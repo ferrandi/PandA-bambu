@@ -61,13 +61,16 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "time_info.hpp"
+#include "token_interface.hpp"
 #include "var_pp_functor.hpp"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <tuple>
 
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
@@ -113,6 +116,218 @@ namespace
       }
       return ir_man->create_unary_operation(target_type, value, BUILTIN_LOCINFO, cast_kind);
    }
+
+   bool isPlainSsaExpression(const ir_nodeRef& expression)
+   {
+      if(!expression)
+      {
+         return false;
+      }
+      switch(static_cast<unsigned int>(expression->get_kind()))
+      {
+         case ssa_node_K:
+         case argument_val_node_K:
+         case constant_int_val_node_K:
+         case constant_fp_val_node_K:
+         case constant_vector_val_node_K:
+            return true;
+         case CASE_UNARY_NODES:
+         {
+            if(expression->get_kind() == mem_access_node_K ||
+               expression->get_kind() == unaligned_mem_access_node_K)
+            {
+               return false;
+            }
+            if(expression->get_kind() == addr_node_K &&
+               GetPointerS<const unary_node>(expression)->op &&
+               GetPointerS<const unary_node>(expression)->op->get_kind() == variable_val_node_K)
+            {
+               return true;
+            }
+            return isPlainSsaExpression(GetPointerS<const unary_node>(expression)->op);
+         }
+         case CASE_BINARY_NODES:
+         {
+            const auto binary = GetPointerS<const binary_node>(expression);
+            // GEP is pure pointer arithmetic. Keep it in the same recursive
+            // whitelist as integer arithmetic so ordinary address derivations
+            // for read-only loads do not look like opaque effects.
+            return isPlainSsaExpression(binary->op0) && isPlainSsaExpression(binary->op1);
+         }
+         case CASE_TERNARY_NODES:
+         {
+            const auto ternary = GetPointerS<const ternary_node>(expression);
+            return isPlainSsaExpression(ternary->op0) && isPlainSsaExpression(ternary->op1) &&
+                   isPlainSsaExpression(ternary->op2);
+         }
+         default:
+            return false;
+      }
+   }
+
+   bool hasOnlyOrdinaryReadEffects(const statement_list_node* sl,
+                                   const CustomOrderedSet<unsigned int>& function_memory)
+   {
+      if(!sl)
+      {
+         return false;
+      }
+      for(const auto& block : sl->list_of_bloc)
+      {
+         for(const auto& stmt : block.second->CGetStmtList())
+         {
+            const auto node = GetPointerS<const node_stmt>(stmt);
+            if(node->memdef || node->vdef || !node->vovers.empty() || ir_helper::IsStore(stmt, function_memory))
+            {
+               return false;
+            }
+            const bool is_load = ir_helper::IsLoad(stmt, function_memory);
+            if((node->memuse || !node->vuses.empty()) && !is_load)
+            {
+               return false;
+            }
+            switch(static_cast<unsigned int>(stmt->get_kind()))
+            {
+               case assign_stmt_K:
+               {
+                  const auto assign = GetPointerS<const assign_stmt>(stmt);
+                  if(!assign->op0 || assign->op0->get_kind() != ssa_node_K)
+                  {
+                     return false;
+                  }
+                  if(is_load && assign->op1->get_kind() != mem_access_node_K)
+                  {
+                     return false;
+                  }
+                  if(is_load && !isPlainSsaExpression(GetPointerS<const mem_access_node>(assign->op1)->op))
+                  {
+                     return false;
+                  }
+                  if(!is_load && (assign->op1->get_kind() == mem_access_node_K ||
+                                  assign->op1->get_kind() == unaligned_mem_access_node_K))
+                  {
+                     return false;
+                  }
+                  if(!is_load && !isPlainSsaExpression(assign->op1))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               case phi_stmt_K:
+               {
+                  const auto phi = GetPointerS<const phi_stmt>(stmt);
+                  if(is_load || std::any_of(phi->CGetDefEdgesList().begin(), phi->CGetDefEdgesList().end(),
+                                            [](const auto& edge) { return !isPlainSsaExpression(edge.first); }))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               case multi_way_if_stmt_K:
+               {
+                  const auto branch = GetPointerS<const multi_way_if_stmt>(stmt);
+                  if(is_load || std::any_of(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                            [](const auto& condition) {
+                                               return condition.first && !isPlainSsaExpression(condition.first);
+                                            }))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               case nop_stmt_K:
+                  if(is_load)
+                  {
+                     return false;
+                  }
+                  break;
+               case return_stmt_K:
+               {
+                  const auto ret = GetPointerS<const return_stmt>(stmt);
+                  if(is_load || (ret->op && !isPlainSsaExpression(ret->op)))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+               default:
+                  // Calls, inline assembly, and any statement kind not explicitly
+                  // classified here may have effects that invalidate prefetching.
+                  return false;
+            }
+         }
+      }
+      return true;
+   }
+
+   bool hasOnlyOrdinaryMemoryEffects(const statement_list_node* sl)
+   {
+      if(!sl)
+      {
+         return false;
+      }
+      for(const auto& block : sl->list_of_bloc)
+      {
+         for(const auto& stmt : block.second->CGetStmtList())
+         {
+            const auto node = GetPointerS<const node_stmt>(stmt);
+            const bool is_store = stmt->get_kind() == assign_stmt_K &&
+                                  GetPointerS<const assign_stmt>(stmt)->op0 &&
+                                  GetPointerS<const assign_stmt>(stmt)->op0->get_kind() == mem_access_node_K;
+            if(!node->vovers.empty() || ((node->memdef || node->vdef) && !is_store))
+            {
+               return false;
+            }
+            if(stmt->get_kind() != assign_stmt_K && stmt->get_kind() != phi_stmt_K &&
+               stmt->get_kind() != multi_way_if_stmt_K && stmt->get_kind() != nop_stmt_K &&
+               stmt->get_kind() != return_stmt_K)
+            {
+               return false;
+            }
+            if(stmt->get_kind() == assign_stmt_K)
+            {
+               const auto assignment = GetPointerS<const assign_stmt>(stmt);
+               const bool lhs_memory = assignment->op0 && assignment->op0->get_kind() == mem_access_node_K;
+               const bool rhs_memory = assignment->op1 && assignment->op1->get_kind() == mem_access_node_K;
+               if(lhs_memory)
+               {
+                  const auto access = GetPointerS<const mem_access_node>(assignment->op0);
+                  if(!access->ordinary_memory_access || !isPlainSsaExpression(access->op) ||
+                     !isPlainSsaExpression(assignment->op1))
+                  {
+                     return false;
+                  }
+               }
+               else if(rhs_memory)
+               {
+                  const auto access = GetPointerS<const mem_access_node>(assignment->op1);
+                  if(!access->ordinary_memory_access || !isPlainSsaExpression(access->op) ||
+                     assignment->op0->get_kind() != ssa_node_K)
+                  {
+                     return false;
+                  }
+               }
+               else if(!isPlainSsaExpression(assignment->op1))
+               {
+                  return false;
+               }
+            }
+         }
+      }
+      return true;
+   }
+
+   struct OriginalMemoryAccess
+   {
+      ir_nodeRef statement;
+      ir_nodeRef base;
+      unsigned int owner_argument_index;
+      std::string bundle;
+      bool is_write;
+      bool ordinary;
+      bool classified;
+   };
 
    bool isPointerDerivation(const ir_nodeRef& stmt, const ir_nodeRef& pointer)
    {
@@ -350,6 +565,132 @@ namespace
       }
    }
 
+   blocRef splitBlockBeforeStatement(statement_list_node* sl, const blocRef& block, const ir_nodeRef& first_statement,
+                                     const application_managerRef& AppM, const ir_managerRef& TM)
+   {
+      THROW_ASSERT(block && !block->schedule, "Runtime duplex CFG lowering requires an unscheduled basic block");
+      const auto first = std::find_if(block->CGetStmtList().begin(), block->CGetStmtList().end(),
+                                      [&](const auto& stmt) { return stmt->index == first_statement->index; });
+      THROW_ASSERT(first != block->CGetStmtList().end(), "Split point is not in its expected basic block");
+      const auto old_successors = block->list_of_succ;
+      const auto new_index = sl->list_of_bloc.rbegin()->first + 1U;
+      const auto tail = blocRef(new bloc(new_index));
+      tail->loop_id = block->loop_id;
+      tail->schedule = block->schedule;
+      tail->SetSSAUsesComputed();
+      sl->list_of_bloc.emplace(new_index, tail);
+      std::vector<ir_nodeRef> moved(first, block->CGetStmtList().end());
+      for(const auto& stmt : moved)
+      {
+         block->RemoveStmt(stmt, AppM);
+         tail->PushBack(stmt, AppM);
+      }
+      tail->list_of_pred.push_back(block->number);
+      tail->list_of_succ = old_successors;
+      block->list_of_succ = {new_index};
+      for(const auto successor_id : old_successors)
+      {
+         const auto successor = sl->list_of_bloc.at(successor_id);
+         for(auto& predecessor : successor->list_of_pred)
+         {
+            if(predecessor == block->number)
+            {
+               predecessor = new_index;
+            }
+         }
+         for(const auto& phi_node : successor->CGetPhiList())
+         {
+            auto phi = GetPointerS<phi_stmt>(phi_node);
+            std::vector<phi_stmt::DefEdge> old_edges;
+            for(const auto& edge : phi->CGetDefEdgesList())
+            {
+               if(edge.second == block->number)
+               {
+                  old_edges.push_back(edge);
+               }
+            }
+            for(const auto& edge : old_edges)
+            {
+               phi->ReplaceDefEdge(TM, edge, {edge.first, new_index});
+            }
+         }
+      }
+      return tail;
+   }
+
+   ir_nodeRef createBranch(const ir_managerRef& TM, const unsigned int function_id, const blocRef& block,
+                           const ir_nodeRef& condition, const unsigned int true_target,
+                           const unsigned int false_target, const application_managerRef& AppM)
+   {
+      if(true_target == false_target)
+      {
+         THROW_ASSERT(block->list_of_succ.size() == 1 && block->list_of_succ.front() == true_target,
+                      "Unconditional branch block must already have its sole CFG successor");
+         return ir_nodeRef();
+      }
+      THROW_ASSERT(condition, "Conditional branch requires a condition");
+      ir_manager::IRSchema schema;
+      schema[TOK(TOK_IR_LOCINFO)] = BUILTIN_LOCINFO;
+      schema[TOK(TOK_PARENT)] = STR(function_id);
+      const auto branch = TM->create_ir_node(multi_way_if_stmt_K, schema);
+      const auto branch_stmt = GetPointerS<multi_way_if_stmt>(branch);
+      branch_stmt->add_cond(condition, true_target);
+      branch_stmt->add_cond(ir_nodeRef(), false_target);
+      block->PushBack(branch, AppM);
+      return branch;
+   }
+
+   void insertConditionalCallDiamond(statement_list_node* sl, const blocRef& predecessor, const blocRef& join,
+                                     const ir_nodeRef& fast_mode, const ir_nodeRef& conditional_call,
+                                     const unsigned int function_id, const application_managerRef& AppM,
+                                     const ir_managerRef& TM)
+   {
+      THROW_ASSERT(predecessor->list_of_succ.size() == 1 && predecessor->list_of_succ.front() == join->number,
+                   "Conditional call insertion requires a single predecessor edge");
+      const auto make_block = [&](const unsigned int loop_id) {
+         const auto index = sl->list_of_bloc.rbegin()->first + 1U;
+         const auto block = blocRef(new bloc(index));
+         block->loop_id = loop_id;
+         block->schedule = predecessor->schedule;
+         block->SetSSAUsesComputed();
+         sl->list_of_bloc.emplace(index, block);
+         return block;
+      };
+      const auto dispatch = make_block(predecessor->loop_id);
+      const auto call_block = make_block(predecessor->loop_id);
+      predecessor->list_of_succ = {dispatch->number};
+      dispatch->list_of_pred.push_back(predecessor->number);
+      dispatch->list_of_succ = {join->number, call_block->number};
+      call_block->list_of_pred.push_back(dispatch->number);
+      call_block->list_of_succ.push_back(join->number);
+      join->list_of_pred.erase(
+          std::remove(join->list_of_pred.begin(), join->list_of_pred.end(), predecessor->number),
+          join->list_of_pred.end());
+      join->list_of_pred.push_back(dispatch->number);
+      join->list_of_pred.push_back(call_block->number);
+      for(const auto& phi_node : join->CGetPhiList())
+      {
+         auto phi = GetPointerS<phi_stmt>(phi_node);
+         std::vector<phi_stmt::DefEdge> old_edges;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == predecessor->number)
+            {
+               old_edges.push_back(edge);
+            }
+         }
+         for(const auto& edge : old_edges)
+         {
+            phi->ReplaceDefEdge(TM, edge, {edge.first, dispatch->number});
+            phi->AddDefEdge(TM, {edge.first, call_block->number});
+         }
+      }
+      createBranch(TM, function_id, predecessor, ir_nodeRef(), dispatch->number, dispatch->number, AppM);
+      createBranch(TM, function_id, dispatch, fast_mode, join->number, call_block->number, AppM);
+      call_block->PushBack(conditional_call, AppM);
+      createBranch(TM, function_id, call_block, ir_nodeRef(), join->number, join->number, AppM);
+   }
+
    void serializeInterfaceAccess(const ir_nodeRef& stmt, const std::string& interface_fname,
                                  std::map<std::string, ir_nodeRef>& last_interface_vdefs,
                                  const ir_manipulationRef& ir_man)
@@ -366,6 +707,1482 @@ namespace
       stmt_node->SetVdef(new_vdef);
       GetPointerS<ssa_node>(new_vdef)->SetDefStmt(stmt);
       last_interface_vdefs[interface_fname] = new_vdef;
+   }
+
+   struct ReadBurstRegion
+   {
+      unsigned int preheader;
+      unsigned int header;
+      ir_nodeRef branch;
+      ir_nodeRef guard;
+      ir_nodeRef bound;
+      ir_nodeRef loop_trip_bound;
+      ir_nodeRef loop_trip_compare;
+      ir_nodeRef effective_bound;
+      ir_nodeRef effective_compare;
+      unsigned int access_bb = 0;
+      bool has_direction_guard = false;
+      ir_nodeRef base;
+      ir_nodeRef induction;
+      std::vector<ir_nodeRef> reads;
+   };
+
+   struct WriteBurstRegion
+   {
+      unsigned int preheader;
+      unsigned int header;
+      unsigned int exit;
+      ir_nodeRef guard;
+      ir_nodeRef bound;
+      ir_nodeRef loop_trip_bound;
+      ir_nodeRef loop_trip_compare;
+      ir_nodeRef effective_bound;
+      ir_nodeRef effective_compare;
+      unsigned int access_bb = 0;
+      bool has_direction_guard = false;
+      ir_nodeRef base;
+      ir_nodeRef induction;
+      ir_nodeRef store;
+   };
+
+   struct SameBaseDuplexProof
+   {
+      unsigned int owner_argument_index = 0;
+      unsigned int read_owner_argument_index = 0;
+      unsigned int write_owner_argument_index = 0;
+      bool distinct_bases = false;
+      bool runtime_range_guard = false;
+      std::string bundle;
+      ir_nodeRef base;
+      ir_nodeRef read_base;
+      ir_nodeRef write_base;
+      ir_nodeRef load_statement;
+      ir_nodeRef store_statement;
+      ReadBurstRegion read_region{};
+      WriteBurstRegion write_region{};
+   };
+
+   bool isConstantValue(const ir_nodeRef& value, const long long expected)
+   {
+      return value && value->get_kind() == constant_int_val_node_K && ir_helper::GetConstValue(value) == expected;
+   }
+
+   bool isUnsigned32Type(const ir_nodeConstRef& type)
+   {
+      return type && type->get_kind() == integer_ty_node_K && ir_helper::Size(type) == 32 &&
+             GetPointerS<const integer_ty_node>(type)->unsigned_flag;
+   }
+
+   bool isSigned32Type(const ir_nodeConstRef& type)
+   {
+      return type && type->get_kind() == integer_ty_node_K && ir_helper::Size(type) == 32 &&
+             !GetPointerS<const integer_ty_node>(type)->unsigned_flag;
+   }
+
+   bool hasBlockPath(const statement_list_node* sl, const unsigned int source, const unsigned int target)
+   {
+      std::vector<unsigned int> pending{source};
+      std::set<unsigned int> visited{source};
+      while(!pending.empty())
+      {
+         const auto current = pending.back();
+         pending.pop_back();
+         if(current == target)
+         {
+            return true;
+         }
+         const auto current_it = sl->list_of_bloc.find(current);
+         if(current_it == sl->list_of_bloc.end())
+         {
+            continue;
+         }
+         for(const auto successor : current_it->second->list_of_succ)
+         {
+            if(visited.insert(successor).second)
+            {
+               pending.push_back(successor);
+            }
+         }
+      }
+      return false;
+   }
+
+   bool isPreanalyzedCrossBundleWrite(const ir_nodeRef& stmt,
+                                      const std::vector<OriginalMemoryAccess>& original_memory_accesses,
+                                      const ir_nodeRef& expected_base, const std::string& expected_bundle)
+   {
+      if(!stmt || !expected_base)
+      {
+         return false;
+      }
+      const auto is_distinct_ordinary_write = [&](const OriginalMemoryAccess& access) {
+         return access.is_write && access.classified && access.ordinary && access.base &&
+                access.base->index != expected_base->index && access.bundle != expected_bundle;
+      };
+      if(stmt->get_kind() == assign_stmt_K &&
+         std::any_of(original_memory_accesses.begin(), original_memory_accesses.end(), [&](const auto& access) {
+            return is_distinct_ordinary_write(access) && access.statement && access.statement->index == stmt->index;
+         }))
+      {
+         return true;
+      }
+      if(stmt->get_kind() != call_stmt_K)
+      {
+         return false;
+      }
+      auto callee = GetPointerS<const call_stmt>(stmt)->fn;
+      if(callee && callee->get_kind() == addr_node_K)
+      {
+         callee = GetPointerS<const addr_node>(callee)->op;
+      }
+      if(!callee || ir_helper::GetFunctionName(callee).empty() ||
+         GetPointerS<const call_stmt>(stmt)->args.size() != 5)
+      {
+         return false;
+      }
+      const auto call_name = ir_helper::GetFunctionName(callee);
+      return std::any_of(original_memory_accesses.begin(), original_memory_accesses.end(),
+                         [&](const auto& access) {
+                            return is_distinct_ordinary_write(access) &&
+                                   call_name == ENCODE_FDNAME(access.bundle, "_store_write", "");
+                         });
+   }
+
+   bool recognizeReadBurstRegion(const statement_list_node* sl, const std::vector<ir_nodeRef>& reads,
+                                 const ir_nodeRef& expected_base,
+                                 const std::vector<OriginalMemoryAccess>& original_memory_accesses,
+                                 const std::string& expected_bundle, ReadBurstRegion& result,
+                                 const ir_nodeRef& paired_store = ir_nodeRef())
+   {
+      if(reads.empty() || !expected_base || expected_base->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto first_stmt = reads.front();
+      const auto loop_id = GetPointerS<const node_stmt>(first_stmt)->bb_index;
+      const auto bb_it = sl->list_of_bloc.find(loop_id);
+      if(bb_it == sl->list_of_bloc.end())
+      {
+         return false;
+      }
+      const auto loop_bb = bb_it->second;
+      if(loop_bb->list_of_succ.size() != 2 || loop_bb->list_of_pred.size() != 2 ||
+         std::count(loop_bb->list_of_succ.begin(), loop_bb->list_of_succ.end(), loop_id) != 1 ||
+         std::count(loop_bb->list_of_pred.begin(), loop_bb->list_of_pred.end(), loop_id) != 1)
+      {
+         return false;
+      }
+      const auto preheader_it = std::find_if(loop_bb->list_of_pred.begin(), loop_bb->list_of_pred.end(),
+                                             [&](const auto pred) { return pred != loop_id; });
+      const auto exit_it = std::find_if(loop_bb->list_of_succ.begin(), loop_bb->list_of_succ.end(),
+                                        [&](const auto succ) { return succ != loop_id; });
+      if(preheader_it == loop_bb->list_of_pred.end() || exit_it == loop_bb->list_of_succ.end())
+      {
+         return false;
+      }
+      const auto preheader_id = *preheader_it;
+      const auto preheader_bb_it = sl->list_of_bloc.find(preheader_id);
+      if(preheader_bb_it == sl->list_of_bloc.end() || preheader_bb_it->second->list_of_pred.size() != 1)
+      {
+         return false;
+      }
+      const auto& loop_stmts = loop_bb->CGetStmtList();
+      if(loop_stmts.empty() || loop_stmts.back()->get_kind() != multi_way_if_stmt_K)
+      {
+         return false;
+      }
+      for(auto stmt_it = loop_stmts.begin(); stmt_it != std::prev(loop_stmts.end()); ++stmt_it)
+      {
+         const auto stmt = *stmt_it;
+         if(paired_store && stmt->index == paired_store->index)
+         {
+            continue;
+         }
+         if(isPreanalyzedCrossBundleWrite(stmt, original_memory_accesses, expected_base, expected_bundle))
+         {
+            continue;
+         }
+         if(stmt->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto assignment = GetPointerS<const assign_stmt>(stmt);
+         if(assignment->op0->get_kind() == mem_access_node_K || assignment->op1->get_kind() == call_node_K)
+         {
+            return false;
+         }
+      }
+      const auto loop_branch = loop_stmts.back();
+      const auto loop_branch_node = GetPointerS<const multi_way_if_stmt>(loop_branch);
+      if(loop_branch_node->list_of_cond.empty())
+      {
+         return false;
+      }
+      const auto branch_condition = loop_branch_node->list_of_cond.front().first;
+      if(!branch_condition || branch_condition->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto condition_def = GetPointerS<const ssa_node>(branch_condition)->GetDefStmt();
+      if(!condition_def || condition_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(condition_def)->op1->get_kind() != eq_node_K)
+      {
+         return false;
+      }
+      const auto compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(condition_def)->op1);
+      ir_nodeRef induction;
+      ir_nodeRef increment;
+      for(const auto& phi_node : loop_bb->CGetPhiList())
+      {
+         if(phi_node->get_kind() != phi_stmt_K)
+         {
+            continue;
+         }
+         const auto phi = GetPointerS<const phi_stmt>(phi_node);
+         if(phi->CGetDefEdgesList().size() != 2)
+         {
+            continue;
+         }
+         ir_nodeRef initial;
+         ir_nodeRef backedge;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == preheader_id)
+            {
+               initial = edge.first;
+            }
+            else if(edge.second == loop_id)
+            {
+               backedge = edge.first;
+            }
+         }
+         if(!isConstantValue(initial, 0) || !backedge || backedge->get_kind() != ssa_node_K)
+         {
+            continue;
+         }
+         const auto update_stmt = GetPointerS<const ssa_node>(backedge)->GetDefStmt();
+         if(!update_stmt || update_stmt->get_kind() != assign_stmt_K)
+         {
+            continue;
+         }
+         const auto update = GetPointerS<const assign_stmt>(update_stmt);
+         if(update->op1->get_kind() != add_node_K)
+         {
+            continue;
+         }
+         const auto add = GetPointerS<const binary_node>(update->op1);
+         const auto adds_one = (add->op0->index == phi->res->index && isConstantValue(add->op1, 1)) ||
+                              (add->op1->index == phi->res->index && isConstantValue(add->op0, 1));
+         if(adds_one)
+         {
+            induction = phi->res;
+            increment = backedge;
+            break;
+         }
+      }
+      if(!induction || !increment)
+      {
+         return false;
+      }
+      ir_nodeRef bound;
+      if(compare->op0->index == increment->index)
+      {
+         bound = compare->op1;
+      }
+      else if(compare->op1->index == increment->index)
+      {
+         bound = compare->op0;
+      }
+      else
+      {
+         return false;
+      }
+      if(bound->get_kind() != ssa_node_K || !isUnsigned32Type(ir_helper::CGetType(bound)))
+      {
+         return false;
+      }
+      const auto bound_def = GetPointerS<const ssa_node>(bound)->GetDefStmt();
+      if(bound_def && GetPointerS<const node_stmt>(bound_def)->bb_index == loop_id)
+      {
+         return false;
+      }
+
+      // The IR's conditional edge is the first successor for a true comparison.
+      if(loop_bb->list_of_succ.size() != 2 || loop_branch_node->list_of_cond.front().second != *exit_it)
+      {
+         return false;
+      }
+
+      const auto preheader_bb = preheader_bb_it->second;
+      if(preheader_bb->CGetStmtList().empty() || preheader_bb->CGetStmtList().back()->get_kind() != multi_way_if_stmt_K)
+      {
+         return false;
+      }
+      const auto guard_branch = preheader_bb->CGetStmtList().back();
+      const auto guard_node = GetPointerS<const multi_way_if_stmt>(guard_branch);
+      if(guard_node->list_of_cond.empty())
+      {
+         return false;
+      }
+      const auto guard_condition = guard_node->list_of_cond.front().first;
+      if(!guard_condition || guard_condition->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto guard_def = GetPointerS<const ssa_node>(guard_condition)->GetDefStmt();
+      if(!guard_def || guard_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(guard_def)->op1->get_kind() != gt_node_K)
+      {
+         return false;
+      }
+      const auto guard_compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(guard_def)->op1);
+      if(!isConstantValue(guard_compare->op1, 0) || guard_compare->op0->get_kind() != ssa_node_K ||
+         !ir_helper::IsSignedIntegerType(guard_compare->op0) || !ir_helper::IsSignedIntegerType(guard_compare->op1))
+      {
+         return false;
+      }
+      const auto signed_bound = GetPointerS<const ssa_node>(guard_compare->op0);
+      const auto signed_bound_def = signed_bound->GetDefStmt();
+      if(!signed_bound_def || signed_bound_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(signed_bound_def)->op1->get_kind() != nop_node_K)
+      {
+         return false;
+      }
+      const auto unsigned_bound = GetPointerS<const unary_node>(GetPointerS<const assign_stmt>(signed_bound_def)->op1)->op;
+      if(unsigned_bound->index != bound->index || !isUnsigned32Type(ir_helper::CGetType(unsigned_bound)) ||
+         !isSigned32Type(ir_helper::CGetType(guard_compare->op0)))
+      {
+         return false;
+      }
+      if(guard_node->list_of_cond.front().second != loop_id)
+      {
+         return false;
+      }
+
+      std::vector<ir_nodeRef> loop_reads;
+      if(reads.size() != 1)
+      {
+         return false;
+      }
+      for(const auto& read_stmt : reads)
+      {
+         if(GetPointerS<const node_stmt>(read_stmt)->bb_index != loop_id)
+         {
+            return false;
+         }
+         loop_reads.push_back(read_stmt);
+      }
+      for(const auto& read_stmt : loop_reads)
+      {
+         if(read_stmt->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto read = GetPointerS<const assign_stmt>(read_stmt);
+         const auto read_node = GetPointerS<const node_stmt>(read_stmt);
+         if(read->op1->get_kind() != mem_access_node_K || (read_node->predicate && !isConstantValue(read_node->predicate, 1)) ||
+            ir_helper::Size(read->op0) != 32)
+         {
+            return false;
+         }
+         const auto address = GetPointerS<const mem_access_node>(read->op1)->op;
+         const auto address_def = address && address->get_kind() == ssa_node_K ?
+                                      GetPointerS<const ssa_node>(address)->GetDefStmt() :
+                                      ir_nodeRef();
+         if(!address_def || address_def->get_kind() != assign_stmt_K ||
+            GetPointerS<const assign_stmt>(address_def)->op1->get_kind() != gep_node_K)
+         {
+            return false;
+         }
+         const auto gep = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(address_def)->op1);
+         if(gep->op0->index != expected_base->index || gep->op1->get_kind() != ssa_node_K)
+         {
+            return false;
+         }
+         const auto index_def = GetPointerS<const ssa_node>(gep->op1)->GetDefStmt();
+         if(!index_def || index_def->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto index_expr = GetPointerS<const assign_stmt>(index_def)->op1;
+         if(index_expr->get_kind() != shl_node_K && index_expr->get_kind() != mul_node_K)
+         {
+            return false;
+         }
+         const auto scale = GetPointerS<const binary_node>(index_expr);
+         const bool scaled = (scale->op0->index == induction->index &&
+                              ((index_expr->get_kind() == shl_node_K && isConstantValue(scale->op1, 2)) ||
+                               (index_expr->get_kind() != shl_node_K && isConstantValue(scale->op1, 4)))) ||
+                             (scale->op1->index == induction->index && index_expr->get_kind() != shl_node_K &&
+                              isConstantValue(scale->op0, 4));
+         if(!scaled)
+         {
+            return false;
+         }
+      }
+      result.preheader = preheader_id;
+      result.header = loop_id;
+      result.branch = guard_branch;
+      result.guard = guard_condition;
+      result.bound = bound;
+      result.loop_trip_bound = bound;
+      result.loop_trip_compare = branch_condition;
+      result.effective_bound = bound;
+      result.effective_compare = ir_nodeRef();
+      result.access_bb = GetPointerS<const node_stmt>(reads.front())->bb_index;
+      result.has_direction_guard = false;
+      result.base = expected_base;
+      result.induction = induction;
+      result.reads = std::move(loop_reads);
+      return true;
+   }
+
+   bool recognizeWriteBurstRegion(const statement_list_node* sl, const std::vector<ir_nodeRef>& stores,
+                                  const ir_nodeRef& expected_base,
+                                  const std::vector<OriginalMemoryAccess>& original_memory_accesses,
+                                  const std::string& expected_bundle, WriteBurstRegion& result,
+                                  const ir_nodeRef& paired_read = ir_nodeRef())
+   {
+      if(stores.size() != 1 || !expected_base || expected_base->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto store_stmt = stores.front();
+      const auto loop_id = GetPointerS<const node_stmt>(store_stmt)->bb_index;
+      const auto loop_it = sl->list_of_bloc.find(loop_id);
+      if(loop_it == sl->list_of_bloc.end())
+      {
+         return false;
+      }
+      const auto loop_bb = loop_it->second;
+      if(loop_bb->list_of_succ.size() != 2 || loop_bb->list_of_pred.size() != 2 ||
+         std::count(loop_bb->list_of_succ.begin(), loop_bb->list_of_succ.end(), loop_id) != 1 ||
+         std::count(loop_bb->list_of_pred.begin(), loop_bb->list_of_pred.end(), loop_id) != 1)
+      {
+         return false;
+      }
+      const auto preheader_it = std::find_if(loop_bb->list_of_pred.begin(), loop_bb->list_of_pred.end(),
+                                             [&](const auto pred) { return pred != loop_id; });
+      const auto exit_it = std::find_if(loop_bb->list_of_succ.begin(), loop_bb->list_of_succ.end(),
+                                        [&](const auto succ) { return succ != loop_id; });
+      if(preheader_it == loop_bb->list_of_pred.end() || exit_it == loop_bb->list_of_succ.end())
+      {
+         return false;
+      }
+      const auto preheader = sl->list_of_bloc.find(*preheader_it);
+      const auto exit = sl->list_of_bloc.find(*exit_it);
+      if(preheader == sl->list_of_bloc.end() || preheader->second->list_of_pred.size() != 1 ||
+         exit == sl->list_of_bloc.end() ||
+         (exit->second->list_of_pred.size() != 1 &&
+          !(exit->second->list_of_pred.size() == 2 &&
+            std::count(exit->second->list_of_pred.begin(), exit->second->list_of_pred.end(), *preheader_it) == 1)))
+      {
+         return false;
+      }
+      const auto& statements = loop_bb->CGetStmtList();
+      if(statements.empty() || statements.back()->get_kind() != multi_way_if_stmt_K)
+      {
+         return false;
+      }
+      for(auto stmt_it = statements.begin(); stmt_it != std::prev(statements.end()); ++stmt_it)
+      {
+         if(paired_read && (*stmt_it)->index == paired_read->index)
+         {
+            continue;
+         }
+         if((*stmt_it)->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto assignment = GetPointerS<const assign_stmt>(*stmt_it);
+         if((*stmt_it)->index != store_stmt->index && assignment->op0 &&
+            assignment->op0->get_kind() == mem_access_node_K)
+         {
+            return false;
+         }
+         if(assignment->op1 && assignment->op1->get_kind() == call_node_K)
+         {
+            const auto call = GetPointerS<const call_node>(assignment->op1);
+            const auto is_preanalyzed_source_read = std::any_of(
+                original_memory_accesses.begin(), original_memory_accesses.end(), [&](const auto& access) {
+                   return access.statement->index == (*stmt_it)->index && !access.is_write && access.classified &&
+                          access.ordinary && access.base && access.bundle != expected_bundle &&
+                          call->fn && ir_helper::GetFunctionName(call->fn) ==
+                                          ENCODE_FDNAME(access.bundle, "_burst_read", "");
+                });
+            if(!is_preanalyzed_source_read)
+            {
+               return false;
+            }
+         }
+      }
+      const auto branch = GetPointerS<const multi_way_if_stmt>(statements.back());
+      if(branch->list_of_cond.size() != 2)
+      {
+         return false;
+      }
+      const auto loop_exit_condition = std::find_if(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                                    [&](const auto& condition) {
+                                                       return condition.first && condition.second == *exit_it;
+                                                    });
+      const auto loop_backedge = std::find_if(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                               [&](const auto& condition) {
+                                                  return !condition.first && condition.second == loop_id;
+                                               });
+      if(loop_exit_condition == branch->list_of_cond.end() || loop_backedge == branch->list_of_cond.end() ||
+         loop_exit_condition->first->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto condition_def = GetPointerS<const ssa_node>(loop_exit_condition->first)->GetDefStmt();
+      if(!condition_def || condition_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(condition_def)->op1->get_kind() != eq_node_K)
+      {
+         return false;
+      }
+      const auto compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(condition_def)->op1);
+      ir_nodeRef induction;
+      ir_nodeRef increment;
+      for(const auto& phi_node : loop_bb->CGetPhiList())
+      {
+         if(phi_node->get_kind() != phi_stmt_K)
+         {
+            continue;
+         }
+         const auto phi = GetPointerS<const phi_stmt>(phi_node);
+         if(phi->CGetDefEdgesList().size() != 2)
+         {
+            continue;
+         }
+         ir_nodeRef initial;
+         ir_nodeRef backedge;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == *preheader_it)
+            {
+               initial = edge.first;
+            }
+            else if(edge.second == loop_id)
+            {
+               backedge = edge.first;
+            }
+         }
+         if(!isConstantValue(initial, 0) || !backedge || backedge->get_kind() != ssa_node_K)
+         {
+            continue;
+         }
+         const auto update_stmt = GetPointerS<const ssa_node>(backedge)->GetDefStmt();
+         if(!update_stmt || update_stmt->get_kind() != assign_stmt_K ||
+            GetPointerS<const assign_stmt>(update_stmt)->op1->get_kind() != add_node_K)
+         {
+            continue;
+         }
+         const auto add = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(update_stmt)->op1);
+         if((add->op0->index == phi->res->index && isConstantValue(add->op1, 1)) ||
+            (add->op1->index == phi->res->index && isConstantValue(add->op0, 1)))
+         {
+            induction = phi->res;
+            increment = backedge;
+            break;
+         }
+      }
+      if(!increment)
+      {
+         return false;
+      }
+      ir_nodeRef bound;
+      if(compare->op0->index == increment->index)
+      {
+         bound = compare->op1;
+      }
+      else if(compare->op1->index == increment->index)
+      {
+         bound = compare->op0;
+      }
+      if(!bound || bound->get_kind() != ssa_node_K || !isUnsigned32Type(ir_helper::CGetType(bound)))
+      {
+         return false;
+      }
+      const auto bound_def = GetPointerS<const ssa_node>(bound)->GetDefStmt();
+      if(bound_def && GetPointerS<const node_stmt>(bound_def)->bb_index == loop_id)
+      {
+         return false;
+      }
+      const auto preheader_stmts = preheader->second->CGetStmtList();
+      if(preheader_stmts.empty() || preheader_stmts.back()->get_kind() != multi_way_if_stmt_K)
+      {
+         return false;
+      }
+      const auto guard = GetPointerS<const multi_way_if_stmt>(preheader_stmts.back());
+      if(guard->list_of_cond.size() != 2)
+      {
+         return false;
+      }
+      const auto enters_loop = std::find_if(guard->list_of_cond.begin(), guard->list_of_cond.end(),
+                                            [&](const auto& condition) {
+                                               return condition.first && condition.second == loop_id;
+                                            });
+      const auto skips_loop = std::find_if(guard->list_of_cond.begin(), guard->list_of_cond.end(),
+                                           [&](const auto& condition) {
+                                              return !condition.first && condition.second == *exit_it;
+                                           });
+      if(enters_loop == guard->list_of_cond.end() || skips_loop == guard->list_of_cond.end() ||
+         enters_loop->first->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto guard_def = GetPointerS<const ssa_node>(enters_loop->first)->GetDefStmt();
+      if(!guard_def || guard_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(guard_def)->op1->get_kind() != gt_node_K)
+      {
+         return false;
+      }
+      const auto guard_compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(guard_def)->op1);
+      if(!isConstantValue(guard_compare->op1, 0) || guard_compare->op0->get_kind() != ssa_node_K ||
+         !ir_helper::IsSignedIntegerType(guard_compare->op0) || !ir_helper::IsSignedIntegerType(guard_compare->op1))
+      {
+         return false;
+      }
+      const auto signed_bound = GetPointerS<const ssa_node>(guard_compare->op0);
+      const auto signed_bound_def = signed_bound->GetDefStmt();
+      if(!signed_bound_def || signed_bound_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(signed_bound_def)->op1->get_kind() != nop_node_K)
+      {
+         return false;
+      }
+      const auto unsigned_bound = GetPointerS<const unary_node>(GetPointerS<const assign_stmt>(signed_bound_def)->op1)->op;
+      if(unsigned_bound->index != bound->index || !isUnsigned32Type(ir_helper::CGetType(unsigned_bound)) ||
+         !isSigned32Type(ir_helper::CGetType(guard_compare->op0)))
+      {
+         return false;
+      }
+      if(store_stmt->get_kind() != assign_stmt_K)
+      {
+         return false;
+      }
+      const auto store = GetPointerS<const assign_stmt>(store_stmt);
+      const auto store_node = GetPointerS<const node_stmt>(store_stmt);
+      if(store->op0->get_kind() != mem_access_node_K || (store_node->predicate && !isConstantValue(store_node->predicate, 1)) ||
+         ir_helper::Size(store->op0) != 32 ||
+         !GetPointerS<const mem_access_node>(store->op0)->ordinary_memory_access)
+      {
+         return false;
+      }
+      const auto address = GetPointerS<const mem_access_node>(store->op0)->op;
+      const auto address_def = address && address->get_kind() == ssa_node_K ?
+                                   GetPointerS<const ssa_node>(address)->GetDefStmt() : ir_nodeRef();
+      if(!address_def || address_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(address_def)->op1->get_kind() != gep_node_K)
+      {
+         return false;
+      }
+      const auto gep = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(address_def)->op1);
+      if(gep->op0->index != expected_base->index || gep->op1->get_kind() != ssa_node_K)
+      {
+         return false;
+      }
+      const auto index_def = GetPointerS<const ssa_node>(gep->op1)->GetDefStmt();
+      if(!index_def || index_def->get_kind() != assign_stmt_K)
+      {
+         return false;
+      }
+      const auto index_expr = GetPointerS<const assign_stmt>(index_def)->op1;
+      if(index_expr->get_kind() != shl_node_K && index_expr->get_kind() != mul_node_K)
+      {
+         return false;
+      }
+      const auto scale = GetPointerS<const binary_node>(index_expr);
+      const bool scaled = (scale->op0->index == induction->index &&
+                           ((index_expr->get_kind() == shl_node_K && isConstantValue(scale->op1, 2)) ||
+                            (index_expr->get_kind() != shl_node_K && isConstantValue(scale->op1, 4)))) ||
+                          (scale->op1->index == induction->index && index_expr->get_kind() != shl_node_K &&
+                           isConstantValue(scale->op0, 4));
+      if(!scaled || ir_helper::Size(store->op1) != 32)
+      {
+         return false;
+      }
+      for(const auto& block : sl->list_of_bloc)
+      {
+         for(const auto& stmt : block.second->CGetStmtList())
+         {
+            if(stmt->get_kind() == return_stmt_K && block.first != *exit_it)
+            {
+               return false;
+            }
+         }
+      }
+      result.preheader = *preheader_it;
+      result.header = loop_id;
+      result.exit = *exit_it;
+      result.guard = enters_loop->first;
+      result.bound = bound;
+      result.loop_trip_bound = bound;
+      result.loop_trip_compare = loop_exit_condition->first;
+      result.effective_bound = bound;
+      result.effective_compare = ir_nodeRef();
+      result.access_bb = GetPointerS<const node_stmt>(store_stmt)->bb_index;
+      result.has_direction_guard = false;
+      result.base = expected_base;
+      result.induction = induction;
+      result.store = store_stmt;
+      return true;
+   }
+
+   bool recognizePrefixDuplexRegions(const statement_list_node* sl, const ir_nodeRef& read_stmt,
+                                     const ir_nodeRef& write_stmt, const ir_nodeRef& read_base,
+                                     const ir_nodeRef& write_base, ReadBurstRegion& read_region,
+                                     WriteBurstRegion& write_region, std::string& reason)
+   {
+      const auto read_node = GetPointerS<const node_stmt>(read_stmt);
+      const auto write_node = GetPointerS<const node_stmt>(write_stmt);
+      if(!read_node || !write_node || read_node->bb_index == 0 || write_node->bb_index == 0)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto read_block = sl->list_of_bloc.find(read_node->bb_index);
+      const auto write_block = sl->list_of_bloc.find(write_node->bb_index);
+      if(read_block == sl->list_of_bloc.end() || write_block == sl->list_of_bloc.end() ||
+         read_block->second->loop_id == 0 || read_block->second->loop_id != write_block->second->loop_id)
+      {
+         reason = "read/write accesses do not share one canonical loop";
+         return false;
+      }
+      const auto loop_id = read_block->second->loop_id;
+      std::set<unsigned int> loop_blocks;
+      for(const auto& block : sl->list_of_bloc)
+      {
+         if(block.second->loop_id == loop_id)
+         {
+            loop_blocks.insert(block.first);
+         }
+      }
+      if(loop_blocks.empty())
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+
+      std::vector<unsigned int> headers;
+      for(const auto block_id : loop_blocks)
+      {
+         const auto& block = sl->list_of_bloc.at(block_id);
+         if(std::any_of(block->list_of_pred.begin(), block->list_of_pred.end(), [&](const auto pred) {
+               return !loop_blocks.count(pred);
+            }))
+         {
+            headers.push_back(block_id);
+         }
+      }
+      if(headers.size() != 1)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto header = headers.front();
+      const auto& header_block = sl->list_of_bloc.at(header);
+      std::vector<unsigned int> preheaders;
+      for(const auto pred : header_block->list_of_pred)
+      {
+         if(!loop_blocks.count(pred))
+         {
+            preheaders.push_back(pred);
+         }
+      }
+      if(preheaders.size() != 1)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto preheader = preheaders.front();
+      std::vector<unsigned int> latches;
+      std::set<unsigned int> exits;
+      for(const auto block_id : loop_blocks)
+      {
+         const auto& block = sl->list_of_bloc.at(block_id);
+         if(std::count(block->list_of_succ.begin(), block->list_of_succ.end(), header) != 0)
+         {
+            latches.push_back(block_id);
+         }
+         for(const auto succ : block->list_of_succ)
+         {
+            if(!loop_blocks.count(succ))
+            {
+               exits.insert(succ);
+            }
+         }
+      }
+      if(latches.size() != 1 || exits.size() != 1)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto latch = latches.front();
+      const auto exit = *exits.begin();
+      for(const auto block_id : loop_blocks)
+      {
+         const auto& block = sl->list_of_bloc.at(block_id);
+         if(block_id != latch && std::any_of(block->list_of_succ.begin(), block->list_of_succ.end(),
+                                             [&](const auto succ) { return !loop_blocks.count(succ); }))
+         {
+            reason = "unsupported direction guard CFG";
+            return false;
+         }
+      }
+
+      std::map<unsigned int, unsigned int> indegree;
+      std::deque<unsigned int> ready;
+      for(const auto block_id : loop_blocks)
+      {
+         unsigned int degree = 0;
+         for(const auto pred : sl->list_of_bloc.at(block_id)->list_of_pred)
+         {
+            if(loop_blocks.count(pred) && !(pred == latch && block_id == header))
+            {
+               ++degree;
+            }
+         }
+         indegree[block_id] = degree;
+         if(degree == 0)
+         {
+            ready.push_back(block_id);
+         }
+      }
+      std::vector<unsigned int> topological_order;
+      while(!ready.empty())
+      {
+         const auto current = ready.front();
+         ready.pop_front();
+         topological_order.push_back(current);
+         for(const auto succ : sl->list_of_bloc.at(current)->list_of_succ)
+         {
+            if(!loop_blocks.count(succ) || (current == latch && succ == header))
+            {
+               continue;
+            }
+            auto& degree = indegree[succ];
+            if(--degree == 0)
+            {
+               ready.push_back(succ);
+            }
+         }
+      }
+      if(topological_order.size() != loop_blocks.size())
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      unsigned int body_branch_count = 0;
+      for(const auto block_id : loop_blocks)
+      {
+         if(block_id == latch)
+         {
+            continue;
+         }
+         const auto& statements = sl->list_of_bloc.at(block_id)->CGetStmtList();
+         if(!statements.empty() && statements.back()->get_kind() == multi_way_if_stmt_K)
+         {
+            ++body_branch_count;
+         }
+      }
+      if(body_branch_count > 2)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+
+      const auto latch_statements = sl->list_of_bloc.at(latch)->CGetStmtList();
+      if(latch_statements.empty() || latch_statements.back()->get_kind() != multi_way_if_stmt_K)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto latch_branch = GetPointerS<const multi_way_if_stmt>(latch_statements.back());
+      if(latch_branch->list_of_cond.size() != 2)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto latch_exit_cond = std::find_if(latch_branch->list_of_cond.begin(), latch_branch->list_of_cond.end(),
+                                                [&](const auto& item) {
+                                                   return item.first && item.second == exit;
+                                                });
+      const auto latch_backedge = std::find_if(latch_branch->list_of_cond.begin(), latch_branch->list_of_cond.end(),
+                                               [&](const auto& item) {
+                                                  return !item.first && item.second == header;
+                                               });
+      if(latch_exit_cond == latch_branch->list_of_cond.end() || latch_backedge == latch_branch->list_of_cond.end() ||
+         !latch_exit_cond->first || latch_exit_cond->first->get_kind() != ssa_node_K)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto loop_compare_def = GetPointerS<const ssa_node>(latch_exit_cond->first)->GetDefStmt();
+      if(!loop_compare_def || loop_compare_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(loop_compare_def)->op1->get_kind() != eq_node_K)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto loop_compare = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(loop_compare_def)->op1);
+      ir_nodeRef induction;
+      ir_nodeRef increment;
+      for(const auto& phi_node : header_block->CGetPhiList())
+      {
+         if(phi_node->get_kind() != phi_stmt_K)
+         {
+            continue;
+         }
+         const auto phi = GetPointerS<const phi_stmt>(phi_node);
+         ir_nodeRef initial;
+         ir_nodeRef backedge;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == preheader)
+            {
+               initial = edge.first;
+            }
+            else if(edge.second == latch)
+            {
+               backedge = edge.first;
+            }
+         }
+         if(!isConstantValue(initial, 0) || !backedge || backedge->get_kind() != ssa_node_K)
+         {
+            continue;
+         }
+         const auto update_stmt = GetPointerS<const ssa_node>(backedge)->GetDefStmt();
+         if(!update_stmt || update_stmt->get_kind() != assign_stmt_K ||
+            GetPointerS<const assign_stmt>(update_stmt)->op1->get_kind() != add_node_K)
+         {
+            continue;
+         }
+         const auto update = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(update_stmt)->op1);
+         if((update->op0->index == phi->res->index && isConstantValue(update->op1, 1)) ||
+            (update->op1->index == phi->res->index && isConstantValue(update->op0, 1)))
+         {
+            induction = phi->res;
+            increment = backedge;
+            break;
+         }
+      }
+      if(!increment)
+      {
+         reason = "canonical induction must start at zero and increment by one";
+         return false;
+      }
+      ir_nodeRef trip_bound;
+      if(loop_compare->op0->index == increment->index)
+      {
+         trip_bound = loop_compare->op1;
+      }
+      else if(loop_compare->op1->index == increment->index)
+      {
+         trip_bound = loop_compare->op0;
+      }
+      if(!trip_bound || trip_bound->get_kind() != ssa_node_K || !isUnsigned32Type(ir_helper::CGetType(trip_bound)))
+      {
+         reason = "loop trip bound is not unsigned 32-bit SSA";
+         return false;
+      }
+      const auto trip_def = GetPointerS<const ssa_node>(trip_bound)->GetDefStmt();
+      if(trip_def && loop_blocks.count(GetPointerS<const node_stmt>(trip_def)->bb_index))
+      {
+         reason = "loop trip bound is defined inside loop";
+         return false;
+      }
+
+      ir_nodeRef entry_guard;
+      bool entry_guard_recognized = false;
+      const auto preheader_block = sl->list_of_bloc.find(preheader);
+      if(preheader_block == sl->list_of_bloc.end())
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      if(!preheader_block->second->CGetStmtList().empty() &&
+         preheader_block->second->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K)
+      {
+         const auto preheader_branch =
+             GetPointerS<const multi_way_if_stmt>(preheader_block->second->CGetStmtList().back());
+         if(preheader_branch->list_of_cond.size() == 2)
+         {
+            const auto enters = std::find_if(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                                              [&](const auto& item) {
+                                                 return item.first && item.second == header;
+                                              });
+            if(enters != preheader_branch->list_of_cond.end() && enters->first &&
+               enters->first->get_kind() == ssa_node_K)
+            {
+               const auto skips = std::find_if(preheader_branch->list_of_cond.begin(),
+                                               preheader_branch->list_of_cond.end(), [&](const auto& item) {
+                                                  return !item.first && item.second == exit;
+                                               });
+               const auto guard_def = GetPointerS<const ssa_node>(enters->first)->GetDefStmt();
+               if(skips == preheader_branch->list_of_cond.end() || !guard_def ||
+                  guard_def->get_kind() != assign_stmt_K ||
+                  GetPointerS<const assign_stmt>(guard_def)->op1->get_kind() != gt_node_K)
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               const auto guard_compare =
+                   GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(guard_def)->op1);
+               if(!isConstantValue(guard_compare->op1, 0) || guard_compare->op0->get_kind() != ssa_node_K ||
+                  !isSigned32Type(ir_helper::CGetType(guard_compare->op0)) ||
+                  !isSigned32Type(ir_helper::CGetType(guard_compare->op1)))
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               const auto signed_bound = GetPointerS<const ssa_node>(guard_compare->op0);
+               const auto signed_bound_def = signed_bound->GetDefStmt();
+               if(!signed_bound_def || signed_bound_def->get_kind() != assign_stmt_K ||
+                  GetPointerS<const assign_stmt>(signed_bound_def)->op1->get_kind() != nop_node_K)
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               const auto unsigned_bound =
+                   GetPointerS<const unary_node>(GetPointerS<const assign_stmt>(signed_bound_def)->op1)->op;
+               if(unsigned_bound->index != trip_bound->index || !isUnsigned32Type(ir_helper::CGetType(unsigned_bound)) ||
+                  !isSigned32Type(ir_helper::CGetType(guard_compare->op0)))
+               {
+                  reason = "unsupported direction guard CFG";
+                  return false;
+               }
+               entry_guard = enters->first;
+               entry_guard_recognized = true;
+            }
+         }
+         if(!entry_guard_recognized && preheader_branch->list_of_cond.size() == 2)
+         {
+            const auto skips = std::find_if(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                                             [&](const auto& item) {
+                                                return item.first && item.second == exit;
+                                             });
+            const auto enters = std::find_if(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                                              [&](const auto& item) {
+                                                 return !item.first && item.second == header;
+                                              });
+            if(skips != preheader_branch->list_of_cond.end() && enters != preheader_branch->list_of_cond.end() &&
+               skips->first && skips->first->get_kind() == ssa_node_K && isUnsigned32Type(ir_helper::CGetType(trip_bound)))
+            {
+               const auto skip_def = GetPointerS<const ssa_node>(skips->first)->GetDefStmt();
+               if(skip_def && skip_def->get_kind() == assign_stmt_K &&
+                  GetPointerS<const assign_stmt>(skip_def)->op1->get_kind() == eq_node_K)
+               {
+                  const auto zero_test =
+                      GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(skip_def)->op1);
+                  const bool compares_trip_bound_to_zero =
+                      (zero_test->op0->get_kind() == ssa_node_K && zero_test->op0->index == trip_bound->index &&
+                       isConstantValue(zero_test->op1, 0)) ||
+                      (zero_test->op1->get_kind() == ssa_node_K && zero_test->op1->index == trip_bound->index &&
+                       isConstantValue(zero_test->op0, 0));
+                  if(compares_trip_bound_to_zero)
+                  {
+                     entry_guard = skips->first;
+                  }
+                  entry_guard_recognized = compares_trip_bound_to_zero;
+               }
+            }
+         }
+      }
+      if(!entry_guard_recognized)
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+
+      const auto is_reachable_avoiding = [&](unsigned int source, unsigned int target, unsigned int avoid) {
+         if(source == avoid || target == avoid)
+         {
+            return false;
+         }
+         std::vector<unsigned int> pending{source};
+         std::set<unsigned int> visited{source};
+         while(!pending.empty())
+         {
+            const auto current = pending.back();
+            pending.pop_back();
+            if(current == target)
+            {
+               return true;
+            }
+            for(const auto succ : sl->list_of_bloc.at(current)->list_of_succ)
+            {
+               if(!loop_blocks.count(succ) || (current == latch && succ == header) || succ == avoid)
+               {
+                  continue;
+               }
+               if(visited.insert(succ).second)
+               {
+                  pending.push_back(succ);
+               }
+            }
+         }
+         return false;
+      };
+      const auto path_reaches = [&](unsigned int source, unsigned int target) {
+         std::vector<unsigned int> pending{source};
+         std::set<unsigned int> visited{source};
+         while(!pending.empty())
+         {
+            const auto current = pending.back();
+            pending.pop_back();
+            if(current == target)
+            {
+               return true;
+            }
+            for(const auto succ : sl->list_of_bloc.at(current)->list_of_succ)
+            {
+               if(!loop_blocks.count(succ) || (current == latch && succ == header))
+               {
+                  continue;
+               }
+               if(visited.insert(succ).second)
+               {
+                  pending.push_back(succ);
+               }
+            }
+         }
+         return false;
+      };
+      const auto recognize_direction = [&](const unsigned int access_bb, ir_nodeRef& effective_bound,
+                                           ir_nodeRef& effective_compare, bool& guarded) {
+         std::vector<std::tuple<unsigned int, ir_nodeRef, ir_nodeRef>> matching_guards;
+         std::vector<unsigned int> induction_prefix_guard_blocks;
+         bool mentions_induction = false;
+         bool has_controlling_branch = false;
+         unsigned int controlling_branch_count = 0;
+         for(const auto block_id : loop_blocks)
+         {
+            const auto& statements = sl->list_of_bloc.at(block_id)->CGetStmtList();
+            if(statements.empty() || statements.back()->get_kind() != multi_way_if_stmt_K || block_id == latch)
+            {
+               continue;
+            }
+            const auto branch = GetPointerS<const multi_way_if_stmt>(statements.back());
+            if(branch->list_of_cond.size() != 2 || !branch->list_of_cond.front().first ||
+               branch->list_of_cond.front().first->get_kind() != ssa_node_K)
+            {
+               continue;
+            }
+            const auto true_edge = branch->list_of_cond.front();
+            const auto false_edge = branch->list_of_cond.back();
+            const bool true_reaches_access = path_reaches(true_edge.second, access_bb);
+            const bool false_reaches_access = path_reaches(false_edge.second, access_bb);
+            if(true_reaches_access || false_reaches_access)
+            {
+               const auto condition_def =
+                   GetPointerS<const ssa_node>(branch->list_of_cond.front().first)->GetDefStmt();
+               if(condition_def && condition_def->get_kind() == assign_stmt_K)
+               {
+                  const auto condition = GetPointerS<const assign_stmt>(condition_def)->op1;
+                  if(condition->get_kind() == lt_node_K)
+                  {
+                     const auto compare = GetPointerS<const binary_node>(condition);
+                     if(compare->op0->index == induction->index && compare->op1->get_kind() == ssa_node_K &&
+                        isUnsigned32Type(ir_helper::CGetType(compare->op0)) &&
+                        isUnsigned32Type(ir_helper::CGetType(compare->op1)))
+                     {
+                        induction_prefix_guard_blocks.push_back(block_id);
+                     }
+                  }
+               }
+            }
+            if(true_reaches_access == false_reaches_access)
+            {
+               continue;
+            }
+            has_controlling_branch = true;
+            ++controlling_branch_count;
+            const auto compare_def = GetPointerS<const ssa_node>(branch->list_of_cond.front().first)->GetDefStmt();
+            if(!compare_def || compare_def->get_kind() != assign_stmt_K)
+            {
+               continue;
+            }
+            const auto condition = GetPointerS<const assign_stmt>(compare_def)->op1;
+            if(condition->get_kind() != lt_node_K)
+            {
+               if(condition->get_kind() == eq_node_K || condition->get_kind() == ne_node_K ||
+                  condition->get_kind() == gt_node_K || condition->get_kind() == ge_node_K ||
+                  condition->get_kind() == le_node_K)
+               {
+                  const auto other_compare = GetPointerS<const binary_node>(condition);
+                  mentions_induction |= other_compare->op0->index == induction->index ||
+                                        other_compare->op1->index == induction->index;
+               }
+               continue;
+            }
+            const auto compare = GetPointerS<const binary_node>(condition);
+            if(compare->op0->index != induction->index && compare->op1->index != induction->index)
+            {
+               continue;
+            }
+            mentions_induction = true;
+            if(true_reaches_access && !false_reaches_access &&
+               !is_reachable_avoiding(true_edge.second, latch, access_bb))
+            {
+               matching_guards.emplace_back(block_id, branch->list_of_cond.front().first, condition);
+            }
+         }
+         if(matching_guards.empty())
+         {
+            if(std::any_of(induction_prefix_guard_blocks.begin(), induction_prefix_guard_blocks.end(),
+                           [&](const auto guard_bb) {
+                              return is_reachable_avoiding(header, access_bb, guard_bb);
+                           }))
+            {
+               reason = "direction guard does not dominate memory access";
+               return false;
+            }
+            if(is_reachable_avoiding(header, latch, access_bb))
+            {
+               reason = mentions_induction ? "direction guard is not an unsigned induction prefix" :
+                                             "unsupported direction guard CFG";
+               return false;
+            }
+            if(mentions_induction)
+            {
+               reason = "direction guard is not an unsigned induction prefix";
+               return false;
+            }
+            if(has_controlling_branch)
+            {
+               reason = "unsupported direction guard CFG";
+               return false;
+            }
+            effective_bound = trip_bound;
+            effective_compare = ir_nodeRef();
+            guarded = false;
+            return true;
+         }
+         if(matching_guards.size() != 1)
+         {
+            reason = "unsupported direction guard CFG";
+            return false;
+         }
+         if(controlling_branch_count != 1)
+         {
+            reason = "unsupported direction guard CFG";
+            return false;
+         }
+         const auto guard_bb = std::get<0>(matching_guards.front());
+         effective_compare = std::get<1>(matching_guards.front());
+         const auto compare = GetPointerS<const binary_node>(std::get<2>(matching_guards.front()));
+         if(compare->op0->index != induction->index || compare->op1->get_kind() != ssa_node_K ||
+            !isUnsigned32Type(ir_helper::CGetType(compare->op0)) ||
+            !isUnsigned32Type(ir_helper::CGetType(compare->op1)))
+         {
+            reason = "direction guard is not an unsigned induction prefix";
+            return false;
+         }
+         effective_bound = compare->op1;
+         const auto effective_def = GetPointerS<const ssa_node>(effective_bound)->GetDefStmt();
+         if(effective_def && loop_blocks.count(GetPointerS<const node_stmt>(effective_def)->bb_index))
+         {
+            reason = "effective bound is defined inside loop";
+            return false;
+         }
+         if(is_reachable_avoiding(header, access_bb, guard_bb))
+         {
+            reason = "direction guard does not dominate memory access";
+            return false;
+         }
+         guarded = true;
+         return true;
+      };
+
+      ir_nodeRef read_effective_bound;
+      ir_nodeRef read_effective_compare;
+      bool read_guarded = false;
+      if(!recognize_direction(read_node->bb_index, read_effective_bound, read_effective_compare, read_guarded))
+      {
+         return false;
+      }
+      ir_nodeRef write_effective_bound;
+      ir_nodeRef write_effective_compare;
+      bool write_guarded = false;
+      if(!recognize_direction(write_node->bb_index, write_effective_bound, write_effective_compare, write_guarded))
+      {
+         return false;
+      }
+      if(!path_reaches(read_node->bb_index, write_node->bb_index))
+      {
+         reason = "read-before-write is not proven on paired prefix";
+         return false;
+      }
+      if(read_node->bb_index == write_node->bb_index)
+      {
+         const auto& statements = sl->list_of_bloc.at(read_node->bb_index)->CGetStmtList();
+         const auto read_position = std::find(statements.begin(), statements.end(), read_stmt);
+         const auto write_position = std::find(statements.begin(), statements.end(), write_stmt);
+         if(read_position == statements.end() || write_position == statements.end() ||
+            std::distance(statements.begin(), read_position) >= std::distance(statements.begin(), write_position))
+         {
+            reason = "read-before-write is not proven on paired prefix";
+            return false;
+         }
+      }
+      if(!read_base || !write_base || read_base->get_kind() != ssa_node_K || write_base->get_kind() != ssa_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      if(read_stmt->get_kind() != assign_stmt_K || write_stmt->get_kind() != assign_stmt_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      if((read_node->predicate && !isConstantValue(read_node->predicate, 1)) ||
+         (write_node->predicate && !isConstantValue(write_node->predicate, 1)))
+      {
+         reason = "unsupported direction guard CFG";
+         return false;
+      }
+      const auto read_assign = GetPointerS<const assign_stmt>(read_stmt);
+      const auto write_assign = GetPointerS<const assign_stmt>(write_stmt);
+      if(read_assign->op1->get_kind() != mem_access_node_K || write_assign->op0->get_kind() != mem_access_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      const auto read_address = GetPointerS<const mem_access_node>(read_assign->op1)->op;
+      const auto write_address = GetPointerS<const mem_access_node>(write_assign->op0)->op;
+      if(!read_address || read_address->get_kind() != ssa_node_K || !write_address ||
+         write_address->get_kind() != ssa_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      const auto read_gep_def = GetPointerS<const ssa_node>(read_address)->GetDefStmt();
+      const auto write_gep_def = GetPointerS<const ssa_node>(write_address)->GetDefStmt();
+      if(!read_gep_def || !write_gep_def || read_gep_def->get_kind() != assign_stmt_K ||
+         write_gep_def->get_kind() != assign_stmt_K ||
+         GetPointerS<const assign_stmt>(read_gep_def)->op1->get_kind() != gep_node_K ||
+         GetPointerS<const assign_stmt>(write_gep_def)->op1->get_kind() != gep_node_K)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+      const auto read_gep = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(read_gep_def)->op1);
+      const auto write_gep = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(write_gep_def)->op1);
+      const auto recognize_scaled_index = [&](const ir_nodeRef& index) {
+         if(!index || index->get_kind() != ssa_node_K)
+         {
+            return false;
+         }
+         const auto index_def = GetPointerS<const ssa_node>(index)->GetDefStmt();
+         if(!index_def || index_def->get_kind() != assign_stmt_K)
+         {
+            return false;
+         }
+         const auto expression = GetPointerS<const assign_stmt>(index_def)->op1;
+         if(expression->get_kind() != mul_node_K && expression->get_kind() != shl_node_K)
+         {
+            return false;
+         }
+         const auto scaled = GetPointerS<const binary_node>(expression);
+         return (scaled->op0->index == induction->index &&
+                 ((expression->get_kind() == shl_node_K && isConstantValue(scaled->op1, 2)) ||
+                  (expression->get_kind() != shl_node_K && isConstantValue(scaled->op1, 4)))) ||
+                (scaled->op1->index == induction->index && expression->get_kind() != shl_node_K &&
+                 isConstantValue(scaled->op0, 4));
+      };
+      if(read_gep->op0->index != read_base->index || write_gep->op0->index != write_base->index ||
+         !recognize_scaled_index(read_gep->op1) || !recognize_scaled_index(write_gep->op1) ||
+         ir_helper::Size(read_assign->op0) != 32 ||
+         ir_helper::Size(write_assign->op1) != 32 ||
+         !GetPointerS<const mem_access_node>(read_assign->op1)->ordinary_memory_access ||
+         !GetPointerS<const mem_access_node>(write_assign->op0)->ordinary_memory_access)
+      {
+         reason = "canonical contiguous loop recognition failed";
+         return false;
+      }
+
+      read_region.preheader = preheader;
+      read_region.header = header;
+      read_region.branch = preheader_block->second->CGetStmtList().back();
+      read_region.guard = entry_guard;
+      read_region.bound = trip_bound;
+      read_region.loop_trip_bound = trip_bound;
+      read_region.loop_trip_compare = latch_exit_cond->first;
+      read_region.effective_bound = read_effective_bound;
+      read_region.effective_compare = read_effective_compare;
+      read_region.access_bb = read_node->bb_index;
+      read_region.has_direction_guard = read_guarded;
+      read_region.base = read_base;
+      read_region.induction = induction;
+      read_region.reads = {read_stmt};
+      write_region.preheader = preheader;
+      write_region.header = header;
+      write_region.exit = exit;
+      write_region.guard = entry_guard;
+      write_region.bound = trip_bound;
+      write_region.loop_trip_bound = trip_bound;
+      write_region.loop_trip_compare = latch_exit_cond->first;
+      write_region.effective_bound = write_effective_bound;
+      write_region.effective_compare = write_effective_compare;
+      write_region.access_bb = write_node->bb_index;
+      write_region.has_direction_guard = write_guarded;
+      write_region.base = write_base;
+      write_region.induction = induction;
+      write_region.store = write_stmt;
+      reason.clear();
+      return true;
+   }
+
+   static ir_nodeRef CreateDuplexDirectionCount(const ir_manipulationRef& ir_man, const ir_managerRef& TM,
+                                                const application_managerRef& AppM, const unsigned int function_id,
+                                                const blocRef& preheader, const ir_nodeRef& insertion_point,
+                                                const ir_nodeRef& entry_guard, const ir_nodeRef& trip_bound,
+                                                const ir_nodeRef& effective_bound, const bool has_direction_guard,
+                                                const ir_nodeConstRef& u32_type)
+   {
+      const auto append_value = [&](const ir_nodeRef& expression, const ir_nodeConstRef& value_type) {
+         const auto statement = ir_man->CreateAssignStmt(value_type, nullptr, nullptr, expression, function_id,
+                                                         BUILTIN_LOCINFO);
+         preheader->PushBefore(statement, insertion_point, AppM);
+         return GetPointerS<const assign_stmt>(statement)->op0;
+      };
+      ir_nodeRef count = trip_bound;
+      if(has_direction_guard)
+      {
+         const auto boolean_type = ir_man->GetBooleanType();
+         const auto compare = ir_man->create_binary_operation(boolean_type, trip_bound, effective_bound,
+                                                              BUILTIN_LOCINFO, lt_node_K);
+         const auto compare_value = append_value(compare, boolean_type);
+         const auto minimum = ir_man->create_ternary_operation(u32_type, compare_value, trip_bound,
+                                                               effective_bound, BUILTIN_LOCINFO, select_node_K);
+         count = append_value(minimum, u32_type);
+      }
+      if(entry_guard)
+      {
+         const auto zero = TM->CreateUniqueIntegerCst(0, u32_type);
+         ir_nodeRef entry_condition = entry_guard;
+         const auto entry_guard_def = GetPointerS<const ssa_node>(entry_guard)->GetDefStmt();
+         if(entry_guard_def && entry_guard_def->get_kind() == assign_stmt_K &&
+            GetPointerS<const assign_stmt>(entry_guard_def)->op1->get_kind() == eq_node_K)
+         {
+            const auto zero_test = GetPointerS<const binary_node>(GetPointerS<const assign_stmt>(entry_guard_def)->op1);
+            const bool is_trip_bound_zero_test =
+                (zero_test->op0->get_kind() == ssa_node_K && zero_test->op0->index == trip_bound->index &&
+                 isConstantValue(zero_test->op1, 0)) ||
+                (zero_test->op1->get_kind() == ssa_node_K && zero_test->op1->index == trip_bound->index &&
+                 isConstantValue(zero_test->op0, 0));
+            if(is_trip_bound_zero_test)
+            {
+               const auto boolean_type = ir_man->GetBooleanType();
+               const auto nonzero_test = ir_man->create_binary_operation(boolean_type, trip_bound, zero,
+                                                                          BUILTIN_LOCINFO, ne_node_K);
+               entry_condition = append_value(nonzero_test, boolean_type);
+            }
+         }
+         count = append_value(ir_man->create_ternary_operation(u32_type, entry_condition, count, zero,
+                                                              BUILTIN_LOCINFO, select_node_K), u32_type);
+      }
+      return count;
    }
 
    void preserveBlockingInterfaceAccess(const ir_nodeRef& stmt, const ir_nodeRef& original_stmt,
@@ -412,6 +2229,443 @@ namespace
          GetPointerS<ssa_node>(stmt_vdef)->SetDefStmt(stmt);
       }
       last_interface_vdefs[interface_fname] = stmt_vdef;
+   }
+
+   std::vector<ir_nodeRef> lowerRuntimeGuardedDuplex(
+       const statement_list_node* const_sl, const function_val_node* fd, const unsigned int root_id,
+       const SameBaseDuplexProof& proof, const std::string& bundle_name, const std::string& function_name,
+       const std::string& read_argument_name, const std::string& write_argument_name,
+       const ir_nodeConstRef& interface_datatype, const AXIWriteBurstProfile& write_profile,
+       const unsigned int address_bitsize, const application_managerRef& AppM, const ir_managerRef& TM,
+       const ir_manipulationRef& ir_man, std::map<std::string, ir_nodeRef>& channel_read_vdefs,
+       std::map<std::string, ir_nodeRef>& channel_write_vdefs,
+       std::map<unsigned int, std::map<std::string, std::list<unsigned int>>>& interface_io)
+   {
+      auto sl = const_cast<statement_list_node*>(const_sl);
+      const auto function_id = fd->index;
+      const auto& read_region = proof.read_region;
+      const auto& write_region = proof.write_region;
+      const auto address_type = ir_helper::CGetType(proof.read_base);
+      const auto pointer_bits = static_cast<unsigned int>(ir_helper::SizeAlloc(address_type));
+      const auto write_address_type = ir_helper::CGetType(proof.write_base);
+      const auto count_type = ir_helper::CGetType(read_region.loop_trip_bound);
+      THROW_ASSERT(proof.runtime_range_guard && proof.distinct_bases && pointer_bits >= 32 && pointer_bits <= 64 &&
+                       (pointer_bits == 32 || pointer_bits == 64) &&
+                       (address_bitsize == 32 || address_bitsize == 64) && pointer_bits <= address_bitsize,
+                   "Runtime duplex range guard received an unqualified address profile");
+      THROW_ASSERT(read_region.header == read_region.access_bb && read_region.access_bb == write_region.access_bb &&
+                       read_region.preheader == write_region.preheader &&
+                       read_region.header == write_region.header &&
+                       read_region.loop_trip_bound->index == write_region.loop_trip_bound->index &&
+                       ir_helper::SizeAlloc(write_address_type) == pointer_bits &&
+                       isUnsigned32Type(count_type) &&
+                       ir_helper::Size(GetPointerS<const assign_stmt>(proof.load_statement)->op0) ==
+                           ir_helper::Size(interface_datatype) &&
+                       ir_helper::Size(GetPointerS<const assign_stmt>(proof.store_statement)->op1) == 32,
+                   "Runtime duplex lowering requires the frozen single-block shared loop");
+      const auto preheader = sl->list_of_bloc.at(read_region.preheader);
+      const auto header = sl->list_of_bloc.at(read_region.header);
+      const auto exit = sl->list_of_bloc.at(write_region.exit);
+      THROW_ASSERT(!preheader->CGetStmtList().empty() && !header->CGetStmtList().empty() &&
+                       preheader->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K &&
+                       header->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K &&
+                       std::find(preheader->list_of_succ.begin(), preheader->list_of_succ.end(), header->number) !=
+                           preheader->list_of_succ.end() &&
+                       std::find(header->list_of_succ.begin(), header->list_of_succ.end(), exit->number) !=
+                           header->list_of_succ.end(),
+                   "Runtime duplex loop entry/exit CFG is not canonical");
+      const auto preheader_branch = GetPointerS<multi_way_if_stmt>(preheader->CGetStmtList().back());
+#if HAVE_ASSERTS
+      const auto header_branch = GetPointerS<const multi_way_if_stmt>(header->CGetStmtList().back());
+#endif
+      THROW_ASSERT(std::any_of(preheader_branch->list_of_cond.begin(), preheader_branch->list_of_cond.end(),
+                               [&](const auto& edge) { return edge.second == header->number; }),
+                   "Runtime duplex preheader terminator does not target its loop header");
+      THROW_ASSERT(std::any_of(header_branch->list_of_cond.begin(), header_branch->list_of_cond.end(),
+                               [&](const auto& edge) { return edge.second == exit->number; }) &&
+                       std::any_of(header_branch->list_of_cond.begin(), header_branch->list_of_cond.end(),
+                                   [&](const auto& edge) { return edge.second == header->number; }),
+                   "Runtime duplex loop terminator must provide backedge and exit edges");
+      const auto load = proof.load_statement;
+      const auto store = proof.store_statement;
+      const auto load_assign = GetPointerS<const assign_stmt>(load);
+      const auto store_assign = GetPointerS<const assign_stmt>(store);
+#if HAVE_ASSERTS
+      const auto load_position = std::find_if(header->CGetStmtList().begin(), header->CGetStmtList().end(),
+                                              [&](const auto& stmt) { return stmt->index == load->index; });
+      const auto header_store_position = std::find_if(
+          header->CGetStmtList().begin(), header->CGetStmtList().end(),
+          [&](const auto& stmt) { return stmt->index == store->index; });
+#endif
+      THROW_ASSERT(GetPointerS<const node_stmt>(load)->bb_index == header->number &&
+                       GetPointerS<const node_stmt>(store)->bb_index == header->number &&
+                       load_position != header->CGetStmtList().end() &&
+                       header_store_position != header->CGetStmtList().end() &&
+                       std::distance(header->CGetStmtList().begin(), load_position) <
+                           std::distance(header->CGetStmtList().begin(), header_store_position) &&
+                       std::next(header_store_position) != header->CGetStmtList().end() && !header->schedule &&
+                       !preheader->schedule,
+                   "Runtime duplex accesses are not ordered in the validated shared header");
+#if HAVE_ASSERTS
+      for(const auto& phi_node : header->CGetPhiList())
+      {
+         const auto phi = GetPointerS<const phi_stmt>(phi_node);
+         const auto& edges = phi->CGetDefEdgesList();
+         THROW_ASSERT(std::any_of(edges.begin(), edges.end(),
+                                  [&](const auto& edge) { return edge.second == preheader->number; }) &&
+                          std::any_of(edges.begin(), edges.end(),
+                                      [&](const auto& edge) { return edge.second == header->number; }),
+                      "Runtime duplex header PHI must represent both entry and backedge");
+      }
+#endif
+
+      const auto make_block = [&](const unsigned int loop_id) {
+         const auto index = sl->list_of_bloc.rbegin()->first + 1U;
+         const auto block = blocRef(new bloc(index));
+         block->loop_id = loop_id;
+         block->SetSSAUsesComputed();
+         sl->list_of_bloc.emplace(index, block);
+         return block;
+      };
+      const auto append_value = [&](const blocRef& block, const ir_nodeRef& expression,
+                                    const ir_nodeConstRef& value_type) {
+         const auto statement = ir_man->CreateAssignStmt(value_type, nullptr, nullptr, expression, function_id,
+                                                         BUILTIN_LOCINFO);
+         block->PushBack(statement, AppM);
+         return GetPointerS<const assign_stmt>(statement)->op0;
+      };
+      std::vector<ir_nodeRef> generated_calls;
+      CustomUnorderedSet<unsigned int> call_points;
+      const auto register_call = [&](const ir_nodeRef& call, const ir_nodeRef& declaration,
+                                     const std::string& argument_name,
+                                     const std::string& channel,
+                                     std::map<std::string, ir_nodeRef>& channel_vdefs) {
+         serializeInterfaceAccess(call, bundle_name, channel_vdefs, ir_man);
+         const auto call_bb = GetPointerS<const node_stmt>(call)->bb_index;
+         interface_io[call_bb][argument_name].push_back(call->index);
+         CallGraphManager::addCallPointAndExpand(call_points, AppM, function_id, declaration->index, call->index,
+                                                 FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+         generated_calls.push_back(call);
+         (void)channel;
+      };
+      const auto append_call = [&](const blocRef& block, const ir_nodeRef& declaration,
+                                   const std::vector<ir_nodeRef>& args, const std::string& argument_name,
+                                   const std::string& channel,
+                                   std::map<std::string, ir_nodeRef>& channel_vdefs) {
+         const auto call = ir_man->create_call_stmt(declaration, args, function_id, BUILTIN_LOCINFO);
+         block->PushBack(call, AppM);
+         register_call(call, declaration, argument_name, channel, channel_vdefs);
+         return call;
+      };
+      const auto opcode_type = ir_man->GetCustomIntegerType(2, true);
+      const auto u32_type = ir_man->GetUnsignedIntegerType();
+      const auto boolean_type = ir_man->GetBooleanType();
+      const auto extended_bits = std::max(address_bitsize + 1U, 35U);
+      const auto extended_type = ir_man->GetCustomIntegerType(extended_bits, true);
+      const auto pointer_type = ir_man->GetCustomIntegerType(pointer_bits, true);
+      const auto address_integer_type = ir_man->GetCustomIntegerType(address_bitsize, true);
+      const auto read_configure_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
+      const auto burst_read_name = ENCODE_FDNAME(bundle_name, "_burst_read", "");
+      const auto write_configure_name = ENCODE_FDNAME(bundle_name, "_configure_write", "");
+      const auto store_name = ENCODE_FDNAME(bundle_name, "_store_write", "");
+      const auto drain_name = ENCODE_FDNAME(bundle_name, "_drain_write", "");
+      const std::vector<ir_nodeConstRef> command_types{opcode_type, u32_type, interface_datatype, address_type,
+                                                        u32_type};
+      const auto read_configure_decl = ir_man->create_function_decl(
+          read_configure_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+      const auto read_decl = ir_man->create_function_decl(
+          burst_read_name, fd->parent, command_types, interface_datatype, BUILTIN_LOCINFO, false);
+      const auto write_configure_decl = ir_man->create_function_decl(
+          write_configure_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+      const auto store_decl = ir_man->create_function_decl(
+          store_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+      const auto drain_decl = ir_man->create_function_decl(
+          drain_name, fd->parent, command_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+
+      const auto old_predecessor_edges = [&]() {
+         std::map<unsigned int, ir_nodeRef> incoming;
+         for(const auto& phi_node : header->CGetPhiList())
+         {
+            const auto phi = GetPointerS<const phi_stmt>(phi_node);
+            for(const auto& edge : phi->CGetDefEdgesList())
+            {
+               if(edge.second == preheader->number)
+               {
+                  incoming[phi->index] = edge.first;
+                  break;
+               }
+            }
+         }
+         return incoming;
+      }();
+      const auto entry = make_block(0);
+      const auto full_configure = make_block(0);
+      bool entry_edge_retargeted = false;
+      for(auto& edge : preheader_branch->list_of_cond)
+      {
+         if(edge.second == header->number)
+         {
+            edge.second = entry->number;
+            entry_edge_retargeted = true;
+         }
+      }
+      (void)entry_edge_retargeted;
+      std::replace(preheader->list_of_succ.begin(), preheader->list_of_succ.end(), header->number, entry->number);
+      header->list_of_pred.erase(
+          std::remove(header->list_of_pred.begin(), header->list_of_pred.end(), preheader->number),
+          header->list_of_pred.end());
+      entry->list_of_pred.push_back(preheader->number);
+      entry->list_of_succ = {header->number, full_configure->number};
+      full_configure->list_of_pred.push_back(entry->number);
+      full_configure->list_of_succ.push_back(header->number);
+      header->list_of_pred.push_back(entry->number);
+      header->list_of_pred.push_back(full_configure->number);
+      for(const auto& phi_node : header->CGetPhiList())
+      {
+         const auto phi = GetPointerS<phi_stmt>(phi_node);
+         const auto incoming = old_predecessor_edges.find(phi->index);
+         if(incoming != old_predecessor_edges.end())
+         {
+            phi->ReplaceDefEdge(TM, {incoming->second, preheader->number},
+                                {incoming->second, entry->number});
+            phi->AddDefEdge(TM, {incoming->second, full_configure->number});
+         }
+      }
+
+      const auto append_unsigned_cast = [&](const blocRef& block, const ir_nodeRef& value,
+                                            const ir_nodeConstRef& target_type) {
+         const auto cast = ir_man->CreateNopExpr(value, target_type, nullptr, nullptr, function_id);
+         block->PushBack(cast, AppM);
+         return GetPointerS<const assign_stmt>(cast)->op0;
+      };
+      const auto append_extended_pointer = [&](const ir_nodeRef& pointer) {
+         auto value = append_unsigned_cast(entry, pointer, pointer_type);
+         if(pointer_bits < address_bitsize)
+         {
+            value = append_unsigned_cast(entry, value, address_integer_type);
+         }
+         if(address_bitsize < extended_bits)
+         {
+            value = append_unsigned_cast(entry, value, extended_type);
+         }
+         return value;
+      };
+      const auto read_start = append_extended_pointer(proof.read_base);
+      const auto write_start = append_extended_pointer(proof.write_base);
+      const auto count_u32 = read_region.loop_trip_bound;
+      const auto extended_count = append_unsigned_cast(entry, count_u32, extended_type);
+      const auto shift = TM->CreateUniqueIntegerCst(2, extended_type);
+      const auto byte_count = append_value(
+          entry, ir_man->create_binary_operation(extended_type, extended_count, shift, BUILTIN_LOCINFO, shl_node_K),
+          extended_type);
+      const auto read_end = append_value(
+          entry, ir_man->create_binary_operation(extended_type, read_start, byte_count, BUILTIN_LOCINFO, add_node_K),
+          extended_type);
+      const auto write_end = append_value(
+          entry,
+          ir_man->create_binary_operation(extended_type, write_start, byte_count, BUILTIN_LOCINFO, add_node_K),
+          extended_type);
+      const auto limit_bits = std::min(pointer_bits, address_bitsize);
+      const auto limit = TM->CreateUniqueIntegerCst(integer_cst_t(1) << limit_bits, extended_type);
+      const auto read_valid = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, read_end, limit, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto write_valid = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, write_end, limit, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto both_valid = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, read_valid, write_valid, BUILTIN_LOCINFO, and_node_K),
+          boolean_type);
+      const auto read_before_write = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, read_end, write_start, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto write_before_read = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, write_end, read_start, BUILTIN_LOCINFO, le_node_K),
+          boolean_type);
+      const auto disjoint = append_value(
+          entry,
+          ir_man->create_binary_operation(boolean_type, read_before_write, write_before_read, BUILTIN_LOCINFO,
+                                          or_node_K),
+          boolean_type);
+      const auto nonempty = append_value(
+          entry,
+          ir_man->create_binary_operation(boolean_type, count_u32, TM->CreateUniqueIntegerCst(0, u32_type),
+                                          BUILTIN_LOCINFO, ne_node_K),
+          boolean_type);
+      const auto valid_disjoint = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, both_valid, disjoint, BUILTIN_LOCINFO, and_node_K),
+          boolean_type);
+      const auto fast_mode = append_value(
+          entry, ir_man->create_binary_operation(boolean_type, nonempty, valid_disjoint, BUILTIN_LOCINFO, and_node_K),
+          boolean_type);
+
+      const auto full_read_configure = append_call(
+          full_configure, read_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.read_base, read_region.loop_trip_bound},
+          read_argument_name, "read", channel_read_vdefs);
+      const auto full_write_configure = append_call(
+          full_configure, write_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.write_base, write_region.loop_trip_bound},
+          write_argument_name, "write", channel_write_vdefs);
+      createBranch(TM, function_id, entry, fast_mode, full_configure->number, header->number, AppM);
+      createBranch(TM, function_id, full_configure, ir_nodeRef(), header->number, header->number, AppM);
+
+      const auto read_address = GetPointerS<const mem_access_node>(load_assign->op1)->op;
+      const auto write_address = GetPointerS<const mem_access_node>(store_assign->op0)->op;
+      const auto scalar_count = TM->CreateUniqueIntegerCst(1, u32_type);
+      const auto scalar_read_configure = ir_man->create_call_stmt(
+          read_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), read_address, scalar_count},
+          function_id, BUILTIN_LOCINFO);
+      const auto load_block = header;
+      const auto load_join = splitBlockBeforeStatement(sl, load_block, load, AppM, TM);
+      insertConditionalCallDiamond(sl, load_block, load_join, fast_mode, scalar_read_configure, function_id, AppM, TM);
+      register_call(scalar_read_configure, read_configure_decl, read_argument_name, "read", channel_read_vdefs);
+
+      const auto scalar_write_configure = ir_man->create_call_stmt(
+          write_configure_decl,
+          {TM->CreateUniqueIntegerCst(2, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), write_address, scalar_count},
+          function_id, BUILTIN_LOCINFO);
+      const auto store_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store)->bb_index);
+      const auto store_join = splitBlockBeforeStatement(sl, store_block, store, AppM, TM);
+      insertConditionalCallDiamond(sl, store_block, store_join, fast_mode, scalar_write_configure, function_id, AppM,
+                                   TM);
+      register_call(scalar_write_configure, write_configure_decl, write_argument_name, "write", channel_write_vdefs);
+
+      ir_nodeRef read_expr = ir_man->CreateCallExpr(
+          read_decl, {TM->CreateUniqueIntegerCst(0, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+                      TM->CreateUniqueIntegerCst(0, interface_datatype), read_address,
+                      TM->CreateUniqueIntegerCst(0, u32_type)},
+          BUILTIN_LOCINFO);
+      ir_nodeRef rewritten_read = load;
+      if(ir_helper::IsSameType(interface_datatype, ir_helper::CGetType(load_assign->op0)))
+      {
+         TM->ReplaceIRNode(load, load_assign->op1, read_expr);
+      }
+      else
+      {
+         const auto actual_type = ir_helper::CGetType(load_assign->op0);
+         const auto is_real = ir_helper::IsRealType(actual_type);
+         const auto temporary_type = is_real ? ir_man->GetCustomIntegerType(ir_helper::Size(actual_type), true) :
+                                                interface_datatype;
+         const auto temporary = ir_man->create_ssa_name(nullptr, temporary_type, nullptr, nullptr);
+         rewritten_read = ir_man->create_assign_stmt(temporary, read_expr, function_id, BUILTIN_LOCINFO);
+         const auto access_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(load)->bb_index);
+         access_block->Replace(load, rewritten_read, true, AppM);
+         const auto cast_expression = ir_man->create_unary_operation(
+             actual_type, temporary, BUILTIN_LOCINFO, is_real ? bitcast_node_K : nop_node_K);
+         const auto cast_statement = ir_man->create_assign_stmt(load_assign->op0, cast_expression, function_id,
+                                                                BUILTIN_LOCINFO);
+         access_block->PushAfter(cast_statement, rewritten_read, AppM);
+         generated_calls.push_back(cast_statement);
+      }
+      serializeInterfaceAccess(rewritten_read, bundle_name, channel_read_vdefs, ir_man);
+      CallGraphManager::addCallPointAndExpand(call_points, AppM, function_id, read_decl->index, rewritten_read->index,
+                                              FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+      interface_io[GetPointerS<const node_stmt>(rewritten_read)->bb_index][read_argument_name].push_back(
+          rewritten_read->index);
+      generated_calls.push_back(rewritten_read);
+
+      auto value = store_assign->op1;
+      if(!ir_helper::IsSameType(interface_datatype, ir_helper::CGetType(value)))
+      {
+         const auto cast = ir_man->create_unary_operation(interface_datatype, value, BUILTIN_LOCINFO, nop_node_K);
+         const auto cast_stmt = ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, cast, function_id,
+                                                         BUILTIN_LOCINFO);
+         const auto block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store)->bb_index);
+         block->PushBefore(cast_stmt, store, AppM);
+         value = GetPointerS<const assign_stmt>(cast_stmt)->op0;
+      }
+      const auto store_call = ir_man->create_call_stmt(
+          store_decl,
+          {TM->CreateUniqueIntegerCst(1, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type), value,
+           write_address, TM->CreateUniqueIntegerCst(0, u32_type)},
+          function_id, BUILTIN_LOCINFO);
+      const auto store_access_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store)->bb_index);
+      store_access_block->Replace(store, store_call, true, AppM);
+      preserveBlockingInterfaceAccess(store_call, store, bundle_name, channel_write_vdefs, ir_man);
+      CallGraphManager::addCallPointAndExpand(call_points, AppM, function_id, store_decl->index, store_call->index,
+                                              FunctionEdgeInfo::CallType::direct_call, DEBUG_LEVEL_NONE);
+      interface_io[GetPointerS<const node_stmt>(store_call)->bb_index][write_argument_name].push_back(store_call->index);
+      generated_calls.push_back(store_call);
+
+      const auto scalar_drain = ir_man->create_call_stmt(
+          drain_decl,
+          {TM->CreateUniqueIntegerCst(3, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.write_base,
+           TM->CreateUniqueIntegerCst(0, u32_type)},
+          function_id, BUILTIN_LOCINFO);
+      const auto current_store_block = sl->list_of_bloc.at(GetPointerS<const node_stmt>(store_call)->bb_index);
+      const auto& store_statements = current_store_block->CGetStmtList();
+      const auto after_store = std::find_if(store_statements.begin(), store_statements.end(), [&](const auto& stmt) {
+         return stmt->index == store_call->index;
+      });
+      const auto latch = splitBlockBeforeStatement(sl, current_store_block, *std::next(after_store), AppM, TM);
+      insertConditionalCallDiamond(sl, current_store_block, latch, fast_mode, scalar_drain, function_id, AppM, TM);
+      register_call(scalar_drain, drain_decl, write_argument_name, "write", channel_write_vdefs);
+      addVirtualUseToStatement(scalar_read_configure, GetPointerS<const node_stmt>(scalar_drain)->vdef);
+
+      const auto full_drain_block = make_block(0);
+      const auto full_drain = append_call(
+          full_drain_block, drain_decl,
+          {TM->CreateUniqueIntegerCst(3, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+           TM->CreateUniqueIntegerCst(0, interface_datatype), proof.write_base,
+           TM->CreateUniqueIntegerCst(0, u32_type)},
+          write_argument_name, "write", channel_write_vdefs);
+      const auto full_drain_join = make_block(0);
+      const auto loop_exit = sl->list_of_bloc.at(write_region.exit);
+      const auto latch_exit_branch = GetPointerS<multi_way_if_stmt>(latch->CGetStmtList().back());
+      bool latch_exit_retargeted = false;
+      for(auto& edge : latch_exit_branch->list_of_cond)
+      {
+         if(edge.second == loop_exit->number)
+         {
+            edge.second = full_drain_join->number;
+            latch_exit_retargeted = true;
+         }
+      }
+      (void)latch_exit_retargeted;
+      std::replace(latch->list_of_succ.begin(), latch->list_of_succ.end(), loop_exit->number,
+                   full_drain_join->number);
+      loop_exit->list_of_pred.erase(
+          std::remove(loop_exit->list_of_pred.begin(), loop_exit->list_of_pred.end(), latch->number),
+          loop_exit->list_of_pred.end());
+      full_drain_join->list_of_pred.push_back(latch->number);
+      full_drain_join->list_of_succ = {loop_exit->number, full_drain_block->number};
+      full_drain_block->list_of_pred.push_back(full_drain_join->number);
+      full_drain_block->list_of_succ.push_back(loop_exit->number);
+      loop_exit->list_of_pred.push_back(full_drain_join->number);
+      loop_exit->list_of_pred.push_back(full_drain_block->number);
+      for(const auto& phi_node : loop_exit->CGetPhiList())
+      {
+         const auto phi = GetPointerS<phi_stmt>(phi_node);
+         std::vector<phi_stmt::DefEdge> latch_edges;
+         for(const auto& edge : phi->CGetDefEdgesList())
+         {
+            if(edge.second == latch->number)
+            {
+               latch_edges.push_back(edge);
+            }
+         }
+         for(const auto& edge : latch_edges)
+         {
+            phi->ReplaceDefEdge(TM, edge, {edge.first, full_drain_join->number});
+            phi->AddDefEdge(TM, {edge.first, full_drain_block->number});
+         }
+      }
+      createBranch(TM, function_id, full_drain_join, fast_mode, full_drain_block->number, loop_exit->number, AppM);
+      createBranch(TM, function_id, full_drain_block, ir_nodeRef(), loop_exit->number, loop_exit->number, AppM);
+      (void)full_read_configure;
+      (void)full_write_configure;
+      (void)full_drain;
+      (void)write_profile;
+      (void)root_id;
+      (void)function_name;
+      return generated_calls;
    }
 
    bool isSimpleStreamInterface(const application_managerRef& AppM, unsigned int function_id,
@@ -618,6 +2872,73 @@ static std::vector<unsigned int> GetSortedRoots(const CallGraphManager& CGM)
    return sorted_roots;
 }
 
+static std::vector<OriginalMemoryAccess> CollectOriginalMemoryAccesses(
+    const function_val_node* fd, const unsigned int root_id, const FunctionArchitectureRef& func_arch,
+    const application_managerRef& AppM, const ir_managerRef& TM, bool& all_classified)
+{
+   std::vector<OriginalMemoryAccess> accesses;
+   all_classified = true;
+   const auto sl = GetPointerS<const statement_list_node>(fd->body);
+   for(const auto& block : sl->list_of_bloc)
+   {
+      for(const auto& stmt : block.second->CGetStmtList())
+      {
+         if(stmt->get_kind() != assign_stmt_K)
+         {
+            continue;
+         }
+         const auto assignment = GetPointerS<const assign_stmt>(stmt);
+         const auto record_access = [&](const ir_nodeRef& operand, const bool is_write) {
+            if(!operand || operand->get_kind() != mem_access_node_K)
+            {
+               return;
+            }
+            const auto access = GetPointerS<const mem_access_node>(operand);
+            const auto base = ir_helper::GetBaseVariable(access->op);
+            unsigned int owner_argument_index = 0;
+            std::string bundle;
+            bool classified = false;
+            for(const auto& candidate_arg : fd->list_of_args)
+            {
+               if(!ir_helper::IsPointerType(ir_helper::CGetType(candidate_arg)))
+               {
+                  continue;
+               }
+               const auto candidate_ssa = TM->GetIRNode(AppM->getSSAFromParm(root_id, candidate_arg->index));
+               if(!base || (candidate_arg->index != base->index &&
+                            (!candidate_ssa || candidate_ssa->index != base->index)))
+               {
+                  continue;
+               }
+               const auto parm = func_arch->parms.find(get_decl_name(candidate_arg));
+               if(parm == func_arch->parms.end())
+               {
+                  continue;
+               }
+               const auto candidate_bundle = parm->second.at(FunctionArchitecture::parm_bundle);
+               if(!classified)
+               {
+                  owner_argument_index = candidate_arg->index;
+                  bundle = candidate_bundle;
+                  classified = true;
+               }
+               else if(bundle != candidate_bundle)
+               {
+                  classified = false;
+                  break;
+               }
+            }
+            const bool ordinary = access->ordinary_memory_access;
+            all_classified &= classified && ordinary;
+            accesses.push_back({stmt, base, owner_argument_index, bundle, is_write, ordinary, classified});
+         };
+         record_access(assignment->op0, true);
+         record_access(assignment->op1, false);
+      }
+   }
+   return accesses;
+}
+
 static std::tuple<unsigned int, unsigned int> GetCallStmt(const CallGraphManager& CGM, unsigned int fid)
 {
    const auto fv = CGM.GetVertex(fid);
@@ -635,6 +2956,233 @@ static std::tuple<unsigned int, unsigned int> GetCallStmt(const CallGraphManager
    return {0, 0};
 }
 
+static bool RecognizeSameBaseDuplex(const statement_list_node* sl, const function_val_node* fd,
+                                    const unsigned int root_id, const std::string& bundle_name,
+                                    const std::vector<OriginalMemoryAccess>& original_accesses,
+                                    const std::vector<OriginalMemoryAccess>& burst_accesses,
+                                    const bool original_effects_safe, const application_managerRef& AppM,
+                                    const ir_managerRef& TM, const FunctionArchitectureRef& func_arch,
+                                    SameBaseDuplexProof& proof, std::string& reason)
+{
+   reason = "original effects are not fully classified ordinary accesses";
+   if(!original_effects_safe || original_accesses.size() != 2)
+   {
+      return false;
+   }
+   const auto read_access = std::find_if(original_accesses.begin(), original_accesses.end(), [&](const auto& access) {
+      return !access.is_write && access.bundle == bundle_name;
+   });
+   const auto write_access = std::find_if(original_accesses.begin(), original_accesses.end(), [&](const auto& access) {
+      return access.is_write && access.bundle == bundle_name;
+   });
+   if(read_access == original_accesses.end() || write_access == original_accesses.end() ||
+      !read_access->classified || !write_access->classified || !read_access->ordinary || !write_access->ordinary ||
+      !read_access->base || !write_access->base)
+   {
+      reason = "not exactly one classified same-base read/store pair";
+      return false;
+   }
+   const bool same_base = read_access->base->index == write_access->base->index &&
+                          read_access->owner_argument_index == write_access->owner_argument_index;
+   const bool distinct_base = read_access->base->index != write_access->base->index &&
+                              read_access->owner_argument_index != write_access->owner_argument_index;
+   const auto read_owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(), [&](const auto& candidate) {
+      return candidate->index == read_access->owner_argument_index;
+   });
+   const auto write_owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(), [&](const auto& candidate) {
+      return candidate->index == write_access->owner_argument_index;
+   });
+   if(read_owner_arg == fd->list_of_args.end() || write_owner_arg == fd->list_of_args.end())
+   {
+      reason = "read/write owner argument is unavailable";
+      return false;
+   }
+   bool runtime_range_guard = false;
+   if(!same_base && distinct_base)
+   {
+      const auto source_attrs = func_arch->parms.find(get_decl_name(*read_owner_arg));
+      const auto destination_attrs = func_arch->parms.find(get_decl_name(*write_owner_arg));
+      std::string source_restrict;
+      std::string destination_restrict;
+      if(source_attrs != func_arch->parms.end())
+      {
+         const auto attr = source_attrs->second.find(FunctionArchitecture::parm_source_restrict);
+         if(attr != source_attrs->second.end())
+         {
+            source_restrict = attr->second;
+         }
+      }
+      if(destination_attrs != func_arch->parms.end())
+      {
+         const auto attr = destination_attrs->second.find(FunctionArchitecture::parm_source_restrict);
+         if(attr != destination_attrs->second.end())
+         {
+            destination_restrict = attr->second;
+         }
+      }
+      const bool both_unrestricted = source_restrict == "0" && destination_restrict == "0";
+      const bool both_restricted = source_restrict == "1" && destination_restrict == "1";
+      if(both_unrestricted)
+      {
+         runtime_range_guard = true;
+      }
+      else if(!both_restricted)
+      {
+         reason = "distinct-base duplex requires source restrict on both owners";
+         return false;
+      }
+   }
+   else if(!same_base)
+   {
+      reason = "not exactly one classified same-base read/store pair";
+      return false;
+   }
+   const auto expected_read_base = TM->GetIRNode(AppM->getSSAFromParm(root_id, (*read_owner_arg)->index));
+   const auto expected_write_base = TM->GetIRNode(AppM->getSSAFromParm(root_id, (*write_owner_arg)->index));
+   ReadBurstRegion read_region{};
+   WriteBurstRegion write_region{};
+   const std::vector<ir_nodeRef> reads{read_access->statement};
+   const std::vector<ir_nodeRef> writes{write_access->statement};
+   const bool recognized_by_legacy_shape =
+       recognizeReadBurstRegion(sl, reads, expected_read_base, burst_accesses, bundle_name, read_region,
+                                write_access->statement) &&
+       recognizeWriteBurstRegion(sl, writes, expected_write_base, burst_accesses, bundle_name, write_region,
+                                 read_access->statement);
+   if(!recognized_by_legacy_shape &&
+      !recognizePrefixDuplexRegions(sl, read_access->statement, write_access->statement, expected_read_base,
+                                    expected_write_base, read_region, write_region, reason))
+   {
+      if(reason.empty())
+      {
+         reason = "canonical contiguous loop recognition failed";
+      }
+      return false;
+   }
+   bool runtime_shape_valid = true;
+   if(runtime_range_guard)
+   {
+      runtime_shape_valid = recognized_by_legacy_shape && read_region.access_bb == write_region.access_bb &&
+                            read_region.access_bb == read_region.header && !read_region.has_direction_guard &&
+                            !write_region.has_direction_guard &&
+                            read_region.preheader == write_region.preheader &&
+                            read_region.effective_bound->index == read_region.loop_trip_bound->index &&
+                            write_region.effective_bound->index == write_region.loop_trip_bound->index &&
+                            read_region.loop_trip_bound->index == write_region.loop_trip_bound->index &&
+                            read_region.loop_trip_compare->index == write_region.loop_trip_compare->index;
+      if(runtime_shape_valid)
+      {
+         const auto header_it = sl->list_of_bloc.find(read_region.header);
+         runtime_shape_valid = header_it != sl->list_of_bloc.end() && header_it->second->loop_id != 0;
+         if(runtime_shape_valid)
+         {
+            const auto& header = header_it->second;
+            const std::set<unsigned int> expected_predecessors{read_region.preheader, read_region.header};
+            const std::set<unsigned int> expected_successors{read_region.header, write_region.exit};
+            runtime_shape_valid = std::set<unsigned int>(header->list_of_pred.begin(), header->list_of_pred.end()) ==
+                                      expected_predecessors &&
+                                  std::set<unsigned int>(header->list_of_succ.begin(), header->list_of_succ.end()) ==
+                                      expected_successors &&
+                                  header->CGetStmtList().size() >= 3 &&
+                                  header->CGetStmtList().back()->get_kind() == multi_way_if_stmt_K;
+            for(const auto& block : sl->list_of_bloc)
+            {
+               if(block.second->loop_id == header->loop_id && block.first != read_region.header)
+               {
+                  runtime_shape_valid = false;
+                  break;
+               }
+            }
+            if(runtime_shape_valid)
+            {
+               const auto branch = GetPointerS<const multi_way_if_stmt>(header->CGetStmtList().back());
+               runtime_shape_valid = branch->list_of_cond.size() == 2 &&
+                                     std::any_of(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                                 [&](const auto& edge) {
+                                                    return edge.first && edge.second == write_region.exit;
+                                                 }) &&
+                                     std::any_of(branch->list_of_cond.begin(), branch->list_of_cond.end(),
+                                                 [&](const auto& edge) {
+                                                    return !edge.first && edge.second == read_region.header;
+                                                 });
+            }
+            for(auto stmt = header->CGetStmtList().begin(); runtime_shape_valid &&
+                                                          stmt != std::prev(header->CGetStmtList().end()); ++stmt)
+            {
+               runtime_shape_valid = (*stmt)->get_kind() == assign_stmt_K;
+            }
+         }
+      }
+   }
+   if(runtime_range_guard && !runtime_shape_valid)
+   {
+      reason = "runtime alias fallback requires one straight-line shared access block";
+      return false;
+   }
+   if(read_region.preheader != write_region.preheader || read_region.header != write_region.header ||
+      read_region.induction->index != write_region.induction->index ||
+      read_region.loop_trip_bound->index != write_region.loop_trip_bound->index ||
+      read_region.loop_trip_compare->index != write_region.loop_trip_compare->index)
+   {
+      reason = "read/write accesses do not share one canonical loop";
+      return false;
+   }
+   THROW_ASSERT((same_base && read_region.base->index == write_region.base->index) ||
+                   (distinct_base && read_region.base->index != write_region.base->index),
+                "Duplex owner/base classification must imply the accepted base relation");
+   if(!recognized_by_legacy_shape)
+   {
+      if(read_region.access_bb == write_region.access_bb)
+      {
+         const auto& loop_stmts = sl->list_of_bloc.at(read_region.access_bb)->CGetStmtList();
+         const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+            return stmt->index == read_access->statement->index;
+         });
+         const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+            return stmt->index == write_access->statement->index;
+         });
+         if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
+            std::distance(loop_stmts.begin(), read_position) >= std::distance(loop_stmts.begin(), write_position))
+         {
+            reason = "read-before-write is not proven on paired prefix";
+            return false;
+         }
+      }
+   }
+   else
+   {
+      const auto& loop_stmts = sl->list_of_bloc.at(read_region.access_bb)->CGetStmtList();
+      const auto read_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+         return stmt->index == read_access->statement->index;
+      });
+      const auto write_position = std::find_if(loop_stmts.begin(), loop_stmts.end(), [&](const auto& stmt) {
+         return stmt->index == write_access->statement->index;
+      });
+      if(read_position == loop_stmts.end() || write_position == loop_stmts.end() ||
+         std::distance(loop_stmts.begin(), read_position) >= std::distance(loop_stmts.begin(), write_position))
+      {
+         reason = "LOAD does not precede STORE in the original iteration";
+         return false;
+      }
+   }
+   proof.owner_argument_index = read_access->owner_argument_index;
+   proof.read_owner_argument_index = read_access->owner_argument_index;
+   proof.write_owner_argument_index = write_access->owner_argument_index;
+   proof.distinct_bases = distinct_base;
+   proof.runtime_range_guard = runtime_range_guard;
+   proof.bundle = bundle_name;
+   proof.base = read_region.base;
+   proof.read_base = read_region.base;
+   proof.write_base = write_region.base;
+   proof.load_statement = read_access->statement;
+   proof.store_statement = write_access->statement;
+   proof.read_region = std::move(read_region);
+   proof.write_region = std::move(write_region);
+   reason = runtime_range_guard ? "distinct-base runtime-range-guarded pointwise read-before-write candidate" :
+            distinct_base ? "distinct-base restricted pointwise read-before-write candidate" :
+                            "same-base pointwise read-before-write candidate";
+   return true;
+}
+
 static std::vector<ir_nodeRef> GetCallArgs(ir_nodeRef stmt)
 {
    if(const auto ga = GetPointer<const assign_stmt>(stmt))
@@ -648,6 +3196,16 @@ static std::vector<ir_nodeRef> GetCallArgs(ir_nodeRef stmt)
    }
    THROW_UNREACHABLE("Unexpected call statement.");
    return std::vector<ir_nodeRef>();
+}
+
+namespace
+{
+   void register_duplex_m_axi_resources(const technology_managerRef& TechMan, const ParameterConstRef& parameters,
+                                        const std::string& bundle_name, unsigned int address_bitsize,
+                                        unsigned int data_bitsize, unsigned int backend_data_bitsize,
+                                        std::uint32_t axi_latency, unsigned int read_max_burst_length,
+                                        const AXIReadBurstProfile& read_profile,
+                                        const AXIWriteBurstProfile& write_profile);
 }
 
 InterfaceInfer::InterfaceInfer(const application_managerRef _AppM, const DesignFlowManager& _design_flow_manager,
@@ -733,6 +3291,8 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    const auto TM = AppM->get_ir_manager();
    const auto& CGM = AppM->CGetCallGraphManager();
    const auto sorted_roots = GetSortedRoots(CGM);
+   const bool burst_feature_enabled = parameters->IsParameter("experimental-m-axi-burst") &&
+                                      parameters->GetParameter<std::string>("experimental-m-axi-burst") == "1";
 
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const ir_nodeRef& tn) {
@@ -757,6 +3317,401 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       else
       {
          ++it;
+      }
+   }
+
+   struct FrozenDuplexContribution
+   {
+      unsigned int root_id = 0;
+      unsigned int owner_argument_index = 0;
+      std::string bundle;
+      SameBaseDuplexProof proof;
+      AXIReadBurstProfile read_profile{};
+      AXIWriteBurstProfile write_profile{};
+      unsigned int read_max_burst_length = 0;
+      unsigned int address_bitsize = 0;
+      unsigned int data_bitsize = 32;
+      std::uint32_t latency = 0;
+   };
+   const auto is_dataflow_architecture = [](const FunctionArchitectureRef& arch) {
+      const auto it = arch->attrs.find(FunctionArchitecture::func_dataflow_module);
+      return it != arch->attrs.end() && it->second == "1";
+   };
+   unsigned int effective_burst_type = parameters->isOption(OPT_axi_burst_type) ?
+                                           parameters->getOption<unsigned int>(OPT_axi_burst_type) :
+                                           0U;
+   unsigned int device_burst_type = 0U;
+   if(HLSMgr->TryGetParameterFromParameterOrDevice<unsigned int>("axi_burst_type", HLSMgr->get_HLS_device(),
+                                                                 device_burst_type))
+   {
+      effective_burst_type = device_burst_type;
+   }
+   if(burst_feature_enabled && effective_burst_type != 1U)
+   {
+      for(const auto root_id : sorted_roots)
+      {
+         const auto symbol = ir_helper::GetFunctionName(TM->GetIRNode(root_id));
+         const auto arch = HLSMgr->module_arch->GetArchitecture(symbol);
+         if(!arch)
+         {
+            continue;
+         }
+         for(const auto& iface : arch->ifaces)
+         {
+            const auto mode = iface.second.find(FunctionArchitecture::iface_mode);
+            if(mode == iface.second.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            if(iface.second.count(FunctionArchitecture::iface_max_read_burst_length))
+            {
+               THROW_ERROR_USAGE("Configured read bursts for bundle '" + iface.first +
+                                 "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
+                                 (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
+            }
+            if(iface.second.count(FunctionArchitecture::iface_max_write_burst_length))
+            {
+               THROW_ERROR_USAGE("Configured write bursts for bundle '" + iface.first +
+                                 "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
+                                 (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
+            }
+         }
+      }
+   }
+   const auto get_duplex_contribution = [&](const unsigned int root_id, const FunctionArchitectureRef& arch,
+                                            const std::string& bundle,
+                                            FrozenDuplexContribution& contribution, std::string& reason) {
+      if(!burst_feature_enabled)
+      {
+         reason = "experimental burst feature is disabled";
+         return false;
+      }
+      if(bundle.rfind("DF_bambu_", 0) == 0 || is_dataflow_architecture(arch))
+      {
+         reason = "DATAFLOW/forwarded bundle ownership is unsupported";
+         return false;
+      }
+      const auto call_graph_vertex = CGM.GetVertex(root_id);
+      if(CGM.GetCallGraph().in_degree(call_graph_vertex) != 0)
+      {
+         reason = "bundle contribution is not an independent entry root";
+         return false;
+      }
+      if(effective_burst_type != 1U)
+      {
+         reason = "AXI burst type is not INCREMENTAL";
+         return false;
+      }
+      const auto iface_it = arch->ifaces.find(bundle);
+      if(iface_it == arch->ifaces.end())
+      {
+         reason = "bundle has no explicit interface architecture";
+         return false;
+      }
+      const auto& attrs = iface_it->second;
+      const auto mode = attrs.find(FunctionArchitecture::iface_mode);
+      const auto read_max = attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+      const auto write_max = attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+      if(mode == attrs.end() || mode->second != "m_axi" || read_max == attrs.end() || write_max == attrs.end())
+      {
+         reason = "bundle does not explicitly request both read and write bursts";
+         return false;
+      }
+      if(attrs.count(FunctionArchitecture::iface_cache_line_count))
+      {
+         reason = "cache-enabled bundle";
+         return false;
+      }
+      const auto fd = GetPointer<const function_val_node>(TM->GetIRNode(root_id));
+      const auto sl = GetPointerS<const statement_list_node>(fd->body);
+      std::vector<ir_nodeRef> bundle_pointer_args;
+      for(const auto& argument : fd->list_of_args)
+      {
+         if(!ir_helper::IsPointerType(ir_helper::CGetType(argument)))
+         {
+            continue;
+         }
+         const auto parm = arch->parms.find(get_decl_name(argument));
+         if(parm == arch->parms.end() || parm->second.count(FunctionArchitecture::parm_bundle) == 0)
+         {
+            reason = "original pointer-to-bundle mapping is incomplete";
+            return false;
+         }
+         if(parm->second.at(FunctionArchitecture::parm_bundle) == bundle)
+         {
+            bundle_pointer_args.push_back(argument);
+         }
+      }
+      if(bundle_pointer_args.empty() || bundle_pointer_args.size() > 2)
+      {
+         reason = "bundle must have one or two pointer arguments";
+         return false;
+      }
+      for(const auto& owner : bundle_pointer_args)
+      {
+         const auto owner_type = ir_helper::CGetPointedType(ir_helper::CGetType(owner));
+         if(!owner_type || owner_type->get_kind() != integer_ty_node_K || ir_helper::Size(owner_type) != 32 ||
+            ir_helper::SizeAlloc(owner_type) != 32)
+         {
+            reason = "bundle element must be a direct 32-bit integer";
+            return false;
+         }
+      }
+      const auto bitwidth = attrs.find(FunctionArchitecture::iface_bitwidth);
+      const auto alignment = attrs.find(FunctionArchitecture::iface_alignment);
+      if((bitwidth != attrs.end() && !bitwidth->second.empty() && std::stoul(bitwidth->second) != 32U) ||
+         (alignment != attrs.end() && !alignment->second.empty() && std::stoul(alignment->second) < 4U))
+      {
+         reason = "unsupported interface width or alignment";
+         return false;
+      }
+      const auto address_bitsize = HLSMgr->get_address_bitsize();
+      if(address_bitsize != 32U && address_bitsize != 64U)
+      {
+         reason = "AXI address width is not 32 or 64 bits";
+         return false;
+      }
+      bool classified = false;
+      const auto original_accesses = CollectOriginalMemoryAccesses(fd, root_id, arch, AppM, TM, classified);
+      const auto original_safe = hasOnlyOrdinaryMemoryEffects(sl) && classified;
+      SameBaseDuplexProof proof{};
+      if(!RecognizeSameBaseDuplex(sl, fd, root_id, bundle, original_accesses, original_accesses,
+                                  original_safe, AppM, TM, arch, proof, reason))
+      {
+         return false;
+      }
+      if(proof.runtime_range_guard)
+      {
+         const auto pointer_bits = static_cast<unsigned int>(ir_helper::SizeAlloc(ir_helper::CGetType(proof.read_base)));
+         if((pointer_bits != 32U && pointer_bits != 64U) || pointer_bits > address_bitsize)
+         {
+            reason = "runtime alias guard requires a 32/64-bit pointer no wider than the AXI address";
+            return false;
+         }
+      }
+      const auto owner_is_bundled = [&](const unsigned int owner_index) {
+         return std::any_of(bundle_pointer_args.begin(), bundle_pointer_args.end(), [&](const auto& owner) {
+            return owner->index == owner_index;
+         });
+      };
+      if(!owner_is_bundled(proof.read_owner_argument_index) || !owner_is_bundled(proof.write_owner_argument_index))
+      {
+         reason = "proof owners differ from the bundle pointer arguments";
+         return false;
+      }
+      contribution.root_id = root_id;
+      contribution.owner_argument_index = proof.read_owner_argument_index;
+      contribution.bundle = bundle;
+      contribution.proof = std::move(proof);
+      contribution.read_max_burst_length = static_cast<unsigned int>(std::stoul(read_max->second));
+      contribution.read_profile = ParseAXIReadBurstProfile(attrs, bundle);
+      contribution.write_profile = ParseAXIWriteBurstProfile(attrs, bundle);
+      if(contribution.read_max_burst_length < 1U || contribution.read_max_burst_length > 256U)
+      {
+         reason = "unsupported duplex burst profile";
+         return false;
+      }
+      contribution.address_bitsize = address_bitsize;
+      contribution.latency = ParseAXIInterfaceLatency(attrs, bundle);
+      return true;
+   };
+
+   std::map<unsigned int, std::map<std::string, FrozenDuplexContribution>> candidate_duplex_by_root;
+   std::set<std::string> candidate_duplex_bundles;
+   if(burst_feature_enabled)
+   {
+      for(const auto root_id : sorted_roots)
+      {
+         const auto fnode = TM->GetIRNode(root_id);
+         const auto fsymbol = ir_helper::GetFunctionName(fnode);
+         const auto arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
+         if(!arch || is_dataflow_architecture(arch))
+         {
+            continue;
+         }
+         for(const auto& iface : arch->ifaces)
+         {
+            const auto mode = iface.second.find(FunctionArchitecture::iface_mode);
+            const auto read = iface.second.find(FunctionArchitecture::iface_max_read_burst_length);
+            const auto write = iface.second.find(FunctionArchitecture::iface_max_write_burst_length);
+            if(mode == iface.second.end() || mode->second != "m_axi" || read == iface.second.end() ||
+               write == iface.second.end())
+            {
+               continue;
+            }
+            FrozenDuplexContribution contribution{};
+            std::string reason;
+            if(get_duplex_contribution(root_id, arch, iface.first, contribution, reason))
+            {
+               candidate_duplex_bundles.insert(iface.first);
+               candidate_duplex_by_root[root_id].emplace(iface.first, std::move(contribution));
+            }
+         }
+      }
+   }
+
+   std::map<std::string, FrozenDuplexContribution> frozen_duplex_by_bundle;
+   std::map<unsigned int, std::map<std::string, FrozenDuplexContribution>> frozen_duplex_by_root;
+   std::map<std::string, std::string> duplex_bundle_vetoes;
+   for(const auto& candidate_bundle : candidate_duplex_bundles)
+   {
+      std::vector<FrozenDuplexContribution> contributions;
+      std::string veto_reason;
+      for(auto arch_it = HLSMgr->module_arch->cbegin(); arch_it != HLSMgr->module_arch->cend(); ++arch_it)
+      {
+         const auto arch = arch_it->second;
+         const auto iface = arch->ifaces.find(candidate_bundle);
+         if(iface == arch->ifaces.end())
+         {
+            continue;
+         }
+         const auto mode = iface->second.find(FunctionArchitecture::iface_mode);
+         if(mode == iface->second.end() || mode->second != "m_axi")
+         {
+            continue;
+         }
+         const auto symbol = arch->attrs.find(FunctionArchitecture::func_symbol);
+         if(symbol == arch->attrs.end())
+         {
+            veto_reason = "same-name architecture contribution has no resolved function owner";
+            break;
+         }
+         const auto function = TM->GetFunction(symbol->second);
+         if(!function)
+         {
+            veto_reason = "same-name architecture contribution has no resolved function owner";
+            break;
+         }
+         const auto root_id = function->index;
+         const auto existing_candidate = candidate_duplex_by_root.find(root_id);
+         if(existing_candidate == candidate_duplex_by_root.end() ||
+            existing_candidate->second.find(candidate_bundle) == existing_candidate->second.end())
+         {
+            FrozenDuplexContribution contribution{};
+            std::string reason;
+            if(!get_duplex_contribution(root_id, arch, candidate_bundle, contribution, reason))
+            {
+               veto_reason = reason.empty() ? "same-name architecture contribution is not eligible" : reason;
+               break;
+            }
+            contributions.push_back(std::move(contribution));
+         }
+         else
+         {
+            contributions.push_back(existing_candidate->second.at(candidate_bundle));
+         }
+      }
+      if(!veto_reason.empty() || contributions.empty())
+      {
+         duplex_bundle_vetoes[candidate_bundle] =
+             veto_reason.empty() ? "same-name architecture contribution is not eligible" : veto_reason;
+         continue;
+      }
+      const auto& reference = contributions.front();
+      const auto incompatible = std::find_if(std::next(contributions.begin()), contributions.end(), [&](const auto& c) {
+         return c.read_max_burst_length != reference.read_max_burst_length ||
+                c.read_profile.max_outstanding != reference.read_profile.max_outstanding ||
+                c.read_profile.fifo_depth != reference.read_profile.fifo_depth ||
+                c.write_profile.max_burst_length != reference.write_profile.max_burst_length ||
+                c.write_profile.max_outstanding != reference.write_profile.max_outstanding ||
+                c.write_profile.fifo_depth != reference.write_profile.fifo_depth || c.latency != reference.latency ||
+                c.address_bitsize != reference.address_bitsize || c.data_bitsize != reference.data_bitsize;
+      });
+      if(incompatible != contributions.end())
+      {
+         THROW_ERROR_USAGE("Incompatible duplex m_axi profiles or latency for bundle '" + candidate_bundle +
+                           "' across root functions; use distinct bundle names.");
+      }
+      frozen_duplex_by_bundle.emplace(candidate_bundle, reference);
+      for(auto& contribution : contributions)
+      {
+         frozen_duplex_by_root[contribution.root_id].emplace(candidate_bundle, std::move(contribution));
+      }
+   }
+   std::set<std::string> duplex_bundle_force_legacy;
+   for(const auto& candidate_bundle : candidate_duplex_bundles)
+   {
+      if(frozen_duplex_by_bundle.count(candidate_bundle) == 0)
+      {
+         duplex_bundle_force_legacy.insert(candidate_bundle);
+      }
+   }
+
+   if(!frozen_duplex_by_bundle.empty())
+   {
+      const auto HLS_D = HLSMgr->get_HLS_device();
+      const auto TechMan = HLS_D->get_technology_manager();
+      const auto operation_names = [](const std::string& bundle) {
+         return std::array<std::string, 5>{ENCODE_FDNAME(bundle, "_configure_read", ""),
+                                           ENCODE_FDNAME(bundle, "_burst_read", ""),
+                                           ENCODE_FDNAME(bundle, "_configure_write", ""),
+                                           ENCODE_FDNAME(bundle, "_store_write", ""),
+                                           ENCODE_FDNAME(bundle, "_drain_write", "")};
+      };
+      for(const auto& bundle_plan : frozen_duplex_by_bundle)
+      {
+         const auto bundle = bundle_plan.first;
+         const auto names = operation_names(bundle);
+         const auto read_resource = ENCODE_FDNAME(bundle, "_duplex_read_endpoint", "");
+         const auto write_resource = ENCODE_FDNAME(bundle, "_duplex_write_endpoint", "");
+         for(const auto& item : {std::make_pair(names[0], read_resource), std::make_pair(names[1], read_resource),
+                                 std::make_pair(names[2], write_resource), std::make_pair(names[3], write_resource),
+                                 std::make_pair(names[4], write_resource)})
+         {
+            const auto mapped = TechMan->GetFunctionFU(item.first);
+            if(mapped && mapped != TechMan->get_fu(item.second, INTERFACE_LIBRARY))
+            {
+               THROW_ERROR_USAGE("Duplex m_axi operation '" + item.first +
+                                 "' is already owned by an incompatible resource.");
+            }
+         }
+         const auto plain_resource = ENCODE_FDNAME(bundle, "", "");
+         if(TechMan->is_library_manager(INTERFACE_LIBRARY) &&
+            TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(plain_resource))
+         {
+            THROW_ERROR_USAGE("Duplex m_axi bundle '" + bundle +
+                              "' conflicts with an existing single-mode m_axi resource.");
+         }
+         for(const auto& resource : {read_resource, write_resource})
+         {
+            const auto constraint = HLSMgr->global_resource_constraints.find({resource, INTERFACE_LIBRARY});
+            if(constraint != HLSMgr->global_resource_constraints.end() && constraint->second != std::make_pair(1U, 1U))
+            {
+               THROW_ERROR_USAGE("Incompatible duplex resource constraint for bundle '" + bundle + "'.");
+            }
+         }
+      }
+      for(const auto& bundle_plan : frozen_duplex_by_bundle)
+      {
+         const auto& contribution = bundle_plan.second;
+         register_duplex_m_axi_resources(TechMan, parameters, bundle_plan.first, contribution.address_bitsize,
+                                         contribution.data_bitsize, contribution.data_bitsize, contribution.latency,
+                                         contribution.read_max_burst_length, contribution.read_profile,
+                                         contribution.write_profile);
+         const auto names = operation_names(bundle_plan.first);
+         const auto add_if_unmapped = [&](const std::string& op, const std::string& resource) {
+            if(!TechMan->GetFunctionFU(op))
+            {
+               TechMan->add_operation(INTERFACE_LIBRARY, resource, op);
+            }
+            const auto mapped_fu = GetPointerS<functional_unit>(TechMan->GetFunctionFU(op));
+            const auto operation_node = GetPointerS<operation>(mapped_fu->get_operation(op));
+            operation_node->time_m = std::make_shared<time_info>();
+            operation_node->bounded = false;
+            operation_node->time_m->set_execution_time(TechMan->CGetSetupHoldTime() + EPSILON, 0);
+            operation_node->time_m->set_synthesis_dependent(true);
+         };
+         const auto read_resource = ENCODE_FDNAME(bundle_plan.first, "_duplex_read_endpoint", "");
+         const auto write_resource = ENCODE_FDNAME(bundle_plan.first, "_duplex_write_endpoint", "");
+         add_if_unmapped(names[0], read_resource);
+         add_if_unmapped(names[1], read_resource);
+         add_if_unmapped(names[2], write_resource);
+         add_if_unmapped(names[3], write_resource);
+         add_if_unmapped(names[4], write_resource);
+         for(const auto& resource : {read_resource, write_resource})
+         {
+            HLSMgr->global_resource_constraints[{resource, INTERFACE_LIBRARY}] = std::make_pair(1U, 1U);
+         }
       }
    }
 
@@ -829,10 +3784,635 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
 
+      const bool has_read_burst_pragma = std::any_of(
+          func_arch->ifaces.begin(), func_arch->ifaces.end(), [](const auto& iface) {
+             return iface.second.find(FunctionArchitecture::iface_max_read_burst_length) != iface.second.end();
+          });
+      // InterfaceInfer runs before FunctionBehavior memory classification is guaranteed
+      // to exist. Use only immutable source-IR evidence here, before per-parameter rewrites.
+      const CustomOrderedSet<unsigned int> no_function_memory_info;
+      const bool has_only_read_effects =
+          hasOnlyOrdinaryReadEffects(GetPointerS<const statement_list_node>(fd->body), no_function_memory_info);
+      const auto original_statement_list = GetPointerS<const statement_list_node>(fd->body);
+      const bool original_ordinary_effects = hasOnlyOrdinaryMemoryEffects(original_statement_list);
+      bool all_original_memory_accesses_classified = true;
+      auto original_memory_accesses =
+          CollectOriginalMemoryAccesses(fd, root_id, func_arch, AppM, TM, all_original_memory_accesses_classified);
+      const bool original_memory_effects_safe = original_ordinary_effects && all_original_memory_accesses_classified;
+      const bool function_effects_safe =
+          !burst_feature_enabled || !has_read_burst_pragma ||
+          ((has_only_read_effects && original_ordinary_effects) || original_memory_effects_safe);
+
+      struct BundleBurstDecision
+      {
+         struct DirectionalAccesses
+         {
+            std::vector<OriginalMemoryAccess> reads;
+            std::vector<OriginalMemoryAccess> writes;
+         };
+         bool read_requested = false;
+         bool write_requested = false;
+         bool read_recognized = false;
+         bool write_recognized = false;
+         bool bundle_has_memory_read = false;
+         bool bundle_has_memory_write = false;
+         std::string read_fallback_reason;
+         std::string write_fallback_reason;
+         bool same_base_duplex_candidate = false;
+         std::string same_base_duplex_reason = "read/write profile not requested";
+         bool same_base_duplex_profile_eligible = false;
+         std::string same_base_duplex_profile_reason = "read/write profile not requested";
+         bool same_base_duplex_activated = false;
+         std::string same_base_duplex_activation_reason = "bundle is not in the frozen activation plan";
+         std::unique_ptr<SameBaseDuplexProof> same_base_duplex_proof;
+         AXIReadBurstProfile read_profile{};
+         AXIWriteBurstProfile write_profile{};
+         unsigned int read_max_burst_length = 0;
+         std::map<unsigned int, DirectionalAccesses> accesses_by_argument;
+         std::map<unsigned int, std::vector<ReadBurstRegion>> read_regions;
+         std::map<unsigned int, WriteBurstRegion> write_regions;
+      };
+      std::map<std::string, BundleBurstDecision> burst_decisions;
+      std::vector<OriginalMemoryAccess> burst_memory_accesses = original_memory_accesses;
+      std::map<unsigned int, std::string> dataflow_bundle_by_argument;
+      const auto preanalyze_bursts = [&]() {
+         if(!burst_feature_enabled)
+         {
+            return;
+         }
+         const auto frozen_proof_for_bundle = [&](const std::string& bundle_name) -> const SameBaseDuplexProof* {
+            const auto root_plan = frozen_duplex_by_root.find(root_id);
+            if(root_plan == frozen_duplex_by_root.end())
+            {
+               return nullptr;
+            }
+            const auto bundle_plan = root_plan->second.find(bundle_name);
+            return bundle_plan == root_plan->second.end() ? nullptr : &bundle_plan->second.proof;
+         };
+         // Two m_axi bundles with different names and different SSA bases do not prove disjoint
+         // address ranges: with non-restrict pointers two interfaces can address overlapping memory,
+         // and the two burst engines order their channels independently. Coalescing a bundle therefore
+         // requires the caller's restrict contract on both the owner of this bundle and every owner
+         // that performs the opposite direction in another bundle; without that contract the scalar
+         // interface is kept.
+         const auto parm_has_restrict_contract = [&](unsigned int argument_index) {
+            const auto arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(),
+                                          [&](const auto& candidate) { return candidate->index == argument_index; });
+            if(arg == fd->list_of_args.end())
+            {
+               return false;
+            }
+            const auto attrs = func_arch->parms.find(get_decl_name(*arg));
+            if(attrs == func_arch->parms.end())
+            {
+               return false;
+            }
+            const auto attr = attrs->second.find(FunctionArchitecture::parm_source_restrict);
+            return attr != attrs->second.end() && attr->second == "1";
+         };
+          const auto cross_bundle_burst_is_disjoint = [&](const std::string& bundle_name,
+                                                          bool coalescing_reads,
+                                                          unsigned int owner_argument_index) {
+             std::vector<unsigned int> opposite_owners;
+             for(const auto& access : burst_memory_accesses)
+             {
+                if(!access.classified || !access.ordinary || !access.statement || access.bundle == bundle_name)
+                {
+                   continue;
+                }
+                const bool opposite = coalescing_reads ? access.is_write : !access.is_write;
+                if(opposite)
+                {
+                   opposite_owners.push_back(access.owner_argument_index);
+                }
+             }
+             if(opposite_owners.empty())
+             {
+                // No access of the opposite direction lives in another bundle, so the ordering
+                // between two independent m_axi interfaces is not what has to be proven here.
+                return true;
+             }
+             if(!parm_has_restrict_contract(owner_argument_index))
+             {
+                return false;
+             }
+             for(const auto opposite_owner : opposite_owners)
+             {
+                if(!parm_has_restrict_contract(opposite_owner))
+                {
+                   return false;
+                }
+             }
+             return true;
+          };
+         const auto sl = GetPointerS<const statement_list_node>(fd->body);
+         for(const auto& iface : func_arch->ifaces)
+         {
+            const auto& bundle_name = iface.first;
+            const auto& iface_attrs = iface.second;
+            const auto mode = iface_attrs.find(FunctionArchitecture::iface_mode);
+            if(mode == iface_attrs.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            auto& decision = burst_decisions[bundle_name];
+            const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+            const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+            const auto write_outstanding = iface_attrs.find(FunctionArchitecture::iface_write_burst_outstanding);
+            const auto write_fifo_depth = iface_attrs.find(FunctionArchitecture::iface_write_fifo_depth);
+            const auto read_outstanding = iface_attrs.find(FunctionArchitecture::iface_num_read_outstanding);
+            const auto read_fifo_depth = iface_attrs.find(FunctionArchitecture::iface_read_fifo_depth);
+            decision.read_requested = max_read_burst != iface_attrs.end();
+            decision.write_requested = max_write_burst != iface_attrs.end();
+            if(decision.read_requested)
+            {
+               decision.read_profile = ParseAXIReadBurstProfile(iface_attrs, bundle_name);
+               decision.read_max_burst_length = static_cast<unsigned int>(std::stoul(max_read_burst->second));
+            }
+            if(max_write_burst != iface_attrs.end() || write_outstanding != iface_attrs.end() ||
+               write_fifo_depth != iface_attrs.end())
+            {
+               decision.write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
+            }
+            if(max_read_burst == iface_attrs.end() &&
+               (read_outstanding != iface_attrs.end() || read_fifo_depth != iface_attrs.end()))
+            {
+               THROW_ERROR_USAGE("AXI read profile attributes num_read_outstanding/read_fifo_depth for bundle '" +
+                                 bundle_name +
+                                 "' require max_read_burst_length; the profile cannot be applied to the legacy scalar interface.");
+            }
+            for(const auto& access : burst_memory_accesses)
+            {
+               if(access.bundle == bundle_name && access.classified)
+               {
+                  decision.bundle_has_memory_write |= access.is_write;
+                  decision.bundle_has_memory_read |= !access.is_write;
+                  auto& direction = decision.accesses_by_argument[access.owner_argument_index];
+                  (access.is_write ? direction.writes : direction.reads).push_back(access);
+               }
+            }
+            const bool cache_enabled = iface_attrs.find(FunctionArchitecture::iface_cache_line_count) !=
+                                       iface_attrs.end();
+            if(decision.read_requested)
+            {
+               if(!function_effects_safe)
+               {
+                  decision.read_fallback_reason =
+                      "memory writes or opaque effects; prefetch ordering is not proven";
+               }
+               else if(cache_enabled)
+               {
+                  decision.read_fallback_reason = "cache-enabled bundle";
+               }
+               else if(decision.bundle_has_memory_write && !frozen_proof_for_bundle(bundle_name))
+               {
+                  decision.read_fallback_reason = "bundle contains stores";
+               }
+               if(decision.read_fallback_reason.empty())
+               {
+                  std::vector<ir_nodeRef> bundle_pointer_args;
+                  for(const auto& candidate_arg : fd->list_of_args)
+                  {
+                     const auto candidate_name = get_decl_name(candidate_arg);
+                     if(func_arch->parms.count(candidate_name) &&
+                        func_arch->parms.at(candidate_name).at(FunctionArchitecture::parm_bundle) == bundle_name &&
+                        ir_helper::IsPointerType(ir_helper::CGetType(candidate_arg)))
+                     {
+                        bundle_pointer_args.push_back(candidate_arg);
+                     }
+                  }
+                  std::set<unsigned int> seen_read_statements;
+                  std::map<unsigned int, std::vector<ir_nodeRef>> loop_reads;
+                  const auto frozen_proof = frozen_proof_for_bundle(bundle_name);
+                  const auto read_owner = frozen_proof ?
+                      std::find_if(bundle_pointer_args.begin(), bundle_pointer_args.end(), [&](const auto& arg) {
+                         return arg->index == frozen_proof->read_owner_argument_index;
+                      }) : bundle_pointer_args.begin();
+                  bool cross_bundle_read_disjoint = true;
+                  if(read_owner != bundle_pointer_args.end() &&
+                     !cross_bundle_burst_is_disjoint(bundle_name, true, (*read_owner)->index))
+                  {
+                     cross_bundle_read_disjoint = false;
+                     decision.read_fallback_reason =
+                         "writes through another m_axi bundle without a restrict contract on both "
+                         "owners; cross-bundle prefetch ordering is not proven";
+                  }
+                  if(cross_bundle_read_disjoint &&
+                     (bundle_pointer_args.size() == 1 || frozen_proof) &&
+                     read_owner != bundle_pointer_args.end())
+                  {
+                     const auto owner_arg = *read_owner;
+                     const auto original_reads = decision.accesses_by_argument.find(owner_arg->index);
+                     if(original_reads != decision.accesses_by_argument.end())
+                     {
+                        for(const auto& access : original_reads->second.reads)
+                        {
+                           if(access.ordinary && seen_read_statements.insert(access.statement->index).second)
+                           {
+                              loop_reads[GetPointerS<const node_stmt>(access.statement)->bb_index].push_back(
+                                  access.statement);
+                           }
+                        }
+                     }
+                     const auto expected_base_id = AppM->getSSAFromParm(root_id, owner_arg->index);
+                     const auto expected_base = TM->GetIRNode(expected_base_id);
+                     std::vector<ReadBurstRegion> regions;
+                     bool owner_recognized = !loop_reads.empty();
+                     for(const auto& read_group : loop_reads)
+                     {
+                        ReadBurstRegion region{};
+                        if(!recognizeReadBurstRegion(sl, read_group.second, expected_base,
+                                                     burst_memory_accesses, bundle_name, region,
+                                                     frozen_proof ? frozen_proof->store_statement : ir_nodeRef()))
+                        {
+                           owner_recognized = false;
+                           break;
+                        }
+                        regions.push_back(std::move(region));
+                     }
+                     if(owner_recognized && !regions.empty())
+                     {
+                        for(size_t first = 0; first < regions.size() && owner_recognized; ++first)
+                        {
+                           for(size_t second = first + 1; second < regions.size(); ++second)
+                           {
+                              const auto first_to_second =
+                                  hasBlockPath(sl, regions[first].preheader, regions[second].preheader);
+                              const auto second_to_first =
+                                  hasBlockPath(sl, regions[second].preheader, regions[first].preheader);
+                              if(first_to_second == second_to_first)
+                              {
+                                 owner_recognized = false;
+                                 break;
+                              }
+                           }
+                        }
+                     }
+                     if(owner_recognized && !regions.empty())
+                     {
+                        std::sort(regions.begin(), regions.end(), [&](const auto& lhs, const auto& rhs) {
+                           return hasBlockPath(sl, lhs.preheader, rhs.preheader);
+                        });
+                        decision.read_regions[owner_arg->index] = std::move(regions);
+                     }
+                  }
+                  decision.read_recognized = !decision.read_regions.empty();
+               }
+            }
+            if(decision.write_requested)
+            {
+               if(!original_memory_effects_safe)
+               {
+                  decision.write_fallback_reason = "opaque, volatile, atomic, or unclassified memory effects";
+               }
+               else if(cache_enabled)
+               {
+                  decision.write_fallback_reason = "cache-enabled bundle";
+               }
+               else if(decision.bundle_has_memory_read && !frozen_proof_for_bundle(bundle_name))
+               {
+                  decision.write_fallback_reason =
+                      "bundle contains reads; same-bundle read/write requires duplex support";
+               }
+               if(decision.write_fallback_reason.empty())
+               {
+                  bool any_owner_recognized = false;
+                  for(const auto& owner : func_arch->parms)
+                  {
+                     if(owner.second.at(FunctionArchitecture::parm_bundle) != bundle_name)
+                     {
+                        continue;
+                     }
+                     const auto owner_arg = std::find_if(fd->list_of_args.begin(), fd->list_of_args.end(),
+                                                         [&](const auto& candidate) {
+                                                            return get_decl_name(candidate) == owner.first;
+                                                         });
+                     if(owner_arg == fd->list_of_args.end() ||
+                        !ir_helper::IsPointerType(ir_helper::CGetType(*owner_arg)))
+                     {
+                        continue;
+                     }
+                     std::vector<ir_nodeRef> stores;
+                     const auto original_writes = decision.accesses_by_argument.find((*owner_arg)->index);
+                     if(original_writes != decision.accesses_by_argument.end())
+                     {
+                        for(const auto& access : original_writes->second.writes)
+                        {
+                           if(access.ordinary)
+                           {
+                              stores.push_back(access.statement);
+                           }
+                        }
+                     }
+                     std::sort(stores.begin(), stores.end(), [](const auto& lhs, const auto& rhs) {
+                        return lhs->index < rhs->index;
+                     });
+                     stores.erase(std::unique(stores.begin(), stores.end(), [](const auto& lhs, const auto& rhs) {
+                                     return lhs->index == rhs->index;
+                                  }),
+                                  stores.end());
+                     if(stores.empty())
+                     {
+                        continue;
+                     }
+                     if(!cross_bundle_burst_is_disjoint(bundle_name, false, (*owner_arg)->index))
+                     {
+                        decision.write_fallback_reason =
+                            "reads through another m_axi bundle without a restrict contract on both "
+                            "owners; cross-bundle write ordering is not proven";
+                        continue;
+                     }
+                     const auto expected_base_id = AppM->getSSAFromParm(root_id, (*owner_arg)->index);
+                     const auto expected_base = TM->GetIRNode(expected_base_id);
+                     WriteBurstRegion region{};
+                     const auto frozen_proof = frozen_proof_for_bundle(bundle_name);
+                     bool recognized = recognizeWriteBurstRegion(
+                         sl, stores, expected_base, burst_memory_accesses, bundle_name, region,
+                         frozen_proof ? frozen_proof->load_statement : ir_nodeRef());
+                     if(recognized)
+                     {
+                        for(const auto& access : burst_memory_accesses)
+                        {
+                           if(access.is_write && access.statement->index != region.store->index)
+                           {
+                              recognized = false;
+                              break;
+                           }
+                           const bool paired_duplex_read = frozen_proof &&
+                                                            access.statement->index ==
+                                                                frozen_proof->load_statement->index &&
+                                                            access.bundle == bundle_name && access.classified &&
+                                                            access.ordinary && access.base && expected_base &&
+                                                            access.base->index == frozen_proof->read_base->index;
+                           if(!access.is_write && !paired_duplex_read &&
+                              (!access.classified || !access.ordinary || !access.base || !expected_base ||
+                               access.base->index == expected_base->index || access.bundle == bundle_name))
+                           {
+                              recognized = false;
+                              break;
+                           }
+                        }
+                     }
+                     if(recognized)
+                     {
+                        decision.write_regions[(*owner_arg)->index] = std::move(region);
+                        any_owner_recognized = true;
+                     }
+                  }
+                  decision.write_recognized = any_owner_recognized && !decision.write_regions.empty();
+               }
+            }
+            if(decision.read_requested && decision.write_requested)
+            {
+               decision.same_base_duplex_profile_reason = cache_enabled ? "cache-enabled bundle" :
+                                                           "read/write profile is eligible";
+               decision.same_base_duplex_profile_eligible = !cache_enabled;
+               decision.same_base_duplex_reason = "original effects are not fully classified ordinary accesses";
+               SameBaseDuplexProof proof{};
+               if(RecognizeSameBaseDuplex(sl, fd, root_id, bundle_name, original_memory_accesses,
+                                          burst_memory_accesses, original_memory_effects_safe, AppM, TM, func_arch, proof,
+                                          decision.same_base_duplex_reason))
+               {
+                  decision.same_base_duplex_proof = std::make_unique<SameBaseDuplexProof>(std::move(proof));
+                  decision.same_base_duplex_candidate = true;
+               }
+            }
+         }
+         for(auto& bundle_decision : burst_decisions)
+         {
+            const auto frozen_root = frozen_duplex_by_root.find(root_id);
+            if(frozen_root != frozen_duplex_by_root.end())
+            {
+               const auto frozen = frozen_root->second.find(bundle_decision.first);
+               if(frozen != frozen_root->second.end())
+               {
+                  auto& decision = bundle_decision.second;
+                  const auto& proof = frozen->second.proof;
+                  THROW_ASSERT(decision.same_base_duplex_candidate && decision.same_base_duplex_proof,
+                               "Frozen duplex proof disappeared before IR transformation for bundle " +
+                                   bundle_decision.first);
+#if HAVE_ASSERTS
+                  const auto& current = *decision.same_base_duplex_proof;
+#endif
+                  THROW_ASSERT(current.owner_argument_index == proof.owner_argument_index &&
+                                   current.read_owner_argument_index == proof.read_owner_argument_index &&
+                                   current.write_owner_argument_index == proof.write_owner_argument_index &&
+                                   current.distinct_bases == proof.distinct_bases &&
+                                   current.runtime_range_guard == proof.runtime_range_guard &&
+                                   current.base->index == proof.base->index &&
+                                   current.read_base->index == proof.read_base->index &&
+                                   current.write_base->index == proof.write_base->index &&
+                                   current.load_statement->index == proof.load_statement->index &&
+                                   current.store_statement->index == proof.store_statement->index &&
+                                   current.read_region.preheader == proof.read_region.preheader &&
+                                   current.read_region.header == proof.read_region.header &&
+                                   ((!current.read_region.branch && !proof.read_region.branch) ||
+                                    (current.read_region.branch && proof.read_region.branch &&
+                                     current.read_region.branch->index == proof.read_region.branch->index)) &&
+                                   current.read_region.guard->index == proof.read_region.guard->index &&
+                                   current.read_region.bound->index == proof.read_region.bound->index &&
+                                   current.read_region.loop_trip_bound->index == proof.read_region.loop_trip_bound->index &&
+                                   current.read_region.loop_trip_compare->index == proof.read_region.loop_trip_compare->index &&
+                                   current.read_region.effective_bound->index == proof.read_region.effective_bound->index &&
+                                   ((!current.read_region.effective_compare && !proof.read_region.effective_compare) ||
+                                    (current.read_region.effective_compare && proof.read_region.effective_compare &&
+                                     current.read_region.effective_compare->index ==
+                                         proof.read_region.effective_compare->index)) &&
+                                   current.read_region.access_bb == proof.read_region.access_bb &&
+                                   current.read_region.has_direction_guard == proof.read_region.has_direction_guard &&
+                                   current.read_region.induction->index == proof.read_region.induction->index &&
+                                   current.read_region.base->index == proof.read_region.base->index &&
+                                   current.write_region.preheader == proof.write_region.preheader &&
+                                   current.write_region.header == proof.write_region.header &&
+                                   current.write_region.exit == proof.write_region.exit &&
+                                   current.write_region.guard->index == proof.write_region.guard->index &&
+                                   current.write_region.bound->index == proof.write_region.bound->index &&
+                                   current.write_region.loop_trip_bound->index == proof.write_region.loop_trip_bound->index &&
+                                   current.write_region.loop_trip_compare->index == proof.write_region.loop_trip_compare->index &&
+                                   current.write_region.effective_bound->index == proof.write_region.effective_bound->index &&
+                                   ((!current.write_region.effective_compare && !proof.write_region.effective_compare) ||
+                                    (current.write_region.effective_compare && proof.write_region.effective_compare &&
+                                     current.write_region.effective_compare->index ==
+                                         proof.write_region.effective_compare->index)) &&
+                                   current.write_region.access_bb == proof.write_region.access_bb &&
+                                   current.write_region.has_direction_guard == proof.write_region.has_direction_guard &&
+                                   current.write_region.induction->index == proof.write_region.induction->index &&
+                                   current.write_region.base->index == proof.write_region.base->index &&
+                                   current.write_region.store->index == proof.write_region.store->index,
+                               "Original duplex proof snapshot changed before IR transformation for bundle " +
+                                   bundle_decision.first);
+                  decision.same_base_duplex_proof = std::make_unique<SameBaseDuplexProof>(proof);
+                  decision.read_regions[proof.read_owner_argument_index] = {proof.read_region};
+                  decision.write_regions[proof.write_owner_argument_index] = proof.write_region;
+                  decision.read_recognized = true;
+                  decision.write_recognized = true;
+                  decision.same_base_duplex_activated = true;
+                  decision.same_base_duplex_activation_reason = "frozen application-wide proof and profile accepted";
+               }
+            }
+            if(!bundle_decision.second.same_base_duplex_activated)
+            {
+               const auto veto = duplex_bundle_vetoes.find(bundle_decision.first);
+               if(veto != duplex_bundle_vetoes.end())
+               {
+                  bundle_decision.second.same_base_duplex_activation_reason = veto->second;
+               }
+               else if(bundle_decision.second.same_base_duplex_candidate)
+               {
+                  bundle_decision.second.same_base_duplex_activation_reason =
+                      bundle_decision.first.rfind("DF_bambu_", 0) == 0 ?
+                          "DATAFLOW/forwarded bundle ownership is unsupported" :
+                          bundle_decision.second.same_base_duplex_profile_eligible ?
+                              "bundle is not a globally eligible activation candidate" :
+                              bundle_decision.second.same_base_duplex_profile_reason;
+               }
+               else if(bundle_decision.second.read_requested && bundle_decision.second.write_requested)
+               {
+                  bundle_decision.second.same_base_duplex_activation_reason =
+                      bundle_decision.second.same_base_duplex_reason;
+               }
+            }
+         }
+#ifndef NDEBUG
+         for(const auto& bundle_decision : burst_decisions)
+         {
+            const auto& decision = bundle_decision.second;
+            for(const auto& owner_accesses : decision.accesses_by_argument)
+            {
+               const auto owner_argument_index = owner_accesses.first;
+               const auto read_region = decision.read_regions.find(owner_argument_index);
+               const auto write_region = decision.write_regions.find(owner_argument_index);
+               INDENT_DBG_MEX(
+                   DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                   "AXI_BURST_PREANALYSIS bundle=" + bundle_decision.first +
+                       " owner_argument_index=" + std::to_string(owner_argument_index) +
+                       " read_accesses=" + std::to_string(owner_accesses.second.reads.size()) +
+                       " write_accesses=" + std::to_string(owner_accesses.second.writes.size()) +
+                       " read_requested=" + std::to_string(static_cast<unsigned int>(decision.read_requested)) +
+                       " read_recognized=" +
+                       std::to_string(static_cast<unsigned int>(read_region != decision.read_regions.end())) +
+                       " read_fallback=\"" +
+                       (decision.read_fallback_reason.empty() ? "-" : decision.read_fallback_reason) +
+                       "\" write_requested=" + std::to_string(static_cast<unsigned int>(decision.write_requested)) +
+                       " write_recognized=" +
+                       std::to_string(static_cast<unsigned int>(write_region != decision.write_regions.end())) +
+                       " write_fallback=\"" +
+                       (decision.write_fallback_reason.empty() ? "-" : decision.write_fallback_reason) +
+                       "\" same_base_duplex_candidate=" +
+                       std::to_string(static_cast<unsigned int>(decision.same_base_duplex_candidate)) +
+                       " same_base_duplex_reason=\"" + decision.same_base_duplex_reason +
+                       "\" production_activated=" +
+                       std::to_string(static_cast<unsigned int>(decision.same_base_duplex_activated)) +
+                       " activation_reason=\"" + decision.same_base_duplex_activation_reason + "\"");
+            }
+            if(decision.read_requested && decision.write_requested)
+            {
+               const auto json_string = [](const std::string& value) {
+                  std::string escaped;
+                  escaped.reserve(value.size() + 2U);
+                  for(const auto character : value)
+                  {
+                     if(character == '\\' || character == '"')
+                     {
+                        escaped.push_back('\\');
+                     }
+                     if(character == '\n')
+                     {
+                        escaped += "\\n";
+                     }
+                     else if(character == '\r')
+                     {
+                        escaped += "\\r";
+                     }
+                     else
+                     {
+                        escaped.push_back(character);
+                     }
+                  }
+                  return escaped;
+               };
+               const auto node_id = [](const ir_nodeRef& node) {
+                  return node ? std::to_string(node->index) : std::string("null");
+               };
+               const auto node_id_or_zero = [](const ir_nodeRef& node) {
+                  return node ? std::to_string(node->index) : std::string("0");
+               };
+               std::ostringstream proof_record;
+               proof_record << "AXI_BURST_DUPLEX_PROOF {\"bundle\":\"" << json_string(bundle_decision.first)
+                            << "\",\"semantic_proof\":"
+                            << (decision.same_base_duplex_proof ? "true" : "false")
+                            << ",\"semantic_reason\":\"" << json_string(decision.same_base_duplex_reason)
+                            << "\",\"runtime_range_guard\":"
+                            << (decision.same_base_duplex_proof &&
+                                        decision.same_base_duplex_proof->runtime_range_guard ? "true" : "false")
+                            << ",\"profile_eligible\":"
+                            << (decision.same_base_duplex_profile_eligible ? "true" : "false")
+                            << ",\"profile_reason\":\"" << json_string(decision.same_base_duplex_profile_reason)
+                            << "\"";
+               if(decision.same_base_duplex_proof)
+               {
+                  const auto& proof = *decision.same_base_duplex_proof;
+                  proof_record << ",\"proof_kind\":\""
+                               << (proof.runtime_range_guard ? "distinct_base_runtime_guarded_pointwise" :
+                                   proof.distinct_bases ? "distinct_base_restricted_pointwise" :
+                                                          "same_base_pointwise")
+                               << "\",\"owner_argument_index\":" << proof.owner_argument_index
+                               << ",\"read_owner_argument_index\":" << proof.read_owner_argument_index
+                               << ",\"write_owner_argument_index\":" << proof.write_owner_argument_index
+                               << ",\"base_ssa_index\":" << node_id(proof.base)
+                               << ",\"read_base_ssa_index\":" << node_id(proof.read_base)
+                               << ",\"write_base_ssa_index\":" << node_id(proof.write_base)
+                               << ",\"load_statement_index\":" << node_id(proof.load_statement)
+                               << ",\"store_statement_index\":" << node_id(proof.store_statement)
+                               << ",\"read_preheader_bb\":" << proof.read_region.preheader
+                               << ",\"read_header_bb\":" << proof.read_region.header
+                               << ",\"read_branch_index\":" << node_id(proof.read_region.branch)
+                               << ",\"read_guard_index\":" << node_id(proof.read_region.guard)
+                               << ",\"read_bound_index\":" << node_id(proof.read_region.bound)
+                               << ",\"loop_trip_bound_ssa_index\":"
+                               << node_id(proof.read_region.loop_trip_bound)
+                               << ",\"loop_trip_compare_index\":"
+                               << node_id(proof.read_region.loop_trip_compare)
+                               << ",\"read_effective_bound_ssa_index\":"
+                               << node_id(proof.read_region.effective_bound)
+                               << ",\"read_effective_compare_index\":"
+                               << node_id_or_zero(proof.read_region.effective_compare)
+                               << ",\"read_access_bb\":" << proof.read_region.access_bb
+                               << ",\"read_count_recipe\":\""
+                               << (proof.read_region.has_direction_guard ? "min_trip_and_effective_bound" :
+                                                                            "trip_count")
+                               << "\""
+                               << ",\"read_induction_index\":" << node_id(proof.read_region.induction)
+                               << ",\"write_preheader_bb\":" << proof.write_region.preheader
+                               << ",\"write_header_bb\":" << proof.write_region.header
+                               << ",\"write_exit_bb\":" << proof.write_region.exit
+                               << ",\"write_guard_index\":" << node_id(proof.write_region.guard)
+                               << ",\"write_bound_index\":" << node_id(proof.write_region.bound)
+                               << ",\"write_effective_bound_ssa_index\":"
+                               << node_id(proof.write_region.effective_bound)
+                               << ",\"write_effective_compare_index\":"
+                               << node_id_or_zero(proof.write_region.effective_compare)
+                               << ",\"write_access_bb\":" << proof.write_region.access_bb
+                               << ",\"write_count_recipe\":\""
+                               << (proof.write_region.has_direction_guard ? "min_trip_and_effective_bound" :
+                                                                            "trip_count")
+                               << "\",\"pairing_domain_recipe\":\"min_read_write_counts_prefix\""
+                               << ",\"write_induction_index\":" << node_id(proof.write_region.induction);
+               }
+               proof_record << "}";
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, proof_record.str());
+            }
+         }
+#endif
+      };
+
       const ir_manipulationRef ir_man(new ir_manipulation(TM, parameters, AppM));
       const auto is_dataflow_module =
           func_arch->attrs.find(FunctionArchitecture::func_dataflow_module) != func_arch->attrs.end() &&
           (func_arch->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1");
+      const auto is_forced_legacy_duplex_bundle = [&](const std::string& bundle_name) {
+         return duplex_bundle_force_legacy.count(bundle_name) != 0;
+      };
       if(is_dataflow_module)
       {
          const auto [caller_id, call_id] = GetCallStmt(CGM, root_id);
@@ -852,10 +4432,18 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   return it.second.at(FunctionArchitecture::parm_index) == std::to_string(idx);
                });
                THROW_ASSERT(parm_attr != func_arch->parms.end(), "Expected parameter index " + std::to_string(idx));
+               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
                auto& current_bundle = parm_attr->second.at(FunctionArchitecture::parm_bundle);
+               const auto original_bundle = current_bundle;
+               const auto argument_index = fd->list_of_args.at(idx)->index;
                std::string bundle_name;
                if(base_var->get_kind() == argument_val_node_K)
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
@@ -865,6 +4453,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(ir_helper::IsConstant(base_var))
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
                                      " is constant at this call point");
@@ -902,7 +4495,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                func_arch->ifaces[bundle_name].at(FunctionArchitecture::iface_name) = bundle_name;
                func_arch->ifaces.erase(current_bundle);
                current_bundle = bundle_name;
-               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
+               if(is_forced_legacy_duplex_bundle(original_bundle))
+               {
+                  duplex_bundle_force_legacy.insert(current_bundle);
+               }
+               dataflow_bundle_by_argument[argument_index] = current_bundle;
                auto pd = GetPointerS<argument_val_node>(fd->list_of_args.at(idx));
                pd->name = ir_man->create_identifier_node(bundle_name);
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
@@ -915,6 +4512,72 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             ++idx;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+
+      for(auto& access : burst_memory_accesses)
+      {
+         const auto mapped_bundle = dataflow_bundle_by_argument.find(access.owner_argument_index);
+         if(access.classified && mapped_bundle != dataflow_bundle_by_argument.end())
+         {
+            access.bundle = mapped_bundle->second;
+         }
+      }
+
+      if(burst_feature_enabled)
+      {
+         for(const auto& iface : func_arch->ifaces)
+         {
+            const auto& bundle_name = iface.first;
+            const auto& iface_attrs = iface.second;
+            const auto mode = iface_attrs.find(FunctionArchitecture::iface_mode);
+            if(mode == iface_attrs.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+            const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+            if(max_read_burst != iface_attrs.end() && effective_burst_type != 1U)
+            {
+               THROW_ERROR_USAGE("Configured read bursts for bundle '" + bundle_name +
+                                 "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
+                                 (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
+            }
+            if(max_write_burst != iface_attrs.end() && effective_burst_type != 1U)
+            {
+               THROW_ERROR_USAGE("Configured write bursts for bundle '" + bundle_name +
+                                 "' require AXI INCREMENTAL burst type; the effective AXI burst type is " +
+                                 (effective_burst_type == 0U ? "FIXED" : "unsupported") + ".");
+            }
+         }
+      }
+      preanalyze_bursts();
+
+      if(!burst_feature_enabled)
+      {
+         for(const auto& iface : func_arch->ifaces)
+         {
+            const auto& bundle_name = iface.first;
+            const auto& iface_attrs = iface.second;
+            const auto mode = iface_attrs.find(FunctionArchitecture::iface_mode);
+            const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+            const auto max_write_burst = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+            if(mode == iface_attrs.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            if(max_read_burst != iface_attrs.end())
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "---Keeping legacy m_axi reads for bundle " + bundle_name +
+                                  ": explicit read-burst request ignored because experimental-m-axi-burst=0");
+            }
+            if(max_write_burst != iface_attrs.end())
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "---Keeping legacy m_axi writes for bundle " + bundle_name +
+                                  ": explicit write-burst request ignored because experimental-m-axi-burst=0");
+            }
+         }
       }
 
       std::map<std::string, IRNodeSet> bundle_vdefs;
@@ -974,6 +4637,23 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                           func_arch->ifaces.end(),
                       "Missing parameter bundle: " + parm_attrs.at(FunctionArchitecture::parm_bundle));
          auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+         if(ir_helper::IsPointerType(arg_type) && iface_attrs.at(FunctionArchitecture::iface_mode) == "m_axi")
+         {
+            const auto arg_ssa_id = AppM->getSSAFromParm(root_id, arg_id);
+            const auto arg_ssa = TM->GetIRNode(arg_ssa_id);
+            const bool has_no_uses = arg_ssa && arg_ssa->get_kind() == ssa_node_K &&
+                                     GetPointerS<const ssa_node>(arg_ssa)->CGetUseStmts().empty();
+            const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+            const bool another_parameter_owns_bundle_access = std::any_of(
+                burst_memory_accesses.begin(), burst_memory_accesses.end(), [&](const auto& access) {
+                   return access.classified && access.owner_argument_index != arg_id && access.bundle == bundle_name;
+                });
+            if(has_no_uses && another_parameter_owns_bundle_access)
+            {
+               THROW_WARNING("Parameter '" + arg_name + "' is unused by any statement");
+               continue;
+            }
+         }
          iface_attrs[FunctionArchitecture::iface_direction] = port_o::GetString(port_o::IN);
          const auto is_pointer_type = ir_helper::IsPointerType(arg_type);
          const auto raw_interface_type = iface_attrs.at(FunctionArchitecture::iface_mode);
@@ -1039,7 +4719,37 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                std::list<ir_nodeRef> writeStmt;
                std::list<ir_nodeRef> readStmt;
+               const auto early_decision = burst_decisions.find(parm_attrs.at(FunctionArchitecture::parm_bundle));
+               const bool runtime_guard_candidate =
+                   early_decision != burst_decisions.end() && early_decision->second.same_base_duplex_activated &&
+                   early_decision->second.same_base_duplex_proof &&
+                   early_decision->second.same_base_duplex_proof->runtime_range_guard &&
+                   (arg_id == early_decision->second.same_base_duplex_proof->read_owner_argument_index ||
+                    arg_id == early_decision->second.same_base_duplex_proof->write_owner_argument_index);
                ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
+               if(runtime_guard_candidate)
+               {
+                  if(info.bitwidth == 0)
+                  {
+                     const auto& proof = *early_decision->second.same_base_duplex_proof;
+                     info.bitwidth = ir_helper::Size(
+                         GetPointerS<const assign_stmt>(proof.load_statement)->op0);
+                  }
+                  writeStmt.clear();
+                  readStmt.clear();
+                  const auto owner = early_decision->second.accesses_by_argument.find(arg_id);
+                  if(owner != early_decision->second.accesses_by_argument.end())
+                  {
+                     for(const auto& access : owner->second.reads)
+                     {
+                        readStmt.push_back(access.statement);
+                     }
+                     for(const auto& access : owner->second.writes)
+                     {
+                        writeStmt.push_back(access.statement);
+                     }
+                  }
+               }
                const auto is_csroa_ac_type = [&]() {
                   const auto type_attr = parm_attrs.find(FunctionArchitecture::parm_original_typename);
                   if(type_attr == parm_attrs.end())
@@ -1228,6 +4938,388 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                std::set<std::string> operationsR, operationsW;
                const auto interface_datatype = ir_man->GetCustomIntegerType(info.bitwidth, true);
                const auto& bundle_name = iface_attrs.at(FunctionArchitecture::iface_name);
+               const auto decision_it = burst_decisions.find(bundle_name);
+               const auto* decision = decision_it == burst_decisions.end() ? nullptr : &decision_it->second;
+               const bool burst_enabled = burst_feature_enabled;
+               const bool write_burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
+                                                  decision->write_requested &&
+                                                  !is_forced_legacy_duplex_bundle(bundle_name);
+               const bool burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
+                                            decision->read_requested &&
+                                            !is_forced_legacy_duplex_bundle(bundle_name);
+               const auto same_base_duplex_active = decision && decision->same_base_duplex_activated &&
+                                                    decision->same_base_duplex_proof &&
+                                                    (decision->same_base_duplex_proof->read_owner_argument_index == arg_id ||
+                                                     decision->same_base_duplex_proof->write_owner_argument_index == arg_id);
+               const bool runtime_guarded_duplex = same_base_duplex_active &&
+                                                   decision->same_base_duplex_proof->runtime_range_guard;
+               if(same_base_duplex_active)
+               {
+#if HAVE_ASSERTS
+                  const auto& proof = *decision->same_base_duplex_proof;
+                  const auto read_regions = decision->read_regions.find(proof.read_owner_argument_index);
+                  const auto write_region = decision->write_regions.find(proof.write_owner_argument_index);
+                  const auto same_optional_node = [](const ir_nodeRef& lhs, const ir_nodeRef& rhs) {
+                     return (!lhs && !rhs) || (lhs && rhs && lhs->index == rhs->index);
+                  };
+#endif
+                  THROW_ASSERT(read_regions != decision->read_regions.end() && read_regions->second.size() == 1 &&
+                                   write_region != decision->write_regions.end() &&
+                                   read_regions->second.front().preheader == proof.read_region.preheader &&
+                                   read_regions->second.front().header == proof.read_region.header &&
+                                   read_regions->second.front().bound->index == proof.read_region.bound->index &&
+                                   read_regions->second.front().loop_trip_bound->index ==
+                                       proof.read_region.loop_trip_bound->index &&
+                                   same_optional_node(read_regions->second.front().loop_trip_compare,
+                                                     proof.read_region.loop_trip_compare) &&
+                                   read_regions->second.front().effective_bound->index ==
+                                       proof.read_region.effective_bound->index &&
+                                   same_optional_node(read_regions->second.front().effective_compare,
+                                                     proof.read_region.effective_compare) &&
+                                   read_regions->second.front().has_direction_guard ==
+                                       proof.read_region.has_direction_guard &&
+                                   read_regions->second.front().access_bb == proof.read_region.access_bb &&
+                                   write_region->second.preheader == proof.write_region.preheader &&
+                                   write_region->second.header == proof.write_region.header &&
+                                   write_region->second.exit == proof.write_region.exit &&
+                                   write_region->second.bound->index == proof.write_region.bound->index &&
+                                   write_region->second.loop_trip_bound->index ==
+                                       proof.write_region.loop_trip_bound->index &&
+                                   same_optional_node(write_region->second.loop_trip_compare,
+                                                     proof.write_region.loop_trip_compare) &&
+                                   write_region->second.effective_bound->index ==
+                                       proof.write_region.effective_bound->index &&
+                                   same_optional_node(write_region->second.effective_compare,
+                                                     proof.write_region.effective_compare) &&
+                                   write_region->second.has_direction_guard ==
+                                       proof.write_region.has_direction_guard &&
+                                   write_region->second.access_bb == proof.write_region.access_bb,
+                               "Both frozen duplex regions must be validated before either direction is rewritten");
+               }
+               bool burst_profile_eligible = true;
+               std::string burst_fallback_reason = burst_requested ? decision->read_fallback_reason : "";
+               if(burst_requested)
+               {
+                  if(burst_fallback_reason.empty() && (info.bitwidth != 32 || info.alignment < 4))
+                  {
+                     burst_fallback_reason = "data width/alignment is not 32-bit/4-byte";
+                  }
+                  else if(burst_fallback_reason.empty() &&
+                          iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                          std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)
+                  {
+                     burst_fallback_reason = "m_axi interface data width is not 32-bit";
+                  }
+                  else if(burst_fallback_reason.empty() && HLSMgr->get_address_bitsize() != 32 &&
+                          HLSMgr->get_address_bitsize() != 64)
+                  {
+                     burst_fallback_reason = "AXI address width is not 32 or 64 bit";
+                  }
+                  else if(burst_fallback_reason.empty() && !decision->read_recognized)
+                  {
+                     burst_fallback_reason =
+                         "read-burst CFG/SSA recognition failed or bundle is not exclusive";
+                  }
+                  burst_profile_eligible = burst_fallback_reason.empty();
+                  if(!burst_profile_eligible)
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi accesses for bundle " + bundle_name + ": " +
+                                        burst_fallback_reason);
+                  }
+               }
+               if(runtime_guarded_duplex &&
+                  arg_id == decision->same_base_duplex_proof->read_owner_argument_index)
+               {
+                  THROW_ASSERT(burst_profile_eligible && decision->write_recognized,
+                               "Frozen runtime duplex profile failed direction eligibility");
+                  const auto lowered_calls = lowerRuntimeGuardedDuplex(
+                      GetPointerS<const statement_list_node>(fd->body), fd, root_id,
+                      *decision->same_base_duplex_proof, bundle_name, fsymbol,
+                      get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->read_owner_argument_index)),
+                      get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->write_owner_argument_index)),
+                      interface_datatype, decision->write_profile, HLSMgr->get_address_bitsize(), AppM, TM, ir_man,
+                      channel_read_vdefs, channel_write_vdefs, HLSMgr->design_interface_io[fsymbol]);
+                  for(const auto& call : lowered_calls)
+                  {
+                     add_to_modified(call);
+                  }
+                  readStmt.clear();
+                  operationsR.insert(ENCODE_FDNAME(bundle_name, "_configure_read", ""));
+                  operationsR.insert(ENCODE_FDNAME(bundle_name, "_burst_read", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_configure_write", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_store_write", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_drain_write", ""));
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 "---Activated guarded distinct-base duplex for bundle " + bundle_name +
+                                     " (overlap uses serialized scalar transfers)");
+               }
+               else if(!runtime_guarded_duplex && burst_requested && burst_profile_eligible)
+               {
+                  const auto sl = GetPointerS<const statement_list_node>(fd->body);
+                  const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
+                  const auto expected_base = TM->GetIRNode(expected_base_id);
+                  const auto recognized_regions = decision->read_regions.find(arg_id);
+                  const bool recognized = decision->read_recognized && recognized_regions != decision->read_regions.end();
+                  if(recognized)
+                  {
+                     const auto& regions = recognized_regions->second;
+                     const auto max_burst = decision->read_max_burst_length;
+                     THROW_ASSERT(max_burst >= 1 && max_burst <= 256, "Invalid parsed max_read_burst_length");
+                     const auto configure_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
+                     const auto burst_read_name = ENCODE_FDNAME(bundle_name, "_burst_read", "");
+                     operationsR.insert(configure_name);
+                     operationsR.insert(burst_read_name);
+                     const auto opcode_type = ir_man->GetCustomIntegerType(2, true);
+                     const auto u32_type = ir_man->GetUnsignedIntegerType();
+                     const auto address_type = ir_helper::CGetType(expected_base);
+                     std::vector<ir_nodeConstRef> configure_arg_types{opcode_type, u32_type, interface_datatype,
+                                                                        address_type, u32_type};
+                     const auto configure_decl = ir_man->create_function_decl(
+                         configure_name, fd->parent, configure_arg_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+                     std::vector<ir_nodeConstRef> burst_read_arg_types{opcode_type, u32_type, interface_datatype,
+                                                                        address_type, u32_type};
+                     const auto burst_read_decl = ir_man->create_function_decl(
+                         burst_read_name, fd->parent, burst_read_arg_types, interface_datatype, BUILTIN_LOCINFO, false);
+
+                     for(const auto& region : regions)
+                     {
+                        const auto preheader = sl->list_of_bloc.at(region.preheader);
+                        const auto branch = preheader->CGetStmtList().back();
+                        const auto count_ssa = CreateDuplexDirectionCount(
+                            ir_man, TM, AppM, fd->index, preheader, branch, region.guard, region.loop_trip_bound,
+                            region.effective_bound, region.has_direction_guard, u32_type);
+                        std::vector<ir_nodeRef> configure_args{TM->CreateUniqueIntegerCst(2, opcode_type),
+                                                               TM->CreateUniqueIntegerCst(32, u32_type),
+                                                               TM->CreateUniqueIntegerCst(0, interface_datatype),
+                                                               region.base, count_ssa};
+                        const auto configure_call =
+                            ir_man->create_call_stmt(configure_decl, configure_args, fd->index, BUILTIN_LOCINFO);
+                        preheader->PushBefore(configure_call, branch, AppM);
+                        CustomUnorderedSet<unsigned int> call_points;
+                        CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index, configure_decl->index,
+                                                                configure_call->index,
+                                                                FunctionEdgeInfo::CallType::direct_call,
+                                                                DEBUG_LEVEL_NONE);
+                        serializeInterfaceAccess(configure_call, bundle_name, channel_read_vdefs, ir_man);
+                        GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol][region.preheader][arg_name]
+                            .push_back(configure_call->index);
+                        add_to_modified(configure_call);
+
+                        for(const auto& read_stmt : region.reads)
+                        {
+                           auto read = GetPointerS<assign_stmt>(read_stmt);
+                           const auto mem_access = GetPointerS<const mem_access_node>(read->op1);
+                           std::vector<ir_nodeRef> burst_read_args{TM->CreateUniqueIntegerCst(0, opcode_type),
+                                                                   TM->CreateUniqueIntegerCst(32, u32_type),
+                                                                   TM->CreateUniqueIntegerCst(0, interface_datatype),
+                                                                   mem_access->op,
+                                                                   TM->CreateUniqueIntegerCst(0, u32_type)};
+                           const auto read_expr = ir_man->CreateCallExpr(burst_read_decl, burst_read_args,
+                                                                         BUILTIN_LOCINFO);
+                           ir_nodeRef rewritten_read = read_stmt;
+                           if(ir_helper::IsSameType(interface_datatype, ir_helper::CGetType(read->op0)))
+                           {
+                              TM->ReplaceIRNode(read_stmt, read->op1, read_expr);
+                           }
+                           else
+                           {
+                              const auto actual_type = ir_helper::CGetType(read->op0);
+                              const auto is_real = ir_helper::IsRealType(actual_type);
+                              const auto tmp_type = is_real ?
+                                                        ir_man->GetCustomIntegerType(ir_helper::Size(actual_type), true) :
+                                                        interface_datatype;
+                              const auto tmp_ssa = ir_man->create_ssa_name(nullptr, tmp_type, nullptr, nullptr);
+                              rewritten_read = ir_man->create_assign_stmt(tmp_ssa, read_expr, fd->index, BUILTIN_LOCINFO);
+                              const auto access_bb = sl->list_of_bloc.at(region.access_bb);
+                              access_bb->Replace(read_stmt, rewritten_read, true, AppM);
+                              const auto cast_expr = ir_man->create_unary_operation(
+                                  actual_type, tmp_ssa, BUILTIN_LOCINFO, is_real ? bitcast_node_K : nop_node_K);
+                              const auto cast_stmt = ir_man->create_assign_stmt(read->op0, cast_expr, fd->index,
+                                                                                BUILTIN_LOCINFO);
+                              access_bb->PushAfter(cast_stmt, rewritten_read, AppM);
+                           }
+                           CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index,
+                                                                   burst_read_decl->index, rewritten_read->index,
+                                                                   FunctionEdgeInfo::CallType::direct_call,
+                                                                   DEBUG_LEVEL_NONE);
+                           serializeInterfaceAccess(rewritten_read, bundle_name, channel_read_vdefs, ir_man);
+                           GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol]
+                               [GetPointerS<const node_stmt>(rewritten_read)->bb_index][arg_name]
+                                   .push_back(rewritten_read->index);
+                           add_to_modified(rewritten_read);
+                        }
+                     }
+                     readStmt.clear();
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Configured read burst regions for bundle " + bundle_name + " (B=" +
+                                        std::to_string(max_burst) + ")");
+                  }
+                  else
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi reads for bundle " + bundle_name +
+                                        ": read-burst CFG/SSA recognition failed or bundle is not exclusive");
+                  }
+               }
+               if(runtime_guarded_duplex &&
+                  arg_id == decision->same_base_duplex_proof->write_owner_argument_index)
+               {
+                  writeStmt.clear();
+               }
+               else if(!runtime_guarded_duplex && write_burst_requested)
+               {
+                  std::string write_fallback_reason = decision->write_fallback_reason;
+                  if(write_fallback_reason.empty() &&
+                     (info.bitwidth != 32 || info.alignment < 4 ||
+                      (iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                       std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)))
+                  {
+                     write_fallback_reason = "data width/alignment is not 32-bit/4-byte";
+                  }
+                  else if(write_fallback_reason.empty() && HLSMgr->get_address_bitsize() != 32 &&
+                          HLSMgr->get_address_bitsize() != 64)
+                  {
+                     write_fallback_reason = "AXI address width is not 32 or 64 bit";
+                  }
+                  else if(write_fallback_reason.empty() && !decision->write_recognized)
+                  {
+                     write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
+                  }
+                  const auto sl = GetPointerS<const statement_list_node>(fd->body);
+                  const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
+                  const auto expected_base = TM->GetIRNode(expected_base_id);
+                  const auto recognized_region = decision->write_regions.find(arg_id);
+                  const bool recognized = write_fallback_reason.empty() && decision->write_recognized &&
+                                          recognized_region != decision->write_regions.end();
+                  if(!recognized && write_fallback_reason.empty())
+                  {
+                     write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
+                  }
+                  if(recognized)
+                  {
+                     const auto& region = recognized_region->second;
+                     const auto configure_name = ENCODE_FDNAME(bundle_name, "_configure_write", "");
+                     const auto store_name = ENCODE_FDNAME(bundle_name, "_store_write", "");
+                     const auto drain_name = ENCODE_FDNAME(bundle_name, "_drain_write", "");
+                     operationsW.insert(configure_name);
+                     operationsW.insert(store_name);
+                     operationsW.insert(drain_name);
+                     const auto opcode_type = ir_man->GetCustomIntegerType(2, true);
+                     const auto u32_type = ir_man->GetUnsignedIntegerType();
+                     const auto address_type = ir_helper::CGetType(expected_base);
+                     const std::vector<ir_nodeConstRef> command_arg_types{opcode_type, u32_type, interface_datatype,
+                                                                          address_type, u32_type};
+                     const auto configure_decl = ir_man->create_function_decl(
+                         configure_name, fd->parent, command_arg_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+                     const auto store_decl = ir_man->create_function_decl(
+                         store_name, fd->parent, command_arg_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+                     const auto drain_decl = ir_man->create_function_decl(
+                         drain_name, fd->parent, command_arg_types, ir_man->GetVoidType(), BUILTIN_LOCINFO, false);
+                     const auto preheader = sl->list_of_bloc.at(region.preheader);
+                     const auto preheader_branch = preheader->CGetStmtList().back();
+                     const auto count = CreateDuplexDirectionCount(
+                         ir_man, TM, AppM, fd->index, preheader, preheader_branch, region.guard,
+                         region.loop_trip_bound, region.effective_bound, region.has_direction_guard, u32_type);
+                     const std::vector<ir_nodeRef> configure_args{TM->CreateUniqueIntegerCst(2, opcode_type),
+                                                                  TM->CreateUniqueIntegerCst(32, u32_type),
+                                                                  TM->CreateUniqueIntegerCst(0, interface_datatype),
+                                                                  region.base, count};
+                     const auto configure_call =
+                         ir_man->create_call_stmt(configure_decl, configure_args, fd->index, BUILTIN_LOCINFO);
+                     preheader->PushBefore(configure_call, preheader_branch, AppM);
+                     CustomUnorderedSet<unsigned int> call_points;
+                     CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index, configure_decl->index,
+                                                             configure_call->index,
+                                                             FunctionEdgeInfo::CallType::direct_call,
+                                                             DEBUG_LEVEL_NONE);
+                     serializeInterfaceAccess(configure_call, bundle_name, channel_write_vdefs, ir_man);
+                     GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol][region.preheader][arg_name]
+                         .push_back(configure_call->index);
+                     add_to_modified(configure_call);
+
+                     const auto store = GetPointerS<const assign_stmt>(region.store);
+                     auto value = store->op1;
+                     if(!ir_helper::IsSameType(interface_datatype, ir_helper::CGetType(value)))
+                     {
+                        const auto cast = ir_man->create_unary_operation(interface_datatype, value, BUILTIN_LOCINFO,
+                                                                         nop_node_K);
+                        const auto cast_stmt = ir_man->CreateAssignStmt(interface_datatype, nullptr, nullptr, cast,
+                                                                        fd->index, BUILTIN_LOCINFO);
+                        const auto access_bb = sl->list_of_bloc.at(region.access_bb);
+                        access_bb->PushBefore(cast_stmt, region.store, AppM);
+                        value = GetPointerS<const assign_stmt>(cast_stmt)->op0;
+                     }
+                     const auto address = GetPointerS<const mem_access_node>(store->op0)->op;
+                     const std::vector<ir_nodeRef> store_args{TM->CreateUniqueIntegerCst(1, opcode_type),
+                                                              TM->CreateUniqueIntegerCst(32, u32_type), value,
+                                                              address, TM->CreateUniqueIntegerCst(0, u32_type)};
+                     const auto store_call =
+                         ir_man->create_call_stmt(store_decl, store_args, fd->index, BUILTIN_LOCINFO);
+                     const auto access_bb = sl->list_of_bloc.at(region.access_bb);
+                     access_bb->Replace(region.store, store_call, true, AppM);
+                     preserveBlockingInterfaceAccess(store_call, region.store, bundle_name, channel_write_vdefs, ir_man);
+                     CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index, store_decl->index,
+                                                             store_call->index,
+                                                             FunctionEdgeInfo::CallType::direct_call,
+                                                             DEBUG_LEVEL_NONE);
+                     GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol][region.access_bb][arg_name]
+                         .push_back(store_call->index);
+                     add_to_modified(store_call);
+
+                     const auto exit = sl->list_of_bloc.at(region.exit);
+                     const auto drain_call = ir_man->create_call_stmt(
+                         drain_decl,
+                         {TM->CreateUniqueIntegerCst(3, opcode_type), TM->CreateUniqueIntegerCst(32, u32_type),
+                          TM->CreateUniqueIntegerCst(0, interface_datatype), region.base,
+                          TM->CreateUniqueIntegerCst(0, u32_type)},
+                         fd->index, BUILTIN_LOCINFO);
+                     if(exit->CGetStmtList().empty())
+                     {
+                        exit->PushBack(drain_call, AppM);
+                     }
+                     else
+                     {
+                        exit->PushBefore(drain_call, exit->CGetStmtList().front(), AppM);
+                     }
+                     CallGraphManager::addCallPointAndExpand(call_points, AppM, fd->index, drain_decl->index,
+                                                             drain_call->index,
+                                                             FunctionEdgeInfo::CallType::direct_call,
+                                                             DEBUG_LEVEL_NONE);
+                     serializeInterfaceAccess(drain_call, bundle_name, channel_write_vdefs, ir_man);
+                     GetPointer<HLS_manager>(AppM)->design_interface_io[fsymbol][region.exit][arg_name]
+                         .push_back(drain_call->index);
+                     add_to_modified(drain_call);
+                     writeStmt.clear();
+                     if(same_base_duplex_active)
+                     {
+                        INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                       std::string(decision->same_base_duplex_proof->runtime_range_guard ?
+                                                       "---Activated distinct-base runtime-range-guarded pointwise duplex m_axi bundle " :
+                                                   decision->same_base_duplex_proof->distinct_bases ?
+                                                       "---Activated distinct-base restricted pointwise duplex m_axi bundle " :
+                                                       "---Activated same-base pointwise duplex m_axi bundle ") + bundle_name +
+                                           " for root " + fsymbol);
+                        if(decision->same_base_duplex_proof->distinct_bases &&
+                           !decision->same_base_duplex_proof->runtime_range_guard)
+                        {
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                          "WARNING: distinct-base duplex relies on the caller's __restrict contract; "
+                                          "the caller must ensure the accessed regions do not overlap (no runtime "
+                                          "range validation is performed)");
+                        }
+                     }
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Configured write burst region for bundle " + bundle_name + " (B=" +
+                                        std::to_string(decision->write_profile.max_burst_length) + ")");
+                  }
+                  else
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi writes for bundle " + bundle_name + ": " +
+                                        write_fallback_reason);
+                  }
+               }
                const auto require_flush =
                    interface_type == "m_axi" &&
                    iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end();
@@ -1254,7 +5346,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   add_to_modified(stmt);
                   store_vdef(stmt);
                }
-               create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               if(!same_base_duplex_active)
+               {
+                  create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               }
             }
             else if(interface_type == "none")
             {
@@ -2985,9 +7080,9 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
    THROW_ASSERT(func_arch->parms.find(info.arg_id) != func_arch->parms.end(),
                 "Missing parameter '" + info.arg_id + "' from function architecute.");
-   const auto& parm_attrs = func_arch->parms.at(info.arg_id);
-   const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
-   const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
+      const auto& parm_attrs = func_arch->parms.at(info.arg_id);
+      const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+      const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
    if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
@@ -3309,15 +7404,63 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    const auto& parm_attrs = func_arch->parms.at(info.arg_id);
    const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
+   const auto configure_read_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
+   const auto configure_write_name = ENCODE_FDNAME(bundle_name, "_configure_write", "");
+   const bool configured_read_resource = operationsR.count(configure_read_name) != 0;
+   const bool configured_write_resource = operationsW.count(configure_write_name) != 0;
+   THROW_ASSERT(!(configured_read_resource && configured_write_resource),
+                "A single m_axi resource cannot be configured for both read and write burst modes in F1.");
+   const bool configured_burst_resource = configured_read_resource || configured_write_resource;
+   const std::string requested_burst_mode = configured_read_resource ? "read" : "write";
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
+   if(TechMan->is_library_manager(INTERFACE_LIBRARY))
+   {
+      const auto library_manager = TechMan->get_library_manager(INTERFACE_LIBRARY);
+      for(const auto& suffix : {"_duplex_read_endpoint", "_duplex_write_endpoint", "_duplex_aggregator"})
+      {
+         if(library_manager->is_fu(ENCODE_FDNAME(bundle_name, suffix, "")))
+         {
+            THROW_ERROR_USAGE("Legacy m_axi resource for bundle '" + bundle_name +
+                              "' conflicts with a registered duplex resource.");
+         }
+      }
+   }
+   const bool resource_already_exists = TechMan->is_library_manager(INTERFACE_LIBRARY) &&
+                                        TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName);
+   const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
+   const auto burst_profile_attr = std::string("bambu_max_read_burst_length");
+   const auto outstanding_profile_attr = std::string("bambu_num_read_outstanding");
+   const auto fifo_depth_profile_attr = std::string("bambu_read_fifo_depth");
+   const auto write_burst_profile_attr = std::string("bambu_max_write_burst_length");
+   const auto write_outstanding_profile_attr = std::string("bambu_write_burst_outstanding");
+   const auto write_fifo_depth_profile_attr = std::string("bambu_write_fifo_depth");
+   const auto burst_mode_attr = std::string("bambu_axi_burst_mode");
+   const auto axi_latency_attr = std::string("bambu_axi_latency");
+   unsigned int requested_burst_max = 0;
+   auto requested_read_profile = AXIReadBurstProfile{};
+   auto requested_write_profile = AXIWriteBurstProfile{};
+   const auto requested_axi_latency = ParseAXIInterfaceLatency(iface_attrs, bundle_name);
+   if(configured_read_resource)
+   {
+      const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+      THROW_ASSERT(max_read_burst != iface_attrs.end(),
+                   "Configured burst-read operation has no max_read_burst_length attribute for bundle '" +
+                       bundle_name + "'.");
+      requested_burst_max = static_cast<unsigned int>(std::stoul(max_read_burst->second));
+      THROW_ASSERT(requested_burst_max >= 1 && requested_burst_max <= 256,
+                   "Configured burst-read maximum must be in [1,256] for bundle '" + bundle_name + "'.");
+      requested_read_profile = ParseAXIReadBurstProfile(iface_attrs, bundle_name);
+   }
+   if(configured_write_resource)
+   {
+      requested_write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
+   }
 
-   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
-      !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
+   if(!resource_already_exists)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
-      const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
       const structural_managerRef CM(new structural_manager(parameters));
       const structural_type_descriptorRef module_type(new structural_type_descriptor(ResourceName));
       CM->set_top_info(ResourceName, module_type);
@@ -3328,6 +7471,11 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<module_o>(interface_top)->set_authors("Component automatically generated by bambu");
       GetPointerS<module_o>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module_o>(interface_top)->set_multi_unit_multiplicity(1U);
+      if(configured_burst_resource)
+      {
+         GetPointerS<module_o>(interface_top)->add_attribute(
+             burst_mode_attr, attributeRef(new attribute(attribute::STRING, requested_burst_mode)));
+      }
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
       const auto interface_bitwidth = iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() ?
@@ -3341,8 +7489,10 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
       const structural_type_descriptorRef address_interface_datatype(
           new structural_type_descriptor("bool", address_bitsize));
-      const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
+      const structural_type_descriptorRef size1(
+          new structural_type_descriptor("bool", configured_burst_resource ? 2 : 1));
+      const structural_type_descriptorRef rwsize(
+          new structural_type_descriptor("bool", configured_burst_resource ? 32 : nbitDataSize));
       const structural_type_descriptorRef rwtypeIn(new structural_type_descriptor("bool", interface_bitwidth));
       const structural_type_descriptorRef rwtypeOut(new structural_type_descriptor("bool", backEndBitsize));
       const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 6));
@@ -3372,6 +7522,16 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
       const auto addrPort = CM->add_port("in4", port_o::IN, interface_top, address_interface_datatype);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
+
+      if(configured_burst_resource)
+      {
+         THROW_ASSERT(info.bitwidth == 32 && interface_bitwidth == 32 && backEndBitsize == 32 &&
+                          (address_bitsize == 32 || address_bitsize == 64),
+                      "Configured AXI burst resource requires 32-bit data/backend widths and a 32 or 64 bit "
+                      "address for bundle '" + bundle_name + "'.");
+         const structural_type_descriptorRef burst_count_type(new structural_type_descriptor("bool", 32));
+         CM->add_port("in5", port_o::IN, interface_top, burst_count_type);
+      }
 
       const auto cache_reset_port = CM->add_port(CACHE_RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(cache_reset_port)->set_port_interface(port_o::port_interface::CACHE_RESET);
@@ -3588,7 +7748,8 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          GetPointerS<port_o>(s_bresp)->set_port_interface(port_o::port_interface::S_AXIL_BRESP);
       }
 
-      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
+      const auto library_args = configured_burst_resource ? "in1 in2 in3 in4 in5 out1" : "in1 in2 in3 in4 out1";
+      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, library_args);
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "ReadWrite" + getHDLGeneratorNameToken(info.name) + "HDLGenerator");
 
@@ -3598,6 +7759,37 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
       }
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      if(configured_burst_resource)
+      {
+         fu->ordered_attributes.push_back(burst_mode_attr);
+         fu->attributes[burst_mode_attr] = attributeRef(new attribute(attribute::STRING, requested_burst_mode));
+      }
+      if(configured_read_resource)
+      {
+         fu->ordered_attributes.push_back(burst_profile_attr);
+         fu->attributes[burst_profile_attr] = attributeRef(new attribute(attribute::INT32, STR(requested_burst_max)));
+         fu->ordered_attributes.push_back(outstanding_profile_attr);
+         fu->attributes[outstanding_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_read_profile.max_outstanding)));
+         fu->ordered_attributes.push_back(fifo_depth_profile_attr);
+         fu->attributes[fifo_depth_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_read_profile.fifo_depth)));
+      }
+      if(configured_write_resource)
+      {
+         fu->ordered_attributes.push_back(write_burst_profile_attr);
+         fu->attributes[write_burst_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_write_profile.max_burst_length)));
+         fu->ordered_attributes.push_back(write_outstanding_profile_attr);
+         fu->attributes[write_outstanding_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_write_profile.max_outstanding)));
+         fu->ordered_attributes.push_back(write_fifo_depth_profile_attr);
+         fu->attributes[write_fifo_depth_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_write_profile.fifo_depth)));
+      }
+      fu->ordered_attributes.push_back(axi_latency_attr);
+      fu->attributes[axi_latency_attr] =
+          attributeRef(new attribute(attribute::STRING, std::to_string(requested_axi_latency)));
       fu->area_m = std::make_shared<area_info>();
       fu->area_m->resources[area_info::AREA] = 0;
       if(iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end())
@@ -3614,6 +7806,84 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 
+   // A bundle is shared globally across roots. Its functional-unit ABI is fixed
+   // by the first root that creates it, so reject an incompatible later root
+   // before adding operations that would otherwise silently bind to that ABI.
+   if(resource_already_exists)
+   {
+      const auto existing_fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      const auto existing_latency = existing_fu->attributes.find(axi_latency_attr);
+      const auto existing_latency_value = existing_latency == existing_fu->attributes.end() || !existing_latency->second ?
+                                              std::string("0") : existing_latency->second->get_content_str();
+      const auto requested_latency_value = std::to_string(requested_axi_latency);
+      if(existing_latency_value != requested_latency_value)
+      {
+         THROW_ERROR_USAGE("Incompatible AXI latency for bundle '" + bundle_name + "': existing roots use latency=" +
+                           existing_latency_value + " while this root requires latency=" + requested_latency_value +
+                           ". Use distinct bundle names for roots with different AXI latencies.");
+      }
+      const auto existing_mode = existing_fu->attributes.find(burst_mode_attr);
+      const auto existing_mode_value = existing_mode == existing_fu->attributes.end() || !existing_mode->second ?
+                                           std::string("legacy") : existing_mode->second->get_content_str();
+      const auto requested_mode_value = configured_burst_resource ? requested_burst_mode : "legacy";
+      if(existing_mode_value != requested_mode_value)
+      {
+         THROW_ERROR_USAGE("Incompatible m_axi resource ABI for bundle '" + bundle_name +
+                           "': existing roots use burst mode '" + existing_mode_value + "' while this root requires '" +
+                           requested_mode_value + "'. Use distinct bundle names for incompatible roots.");
+      }
+      if(configured_read_resource)
+      {
+         const auto profile = existing_fu->attributes.find(burst_profile_attr);
+         if(profile == existing_fu->attributes.end() || !profile->second ||
+            profile->second->get_content<unsigned int>() != requested_burst_max)
+         {
+            const auto existing_max = profile == existing_fu->attributes.end() || !profile->second ?
+                                          std::string("unknown") :
+                                          profile->second->get_content_str();
+            THROW_ERROR_USAGE("Incompatible m_axi burst profile for bundle '" + bundle_name +
+                              "': existing roots use max_read_burst_length=" + existing_max +
+                              " while this root requires max_read_burst_length=" + STR(requested_burst_max) +
+                              ". Use distinct bundle names for roots with different burst maxima.");
+         }
+         const auto existing_outstanding = existing_fu->attributes.find(outstanding_profile_attr);
+         const auto existing_fifo_depth = existing_fu->attributes.find(fifo_depth_profile_attr);
+         const unsigned int existing_o = existing_outstanding == existing_fu->attributes.end() ||
+                                                 !existing_outstanding->second ?
+                                             1U : existing_outstanding->second->get_content<unsigned int>();
+         // A root with no explicit depth uses the derived default, which is
+         // exactly the value requested_read_profile already carries.
+         const unsigned int existing_d = existing_fifo_depth == existing_fu->attributes.end() ||
+                                                 !existing_fifo_depth->second ?
+                                             requested_read_profile.fifo_depth :
+                                             existing_fifo_depth->second->get_content<unsigned int>();
+         if(existing_o != requested_read_profile.max_outstanding || existing_d != requested_read_profile.fifo_depth)
+         {
+            THROW_ERROR_USAGE("Incompatible m_axi burst profile for bundle '" + bundle_name +
+                              "': existing roots use num_read_outstanding=" + STR(existing_o) +
+                              ", read_fifo_depth=" + STR(existing_d) + " while this root requires "
+                              "num_read_outstanding=" + STR(requested_read_profile.max_outstanding) +
+                              ", read_fifo_depth=" + STR(requested_read_profile.fifo_depth) +
+                              ". Use distinct bundle names for roots with different burst profiles.");
+         }
+      }
+      if(configured_write_resource)
+      {
+         const auto check_write_attribute = [&](const std::string& name, const unsigned int requested) {
+            const auto profile = existing_fu->attributes.find(name);
+            if(profile == existing_fu->attributes.end() || !profile->second ||
+               profile->second->get_content<unsigned int>() != requested)
+            {
+               THROW_ERROR_USAGE("Incompatible m_axi write-burst profile for bundle '" + bundle_name +
+                                 "': attribute '" + name + "' differs across roots. Use distinct bundle names.");
+            }
+         };
+         check_write_attribute(write_burst_profile_attr, requested_write_profile.max_burst_length);
+         check_write_attribute(write_outstanding_profile_attr, requested_write_profile.max_outstanding);
+         check_write_attribute(write_fifo_depth_profile_attr, requested_write_profile.fifo_depth);
+      }
+   }
+
    for(const auto& fdName : operationsR)
    {
       TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
@@ -3625,6 +7895,19 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
    /* Flush Op */
    const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+   if(configured_burst_resource)
+   {
+      THROW_ASSERT(fu->CM && fu->CM->get_circ() &&
+                       fu->CM->get_circ()->find_member("in5", port_o_K, fu->CM->get_circ()) != nullptr,
+                   "Configured m_axi resource for bundle '" + bundle_name + "' is missing its in5 burst-count port.");
+#if HAVE_ASSERTS
+      const auto mode = fu->attributes.find(burst_mode_attr);
+#endif
+      THROW_ASSERT(mode != fu->attributes.end() && mode->second &&
+                       mode->second->get_content_str() == requested_burst_mode,
+                   "Configured m_axi resource for bundle '" + bundle_name +
+                       "' is missing its explicit read/write burst mode.");
+   }
 
    for(const auto& fdName : operationsR)
    {
@@ -3641,6 +7924,249 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       op->bounded = false;
       op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
       op->time_m->set_synthesis_dependent(true);
+   }
+}
+
+namespace
+{
+   [[maybe_unused]] void register_duplex_m_axi_resources(const technology_managerRef& TechMan,
+                                                          const ParameterConstRef& parameters,
+                                                          const std::string& bundle_name,
+                                                          const unsigned int address_bitsize,
+                                                          const unsigned int data_bitsize,
+                                                          const unsigned int backend_data_bitsize,
+                                                          const std::uint32_t axi_latency,
+                                                          const unsigned int read_max_burst_length,
+                                                          const AXIReadBurstProfile& read_profile,
+                                                          const AXIWriteBurstProfile& write_profile)
+   {
+      if((address_bitsize != 32U && address_bitsize != 64U) || data_bitsize != 32U ||
+         backend_data_bitsize != 32U)
+      {
+         THROW_ERROR_USAGE("Duplex m_axi bundle '" + bundle_name +
+                           "' requires 32 or 64 address bits and 32-bit interface/backend data widths.");
+      }
+      const auto read_name = ENCODE_FDNAME(bundle_name, "_duplex_read_endpoint", "");
+      const auto write_name = ENCODE_FDNAME(bundle_name, "_duplex_write_endpoint", "");
+      const auto aggregator_name = ENCODE_FDNAME(bundle_name, "_duplex_aggregator", "");
+      const std::map<std::string, std::string> metadata{
+          {"bambu_axi_bundle_name", bundle_name},
+          {"bambu_axi_duplex_aggregator", aggregator_name},
+          {"bambu_axi_address_bitsize", std::to_string(address_bitsize)},
+          {"bambu_axi_data_bitsize", std::to_string(data_bitsize)},
+          {"bambu_axi_latency", std::to_string(axi_latency)},
+          {"bambu_max_read_burst_length", std::to_string(read_max_burst_length)},
+          {"bambu_num_read_outstanding", std::to_string(read_profile.max_outstanding)},
+          {"bambu_read_fifo_depth", std::to_string(read_profile.fifo_depth)},
+          {"bambu_max_write_burst_length", std::to_string(write_profile.max_burst_length)},
+          {"bambu_write_burst_outstanding", std::to_string(write_profile.max_outstanding)},
+          {"bambu_write_fifo_depth", std::to_string(write_profile.fifo_depth)}};
+      const auto read_mode = std::string("read");
+      const auto write_mode = std::string("write");
+      const auto duplex_mode = std::string("duplex");
+      const auto register_resource = [&](const std::string& resource_name, const std::string& role,
+                                         const std::string& mode, const bool endpoint) {
+         const auto library_exists = TechMan->is_library_manager(INTERFACE_LIBRARY);
+         const auto resource_exists = library_exists &&
+                                     TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(resource_name);
+         const auto expected_attributes = [&]() {
+            auto attributes = metadata;
+            attributes["bambu_axi_duplex_role"] = role;
+            attributes["bambu_axi_burst_mode"] = mode;
+            return attributes;
+         }();
+         if(resource_exists)
+         {
+            const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(resource_name, INTERFACE_LIBRARY));
+            const auto module = fu->CM ? GetPointer<module_o>(fu->CM->get_circ()) : nullptr;
+            for(const auto& metadata_entry : expected_attributes)
+            {
+               const auto found = fu->attributes.find(metadata_entry.first);
+               const auto module_has_attribute = module &&
+                                                 std::find(module->get_attribute_list().begin(),
+                                                           module->get_attribute_list().end(),
+                                                           metadata_entry.first) != module->get_attribute_list().end();
+               const auto module_attribute = module_has_attribute ? module->get_attribute(metadata_entry.first) :
+                                                                    attributeRef();
+               if(found == fu->attributes.end() || !found->second ||
+                  found->second->get_content_str() != metadata_entry.second || !module_attribute ||
+                  module_attribute->get_content_str() != metadata_entry.second)
+               {
+                  THROW_ERROR_USAGE("Incompatible duplex m_axi resource metadata for bundle '" + bundle_name +
+                                    "' at '" + resource_name + "'.");
+               }
+            }
+            const auto np = module ? module->get_NP_functionality() : NP_functionalityRef();
+            if(!np || (endpoint && (!np->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED) ||
+                                    np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+                                    np->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))) ||
+               (!endpoint && (!np->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+                              np->get_NP_functionality(NP_functionality::VERILOG_GENERATOR) !=
+                                  "DuplexMAXIHDLGenerator")))
+            {
+               THROW_ERROR_USAGE("Incompatible duplex m_axi resource HDL functionality for bundle '" + bundle_name +
+                                 "' at '" + resource_name + "'.");
+            }
+            if(endpoint)
+            {
+               const auto top = fu->CM->get_circ();
+               const auto check_port = [&](const std::string& name, const port_o::port_direction direction,
+                                           const unsigned int width, const bool is_extern) {
+                  const auto port = top->find_member(name, port_o_K, top);
+                  if(!port || GetPointerS<port_o>(port)->get_port_direction() != direction ||
+                     GET_TYPE_SIZE(GetPointerS<port_o>(port)) != width ||
+                     GetPointerS<port_o>(port)->get_is_extern() != is_extern)
+                  {
+                     THROW_ERROR_USAGE("Incompatible duplex m_axi endpoint port '" + name + "' for bundle '" +
+                                       bundle_name + "'.");
+                  }
+               };
+               check_port("in1", port_o::IN, 2, false);
+               check_port("in2", port_o::IN, 32, false);
+               check_port("in3", port_o::IN, data_bitsize, false);
+               check_port("in4", port_o::IN, address_bitsize, false);
+               check_port("in5", port_o::IN, 32, false);
+               check_port(CLOCK_PORT_NAME, port_o::IN, 1, false);
+               check_port(RESET_PORT_NAME, port_o::IN, 1, false);
+               check_port(DONE_PORT_NAME, port_o::OUT, 1, false);
+               check_port("out1", port_o::OUT, data_bitsize, false);
+               check_port("duplex_start", port_o::OUT, 1, true);
+               check_port("duplex_opcode", port_o::OUT, 2, true);
+               check_port("duplex_size", port_o::OUT, 32, true);
+               check_port("duplex_data", port_o::OUT, data_bitsize, true);
+               check_port("duplex_address", port_o::OUT, address_bitsize, true);
+               check_port("duplex_count", port_o::OUT, 32, true);
+               check_port("duplex_done", port_o::IN, 1, true);
+               check_port("duplex_result", port_o::IN, data_bitsize, true);
+               const auto start_port = top->find_member(START_PORT_NAME, port_o_K, top);
+               if(!start_port || GetPointerS<port_o>(start_port)->get_port_direction() != port_o::IN ||
+                  GetPointerS<port_o>(start_port)->get_ports_size() != 1 ||
+                  GetPointerS<port_o>(start_port)->get_is_extern())
+               {
+                  THROW_ERROR_USAGE("Incompatible duplex m_axi start port for bundle '" + bundle_name + "'.");
+               }
+            }
+            return;
+         }
+
+         const structural_managerRef CM(new structural_manager(parameters));
+         const structural_type_descriptorRef module_type(new structural_type_descriptor(resource_name));
+         CM->set_top_info(resource_name, module_type);
+         const auto top = CM->get_circ();
+         const auto module = GetPointerS<module_o>(top);
+         module->set_description("Duplex m_axi resource for bundle: " + bundle_name);
+         module->set_copyright(GENERATED_COPYRIGHT);
+         module->set_authors("Component automatically generated by bambu");
+         module->set_license(GENERATED_LICENSE);
+         module->set_multi_unit_multiplicity(1U);
+
+         const auto add_attribute = [&](const std::string& name, const std::string& value) {
+            const auto numeric = name == "bambu_axi_address_bitsize" || name == "bambu_axi_data_bitsize" ||
+                                 name == "bambu_max_read_burst_length" ||
+                                 name == "bambu_num_read_outstanding" || name == "bambu_read_fifo_depth" ||
+                                 name == "bambu_max_write_burst_length" ||
+                                 name == "bambu_write_burst_outstanding" || name == "bambu_write_fifo_depth";
+            const attributeRef attr(new attribute(numeric ? attribute::INT32 : attribute::STRING, value));
+            module->add_attribute(name, attr);
+         };
+         for(const auto& metadata_entry : expected_attributes)
+         {
+            add_attribute(metadata_entry.first, metadata_entry.second);
+         }
+
+         const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
+         if(endpoint)
+         {
+            const structural_type_descriptorRef opcode_type(new structural_type_descriptor("bool", 2));
+            const structural_type_descriptorRef size_type(new structural_type_descriptor("bool", 32));
+            const structural_type_descriptorRef data_type(new structural_type_descriptor("bool", data_bitsize));
+            const structural_type_descriptorRef address_type(new structural_type_descriptor("bool", address_bitsize));
+            CM->add_port(CLOCK_PORT_NAME, port_o::IN, top, bool_type);
+            CM->add_port(RESET_PORT_NAME, port_o::IN, top, bool_type);
+            CM->add_port_vector(START_PORT_NAME, port_o::IN, 1U, top, bool_type);
+            CM->add_port("in1", port_o::IN, top, opcode_type);
+            CM->add_port("in2", port_o::IN, top, size_type);
+            CM->add_port("in3", port_o::IN, top, data_type);
+            CM->add_port("in4", port_o::IN, top, address_type);
+            CM->add_port("in5", port_o::IN, top, size_type);
+            CM->add_port(DONE_PORT_NAME, port_o::OUT, top, bool_type);
+            CM->add_port("out1", port_o::OUT, top, data_type);
+            const auto private_port = [&](const std::string& name, const port_o::port_direction direction,
+                                          const unsigned int width) {
+               const auto port = CM->add_port(name, direction, top,
+                                              structural_type_descriptorRef(new structural_type_descriptor("bool", width)));
+               GetPointerS<port_o>(port)->set_is_extern(true);
+            };
+            private_port("duplex_start", port_o::OUT, 1);
+            private_port("duplex_opcode", port_o::OUT, 2);
+            private_port("duplex_size", port_o::OUT, 32);
+            private_port("duplex_data", port_o::OUT, data_bitsize);
+            private_port("duplex_address", port_o::OUT, address_bitsize);
+            private_port("duplex_count", port_o::OUT, 32);
+            private_port("duplex_done", port_o::IN, 1);
+            private_port("duplex_result", port_o::IN, data_bitsize);
+            const auto assert_port_width = [&](const std::string& name,
+                                               const unsigned int ASSERT_PARAMETER(width)) {
+               const auto port = top->find_member(name, port_o_K, top);
+               THROW_ASSERT(port && GET_TYPE_SIZE(GetPointerS<port_o>(port)) == width,
+                            "Unexpected width for duplex m_axi port " + name);
+            };
+            assert_port_width("in1", 2);
+            assert_port_width("in2", 32);
+            assert_port_width("in3", data_bitsize);
+            assert_port_width("in4", address_bitsize);
+            assert_port_width("in5", 32);
+            assert_port_width("out1", data_bitsize);
+            assert_port_width(CLOCK_PORT_NAME, 1);
+            assert_port_width(RESET_PORT_NAME, 1);
+            assert_port_width(DONE_PORT_NAME, 1);
+            assert_port_width("duplex_start", 1);
+            assert_port_width("duplex_opcode", 2);
+            assert_port_width("duplex_size", 32);
+            assert_port_width("duplex_data", data_bitsize);
+            assert_port_width("duplex_address", address_bitsize);
+            assert_port_width("duplex_count", 32);
+            assert_port_width("duplex_done", 1);
+            assert_port_width("duplex_result", data_bitsize);
+            CM->add_NP_functionality(top, NP_functionality::LIBRARY, "in1 in2 in3 in4 in5 out1");
+            CM->add_NP_functionality(top, NP_functionality::VERILOG_PROVIDED,
+                                     "assign duplex_start = " START_PORT_NAME "[0];\n"
+                                     "assign duplex_opcode = in1;\n"
+                                     "assign duplex_size = in2;\n"
+                                     "assign duplex_data = in3;\n"
+                                     "assign duplex_address = in4;\n"
+                                     "assign duplex_count = in5;\n"
+                                     "assign " DONE_PORT_NAME " = duplex_done;\n"
+                                     "assign out1 = duplex_result;");
+         }
+         else
+         {
+            CM->add_NP_functionality(top, NP_functionality::VERILOG_GENERATOR, "DuplexMAXIHDLGenerator");
+         }
+
+         TechMan->add_resource(INTERFACE_LIBRARY, resource_name, CM);
+         const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(resource_name, INTERFACE_LIBRARY));
+         for(const auto& metadata_entry : expected_attributes)
+         {
+            fu->ordered_attributes.push_back(metadata_entry.first);
+            const auto numeric = metadata_entry.first == "bambu_max_read_burst_length" ||
+                                 metadata_entry.first == "bambu_axi_address_bitsize" ||
+                                 metadata_entry.first == "bambu_axi_data_bitsize" ||
+                                 metadata_entry.first == "bambu_num_read_outstanding" ||
+                                 metadata_entry.first == "bambu_read_fifo_depth" ||
+                                 metadata_entry.first == "bambu_max_write_burst_length" ||
+                                 metadata_entry.first == "bambu_write_burst_outstanding" ||
+                                 metadata_entry.first == "bambu_write_fifo_depth";
+            fu->attributes[metadata_entry.first] = attributeRef(
+                new attribute(numeric ? attribute::INT32 : attribute::STRING, metadata_entry.second));
+         }
+         fu->area_m = std::make_shared<area_info>();
+         fu->area_m->resources[area_info::AREA] = 0;
+      };
+
+      register_resource(read_name, "read_endpoint", read_mode, true);
+      register_resource(write_name, "write_endpoint", write_mode, true);
+      register_resource(aggregator_name, "aggregator", duplex_mode, false);
    }
 }
 

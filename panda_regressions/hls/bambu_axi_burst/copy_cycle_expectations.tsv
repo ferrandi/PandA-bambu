@@ -1,0 +1,4 @@
+case	profile	cycles	n	maxn	addr_bits	burst_max	outstanding	fifo_depth	read_bundle	write_bundle
+copy-nonrestrict-two-bundles	nonrestrict-two	66565	1024	4096	32	0	0	0	input	output
+copy-legacy-two-bundles	legacy-two	66565	1024	4096	32	0	0	0	input	output
+copy-legacy-shared-bundle	legacy-shared	69634	1024	4096	32	0	0	0	shared	shared

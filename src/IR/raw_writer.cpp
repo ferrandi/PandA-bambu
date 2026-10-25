@@ -204,6 +204,10 @@ void raw_writer::operator()(const unary_node* obj, unsigned int& mask)
    mask = NO_VISIT;
    obj->expr_node::visit(this);
    write_when_not_null(STOK(TOK_OP), obj->op);
+   if(obj->ordinary_memory_access)
+   {
+      WRITE_TOKEN(os, TOK_ORDINARY_MEMORY_ACCESS);
+   }
 }
 
 void raw_writer::operator()(const binary_node* obj, unsigned int& mask)

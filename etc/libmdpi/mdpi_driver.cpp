@@ -937,6 +937,15 @@ void __m_exit(int __status)
    _exit(__status);
 }
 
+void __m_sim_preflight_fail()
+{
+   debug("Waiting for simulator state report before preflight failure...\n");
+   __ipc_wait(MDPI_IPC_STATE_REQUEST);
+   assert(__m_ipc_operation.type == MDPI_OP_TYPE_STATE_CHANGE && "Unexpected simulator request.");
+   assert(__m_ipc_operation.payload.sc.state == MDPI_STATE_READY && "Unexpected simulator state.");
+   __m_exit(EXIT_FAILURE);
+}
+
 void __m_abort()
 {
    error("Co-simulation called abort\n");

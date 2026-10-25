@@ -349,15 +349,15 @@ assign m_axi_awqos = 0;
 assign m_axi_wlast = 1;
 
 `ifndef _SIM_HAVE_CLOG2
-  `define CLOG2(x) \
-    (x &lt;= 2) ? 1 : \
-    (x &lt;= 4) ? 2 : \
-    (x &lt;= 8) ? 3 : \
-    (x &lt;= 16) ? 4 : \
-    (x &lt;= 32) ? 5 : \
-    (x &lt;= 64) ? 6 : \
-    (x &lt;= 128) ? 7 : \
-    -1
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
 `endif
 
 wire [2:0] size_next;
@@ -366,7 +366,7 @@ generate
   `ifdef _SIM_HAVE_CLOG2
     assign size_next = $clog2(Mout_data_ram_size >> 3);
   `else
-    assign size_next = `CLOG2(Mout_data_ram_size >> 3);
+    assign size_next = log2(Mout_data_ram_size >> 3);
   `endif
 endgenerate
 
@@ -742,6 +742,613 @@ end
       </circuit>
     </cell>
     <cell>
+      <name>MinimalAXI4MasterPipelined</name>
+      <circuit>
+        <module_o id="MinimalAXI4MasterPipelined">
+          <description>Experimental configured-read burst engine; fixed 32-bit AXI4 INCR reads</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>PandA/Bambu contributors</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="MinimalAXI4MasterPipelined"/>
+          <parameter name="B_MAX">16</parameter>
+          <parameter name="MAX_OUTSTANDING">1</parameter>
+          <parameter name="FIFO_DEPTH">256</parameter>
+          <parameter name="PEER_FAULT_ENABLE">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="start" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="peer_fault" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="in3" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="in4" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="in5" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="done" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="fault" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_araddr" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="m_axi_arlen" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="m_axi_arsize" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="m_axi_arburst" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_arid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_arvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_arready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="m_axi_rresp" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="m_axi_rid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="m_axi_rlast" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="m_axi_rready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelined B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE in1 in2 in3 in4 in5 out1 peer_fault m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arid m_axi_rdata m_axi_rresp m_axi_rid" VERILOG_PROVIDED="    localparam integer FIFO_PTR_W = (FIFO_DEPTH &lt;= 2) ? 1 : $clog2(FIFO_DEPTH);
+    localparam integer FIFO_COUNT_W = (FIFO_DEPTH &lt;= 1) ? 1 : $clog2(FIFO_DEPTH + 1);
+    localparam integer DESC_PTR_W = (MAX_OUTSTANDING &lt;= 2) ? 1 : $clog2(MAX_OUTSTANDING);
+    localparam integer DESC_COUNT_W = (MAX_OUTSTANDING &lt;= 1) ? 1 : $clog2(MAX_OUTSTANDING + 1);
+    localparam integer RESERVATION_COUNT_W = (MAX_OUTSTANDING &lt;= 1) ? 2 : $clog2(MAX_OUTSTANDING + 2);
+
+    // Widths come from the port parameters, so the same component serves any
+    // address and data width the interface asks for. vector_size in the XML is
+    // only the default of these parameters; the writer overrides them per
+    // instance.
+    localparam integer ADDR_BITS  = BITSIZE_m_axi_araddr;
+    localparam integer DATA_BITS  = BITSIZE_m_axi_rdata;
+    localparam integer BEAT_BYTES = DATA_BITS / 8;
+    localparam integer BEAT_SHIFT = $clog2(BEAT_BYTES);
+    // One bus beat carries one element, so ARSIZE is the beat size itself.
+    localparam integer ARSIZE_ENC = BEAT_SHIFT;
+    // Beat index domain: the top BEAT_SHIFT address bits carry no beat info.
+    localparam integer BEAT_IDX_BITS = ADDR_BITS - BEAT_SHIFT;
+    // Comparison domain for the last-beat check: it must also hold the element
+    // count, which is added to the beat index.
+    localparam integer COUNT_BITS = BITSIZE_in5;
+    localparam integer END_BEAT_W = (COUNT_BITS &gt; BEAT_IDX_BITS ? COUNT_BITS : BEAT_IDX_BITS) + 1;
+    // AXI forbids a burst crossing a 4 KiB boundary.
+    localparam integer BOUNDARY_BEATS = 4096 / BEAT_BYTES;
+    localparam integer BOUNDARY_W = $clog2(BOUNDARY_BEATS) + 1;
+    // The top count bit is reserved to reject values that would truncate here.
+    localparam integer COUNT_W = BITSIZE_in5 - 1;
+    // Burst-length domain: it must be able to hold B_MAX itself.
+    localparam integer LEN_W = $clog2(B_MAX + 1);
+    // ABI opcodes carried by in1.
+    localparam integer OP_LOAD = 0;
+    localparam integer OP_STORE = 1;
+    localparam integer OP_CONFIGURE = 2;
+
+    reg done_reg;
+    reg [BITSIZE_out1-1:0] out1_reg;
+    reg [ADDR_BITS-1:0] m_axi_araddr_reg;
+    reg [BITSIZE_m_axi_arlen-1:0] m_axi_arlen_reg;
+    reg m_axi_arvalid_reg;
+    reg fault_reg;
+    // Keep reset_n for T4B VCD tracing; reset flops use the placeholder directly for Vivado.
+    wire reset_n = !(1RESET_VALUE);
+
+    assign done = done_reg;
+    assign out1 = out1_reg;
+    assign fault = fault_reg;
+    assign m_axi_araddr = m_axi_araddr_reg;
+    assign m_axi_arlen = m_axi_arlen_reg;
+    assign m_axi_arvalid = m_axi_arvalid_reg;
+
+
+    reg        region_active;
+    reg [ADDR_BITS-1:0] region_base;
+    // Configuration rejects a set count high bit before narrowing to this field.
+    reg [COUNT_W-1:0] region_count;
+    reg [ADDR_BITS-1:0] next_expected_address;
+    reg [COUNT_W-1:0] issued;
+    reg [COUNT_W-1:0] issue_remaining;
+    reg issue_remaining_has_high;
+    reg [COUNT_W-1:0] returned;
+    reg [COUNT_W-1:0] consumed;
+    reg loads_exhausted;
+
+    reg        cfg_seen;
+    reg        cfg_pending;
+    reg        cfg_pipe_valid;
+    reg        cfg_pipe_legal;
+    reg        cfg_pipe_conflict;
+    reg [BITSIZE_in2-1:0] cfg_pipe_size;
+    reg [ADDR_BITS-1:0] cfg_pipe_base;
+    reg [COUNT_BITS-1:0] cfg_pipe_count;
+    reg        configure_ack;
+    // The descriptor of the configure request that cfg_seen is guarding. Holding start
+    // with the same operands is one request and must be captured once; holding start
+    // with different operands after the first request completed is a new request.
+    reg [BITSIZE_in2-1:0] cfg_size;
+    reg [ADDR_BITS-1:0] cfg_base;
+    // Full width on purpose: a count whose top bit is set is an invalid request, and a
+    // truncated copy would compare equal to the valid one it replaces, so the invalid
+    // request would never reach validation and would be silently dropped.
+    reg [COUNT_BITS-1:0] cfg_count;
+    reg [ADDR_BITS-1:0] pending_base;
+    reg [COUNT_W-1:0] pending_count;
+
+    reg        load_pending;
+    reg        load_pending_valid;
+    reg [DATA_BITS-1:0] fifo [0:FIFO_DEPTH-1];
+    reg [FIFO_PTR_W-1:0] fifo_rd_ptr;
+    reg [FIFO_PTR_W-1:0] fifo_wr_ptr;
+    reg [FIFO_COUNT_W-1:0] fifo_count;
+    reg [LEN_W-1:0] descriptor_remaining [0:MAX_OUTSTANDING-1];
+    reg [DESC_PTR_W-1:0] descriptor_rd_ptr;
+    reg [DESC_PTR_W-1:0] descriptor_wr_ptr;
+    reg [DESC_COUNT_W-1:0] descriptor_count;
+    wire burst_outstanding;
+    assign burst_outstanding = (descriptor_count != 0);
+    wire descriptor_pop;
+    wire descriptor_push;
+    reg        fifo_load_done;
+    wire       fifo_load_pop;
+    reg        load_request_valid;
+    wire       r_push;
+    wire       r_structural;
+    wire       r_good;
+    wire       r_fault_event;
+    wire       drain_complete;
+    reg        configure_complete;
+    reg        configure_descriptor_valid;
+    reg        configure_capture;
+    wire       activate_pending;
+    wire       peer_fault_active;
+
+    wire configure_range_valid;
+    reg [ADDR_BITS-1:0] next_address;
+    reg [BOUNDARY_W-1:0] boundary_beats;
+    reg [LEN_W-1:0] next_burst_length;
+    reg [RESERVATION_COUNT_W-1:0] outstanding_after_reservation;
+    reg [FIFO_COUNT_W-1:0] fifo_credit_committed;
+    reg [FIFO_COUNT_W-1:0] fifo_credit_minus_one;
+    reg                    fifo_credit_token;
+    wire [FIFO_COUNT_W-1:0] fifo_credit;
+    wire [FIFO_COUNT_W-1:0] fifo_credit_encoded;
+    wire                    fifo_credit_nonzero;
+    localparam integer CREDIT_ARITH_W =
+        (FIFO_COUNT_W &gt; LEN_W) ? FIFO_COUNT_W : LEN_W;
+    wire [CREDIT_ARITH_W-1:0] fifo_credit_committed_wide = fifo_credit_committed;
+    wire [CREDIT_ARITH_W-1:0] fifo_credit_minus_one_wide = fifo_credit_minus_one;
+    wire [CREDIT_ARITH_W-1:0] fifo_credit_token_wide = fifo_credit_token;
+    wire [LEN_W-1:0] arlen_for_count;
+    wire [LEN_W-1:0] accepted_burst_beats;
+    wire [CREDIT_ARITH_W-1:0] accepted_burst_beats_wide = accepted_burst_beats;
+    wire         reservation_eligible;
+    wire [LEN_W-1:0] next_burst_length_minus_one = next_burst_length - 1'b1;
+    wire [CREDIT_ARITH_W-1:0] next_burst_length_minus_one_wide = next_burst_length_minus_one;
+    wire [CREDIT_ARITH_W-1:0] credit_encoded_wide = fifo_credit_encoded;
+    wire [CREDIT_ARITH_W-1:0] selected_arlen =
+        (next_burst_length_minus_one_wide &lt; credit_encoded_wide) ?
+        next_burst_length_minus_one_wide : credit_encoded_wide;
+    // Highest legal beat index: one past the last beat of the address space.
+    wire [END_BEAT_W-1:0] end_beat_limit = {1'b1, {BEAT_IDX_BITS{1'b0}}};
+
+    generate
+        if (BEAT_IDX_BITS > COUNT_BITS &amp;&amp; BITSIZE_in4 == ADDR_BITS) begin : optimized_configure_range
+            wire [COUNT_BITS:0] range_low_sum =
+                {1'b0, in4[BEAT_SHIFT +: COUNT_BITS]} + {1'b0, in5};
+            assign configure_range_valid =
+                !(&amp;in4[ADDR_BITS-1:BEAT_SHIFT+COUNT_BITS]) ||
+                !range_low_sum[COUNT_BITS] ||
+                !(|range_low_sum[COUNT_BITS-1:0]);
+        end else begin : legacy_configure_range
+            wire [END_BEAT_W-1:0] end_beat_ext = (in4 &gt;&gt; BEAT_SHIFT) + in5;
+            assign configure_range_valid = end_beat_ext &lt;= end_beat_limit;
+        end
+    endgenerate
+
+    // synthesis translate_off
+    initial begin
+        if (!(B_MAX >= 1 &amp;&amp; B_MAX &lt;= 256))
+            $fatal(1, &quot;B_MAX must be in [1,256]&quot;);
+        if (!(MAX_OUTSTANDING >= 1 &amp;&amp; MAX_OUTSTANDING &lt;= 16))
+            $fatal(1, &quot;MAX_OUTSTANDING must be in [1,16]&quot;);
+        if (!(FIFO_DEPTH >= 1 &amp;&amp; FIFO_DEPTH &lt;= 4096 &amp;&amp;
+              (FIFO_DEPTH &amp; (FIFO_DEPTH - 1)) == 0))
+            $fatal(1, &quot;FIFO_DEPTH must be a power of two in [1,4096]&quot;);
+        if (!(DATA_BITS >= 8 &amp;&amp; DATA_BITS &lt;= 4096 &amp;&amp;
+              (DATA_BITS &amp; (DATA_BITS - 1)) == 0))
+            $fatal(1, &quot;BITSIZE_m_axi_rdata must be a power-of-two width in [8,4096]&quot;);
+        if (ADDR_BITS &lt; 12)
+            $fatal(1, &quot;BITSIZE_m_axi_araddr must be at least 12 bits for the 4 KiB rule&quot;);
+    end
+    // synthesis translate_on
+
+
+    assign m_axi_arsize  = ARSIZE_ENC; // log2(bytes per beat, from the data width
+    assign m_axi_arburst = 2'b01; // INCR
+    assign m_axi_arid    = 1'b0;
+
+    // A FIFO word completes a load immediately. When empty, one command is
+    // retained until a word arrives, independently of the later start level.
+    always @* begin
+        done_reg = 1'b0;
+        out1_reg = {BITSIZE_out1{1'b0}};
+        fifo_load_done = 1'b0;
+        configure_complete = 1'b0;
+        load_request_valid = region_active &amp;&amp; !loads_exhausted &amp;&amp;
+                             in2 == DATA_BITS &amp;&amp;
+                             in4 == next_expected_address;
+        configure_descriptor_valid = in2 == DATA_BITS &amp;&amp;
+                                     in4[BEAT_SHIFT-1:0] == {BEAT_SHIFT{1'b0}} &amp;&amp;
+                                     // The region counters are COUNT_W bits wide, one narrower
+                                     // than the count operand: a count with its top bit set
+                                     // would truncate silently, and 0x80000000 becomes zero.
+                                     in5[COUNT_BITS-1] == 1'b0 &amp;&amp;
+                                     (in5 == 0 ||
+                                      configure_range_valid);
+        configure_capture = start &amp;&amp; in1 == OP_CONFIGURE &amp;&amp; !cfg_seen &amp;&amp;
+                            !cfg_pipe_valid;
+
+        if (!fault_reg &amp;&amp; !peer_fault_active) begin
+            if (load_pending &amp;&amp; load_pending_valid &amp;&amp; fifo_count != 0) begin
+                done_reg = 1'b1;
+                out1_reg = fifo[fifo_rd_ptr];
+                fifo_load_done = 1'b1;
+            end else if (!load_pending &amp;&amp; start &amp;&amp; in1 == OP_LOAD &amp;&amp;
+                         load_request_valid &amp;&amp; fifo_count != 0) begin
+                done_reg = 1'b1;
+                out1_reg = fifo[fifo_rd_ptr];
+                fifo_load_done = 1'b1;
+            end
+
+            configure_complete = configure_ack;
+            done_reg = done_reg || configure_complete;
+        end
+    end
+
+    assign fifo_load_pop = fifo_load_done;
+    assign peer_fault_active = (PEER_FAULT_ENABLE != 0) ? peer_fault : 1'b0;
+    assign arlen_for_count = m_axi_arlen_reg;
+    assign accepted_burst_beats = arlen_for_count + 1'b1;
+    assign r_push = m_axi_rvalid &amp;&amp; m_axi_rready;
+    assign r_structural = (descriptor_count != 0) &amp;&amp; (!(|m_axi_rid)) &amp;&amp;
+        (((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] == 1 &amp;&amp; m_axi_rlast) ||
+         ((descriptor_count != 0) &amp;&amp; descriptor_remaining[descriptor_rd_ptr] &gt; 1 &amp;&amp; !m_axi_rlast));
+    assign r_good = r_push &amp;&amp; r_structural &amp;&amp; !fault_reg &amp;&amp;
+        !peer_fault_active &amp;&amp; (m_axi_rresp == 2'b00);
+    assign r_fault_event = r_push &amp;&amp; (!r_structural || m_axi_rresp != 2'b00);
+    // RREADY depends only on registered transport/FIFO state and the local
+    // FIFO pop, never on current AXI response inputs. Accepted read credits
+    // ensure a valid response cannot arrive while the FIFO is already full.
+    assign m_axi_rready = (descriptor_count != 0) &amp;&amp;
+        (fault_reg || (fifo_count &lt; FIFO_DEPTH) || fifo_load_pop);
+    assign descriptor_pop = r_push &amp;&amp; r_structural &amp;&amp;
+        (descriptor_remaining[descriptor_rd_ptr] == 1);
+    assign descriptor_push = m_axi_arvalid_reg &amp;&amp; m_axi_arready;
+
+    always @* begin
+        next_address = {ADDR_BITS{1'b0}};
+        next_burst_length = 0;
+        outstanding_after_reservation =
+            {{(RESERVATION_COUNT_W-DESC_COUNT_W){1'b0}}, descriptor_count} +
+            {{(RESERVATION_COUNT_W-1){1'b0}}, m_axi_arvalid_reg};
+        if (region_active &amp;&amp; (issue_remaining_has_high ||
+            (issue_remaining[LEN_W-1:0] != 0)) &amp;&amp; !m_axi_arvalid_reg &amp;&amp;
+            outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp; !fault_reg &amp;&amp;
+            !peer_fault_active) begin
+            // The configure range check guarantees this element address fits.
+            next_address = region_base + (issued &lt;&lt; BEAT_SHIFT);
+            // issued-consumed includes every outstanding or buffered result.
+            next_burst_length = B_MAX;
+            if (!issue_remaining_has_high &amp;&amp;
+                issue_remaining[LEN_W-1:0] &lt; next_burst_length)
+                next_burst_length = issue_remaining[LEN_W-1:0];
+            if (boundary_beats &lt; next_burst_length)
+                next_burst_length = boundary_beats;
+        end
+    end
+
+    assign reservation_eligible = region_active &amp;&amp; (issue_remaining_has_high ||
+        (issue_remaining[LEN_W-1:0] != 0)) &amp;&amp;
+        !m_axi_arvalid_reg &amp;&amp; outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp;
+        fifo_credit_nonzero &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !r_fault_event;
+
+    assign drain_complete = region_active &amp;&amp;
+        issued == region_count &amp;&amp; returned == region_count &amp;&amp;
+        loads_exhausted &amp;&amp; fifo_count == 0 &amp;&amp;
+        !m_axi_arvalid &amp;&amp; descriptor_count == 0 &amp;&amp; !load_pending;
+    assign activate_pending = drain_complete &amp;&amp; cfg_pending;
+    assign fifo_credit = fifo_credit_committed + fifo_credit_token;
+    assign fifo_credit_encoded = fifo_credit_token ? fifo_credit_committed : fifo_credit_minus_one;
+    assign fifo_credit_nonzero = (fifo_credit_committed != 0) || fifo_credit_token;
+    wire activate_configure = cfg_pipe_valid &amp;&amp; cfg_pipe_legal &amp;&amp;
+        cfg_pipe_size == DATA_BITS &amp;&amp; !cfg_pipe_conflict &amp;&amp; !fault_reg &amp;&amp;
+        !peer_fault_active &amp;&amp; !cfg_pending &amp;&amp; (!region_active || drain_complete);
+
+    always @(posedge clock 1RESET_EDGE) begin
+        if (1RESET_VALUE) begin
+            region_active &lt;= 1'b0;
+            region_base &lt;= {ADDR_BITS{1'b0}};
+            region_count &lt;= {COUNT_W{1'b0}};
+            next_expected_address &lt;= {ADDR_BITS{1'b0}};
+            issued &lt;= {COUNT_W{1'b0}};
+            issue_remaining &lt;= {COUNT_W{1'b0}};
+            issue_remaining_has_high &lt;= 1'b0;
+            returned &lt;= {COUNT_W{1'b0}};
+            consumed &lt;= {COUNT_W{1'b0}};
+            loads_exhausted &lt;= 1'b0;
+            cfg_seen &lt;= 1'b0;
+            cfg_pending &lt;= 1'b0;
+            cfg_pipe_valid &lt;= 1'b0;
+            cfg_pipe_legal &lt;= 1'b0;
+            cfg_pipe_conflict &lt;= 1'b0;
+            cfg_pipe_size &lt;= {BITSIZE_in2{1'b0}};
+            cfg_pipe_base &lt;= {ADDR_BITS{1'b0}};
+            cfg_pipe_count &lt;= {COUNT_BITS{1'b0}};
+            configure_ack &lt;= 1'b0;
+            cfg_size &lt;= {BITSIZE_in2{1'b0}};
+            cfg_base &lt;= {ADDR_BITS{1'b0}};
+            cfg_count &lt;= {COUNT_BITS{1'b0}};
+            pending_base &lt;= {ADDR_BITS{1'b0}};
+            pending_count &lt;= {COUNT_W{1'b0}};
+            load_pending &lt;= 1'b0;
+            load_pending_valid &lt;= 1'b0;
+            fifo_rd_ptr &lt;= 0;
+            fifo_wr_ptr &lt;= 0;
+            fifo_count &lt;= 0;
+            descriptor_rd_ptr &lt;= 0;
+            descriptor_wr_ptr &lt;= 0;
+            descriptor_count &lt;= 0;
+            m_axi_araddr_reg &lt;= {ADDR_BITS{1'b0}};
+            m_axi_arlen_reg &lt;= {BITSIZE_m_axi_arlen{1'b0}};
+            m_axi_arvalid_reg &lt;= 1'b0;
+            boundary_beats &lt;= 0;
+            fault_reg &lt;= 1'b0;
+        end else begin
+            configure_ack &lt;= 1'b0;
+            if (peer_fault_active)
+                fault_reg &lt;= 1'b1;
+            if (!cfg_pipe_valid) begin
+                if (!start || in1 != OP_CONFIGURE)
+                    cfg_seen &lt;= 1'b0;
+                    else if (in2 != cfg_size || in4 != cfg_base || in5 != cfg_count)
+                    // The guarded request is finished - it is no longer waiting to be
+                    // activated - and the operands now differ, so the caller is presenting a
+                    // new configure even though start never dropped. Every operand is compared
+                    // at full width: comparing only the address and a truncated count makes an
+                    // invalid request look like the one already guarded, so it never reaches
+                    // validation and produces neither done nor fault. Identical operands keep
+                    // the single-capture behaviour, and a request still pending activation
+                    // must not be replaced.
+                    cfg_seen &lt;= 1'b0;
+            end
+
+            // Capture a configure request exactly once while start is held.
+            if (!peer_fault_active &amp;&amp; !fault_reg &amp;&amp; configure_capture) begin
+                cfg_seen &lt;= 1'b1;
+                cfg_size &lt;= in2;
+                cfg_base &lt;= in4;
+                cfg_count &lt;= in5;
+                cfg_pipe_valid &lt;= 1'b1;
+                cfg_pipe_legal &lt;= configure_descriptor_valid;
+                cfg_pipe_conflict &lt;= cfg_pending;
+                cfg_pipe_size &lt;= in2;
+                cfg_pipe_base &lt;= in4;
+                cfg_pipe_count &lt;= in5;
+            end
+
+            if (cfg_pipe_valid) begin
+                cfg_pipe_valid &lt;= 1'b0;
+                if (!cfg_pipe_legal || cfg_pipe_size != DATA_BITS || cfg_pipe_conflict) begin
+                    fault_reg &lt;= 1'b1;
+                end else if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp;
+                             !cfg_pending &amp;&amp;
+                             (!region_active || drain_complete)) begin
+                    region_active &lt;= 1'b1;
+                    region_base &lt;= cfg_pipe_base;
+                    region_count &lt;= cfg_pipe_count[COUNT_W-1:0];
+                    boundary_beats &lt;= BOUNDARY_BEATS - cfg_pipe_base[11:BEAT_SHIFT];
+                    next_expected_address &lt;= cfg_pipe_base;
+                    issued &lt;= {COUNT_W{1'b0}};
+                    issue_remaining &lt;= cfg_pipe_count[COUNT_W-1:0];
+                    issue_remaining_has_high &lt;= (|cfg_pipe_count[COUNT_W-1:LEN_W]);
+                    returned &lt;= {COUNT_W{1'b0}};
+                    consumed &lt;= {COUNT_W{1'b0}};
+                    loads_exhausted &lt;= (cfg_pipe_count == 0);
+                    fifo_rd_ptr &lt;= 0;
+                    fifo_wr_ptr &lt;= 0;
+                    fifo_count &lt;= 0;
+                    load_pending &lt;= 1'b0;
+                    load_pending_valid &lt;= 1'b0;
+                    cfg_pending &lt;= 1'b0;
+                    configure_ack &lt;= 1'b1;
+                end else if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !cfg_pending) begin
+                    cfg_pending &lt;= 1'b1;
+                    pending_base &lt;= cfg_pipe_base;
+                    pending_count &lt;= cfg_pipe_count[COUNT_W-1:0];
+                end
+            end
+
+            // Record one load command when the response FIFO is empty.
+            if (!peer_fault_active &amp;&amp; start &amp;&amp; in1 == OP_LOAD &amp;&amp; !load_pending) begin
+                if (!load_request_valid)
+                    fault_reg &lt;= 1'b1;
+                else if (fifo_count == 0) begin
+                    load_pending &lt;= 1'b1;
+                    load_pending_valid &lt;= load_request_valid;
+                end
+            end
+            if (fifo_load_done &amp;&amp; !peer_fault_active) begin
+                load_pending &lt;= 1'b0;
+                load_pending_valid &lt;= 1'b0;
+                consumed &lt;= consumed + 1'b1;
+                if (consumed + 1'b1 == region_count)
+                    loads_exhausted &lt;= 1'b1;
+                if (fifo_rd_ptr == FIFO_DEPTH-1)
+                    fifo_rd_ptr &lt;= 0;
+                else
+                    fifo_rd_ptr &lt;= fifo_rd_ptr + 1'b1;
+                next_expected_address &lt;= next_expected_address + BEAT_BYTES;
+            end
+
+            // Reserve and freeze one descriptor before asserting ARVALID.
+            if (reservation_eligible) begin
+                m_axi_araddr_reg &lt;= next_address;
+                // 9 bits are required to represent length 256; subtract in
+                // that domain, then retain the 8-bit AXI ARLEN encoding.
+                m_axi_arlen_reg &lt;= selected_arlen;
+                m_axi_arvalid_reg &lt;= 1'b1;
+            end
+
+            if (m_axi_arvalid_reg &amp;&amp; m_axi_arready) begin
+                m_axi_arvalid_reg &lt;= 1'b0;
+                descriptor_remaining[descriptor_wr_ptr] &lt;= {1'b0, m_axi_arlen_reg} + 1'b1;
+                if (descriptor_wr_ptr == MAX_OUTSTANDING-1)
+                    descriptor_wr_ptr &lt;= 0;
+                else
+                    descriptor_wr_ptr &lt;= descriptor_wr_ptr + 1'b1;
+                issued &lt;= issued + {{(COUNT_W-BITSIZE_m_axi_arlen){1'b0}}, m_axi_arlen_reg} + 1'b1;
+                issue_remaining[LEN_W-1:0] &lt;=
+                    issue_remaining[LEN_W-1:0] - accepted_burst_beats;
+                if (issue_remaining[LEN_W-1:0] &lt; accepted_burst_beats) begin
+                    issue_remaining[COUNT_W-1:LEN_W] &lt;=
+                        issue_remaining[COUNT_W-1:LEN_W] - 1'b1;
+                    if (issue_remaining[COUNT_W-1:LEN_W] == 1)
+                        issue_remaining_has_high &lt;= 1'b0;
+                end
+                if (accepted_burst_beats == boundary_beats)
+                    boundary_beats &lt;= BOUNDARY_BEATS;
+                else
+                    boundary_beats &lt;= boundary_beats - accepted_burst_beats;
+            end
+
+            case ({descriptor_push, descriptor_pop})
+                2'b10: descriptor_count &lt;= descriptor_count + 1'b1;
+                2'b01: descriptor_count &lt;= descriptor_count - 1'b1;
+                default: descriptor_count &lt;= descriptor_count;
+            endcase
+
+                if (r_push) begin
+                if (!r_structural || m_axi_rresp != 2'b00)
+                    fault_reg &lt;= 1'b1;
+                if (r_structural) begin
+                    if (r_good) begin
+                        returned &lt;= returned + 1'b1;
+                        fifo[fifo_wr_ptr] &lt;= m_axi_rdata;
+                        if (fifo_wr_ptr == FIFO_DEPTH-1)
+                            fifo_wr_ptr &lt;= 0;
+                        else
+                            fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+                    end
+                    if (descriptor_remaining[descriptor_rd_ptr] == 1) begin
+                        if (descriptor_rd_ptr == MAX_OUTSTANDING-1)
+                            descriptor_rd_ptr &lt;= 0;
+                        else
+                            descriptor_rd_ptr &lt;= descriptor_rd_ptr + 1'b1;
+                    end else begin
+                        descriptor_remaining[descriptor_rd_ptr] &lt;=
+                            descriptor_remaining[descriptor_rd_ptr] - 1'b1;
+                    end
+                end
+            end
+
+            case ({r_good, fifo_load_pop})
+                2'b10: fifo_count &lt;= fifo_count + 1'b1;
+                2'b01: fifo_count &lt;= fifo_count - 1'b1;
+                default: fifo_count &lt;= fifo_count;
+            endcase
+
+            if (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg) begin
+                region_active &lt;= 1'b1;
+                region_base &lt;= pending_base;
+                region_count &lt;= pending_count;
+                boundary_beats &lt;= BOUNDARY_BEATS - pending_base[11:BEAT_SHIFT];
+                next_expected_address &lt;= pending_base;
+                issued &lt;= {COUNT_W{1'b0}};
+                issue_remaining &lt;= pending_count;
+                issue_remaining_has_high &lt;= (|pending_count[COUNT_W-1:LEN_W]);
+                returned &lt;= {COUNT_W{1'b0}};
+                consumed &lt;= {COUNT_W{1'b0}};
+                loads_exhausted &lt;= (pending_count == 0);
+                fifo_rd_ptr &lt;= 0;
+                fifo_wr_ptr &lt;= 0;
+                fifo_count &lt;= 0;
+                descriptor_rd_ptr &lt;= 0;
+                descriptor_wr_ptr &lt;= 0;
+                descriptor_count &lt;= 0;
+                cfg_pending &lt;= 1'b0;
+                configure_ack &lt;= 1'b1;
+                load_pending &lt;= 1'b0;
+                load_pending_valid &lt;= 1'b0;
+            end else if (drain_complete &amp;&amp; !cfg_pipe_valid) begin
+                region_active &lt;= 1'b0;
+            end
+
+            // Keep a sticky error, including unsupported stores. A fault_reg
+            // suppresses the done handshake and is observable on the fault output.
+            if (start &amp;&amp; in1 == OP_STORE)
+                fault_reg &lt;= 1'b1;
+        end
+    end
+
+    always @(posedge clock 1RESET_EDGE) begin
+        if (1RESET_VALUE || activate_configure ||
+            (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg)) begin
+            fifo_credit_committed &lt;= FIFO_DEPTH;
+            fifo_credit_minus_one &lt;= FIFO_DEPTH - 1'b1;
+            fifo_credit_token &lt;= 1'b0;
+        end else begin
+            fifo_credit_committed &lt;= fifo_credit_committed_wide + fifo_credit_token_wide -
+                (descriptor_push ? accepted_burst_beats_wide : {CREDIT_ARITH_W{1'b0}});
+            fifo_credit_minus_one &lt;= fifo_credit_minus_one_wide + fifo_credit_token_wide -
+                (descriptor_push ? accepted_burst_beats_wide : {CREDIT_ARITH_W{1'b0}});
+            fifo_credit_token &lt;= fifo_load_pop;
+        end
+    end
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+
+    <cell>
       <name>MinimalAXI4AdapterSingleBeat</name>
       <circuit>
         <module_o id="MinimalAXI4AdapterSingleBeat">
@@ -928,15 +1535,15 @@ assign m_axi_wlast = 1;
 assign m_axi_wuser = 0;
 
 `ifndef _SIM_HAVE_CLOG2
-  `define CLOG2(x) \
-    (x &lt;= 2) ? 1 : \
-    (x &lt;= 4) ? 2 : \
-    (x &lt;= 8) ? 3 : \
-    (x &lt;= 16) ? 4 : \
-    (x &lt;= 32) ? 5 : \
-    (x &lt;= 64) ? 6 : \
-    (x &lt;= 128) ? 7 : \
-    -1
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
 `endif
 
 wire [2:0] size_next;
@@ -945,7 +1552,7 @@ generate
   `ifdef _SIM_HAVE_CLOG2
     assign size_next = $clog2(Mout_data_ram_size >> 3);
   `else
-    assign size_next = `CLOG2(Mout_data_ram_size >> 3);
+    assign size_next = log2(Mout_data_ram_size >> 3);
   `endif
 endgenerate
 
@@ -1148,6 +1755,763 @@ begin
   end
 end
 // synthesis translate_on
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>MinimalAXI4MasterPipelinedWrite</name>
+      <circuit>
+        <module_o id="MinimalAXI4MasterPipelinedWrite">
+          <description>Experimental configured-write burst engine; fixed 32-bit AXI4 INCR writes</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>PandA/Bambu contributors</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="MinimalAXI4MasterPipelinedWrite"/>
+          <parameter name="B_MAX">16</parameter>
+          <parameter name="MAX_OUTSTANDING">1</parameter>
+          <parameter name="FIFO_DEPTH">32</parameter>
+          <parameter name="PEER_FAULT_ENABLE">0</parameter>
+          <parameter name="FAST_STORE_ACK">1</parameter>
+          <port_o id="clock" dir="IN" is_clock="1"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="reset" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="start" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="peer_fault" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="in1" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/></port_o>
+          <port_o id="in2" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
+          <port_o id="in3" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
+          <port_o id="in4" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
+          <port_o id="in5" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
+          <port_o id="done" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="out1" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
+          <port_o id="fault" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="m_axi_awaddr" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
+          <port_o id="m_axi_awlen" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/></port_o>
+          <port_o id="m_axi_awsize" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/></port_o>
+          <port_o id="m_axi_awburst" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/></port_o>
+          <port_o id="m_axi_awid" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/></port_o>
+          <port_o id="m_axi_awvalid" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="m_axi_awready" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="m_axi_wdata" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/></port_o>
+          <port_o id="m_axi_wstrb" dir="OUT"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/></port_o>
+          <port_o id="m_axi_wlast" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="m_axi_wvalid" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="m_axi_wready" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="m_axi_bresp" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/></port_o>
+          <port_o id="m_axi_bid" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/></port_o>
+          <port_o id="m_axi_bvalid" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <port_o id="m_axi_bready" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelinedWrite B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE FAST_STORE_ACK in1 in2 in3 in4 in5 out1 peer_fault m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awid m_axi_wdata m_axi_wstrb m_axi_bresp m_axi_bid" VERILOG_PROVIDED="    localparam integer ADDR_BITS = BITSIZE_m_axi_awaddr;
+    localparam integer DATA_BITS = BITSIZE_m_axi_wdata;
+    localparam integer BEAT_BYTES = DATA_BITS / 8;
+    localparam integer BEAT_SHIFT = $clog2(BEAT_BYTES);
+    localparam integer COUNT_BITS = BITSIZE_in5;
+    localparam integer COUNT_W = COUNT_BITS - 1;
+    localparam integer OFFSET_W = (ADDR_BITS &gt; COUNT_W ? ADDR_BITS : COUNT_W);
+    localparam integer PTR_W = (FIFO_DEPTH &lt;= 2) ? 1 : $clog2(FIFO_DEPTH);
+    localparam integer FIFO_COUNT_W = $clog2(FIFO_DEPTH + 1);
+    localparam integer LEN_W = $clog2(B_MAX + 1);
+    localparam integer END_BEAT_W = ((ADDR_BITS - BEAT_SHIFT) &gt; COUNT_BITS ?
+                                      (ADDR_BITS - BEAT_SHIFT) : COUNT_BITS) + 1;
+    localparam integer BOUNDARY_BEATS = 4096 / BEAT_BYTES;
+    localparam integer BOUNDARY_W = $clog2(BOUNDARY_BEATS) + 1;
+    localparam integer OP_STORE = 1;
+    localparam integer OP_CONFIGURE = 2;
+    localparam integer OP_DRAIN = 3;
+
+    reg done_reg;
+    reg fault_reg;
+    reg region_active;
+    reg [ADDR_BITS-1:0] region_base;
+    reg [COUNT_W-1:0] region_count;
+    reg [ADDR_BITS-1:0] next_expected_address;
+    reg stores_exhausted;
+    // The payload pipeline register has to survive synthesis: folding it into the
+    // distributed-RAM write port would put the kernel payload cone straight back onto the
+    // FIFO write path, which is what this fast mode exists to avoid. DONT_TOUCH keeps it, and
+    // the register plus its attribute exist only when FAST_STORE_ACK is set, so the
+    // FAST_STORE_ACK=0 flow keeps exactly its original structure. FAST_STORE_ACK defaults
+    // to 1 and the generated kernels always pass 1: the fast acknowledgement has no
+    // compiler switch anymore. Value 0 is only reachable from the RTL qualification
+    // harness, which instantiates the engine directly.
+    wire fast_pipe_valid;
+    wire [BITSIZE_in3-1:0] fast_pipe_data;
+    reg [COUNT_W-1:0] accepted;
+    reg [COUNT_W-1:0] scheduled;
+    reg [COUNT_W-1:0] remaining_beats;
+    reg remaining_has_high;
+    reg [COUNT_W-1:0] plan_scheduled;
+    reg [LEN_W-1:0] plan_beats [0:1];
+    reg [ADDR_BITS-1:0] plan_address [0:1];
+    reg plan_rd_ptr;
+    reg plan_wr_ptr;
+    reg [1:0] plan_count;
+    reg [COUNT_W-1:0] completed;
+    reg cfg_seen;
+    reg store_seen;
+    reg drain_seen;
+    reg drain_pending;
+    reg store_pending;
+    reg store_ack;
+    reg store_ack_pending;
+    reg [BITSIZE_in2-1:0] store_ack_size;
+    reg [BITSIZE_in3-1:0] store_ack_data;
+    reg [ADDR_BITS-1:0] store_ack_address;
+    reg [BITSIZE_in2-1:0] pending_size;
+    reg [BITSIZE_in3-1:0] pending_data;
+    reg [ADDR_BITS-1:0] pending_address;
+    reg [BITSIZE_in2-1:0] cfg_size;
+    reg [ADDR_BITS-1:0] cfg_base;
+    reg [COUNT_BITS-1:0] cfg_count;
+    reg cfg_pipe_valid;
+    reg cfg_pipe_legal;
+    reg cfg_pipe_idle;
+    reg [BITSIZE_in2-1:0] cfg_pipe_size;
+    reg [ADDR_BITS-1:0] cfg_pipe_base;
+    reg [COUNT_BITS-1:0] cfg_pipe_count;
+    reg configure_ack;
+    reg [BITSIZE_in2-1:0] store_size;
+    reg [BITSIZE_in3-1:0] store_data;
+    reg [ADDR_BITS-1:0] store_address;
+    // The clamp only keeps the derived widths well-formed. The elaboration-time check below
+    // rejects MAX_OUTSTANDING outside [1,16] in simulation and in synthesis alike, so no
+    // out-of-range value reaches the descriptor ring: this is a defensive width, not a policy
+    // that silently accepts a wrong parameter.
+    localparam integer DESC_DEPTH = (MAX_OUTSTANDING &lt; 1) ? 1 : MAX_OUTSTANDING;
+    localparam integer DESC_PTR_W = (DESC_DEPTH &lt;= 2) ? 1 : $clog2(DESC_DEPTH);
+    localparam integer DESC_COUNT_W = (DESC_DEPTH &lt;= 1) ? 1 : $clog2(DESC_DEPTH + 1);
+    localparam integer RESERVED_COUNT_W = $clog2(DESC_DEPTH * B_MAX + 1);
+    localparam integer STORE_ADDR_CHUNK_BITS = 8;
+    localparam [FIFO_COUNT_W-1:0] FIFO_SLOT_LIMIT = FIFO_DEPTH;
+    localparam integer STORE_ADDR_CHUNK_COUNT = (ADDR_BITS + STORE_ADDR_CHUNK_BITS - 1) /
+                                                STORE_ADDR_CHUNK_BITS;
+    reg [ADDR_BITS-1:0] descriptor_address [0:DESC_DEPTH-1];
+    reg [LEN_W-1:0] descriptor_beats [0:DESC_DEPTH-1];
+    reg [LEN_W-1:0] descriptor_w_remaining [0:DESC_DEPTH-1];
+    reg descriptor_valid [0:DESC_DEPTH-1];
+    reg descriptor_aw_done [0:DESC_DEPTH-1];
+    reg [DESC_PTR_W-1:0] descriptor_alloc_ptr;
+    reg [DESC_PTR_W-1:0] descriptor_aw_ptr;
+    reg [DESC_PTR_W-1:0] descriptor_w_ptr;
+    reg [DESC_PTR_W-1:0] descriptor_b_ptr;
+    reg [DESC_COUNT_W-1:0] descriptor_count;
+    reg [RESERVED_COUNT_W-1:0] reserved_data_count;
+    reg [BITSIZE_in3-1:0] fifo [0:FIFO_DEPTH-1];
+    reg [PTR_W-1:0] fifo_rd_ptr;
+    reg [PTR_W-1:0] fifo_wr_ptr;
+    reg [FIFO_COUNT_W-1:0] fifo_count;
+    wire [END_BEAT_W-1:0] region_end;
+    reg [LEN_W-1:0] burst_limit;
+    reg [LEN_W-1:0] plan_limit;
+    reg [BOUNDARY_W-1:0] boundary_beats;
+    reg boundary_within_burst;
+    reg [LEN_W-1:0] reserve_beats;
+    wire [LEN_W:0] scheduled_low_sum;
+    wire [LEN_W:0] plan_scheduled_low_sum;
+    reg [ADDR_BITS-1:0] reserve_address;
+    reg [FIFO_COUNT_W-1:0] unassigned_fifo_count;
+    integer i;
+    wire store_input;
+    wire store_enqueue;
+    wire w_push;
+    wire b_push;
+    wire drain_complete;
+    wire configure_valid;
+    wire store_request_valid;
+    wire store_address_valid;
+    wire configure_capture;
+    wire direct_store;
+    wire pending_store_enqueue;
+    wire pending_store_changed;
+    wire store_ack_match;
+    wire direct_store_ack;
+    wire fast_credit_available;
+    wire fast_store_accept;
+    wire fast_pipe_push;
+    wire fast_data_enqueue;
+    wire [END_BEAT_W-1:0] address_end_limit;
+    wire configure_range_valid;
+    wire [OFFSET_W-1:0] accepted_offset;
+    wire [OFFSET_W-1:0] scheduled_offset;
+    wire [OFFSET_W-1:0] plan_scheduled_offset;
+    wire [STORE_ADDR_CHUNK_COUNT-1:0] store_address_chunk_valid;
+    wire store_address_final_carry;
+    wire store_address_high_zero;
+    wire [BITSIZE_in3-1:0] fifo_head;
+    wire b_ready;
+    wire w_valid;
+    wire aw_valid;
+    wire aw_push;
+    wire b_fault_now;
+    wire peer_fault_active;
+    wire plan_push;
+    wire plan_pop;
+
+    assign done = done_reg;
+    assign out1 = {BITSIZE_out1{1'b0}};
+    assign fault = fault_reg;
+    assign peer_fault_active = (PEER_FAULT_ENABLE != 0) ? peer_fault : 1'b0;
+    assign scheduled_low_sum = {1'b0, scheduled[LEN_W-1:0]} + {1'b0, reserve_beats};
+    assign plan_scheduled_low_sum = {1'b0, plan_scheduled[LEN_W-1:0]} + {1'b0, plan_limit};
+    assign m_axi_awaddr = descriptor_address[descriptor_aw_ptr];
+    assign m_axi_awlen = descriptor_beats[descriptor_aw_ptr] - 1'b1;
+    assign m_axi_awsize = BEAT_SHIFT;
+    assign m_axi_awburst = 2'b01;
+    assign m_axi_awid = 1'b0;
+    assign m_axi_awvalid = aw_valid;
+    assign m_axi_wdata = fifo_head;
+    assign m_axi_wstrb = {BITSIZE_m_axi_wstrb{1'b1}};
+    assign m_axi_wlast = w_valid &amp;&amp; (descriptor_w_remaining[descriptor_w_ptr] == 1);
+    assign m_axi_wvalid = w_valid;
+    assign m_axi_bready = b_ready;
+    assign fifo_head = fifo[fifo_rd_ptr];
+    assign aw_valid = (descriptor_count != 0) &amp;&amp; descriptor_valid[descriptor_aw_ptr] &amp;&amp;
+                      !descriptor_aw_done[descriptor_aw_ptr];
+    assign w_valid = (descriptor_count != 0) &amp;&amp; descriptor_valid[descriptor_w_ptr] &amp;&amp;
+                     (descriptor_w_remaining[descriptor_w_ptr] != 0);
+    assign b_ready = (descriptor_count != 0) &amp;&amp; descriptor_valid[descriptor_b_ptr] &amp;&amp;
+                     descriptor_aw_done[descriptor_b_ptr] &amp;&amp;
+                     (descriptor_w_remaining[descriptor_b_ptr] == 0);
+    assign aw_push = m_axi_awvalid &amp;&amp; m_axi_awready;
+    assign w_push = m_axi_wvalid &amp;&amp; m_axi_wready;
+    assign b_push = m_axi_bvalid &amp;&amp; m_axi_bready;
+    assign b_fault_now = b_push &amp;&amp; ((|m_axi_bid) || (m_axi_bresp != 0));
+    assign store_input = start &amp;&amp; (in1 == OP_STORE);
+    assign accepted_offset = {{(OFFSET_W-COUNT_W){1'b0}}, accepted} &lt;&lt; BEAT_SHIFT;
+    assign scheduled_offset = {{(OFFSET_W-COUNT_W){1'b0}}, scheduled} &lt;&lt; BEAT_SHIFT;
+    assign plan_scheduled_offset = {{(OFFSET_W-COUNT_W){1'b0}}, plan_scheduled} &lt;&lt; BEAT_SHIFT;
+    assign address_end_limit = {1'b1, {(ADDR_BITS-BEAT_SHIFT){1'b0}}};
+    assign region_end = {{(END_BEAT_W-(ADDR_BITS-BEAT_SHIFT)){1'b0}},
+                         in4[ADDR_BITS-1:BEAT_SHIFT]} +
+                        {{(END_BEAT_W-COUNT_BITS){1'b0}}, in5};
+    generate
+        if ((ADDR_BITS-BEAT_SHIFT) &gt; COUNT_BITS &amp;&amp; BITSIZE_in4 == ADDR_BITS) begin : optimized_configure_range
+            wire [COUNT_BITS:0] range_low_sum =
+                {1'b0, in4[BEAT_SHIFT +: COUNT_BITS]} + {1'b0, in5};
+            assign configure_range_valid =
+                !(&amp;in4[ADDR_BITS-1:BEAT_SHIFT+COUNT_BITS]) ||
+                !range_low_sum[COUNT_BITS] ||
+                !(|range_low_sum[COUNT_BITS-1:0]);
+        end else begin : legacy_configure_range
+            assign configure_range_valid = region_end &lt;= address_end_limit;
+        end
+    endgenerate
+    assign configure_valid = (in2 == DATA_BITS) &amp;&amp;
+        (in4[BEAT_SHIFT-1:0] == {BEAT_SHIFT{1'b0}}) &amp;&amp;
+        (in5[COUNT_BITS-1] == 1'b0) &amp;&amp;
+        ((in5 == 0) || configure_range_valid);
+    assign configure_capture = !peer_fault_active &amp;&amp; start &amp;&amp; (in1 == OP_CONFIGURE) &amp;&amp; !cfg_seen &amp;&amp;
+                              !cfg_pipe_valid &amp;&amp; !store_pending;
+    genvar store_address_chunk;
+    generate
+        for (store_address_chunk = 0; store_address_chunk &lt; STORE_ADDR_CHUNK_COUNT;
+             store_address_chunk = store_address_chunk + 1) begin: store_address_chunks
+            localparam integer CHUNK_LSB = store_address_chunk * STORE_ADDR_CHUNK_BITS;
+            localparam integer CHUNK_WIDTH = (ADDR_BITS - CHUNK_LSB &lt; STORE_ADDR_CHUNK_BITS) ?
+                                             ADDR_BITS - CHUNK_LSB : STORE_ADDR_CHUNK_BITS;
+            wire chunk_carry_in;
+            wire [CHUNK_WIDTH:0] chunk_sum;
+
+            if (store_address_chunk == 0) begin: first_chunk
+                assign chunk_carry_in = 1'b0;
+            end else begin: later_chunk
+                assign chunk_carry_in = in4[CHUNK_LSB] ^ region_base[CHUNK_LSB] ^
+                                        accepted_offset[CHUNK_LSB];
+            end
+
+            assign chunk_sum = {1'b0, region_base[CHUNK_LSB +: CHUNK_WIDTH]} +
+                               {1'b0, accepted_offset[CHUNK_LSB +: CHUNK_WIDTH]} +
+                               chunk_carry_in;
+
+            if (CHUNK_LSB + CHUNK_WIDTH &lt; ADDR_BITS) begin: nonfinal_chunk
+                assign store_address_chunk_valid[store_address_chunk] =
+                    (chunk_sum[CHUNK_WIDTH-1:0] == in4[CHUNK_LSB +: CHUNK_WIDTH]) &amp;&amp;
+                    (chunk_sum[CHUNK_WIDTH] ==
+                     (in4[CHUNK_LSB + CHUNK_WIDTH] ^ region_base[CHUNK_LSB + CHUNK_WIDTH] ^
+                      accepted_offset[CHUNK_LSB + CHUNK_WIDTH]));
+            end else begin: final_chunk
+                assign store_address_chunk_valid[store_address_chunk] =
+                    chunk_sum[CHUNK_WIDTH-1:0] == in4[CHUNK_LSB +: CHUNK_WIDTH];
+                assign store_address_final_carry = chunk_sum[CHUNK_WIDTH];
+            end
+        end
+    endgenerate
+    generate
+        if (OFFSET_W &gt; ADDR_BITS) begin: extended_offset_address_check
+            assign store_address_high_zero = store_address_final_carry ?
+                (&amp;accepted_offset[OFFSET_W-1:ADDR_BITS]) :
+                !(|accepted_offset[OFFSET_W-1:ADDR_BITS]);
+        end else begin: address_width_offset_check
+            assign store_address_high_zero = 1'b1;
+        end
+    endgenerate
+    assign store_address_valid = (FAST_STORE_ACK != 0) ?
+        (in4 == next_expected_address) :
+        ((&amp;store_address_chunk_valid) &amp;&amp; store_address_high_zero);
+    assign store_request_valid = (FAST_STORE_ACK != 0) ?
+        (region_active &amp;&amp; !stores_exhausted &amp;&amp; (in2 == DATA_BITS) &amp;&amp; store_address_valid) :
+        (region_active &amp;&amp; (accepted &lt; region_count) &amp;&amp; (in2 == DATA_BITS) &amp;&amp; store_address_valid);
+    assign direct_store = store_input &amp;&amp; (!store_seen || in2 != store_size ||
+        in3 != store_data || in4 != store_address) &amp;&amp; !store_pending;
+    assign pending_store_changed = store_pending &amp;&amp; store_input &amp;&amp;
+        (in2 != pending_size || in3 != pending_data || in4 != pending_address);
+    assign pending_store_enqueue = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; store_pending &amp;&amp;
+        (fifo_count &lt; FIFO_DEPTH) &amp;&amp; !pending_store_changed &amp;&amp;
+        ((FAST_STORE_ACK != 0) ? !fast_pipe_valid : 1'b1);
+    assign store_enqueue = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp;
+        ((FAST_STORE_ACK != 0) ? pending_store_enqueue :
+        ((direct_store &amp;&amp; store_request_valid &amp;&amp; (fifo_count &lt; FIFO_DEPTH)) ||
+         pending_store_enqueue));
+    assign fast_credit_available = (fifo_count + {{(FIFO_COUNT_W-1){1'b0}},
+        (fast_pipe_valid | store_pending)}) &lt; FIFO_SLOT_LIMIT;
+    assign fast_store_accept = (FAST_STORE_ACK != 0) &amp;&amp; store_input &amp;&amp; !store_pending &amp;&amp;
+        store_request_valid &amp;&amp; fast_credit_available &amp;&amp;
+        !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !b_fault_now;
+    assign store_ack_match = store_ack &amp;&amp; (store_ack_pending ||
+        ((in1 == OP_STORE) &amp;&amp; (in2 == store_ack_size) &amp;&amp;
+         (in3 == store_ack_data) &amp;&amp; (in4 == store_ack_address)));
+    assign direct_store_ack = fast_store_accept;
+    generate
+    if (FAST_STORE_ACK != 0) begin : g_fast_pipe_hold
+        (* dont_touch = &quot;true&quot; *) reg fast_pipe_hold_valid;
+        (* dont_touch = &quot;true&quot; *) reg [BITSIZE_in3-1:0] fast_pipe_hold_data;
+        // The accepted CONFIGURE clears the payload pipe; the condition mirrors the
+        // CONFIGURE-pipeline branch of the main sequential block.
+        wire fast_pipe_cfg_clear = cfg_pipe_valid &amp;&amp; cfg_pipe_legal &amp;&amp;
+            (cfg_pipe_size == DATA_BITS) &amp;&amp; cfg_pipe_idle &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active;
+        always @(posedge clock 1RESET_EDGE) begin
+            if (1RESET_VALUE) begin
+                fast_pipe_hold_valid &lt;= 1'b0;
+                fast_pipe_hold_data &lt;= 0;
+            end else if (fast_store_accept) begin
+                // An accept wins over an accepted CONFIGURE in the same cycle, as in the
+                // original single-block ordering where the accept statement followed it.
+                fast_pipe_hold_valid &lt;= 1'b1;
+                fast_pipe_hold_data &lt;= in3;
+            end else if (fast_pipe_cfg_clear || fast_pipe_hold_valid) begin
+                fast_pipe_hold_valid &lt;= 1'b0;
+            end
+        end
+        assign fast_pipe_valid = fast_pipe_hold_valid;
+        assign fast_pipe_data = fast_pipe_hold_data;
+    end else begin : g_fast_pipe_off
+        assign fast_pipe_valid = 1'b0;
+        assign fast_pipe_data = {BITSIZE_in3{1'b0}};
+    end
+    endgenerate
+
+    assign fast_pipe_push = fast_pipe_valid;
+    assign fast_data_enqueue = fast_pipe_push || pending_store_enqueue;
+    assign drain_complete = region_active &amp;&amp; (accepted == region_count) &amp;&amp;
+        (completed == region_count) &amp;&amp; (fifo_count == 0) &amp;&amp; (plan_count == 0) &amp;&amp;
+        (descriptor_count == 0) &amp;&amp; !store_pending &amp;&amp;
+        ((FAST_STORE_ACK != 0) ? !fast_pipe_valid : 1'b1);
+
+    // Parameter legality is checked at elaboration time, where synthesis can see it too: an
+    // out-of-range parameter stops the build instead of being clamped or silently accepted.
+    // Vivado reports the message (Synth 8-6058); Verilator reports it as USERFATAL, which the
+    // regression harness promotes to an error with -Werror-USERFATAL.
+    generate
+        if (!(B_MAX &gt;= 1 &amp;&amp; B_MAX &lt;= 256)) begin : PARAM_CHECK_B_MAX
+            $fatal(1, &quot;B_MAX must be in [1,256]&quot;);
+        end
+        if (!(MAX_OUTSTANDING &gt;= 1 &amp;&amp; MAX_OUTSTANDING &lt;= 16)) begin : PARAM_CHECK_MAX_OUTSTANDING
+            $fatal(1, &quot;MAX_OUTSTANDING must be in [1,16]&quot;);
+        end
+        if (!(FIFO_DEPTH &gt;= B_MAX &amp;&amp; FIFO_DEPTH &lt;= 4096 &amp;&amp;
+              (FIFO_DEPTH &amp; (FIFO_DEPTH - 1)) == 0)) begin : PARAM_CHECK_FIFO_DEPTH
+            $fatal(1, &quot;FIFO_DEPTH must be a power of two &gt;= B_MAX and &lt;= 4096&quot;);
+        end
+        if (DATA_BITS != 32) begin : PARAM_CHECK_DATA_BITS
+            $fatal(1, &quot;F1 writer supports 32-bit data beats only&quot;);
+        end
+        if (ADDR_BITS &lt; 12) begin : PARAM_CHECK_ADDR_BITS
+            $fatal(1, &quot;address width must be at least 12 bits for the 4 KiB rule&quot;);
+        end
+    endgenerate
+
+    // Simulation-only backstop for tools that evaluate the checks at run time instead of at
+    // elaboration; it aborts the run at time 0 with the same messages.
+    // synthesis translate_off
+    initial begin
+        if (!(B_MAX &gt;= 1 &amp;&amp; B_MAX &lt;= 256))
+            $fatal(1, &quot;B_MAX must be in [1,256]&quot;);
+        if (!(MAX_OUTSTANDING &gt;= 1 &amp;&amp; MAX_OUTSTANDING &lt;= 16))
+            $fatal(1, &quot;MAX_OUTSTANDING must be in [1,16]&quot;);
+        if (!(FIFO_DEPTH &gt;= B_MAX &amp;&amp; FIFO_DEPTH &lt;= 4096 &amp;&amp;
+              (FIFO_DEPTH &amp; (FIFO_DEPTH - 1)) == 0))
+            $fatal(1, &quot;FIFO_DEPTH must be a power of two &gt;= B_MAX and &lt;= 4096&quot;);
+        if (DATA_BITS != 32)
+            $fatal(1, &quot;F1 writer supports 32-bit data beats only&quot;);
+        if (ADDR_BITS &lt; 12)
+            $fatal(1, &quot;address width must be at least 12 bits for the 4 KiB rule&quot;);
+    end
+    // synthesis translate_on
+
+    always @* begin
+        done_reg = 1'b0;
+        reserve_beats = 0;
+        reserve_address = region_base + scheduled_offset;
+        plan_limit = B_MAX;
+        if (boundary_within_burst &amp;&amp; boundary_beats[LEN_W-1:0] &lt; plan_limit)
+            plan_limit = boundary_beats;
+        if (!remaining_has_high &amp;&amp; remaining_beats[LEN_W-1:0] &lt; plan_limit)
+            plan_limit = remaining_beats[LEN_W-1:0];
+        burst_limit = B_MAX;
+        if (plan_count != 0)
+            burst_limit = plan_beats[plan_rd_ptr];
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; configure_ack)
+            done_reg = 1'b1;
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; (store_ack_match || direct_store_ack))
+            done_reg = 1'b1;
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; start &amp;&amp;
+            (in1 == OP_DRAIN) &amp;&amp;
+            ((!region_active) || drain_complete))
+            done_reg = 1'b1;
+        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; drain_pending &amp;&amp; drain_complete)
+            done_reg = 1'b1;
+        unassigned_fifo_count = fifo_count - reserved_data_count;
+        if ((descriptor_count &gt;= MAX_OUTSTANDING) || fault_reg || peer_fault_active || b_fault_now)
+            burst_limit = 0;
+        else if (region_active &amp;&amp; plan_count != 0 &amp;&amp; unassigned_fifo_count &gt;= burst_limit)
+            reserve_beats = burst_limit;
+        reserve_address = plan_count != 0 ? plan_address[plan_rd_ptr] : region_base + scheduled_offset;
+    end
+
+    assign plan_pop = (plan_count != 0) &amp;&amp; (descriptor_count &lt; MAX_OUTSTANDING) &amp;&amp;
+        (unassigned_fifo_count &gt;= plan_beats[plan_rd_ptr]) &amp;&amp;
+        region_active &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !b_fault_now;
+    assign plan_push = region_active &amp;&amp; (remaining_has_high || (remaining_beats[LEN_W-1:0] != 0)) &amp;&amp;
+        ((plan_count &lt; 2) || plan_pop) &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !b_fault_now;
+
+    always @(posedge clock 1RESET_EDGE) begin
+        if (1RESET_VALUE) begin
+            fault_reg &lt;= 1'b0;
+            region_active &lt;= 1'b0;
+            region_base &lt;= 0;
+            region_count &lt;= 0;
+            if (FAST_STORE_ACK != 0) begin
+                next_expected_address &lt;= 0;
+                stores_exhausted &lt;= 1'b0;
+            end
+            accepted &lt;= 0;
+            scheduled &lt;= 0;
+            remaining_beats &lt;= 0;
+            remaining_has_high &lt;= 1'b0;
+            plan_scheduled &lt;= 0;
+            plan_rd_ptr &lt;= 0;
+            plan_wr_ptr &lt;= 0;
+            plan_count &lt;= 0;
+            for (i = 0; i &lt; 2; i = i + 1) begin
+                plan_beats[i] &lt;= 0;
+                plan_address[i] &lt;= 0;
+            end
+            boundary_beats &lt;= 0;
+            boundary_within_burst &lt;= 1'b0;
+            completed &lt;= 0;
+            cfg_seen &lt;= 1'b0;
+            store_seen &lt;= 1'b0;
+            drain_seen &lt;= 1'b0;
+            drain_pending &lt;= 1'b0;
+            store_pending &lt;= 1'b0;
+            store_ack &lt;= 1'b0;
+            store_ack_pending &lt;= 1'b0;
+            store_ack_size &lt;= 0;
+            store_ack_data &lt;= 0;
+            store_ack_address &lt;= 0;
+            pending_size &lt;= 0;
+            pending_data &lt;= 0;
+            pending_address &lt;= 0;
+            cfg_size &lt;= 0;
+            cfg_base &lt;= 0;
+            cfg_count &lt;= 0;
+            cfg_pipe_valid &lt;= 1'b0;
+            cfg_pipe_legal &lt;= 1'b0;
+            cfg_pipe_idle &lt;= 1'b0;
+            cfg_pipe_size &lt;= 0;
+            cfg_pipe_base &lt;= 0;
+            cfg_pipe_count &lt;= 0;
+            configure_ack &lt;= 1'b0;
+            store_size &lt;= 0;
+            store_data &lt;= 0;
+            store_address &lt;= 0;
+            descriptor_alloc_ptr &lt;= 0;
+            descriptor_aw_ptr &lt;= 0;
+            descriptor_w_ptr &lt;= 0;
+            descriptor_b_ptr &lt;= 0;
+            descriptor_count &lt;= 0;
+            reserved_data_count &lt;= 0;
+            for (i = 0; i &lt; DESC_DEPTH; i = i + 1) begin
+                descriptor_address[i] &lt;= 0;
+                descriptor_beats[i] &lt;= 0;
+                descriptor_w_remaining[i] &lt;= 0;
+                descriptor_valid[i] &lt;= 1'b0;
+                descriptor_aw_done[i] &lt;= 1'b0;
+            end
+            fifo_rd_ptr &lt;= 0;
+            fifo_wr_ptr &lt;= 0;
+            fifo_count &lt;= 0;
+        end else begin
+            configure_ack &lt;= 1'b0;
+            if (peer_fault_active)
+                fault_reg &lt;= 1'b1;
+            store_ack &lt;= store_enqueue;
+            store_ack_pending &lt;= store_enqueue &amp;&amp; pending_store_enqueue;
+            if (store_enqueue) begin
+                store_ack_size &lt;= pending_store_enqueue ? pending_size : in2;
+                store_ack_data &lt;= pending_store_enqueue ? pending_data : in3;
+                store_ack_address &lt;= pending_store_enqueue ? pending_address : in4;
+                if (FAST_STORE_ACK != 0) begin
+                    next_expected_address &lt;= next_expected_address + BEAT_BYTES;
+                    stores_exhausted &lt;= (accepted + 1'b1 == region_count);
+                end
+            end
+            if (!store_pending) begin
+                if (!cfg_pipe_valid) begin
+                    if (!start || (in1 != OP_CONFIGURE))
+                        cfg_seen &lt;= 1'b0;
+                    else if (in2 != cfg_size || in4 != cfg_base || in5 != cfg_count)
+                        cfg_seen &lt;= 1'b0;
+                end
+                if (!start || (in1 != OP_STORE))
+                    store_seen &lt;= 1'b0;
+                else if (in2 != store_size || in3 != store_data || in4 != store_address)
+                    store_seen &lt;= 1'b0;
+                if (!start || (in1 != OP_DRAIN))
+                    drain_seen &lt;= 1'b0;
+            end
+
+            if (configure_capture) begin
+                cfg_seen &lt;= 1'b1;
+                cfg_size &lt;= in2;
+                cfg_base &lt;= in4;
+                cfg_count &lt;= in5;
+                cfg_pipe_valid &lt;= 1'b1;
+                cfg_pipe_legal &lt;= configure_valid;
+                cfg_pipe_idle &lt;= !region_active;
+                cfg_pipe_size &lt;= in2;
+                cfg_pipe_base &lt;= in4;
+                cfg_pipe_count &lt;= in5;
+            end
+
+            if (cfg_pipe_valid) begin
+                cfg_pipe_valid &lt;= 1'b0;
+                if (!cfg_pipe_legal || cfg_pipe_size != DATA_BITS || !cfg_pipe_idle) begin
+                    fault_reg &lt;= 1'b1;
+                end else if (!fault_reg &amp;&amp; !peer_fault_active) begin
+                    drain_pending &lt;= 1'b0;
+                    region_active &lt;= 1'b1;
+                    region_base &lt;= cfg_pipe_base;
+                    region_count &lt;= cfg_pipe_count[COUNT_W-1:0];
+                    if (FAST_STORE_ACK != 0) begin
+                        next_expected_address &lt;= cfg_pipe_base;
+                        stores_exhausted &lt;= (cfg_pipe_count == 0);
+                    end
+                    boundary_beats &lt;= BOUNDARY_BEATS - cfg_pipe_base[11:BEAT_SHIFT];
+                    boundary_within_burst &lt;=
+                        ((BOUNDARY_BEATS - cfg_pipe_base[11:BEAT_SHIFT]) &lt;= B_MAX);
+                    accepted &lt;= 0;
+                    scheduled &lt;= 0;
+                    remaining_beats &lt;= cfg_pipe_count[COUNT_W-1:0];
+                    remaining_has_high &lt;= (|cfg_pipe_count[COUNT_W-1:LEN_W]);
+                    plan_scheduled &lt;= 0;
+                    plan_rd_ptr &lt;= 0;
+                    plan_wr_ptr &lt;= 0;
+                    plan_count &lt;= 0;
+                    completed &lt;= 0;
+                    fifo_rd_ptr &lt;= 0;
+                    fifo_wr_ptr &lt;= 0;
+                    fifo_count &lt;= 0;
+                    descriptor_alloc_ptr &lt;= 0;
+                    descriptor_aw_ptr &lt;= 0;
+                    descriptor_w_ptr &lt;= 0;
+                    descriptor_b_ptr &lt;= 0;
+                    descriptor_count &lt;= 0;
+                    reserved_data_count &lt;= 0;
+                    for (i = 0; i &lt; DESC_DEPTH; i = i + 1) begin
+                        descriptor_valid[i] &lt;= 1'b0;
+                        descriptor_aw_done[i] &lt;= 1'b0;
+                    end
+                    configure_ack &lt;= 1'b1;
+                end
+            end
+
+            if (fast_pipe_push) begin
+                fifo[fifo_wr_ptr] &lt;= fast_pipe_data;
+                if (fifo_wr_ptr == FIFO_DEPTH-1)
+                    fifo_wr_ptr &lt;= 0;
+                else
+                    fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+            end
+            if (fast_store_accept) begin
+                next_expected_address &lt;= next_expected_address + BEAT_BYTES;
+                stores_exhausted &lt;= (accepted + 1'b1 == region_count);
+                accepted &lt;= accepted + 1'b1;
+            end
+            if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp; direct_store &amp;&amp; !store_pending) begin
+                // The kernel drops `start` one cycle after presenting a request,
+                // so the engine consumes it in this cycle either through the fast
+                // accept or through the pending capture; the novelty state follows
+                // the baseline rule in both modes.
+                store_seen &lt;= 1'b1;
+                store_size &lt;= in2;
+                store_data &lt;= in3;
+                store_address &lt;= in4;
+                if (!store_request_valid) begin
+                    fault_reg &lt;= 1'b1;
+                end else if ((FAST_STORE_ACK == 0) ? (fifo_count == FIFO_DEPTH) :
+                    !fast_store_accept) begin
+                    store_pending &lt;= 1'b1;
+                    pending_size &lt;= in2;
+                    pending_data &lt;= in3;
+                    pending_address &lt;= in4;
+                end else if (FAST_STORE_ACK == 0) begin
+                    fifo[fifo_wr_ptr] &lt;= in3;
+                    if (fifo_wr_ptr == FIFO_DEPTH-1)
+                        fifo_wr_ptr &lt;= 0;
+                    else
+                        fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+                    accepted &lt;= accepted + 1'b1;
+                end
+            end else if (store_pending) begin
+                if (pending_store_changed)
+                    fault_reg &lt;= 1'b1;
+                if (pending_store_enqueue) begin
+                    fifo[fifo_wr_ptr] &lt;= pending_data;
+                    if (fifo_wr_ptr == FIFO_DEPTH-1)
+                        fifo_wr_ptr &lt;= 0;
+                    else
+                        fifo_wr_ptr &lt;= fifo_wr_ptr + 1'b1;
+                    accepted &lt;= accepted + 1'b1;
+                    store_pending &lt;= 1'b0;
+                end
+            end
+
+            if (!peer_fault_active &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; start &amp;&amp;
+                (in1 == OP_DRAIN) &amp;&amp; !drain_seen) begin
+                drain_seen &lt;= 1'b1;
+                if (!region_active) begin
+                end else if (accepted != region_count) begin
+                    fault_reg &lt;= 1'b1;
+                end else if (drain_complete) begin
+                    region_active &lt;= 1'b0;
+                end else begin
+                    drain_pending &lt;= 1'b1;
+                end
+            end else if (!peer_fault_active &amp;&amp; !store_pending &amp;&amp; !store_ack_pending &amp;&amp; drain_seen &amp;&amp; start &amp;&amp;
+                         (in1 == OP_DRAIN) &amp;&amp; drain_complete &amp;&amp; !fault_reg) begin
+                region_active &lt;= 1'b0;
+            end
+
+            if (reserve_beats != 0) begin
+                descriptor_valid[descriptor_alloc_ptr] &lt;= 1'b1;
+                descriptor_aw_done[descriptor_alloc_ptr] &lt;= 1'b0;
+                descriptor_beats[descriptor_alloc_ptr] &lt;= reserve_beats;
+                descriptor_w_remaining[descriptor_alloc_ptr] &lt;= reserve_beats;
+                descriptor_address[descriptor_alloc_ptr] &lt;= reserve_address;
+                if (descriptor_alloc_ptr == DESC_DEPTH-1)
+                    descriptor_alloc_ptr &lt;= 0;
+                else
+                    descriptor_alloc_ptr &lt;= descriptor_alloc_ptr + 1'b1;
+                scheduled[LEN_W-1:0] &lt;= scheduled_low_sum[LEN_W-1:0];
+                if (scheduled_low_sum[LEN_W])
+                    scheduled[COUNT_W-1:LEN_W] &lt;= scheduled[COUNT_W-1:LEN_W] + 1'b1;
+            end
+
+            if (plan_push) begin
+                plan_beats[plan_wr_ptr] &lt;= plan_limit;
+                plan_address[plan_wr_ptr] &lt;= region_base + plan_scheduled_offset;
+                plan_wr_ptr &lt;= ~plan_wr_ptr;
+                plan_scheduled[LEN_W-1:0] &lt;= plan_scheduled_low_sum[LEN_W-1:0];
+                if (plan_scheduled_low_sum[LEN_W])
+                    plan_scheduled[COUNT_W-1:LEN_W] &lt;= plan_scheduled[COUNT_W-1:LEN_W] + 1'b1;
+                if (plan_limit == boundary_beats) begin
+                    boundary_beats &lt;= BOUNDARY_BEATS;
+                    boundary_within_burst &lt;= 1'b0;
+                end else begin
+                    boundary_beats &lt;= boundary_beats - plan_limit;
+                    if (boundary_within_burst || (boundary_beats &lt;= (B_MAX + plan_limit)))
+                        boundary_within_burst &lt;= 1'b1;
+                end
+                remaining_beats[LEN_W-1:0] &lt;= remaining_beats[LEN_W-1:0] - plan_limit;
+                if (remaining_beats[LEN_W-1:0] &lt; plan_limit) begin
+                    remaining_beats[COUNT_W-1:LEN_W] &lt;= remaining_beats[COUNT_W-1:LEN_W] - 1'b1;
+                    if (remaining_beats[COUNT_W-1:LEN_W] == 1)
+                        remaining_has_high &lt;= 1'b0;
+                end
+            end
+            if (plan_pop)
+                plan_rd_ptr &lt;= ~plan_rd_ptr;
+            case ({plan_push, plan_pop})
+                2'b10: plan_count &lt;= plan_count + 1'b1;
+                2'b01: plan_count &lt;= plan_count - 1'b1;
+                default: plan_count &lt;= plan_count;
+            endcase
+            if (fault_reg || peer_fault_active || b_fault_now) begin
+                plan_count &lt;= 0;
+                plan_rd_ptr &lt;= plan_wr_ptr;
+            end
+
+            if (aw_push) begin
+                descriptor_aw_done[descriptor_aw_ptr] &lt;= 1'b1;
+                if (descriptor_aw_ptr == DESC_DEPTH-1)
+                    descriptor_aw_ptr &lt;= 0;
+                else
+                    descriptor_aw_ptr &lt;= descriptor_aw_ptr + 1'b1;
+            end
+
+            if (w_push) begin
+                if (fifo_rd_ptr == FIFO_DEPTH-1)
+                    fifo_rd_ptr &lt;= 0;
+                else
+                    fifo_rd_ptr &lt;= fifo_rd_ptr + 1'b1;
+                descriptor_w_remaining[descriptor_w_ptr] &lt;=
+                    descriptor_w_remaining[descriptor_w_ptr] - 1'b1;
+                if (descriptor_w_remaining[descriptor_w_ptr] == 1) begin
+                    if (descriptor_w_ptr == DESC_DEPTH-1)
+                        descriptor_w_ptr &lt;= 0;
+                    else
+                        descriptor_w_ptr &lt;= descriptor_w_ptr + 1'b1;
+                end
+            end
+
+            case ({((FAST_STORE_ACK != 0) ? fast_data_enqueue : store_enqueue), w_push})
+                2'b10: fifo_count &lt;= fifo_count + 1'b1;
+                2'b01: fifo_count &lt;= fifo_count - 1'b1;
+                default: fifo_count &lt;= fifo_count;
+            endcase
+
+            if (b_push) begin
+                descriptor_valid[descriptor_b_ptr] &lt;= 1'b0;
+                descriptor_aw_done[descriptor_b_ptr] &lt;= 1'b0;
+                completed &lt;= completed + descriptor_beats[descriptor_b_ptr];
+                if (descriptor_b_ptr == DESC_DEPTH-1)
+                    descriptor_b_ptr &lt;= 0;
+                else
+                    descriptor_b_ptr &lt;= descriptor_b_ptr + 1'b1;
+                if ((|m_axi_bid) || (m_axi_bresp != 0))
+                    fault_reg &lt;= 1'b1;
+            end
+            case ({(reserve_beats != 0), b_push})
+                2'b10: descriptor_count &lt;= descriptor_count + 1'b1;
+                2'b01: descriptor_count &lt;= descriptor_count - 1'b1;
+                default: descriptor_count &lt;= descriptor_count;
+            endcase
+            case ({(reserve_beats != 0), w_push})
+                2'b10: reserved_data_count &lt;= reserved_data_count + reserve_beats;
+                2'b01: reserved_data_count &lt;= reserved_data_count - 1'b1;
+                2'b11: reserved_data_count &lt;= reserved_data_count + reserve_beats - 1'b1;
+                default: reserved_data_count &lt;= reserved_data_count;
+            endcase
+            if (!store_pending &amp;&amp; !store_ack_pending &amp;&amp; region_active &amp;&amp;
+                (accepted == region_count) &amp;&amp;
+                drain_complete &amp;&amp; !fault_reg &amp;&amp;
+                (drain_pending || (start &amp;&amp; (in1 == OP_DRAIN)))) begin
+                region_active &lt;= 1'b0;
+                drain_pending &lt;= 1'b0;
+            end
+        end
+    end
 "/>
         </module_o>
       </circuit>
