@@ -365,6 +365,10 @@ set_tests_properties(vector_allocation PROPERTIES LABELS "vector_allocation")
 # it is installed next to bambu so that the runtime flow only needs the tools
 # of the distribution.
 add_executable(record_output "${CMAKE_CURRENT_SOURCE_DIR}/utility/record_output.cpp")
+target_link_options(record_output PRIVATE "-Wl,-z,origin")
+set_target_properties(record_output PROPERTIES
+   INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
+)
 # An older build tree updated to this patch may not have the tool yet, and a
 # partial build of another target would leave the installation without the
 # artifact to install: build it before installing, like the other executables.

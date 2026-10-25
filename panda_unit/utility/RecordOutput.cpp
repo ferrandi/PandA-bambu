@@ -47,6 +47,10 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "Parameter.hpp"
+#include "fileIO.hpp"
+#include "string_manipulation.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
@@ -513,7 +517,59 @@ namespace
       BOOST_REQUIRE_LE(0, fd);
       return fd;
    }
+
+   class LoggingParameter final : public Parameter
+   {
+    public:
+      LoggingParameter() : Parameter("record_output_test", 0, nullptr)
+      {
+      }
+      void SetDefaults() override
+      {
+      }
+      void PrintProgramName(std::ostream&) const override
+      {
+      }
+      void PrintHelp(std::ostream&) const override
+      {
+      }
+      int Exec() override
+      {
+         return 0;
+      }
+      void CheckParameters() override
+      {
+      }
+   };
 } // namespace
+
+BOOST_AUTO_TEST_CASE(record_output_generated_paths_are_shell_escaped)
+{
+   TempPath root("generated_paths", /*as_directory=*/true);
+   const std::string special = " ' \" $HOME `printf WRONG` $(printf WRONG) \\";
+   const std::string payload = "logged output\n";
+   for(const auto level : {0u, 3u})
+   {
+      for(const auto& directory : {std::string("scripts"), "scripts" + special})
+      {
+         const auto script_dir = root.path() / directory;
+         std::filesystem::create_directories(script_dir);
+         auto param = std::make_shared<LoggingParameter>();
+         param->setOption(OPT_output_level, level);
+         param->setOption(OPT_output_temporary_directory, script_dir.string());
+         const auto log = root.path() / ("output" + special + ".log");
+         Child command{spawn_producer(
+             [&]() {
+                const int status = PandaSystem(param, "printf '%s' " + shell_escape_argument(payload), false, log);
+                ::_exit(IsError(status) ? 1 : 0);
+             },
+             {})};
+         BOOST_REQUIRE_EQUAL(0, command.wait());
+         BOOST_CHECK_EQUAL(read_file(log), payload);
+         std::filesystem::remove(log);
+      }
+   }
+}
 
 BOOST_AUTO_TEST_CASE(record_output_crashed_tool_does_not_block)
 {
