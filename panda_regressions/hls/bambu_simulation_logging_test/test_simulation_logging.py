@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 # Copyright (C) 2026 Politecnico di Milano
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-"""Offline integration checks for the shared simulation logging wrapper.
+"""Offline checks for the shared logging functions and the standalone copier."""
 
-The copier is the record_output tool of the distribution (built from
-src/utility/record_output.cpp): the product flow needs neither the system tee
-nor python3. These checks compile the tool with the C++ compiler, and only
-these checks use python3.
-"""
-
+import ast
 import os
 from pathlib import Path
 import shutil
@@ -19,9 +14,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 WRAPPER = ROOT / "etc/libtech/backend/utils/simulation_wrapper.sh"
+LOGGING = ROOT / "etc/libtech/backend/utils/record_output.sh"
 TOOL_SOURCE = ROOT / "src" / "utility" / "record_output.cpp"
 PRODUCT_SOURCES = [
     WRAPPER,
+    LOGGING,
     *sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh")),
     ROOT / "src" / "wrapper" / "BackendWrapper.cpp",
     ROOT / "src" / "utility" / "fileIO.cpp",
@@ -72,6 +69,11 @@ class SimulationLoggingTest(unittest.TestCase):
         self.work = Path(self.temporary.name)
         self.simulation = self.work / "HLS_output/simulation"
         self.simulation.mkdir(parents=True)
+        utils = self.work / "HLS_output/utils"
+        utils.mkdir()
+        shutil.copy(LOGGING, utils / LOGGING.name)
+        self.wrapper = self.simulation / WRAPPER.name
+        shutil.copy(WRAPPER, self.wrapper)
         (self.work / "bambu_time_simulation.txt").write_text("0|2\n", encoding="utf-8")
         # A fake installation tree: the wrapper resolves the copier through
         # ${BAMBU_HLS}/bin/record_output, exactly as the installed flow does.
@@ -133,6 +135,7 @@ class SimulationLoggingTest(unittest.TestCase):
             environment["PATH"] = str(extra_path) + os.pathsep + environment.get("PATH", "")
         environment.update(
             BAMBU_HLS=str(self.bambu_hls),
+            BAMBU_HLS_OUTDIR=str(self.work),
             OUT_LVL="1",
             TARGET="testbench",
             SYS_ELF=str(executable),
@@ -146,7 +149,7 @@ class SimulationLoggingTest(unittest.TestCase):
         )
         Path(environment["SWD"]).mkdir(exist_ok=True)
         result = subprocess.run(
-            ["bash", str(self.bootstrap), str(WRAPPER), str(self.setup)],
+            ["bash", str(self.bootstrap), str(self.wrapper), str(self.setup)],
             cwd=self.work,
             env=environment,
             capture_output=True,
@@ -276,6 +279,31 @@ class SimulationLoggingTest(unittest.TestCase):
                 self.assertIn(PAYLOAD, result.stdout)
                 self.assertNotIn(b"unexpected external tee invocation", result.stderr)
 
+    def test_generated_backend_loads_the_shared_logging(self):
+        backend = self.work / "backend with spaces"
+        utils = backend / "HLS_output/utils"
+        utils.mkdir(parents=True)
+        shutil.copy(LOGGING, utils / LOGGING.name)
+        source = (ROOT / "src/wrapper/BackendWrapper.cpp").read_text(encoding="utf-8")
+        loader = ast.literal_eval(next(line.strip() for line in source.splitlines()
+                                       if "/HLS_output/utils/record_output.sh" in line))
+        environment = dict(os.environ, BAMBU_HLS=str(self.bambu_hls), BAMBU_HLS_OUTDIR=str(backend))
+        for producer_status, bad_log in ((0, False), (7, False), (0, True), (7, True)):
+            with self.subTest(producer_status=producer_status, bad_log=bad_log):
+                log = backend / ("missing/log" if bad_log else "backend.log")
+                environment["PRODUCER_STATUS"] = str(producer_status)
+                result = subprocess.run(
+                    ["bash", "-e", "-o", "pipefail", "-c",
+                     loader + '\nbash -c \'run_logged "$1" "$2"\' bash "$1" "$2"\n',
+                     "bash", str(log), str(self.producer)],
+                    env=environment, capture_output=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, producer_status or int(bad_log),
+                                 result.stderr.decode(errors="replace"))
+                self.assertEqual(result.stdout, PAYLOAD)
+                if not bad_log:
+                    self.assertEqual(log.read_bytes(), PAYLOAD)
+
     def test_simulation_flow_needs_no_python3(self):
         """With a poisoned python3 on PATH the logging flow still runs fine."""
         poison = self.work / "poison-bin"
@@ -292,7 +320,7 @@ class SimulationLoggingTest(unittest.TestCase):
 
     def test_logging_never_relies_on_the_system_tee(self):
         generated_scripts = [ROOT / "src" / "wrapper" / "BackendWrapper.cpp", ROOT / "src" / "utility" / "fileIO.cpp"]
-        for source in [WRAPPER] + sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh")) + generated_scripts:
+        for source in [WRAPPER, LOGGING] + sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh")) + generated_scripts:
             with self.subTest(source=str(source.relative_to(ROOT))):
                 self.assertNotIn("| tee", source.read_text(encoding="utf-8"))
         for source in [WRAPPER] + generated_scripts:
@@ -327,6 +355,19 @@ class SimulationLoggingTest(unittest.TestCase):
             return_code = copier.wait(timeout=30)
         self.assertEqual(return_code, 0)
         self.assertEqual(log.read_bytes(), PAYLOAD)
+
+    def test_closed_standard_outputs_do_not_corrupt_the_log(self):
+        for redirection in ("1>&-", "2>&-", "1>&- 2>&-"):
+            with self.subTest(redirection=redirection):
+                log = self.work / "closed-fd.log"
+                with open(self.payload_file, "rb") as payload:
+                    result = subprocess.run(
+                        ["bash", "-c", 'exec "$1" "$2" ' + redirection,
+                         "bash", str(self.tool), str(log)],
+                        stdin=payload, capture_output=True, timeout=30,
+                    )
+                self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+                self.assertEqual(log.read_bytes(), PAYLOAD)
 
 
 if __name__ == "__main__":

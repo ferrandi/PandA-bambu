@@ -359,19 +359,13 @@ add_test(NAME vector_mask_hls
 set_tests_properties(vector_mask_type vector_mask_ir vector_mask_hls PROPERTIES LABELS "vector_mask")
 set_tests_properties(vector_allocation PROPERTIES LABELS "vector_allocation")
 
-# The standalone log copier used by the generated scripts and by the simulation
-# flow in place of the system tee (see record_output.cpp). It is a POSIX-only
-# tool, without dependencies on panda_core, on the system tee and on python3;
-# it is installed next to bambu so that the runtime flow only needs the tools
-# of the distribution.
+# Standalone copier used by generated commands and simulation scripts.
 add_executable(record_output "${CMAKE_CURRENT_SOURCE_DIR}/utility/record_output.cpp")
 target_link_options(record_output PRIVATE "-Wl,-z,origin")
 set_target_properties(record_output PROPERTIES
    INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
 )
-# An older build tree updated to this patch may not have the tool yet, and a
-# partial build of another target would leave the installation without the
-# artifact to install: build it before installing, like the other executables.
+# Build the copier if a partial build left it missing at install time.
 install(CODE "
    if(NOT EXISTS \"$<TARGET_FILE:record_output>\")
       execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target record_output --config \"\${CMAKE_INSTALL_CONFIG_NAME}\")
@@ -381,8 +375,7 @@ install(TARGETS record_output
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# The record_output unit tests spawn the real tool and check that a broken
-# simulation or a broken console never blocks the flow forever.
+# Exercise the real copier in both the full and focused unit suites.
 add_dependencies(libbambu_unit record_output)
 target_compile_definitions(libbambu_unit PRIVATE
    RECORD_OUTPUT_TOOL="$<TARGET_FILE:record_output>")
@@ -404,8 +397,7 @@ if(PANDA_BUILD_BAMBU)
    set_target_properties(bambu PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
-   # bambu dispatches the copier through the scripts it generates, at pedantic
-   # output level: building bambu must also build the tool it runs.
+   # Generated Bambu scripts require the copier.
    add_dependencies(bambu record_output)
    install(CODE "
       if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu\")

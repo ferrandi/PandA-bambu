@@ -193,17 +193,18 @@ namespace
     public:
       ProcessTempDir()
       {
-         std::error_code ignored;
          const std::filesystem::path parent = std::filesystem::temp_directory_path() / "panda_record_output_tests";
-         std::filesystem::create_directories(parent, ignored);
+         std::filesystem::create_directories(parent);
          const std::string pattern = (parent / "proc_XXXXXX").string();
          std::vector<char> buffer(pattern.begin(), pattern.end());
          buffer.push_back('\0');
          const char* made = ::mkdtemp(buffer.data());
-         if(made)
+         if(!made)
          {
-            path_ = made;
+            throw std::filesystem::filesystem_error("cannot create record_output test directory", parent,
+                                                    std::error_code(errno, std::generic_category()));
          }
+         path_ = made;
       }
       ~ProcessTempDir()
       {
@@ -236,8 +237,7 @@ namespace
       explicit TempPath(const std::string& name, bool as_directory = false)
       {
          const auto& root = process_temp_dir().path();
-         const auto fallback = std::filesystem::temp_directory_path() / ("panda_record_output_" + name);
-         path_ = root.empty() ? fallback : root / ("panda_record_output_" + name);
+         path_ = root / ("panda_record_output_" + name);
          std::filesystem::remove_all(path_);
          if(as_directory)
          {
@@ -542,6 +542,34 @@ namespace
       }
    };
 } // namespace
+
+BOOST_AUTO_TEST_CASE(record_output_temp_directory_failure_preserves_existing_files)
+{
+   TempPath root("temp_failure", /*as_directory=*/true);
+   BOOST_REQUIRE(write_file(root.path() / "panda_record_output_tests", "not a directory"));
+   const auto existing = root.path() / "panda_record_output_big_payload.bin";
+   const std::string content = "pre-existing data";
+   BOOST_REQUIRE(write_file(existing, content));
+   Child child{spawn_producer(
+       [&]() {
+          if(::setenv("TMPDIR", root.path().c_str(), 1) != 0)
+          {
+             ::_exit(2);
+          }
+          try
+          {
+             ProcessTempDir must_fail;
+          }
+          catch(const std::filesystem::filesystem_error&)
+          {
+             ::_exit(0);
+          }
+          ::_exit(1);
+       },
+       {})};
+   BOOST_REQUIRE_EQUAL(0, child.wait());
+   BOOST_CHECK_EQUAL(read_file(existing), content);
+}
 
 BOOST_AUTO_TEST_CASE(record_output_generated_paths_are_shell_escaped)
 {

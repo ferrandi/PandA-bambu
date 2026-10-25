@@ -120,15 +120,20 @@ int main(int argc, char** argv)
       return 2;
    }
 
-   // A disappearing console must not kill this copier with SIGPIPE, and must
-   // not kill the command whose output is being copied: the copier keeps
-   // draining the input and keeps writing the log file.
+   // Keep draining stdin when the console disappears.
    std::signal(SIGPIPE, SIG_IGN);
 
-   // A log file that cannot be opened is handled as a log that cannot be
-   // written: the input is drained anyway, otherwise the logged command would
-   // be killed by SIGPIPE instead of completing.
-   const int log_fd = ::open(log_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+   // Keep the log separate from any closed standard descriptors.
+   int log_fd = ::open(log_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+   if(log_fd >= 0 && log_fd <= STDERR_FILENO)
+   {
+      const int separate_fd = ::fcntl(log_fd, F_DUPFD_CLOEXEC, STDERR_FILENO + 1);
+      const int saved_errno = errno;
+      ::close(log_fd);
+      log_fd = separate_fd;
+      errno = saved_errno;
+   }
+   // An open failure must not close the producer's pipe.
    bool log_ok = log_fd >= 0;
    if(!log_ok)
    {
