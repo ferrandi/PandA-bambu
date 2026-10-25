@@ -79,6 +79,41 @@ fi
         self.assertIn(f"PATH={path_bin / 'vsim'}\n", result.stdout)
         self.assertIn(f"BIN={path_bin}\n", result.stdout)
 
+    def test_relative_path_and_backend_roots_resolve_to_usable_absolute_paths(self) -> None:
+        launch = self.scratch / "relative launch"
+        launch.mkdir()
+        path_bin = launch / "relative tools" / "bin"
+        self.write_executable(path_bin / "vsim", "printf '%s\\n' \"${0##*/}\"\n")
+        env = self.env.copy()
+        env["PATH"] = "relative tools/bin:/usr/bin:/bin"
+        result = self.run_lookup(env, launch)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"PATH={path_bin / 'vsim'}\n", result.stdout)
+        self.assertIn(f"BIN={path_bin}\n", result.stdout)
+        invoked = subprocess.run(
+            [str(path_bin / "vsim")], cwd=self.scratch, text=True,
+            capture_output=True, check=False,
+        )
+        self.assertEqual(invoked.returncode, 0, invoked.stderr)
+        self.assertEqual(invoked.stdout.strip(), "vsim")
+
+        backend_root = launch / "relative backend"
+        backend_bin = backend_root / "questa" / "bin"
+        self.write_executable(backend_bin / "vco", "printf '%s\\n' \"${0##*/}\"\n")
+        (backend_bin / "vsim").symlink_to("vco")
+        env["PATH"] = "/usr/bin:/bin"
+        env["BAMBU_HLS_BACKEND_PATH"] = "relative backend"
+        result = self.run_lookup(env, launch)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"PATH={backend_bin / 'vsim'}\n", result.stdout)
+        self.assertIn(f"BIN={backend_bin}\n", result.stdout)
+        invoked = subprocess.run(
+            [str(backend_bin / "vsim")], cwd=self.scratch, text=True,
+            capture_output=True, check=False,
+        )
+        self.assertEqual(invoked.returncode, 0, invoked.stderr)
+        self.assertEqual(invoked.stdout.strip(), "vsim")
+
     def test_backend_fallback_handles_spaces_symlinked_root_and_vco_dispatcher(self) -> None:
         physical_root = self.scratch / "backend root with spaces"
         bin_dir = physical_root / "questa" / "bin"
