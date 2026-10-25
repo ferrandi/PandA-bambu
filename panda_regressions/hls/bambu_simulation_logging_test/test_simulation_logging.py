@@ -188,10 +188,15 @@ class SimulationLoggingTest(unittest.TestCase):
                 self.assertIn(b"record_output not found", result.stderr)
                 self.assertIn(str(self.bambu_hls).encode(), result.stderr)
                 self.assertNotIn(b"producer failed (141)", result.stderr)
+                if status:
+                    self.assertIn(b"ERROR: producer failed (7); log:", result.stderr)
+                else:
+                    self.assertNotIn(b"ERROR: producer failed", result.stderr)
         result, _ = self.run_wrapper(invalid_log=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(b"record_output not found", result.stderr)
         self.assertNotIn(b"producer failed", result.stderr)
+        self.assertIn(b"cannot open log file", result.stderr)
 
     def test_unloadable_copier_preserves_the_producer_and_log(self):
         tool = self.bambu_hls / "bin/record_output"
@@ -203,6 +208,10 @@ class SimulationLoggingTest(unittest.TestCase):
                 self.assertEqual(log.read_bytes(), PAYLOAD)
                 self.assertIn(b"cannot start", result.stderr)
                 self.assertNotIn(b"producer failed (141)", result.stderr)
+                if status:
+                    self.assertIn(b"ERROR: producer failed (7); log:", result.stderr)
+                else:
+                    self.assertNotIn(b"ERROR: producer failed", result.stderr)
 
     def test_nonblocking_console_resumes_after_backpressure(self):
         read_fd, write_fd = os.pipe()
