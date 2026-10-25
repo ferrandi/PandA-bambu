@@ -76,7 +76,7 @@ def find_cell(xml_path: Path, target: str) -> tuple[ET.Element, str]:
         raise ValueError(f"raw and parsed VERILOG_PROVIDED content disagree for {target}")
     if not body.strip():
         raise ValueError(f"{target} has an empty HDL implementation")
-    # These are Bambu's standard reset substitutions used by run_verilator.sh.
+    # These are Bambu's standard reset substitutions used by the read-core runner.
     body = body.replace("1RESET_EDGE", "").replace("1RESET_VALUE", "reset == 1'b0")
     if re.search(r"1[A-Z][A-Z0-9_]*", body):
         raise ValueError(f"unresolved HDL placeholder in {target}")

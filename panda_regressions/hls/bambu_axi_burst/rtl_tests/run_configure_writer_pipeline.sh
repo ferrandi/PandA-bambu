@@ -7,8 +7,7 @@ ROOT=$(realpath "$SCRIPT_DIR/../../../../")
 EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_configure_writer_pipeline.sv"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
-WRITER_ROOT=$ROOT
-source "$SCRIPT_DIR/modelsim_writer_helpers.sh"
+source "$SCRIPT_DIR/modelsim_helpers.sh"
 
 if (($# > 1)); then
     echo "usage: $0 [fresh-output-directory]" >&2
@@ -24,8 +23,8 @@ for tool in python3 sha256sum timeout grep sed tail tr; do
         exit 2
     fi
 done
-modelsim_writer_resolve
-MODELSIM_WRITER_VERSION=$(modelsim_writer_version) || exit 2
+modelsim_resolve
+MODELSIM_VERSION=$(modelsim_version) || exit 2
 
 OUT_ARG=${1:-"$PWD/out_configure_writer_pipeline"}
 OUT_PARENT=$(realpath -m -- "$(dirname "$OUT_ARG")")
@@ -51,20 +50,20 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$RTL" > "$TASK_OUT/extract.log"
     printf 'runner='; sha256sum "$SCRIPT_DIR/run_configure_writer_pipeline.sh"
     printf 'extractor='; sha256sum "$EXTRACTOR"
     printf 'modelsim_lookup_source=%s\nmodelsim_bin=%s\nvsim=%s\nvlib=%s\nvlog=%s\nvmap=%s\n' \
-        "$MODELSIM_WRITER_SOURCE" "$MODELSIM_WRITER_BIN" "$MODELSIM_WRITER_VSIM" \
-        "$MODELSIM_WRITER_VLIB" "$MODELSIM_WRITER_VLOG" "$MODELSIM_WRITER_VMAP"
-    printf 'modelsim_version=%s\n' "$(printf '%s' "$MODELSIM_WRITER_VERSION" | tr '\n' ' ')"
+        "$MODELSIM_SOURCE" "$MODELSIM_BIN" "$MODELSIM_VSIM" \
+        "$MODELSIM_VLIB" "$MODELSIM_VLOG" "$MODELSIM_VMAP"
+    printf 'modelsim_version=%s\n' "$(printf '%s' "$MODELSIM_VERSION" | tr '\n' ' ')"
 } > "$TASK_OUT/provenance.txt"
 
 : > "$TASK_OUT/aggregate.log"
 BUILD="$TASK_OUT/build"
-modelsim_writer_compile "$BUILD" tb_configure_writer_pipeline "$RTL" "$TB" 0 || exit $?
+modelsim_compile "$BUILD" tb_configure_writer_pipeline "$RTL" "$TB" || exit $?
 
 for scenario in RESET_E1 PEER_FAULT_E1; do
     log="$BUILD/$scenario.log"
     status=0
-    modelsim_writer_run "$BUILD" tb_configure_writer_pipeline "$log" 30 -- "+CASE=$scenario" || status=$?
-    modelsim_writer_normalize_log "$log" "$log.normalized" || exit $?
+    modelsim_run "$BUILD" tb_configure_writer_pipeline "$log" 30 -- "+CASE=$scenario" || status=$?
+    modelsim_normalize_log "$log" "$log.normalized" || exit $?
     if (( status != 0 )); then
         cat "$log" >&2
         echo "RTL scenario failed: $scenario" >&2

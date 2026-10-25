@@ -29,7 +29,7 @@ module tb_burst_engine #(
     logic [1:0] arburst;
     logic [0:0] arid;
     logic arvalid;
-    logic arready = 1'b0;
+    wire arready;
     logic [31:0] rdata;
     logic [1:0] rresp;
     logic [0:0] rid;

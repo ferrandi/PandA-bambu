@@ -8,8 +8,32 @@ source "$SCRIPT_DIR/../parallel_helpers.sh"
 EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_write_burst_engine.sv"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
-WRITER_ROOT=$ROOT
-source "$SCRIPT_DIR/modelsim_writer_helpers.sh"
+source "$SCRIPT_DIR/modelsim_helpers.sh"
+
+modelsim_writer_compile() {
+    local build=$1 top=$2 rtl=$3 tb=$4 plan_fifo=$5
+    if [[ $plan_fifo == 1 ]]; then
+        modelsim_compile "$build" "$top" "$rtl" "$tb" -- +define+PLAN_FIFO_PRESENT
+    else
+        modelsim_compile "$build" "$top" "$rtl" "$tb"
+    fi
+}
+
+modelsim_writer_expect_fatal() {
+    local log=$1 expected=$2 label=$3 status=$4 allow_elaboration=${5:-0} normalized="$1.normalized"
+    modelsim_normalize_log "$log" "$normalized" || return $?
+    # Runtime fatals use effective status 1; Questa reports constant parameter
+    # checks during vopt elaboration with status 12. Only parameter tests opt in.
+    if { (( status != 1 )) && { (( ! allow_elaboration || status != 12 )); }; } || \
+       ! grep -Fq "** Fatal: $expected" "$normalized" || \
+       grep -Eq '^WRITE_BURST_ENGINE PASS CASE=|^WRITE_BURST_ENGINE PARAM PASS ' "$normalized" || \
+       [[ $(grep -Ec '^\*\* Fatal:' "$normalized" || true) != 1 ]] || \
+       grep -Eq '^\*\* Error:|Segmentation fault|stack smashing|AddressSanitizer|Aborted' "$normalized"; then
+        cat "$log" >&2
+        echo "expected one named ModelSim fatal and no PASS marker for $label (status=$status): $expected" >&2
+        return 1
+    fi
+}
 
 if (($# > 1)); then
     echo "usage: $0 [fresh-output-directory]" >&2
@@ -26,8 +50,8 @@ for tool in python3 sha256sum timeout grep sed tail tr; do
         exit 2
     fi
 done
-modelsim_writer_resolve
-MODELSIM_WRITER_VERSION=$(modelsim_writer_version) || exit 2
+modelsim_resolve
+MODELSIM_VERSION=$(modelsim_version) || exit 2
 WRITER_GROUP_JOBS=${BURST_WRITER_GROUP_JOBS:-12}
 if [[ ! $WRITER_GROUP_JOBS =~ ^[1-9][0-9]*$ ]]; then
     echo "BURST_WRITER_GROUP_JOBS must be a positive integer" >&2
@@ -54,9 +78,9 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$TASK_OUT/MinimalAXI4MasterPipelined
     printf 'extractor='; sha256sum "$EXTRACTOR"
     printf 'testbench='; sha256sum "$TB"
     printf 'modelsim_lookup_source=%s\nmodelsim_bin=%s\nvsim=%s\nvlib=%s\nvlog=%s\nvmap=%s\n' \
-        "$MODELSIM_WRITER_SOURCE" "$MODELSIM_WRITER_BIN" "$MODELSIM_WRITER_VSIM" \
-        "$MODELSIM_WRITER_VLIB" "$MODELSIM_WRITER_VLOG" "$MODELSIM_WRITER_VMAP"
-    printf 'modelsim_version=%s\n' "$(printf '%s' "$MODELSIM_WRITER_VERSION" | tr '\n' ' ')"
+        "$MODELSIM_SOURCE" "$MODELSIM_BIN" "$MODELSIM_VSIM" \
+        "$MODELSIM_VLIB" "$MODELSIM_VLOG" "$MODELSIM_VMAP"
+    printf 'modelsim_version=%s\n' "$(printf '%s' "$MODELSIM_VERSION" | tr '\n' ' ')"
     printf 'timeout=%s\nwriter_group_jobs=%s\n' "$(command -v timeout)" "$WRITER_GROUP_JOBS"
     printf 'git_head='; git -C "$ROOT" rev-parse HEAD
     printf 'outside_sandbox_flag=%s\n' "$BURST_WRITER_SIM_OUTSIDE_SANDBOX"
@@ -77,10 +101,10 @@ build_run() {
     for case_name in "$test_case" "$@"; do
         log="$build/$case_name.log"
         status=0
-        modelsim_writer_run "$build" tb_write_burst_engine "$log" 60 \
+        modelsim_run "$build" tb_write_burst_engine "$log" 60 \
             -gB_MAX="$burst" -gMAX_OUTSTANDING=1 -gFIFO_DEPTH="$depth" \
             -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$case_name" || status=$?
-        modelsim_writer_normalize_log "$log" "$log.normalized" || return $?
+        modelsim_normalize_log "$log" "$log.normalized" || return $?
         if (( status != 0 )); then
             cat "$log" >&2
             echo "RTL scenario failed: $label/$case_name" >&2
@@ -123,10 +147,10 @@ build_run_o() {
     for case_name in "$test_case" "$@"; do
         log="$build/$case_name.log"
         status=0
-        modelsim_writer_run "$build" tb_write_burst_engine "$log" 60 \
+        modelsim_run "$build" tb_write_burst_engine "$log" 60 \
             -gB_MAX="$burst" -gMAX_OUTSTANDING="$outstanding" -gFIFO_DEPTH="$depth" \
             -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$case_name" || status=$?
-        modelsim_writer_normalize_log "$log" "$log.normalized" || return $?
+        modelsim_normalize_log "$log" "$log.normalized" || return $?
         if (( status != 0 )); then
             cat "$log" >&2
             echo "RTL scenario failed: $label/$case_name" >&2
@@ -184,11 +208,11 @@ build_async_reset_run() {
     modelsim_writer_compile "$build" tb_write_burst_engine "$source" "$TB" 1 || return $?
     local log="$build/ASYNC_RESET.log"
     local normalized="$log.normalized" status=0
-    modelsim_writer_run "$build" tb_write_burst_engine "$log" 60 \
+    modelsim_run "$build" tb_write_burst_engine "$log" 60 \
         -gB_MAX=16 -gMAX_OUTSTANDING=2 -gFIFO_DEPTH=32 -gADDR_BITS=32 \
         -gFAST_STORE_ACK="$fast_store_ack" -gASYNC_RESET=1 \
         -gRESET_ACTIVE_LOW="$active_low" -- +CASE=ASYNC_RESET || status=$?
-    modelsim_writer_normalize_log "$log" "$normalized" || return $?
+    modelsim_normalize_log "$log" "$normalized" || return $?
     if (( status != 0 )); then
         cat "$log" >&2
         echo "RTL scenario failed: $label/ASYNC_RESET" >&2
@@ -211,7 +235,7 @@ expect_parameter_fatal() {
     modelsim_writer_compile "$build" tb_write_burst_engine \
         "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" 0 || return $?
     local status=0
-    modelsim_writer_run "$build" tb_write_burst_engine "$build/run.log" 20 \
+    modelsim_run "$build" tb_write_burst_engine "$build/run.log" 20 \
         -gB_MAX="$burst" -gMAX_OUTSTANDING="$outstanding" -gFIFO_DEPTH="$depth" \
         -gADDR_BITS=32 -- +CASE=PARAM || status=$?
     modelsim_writer_expect_fatal "$build/run.log" "$expected" "$label" "$status" 1 || return $?
@@ -237,7 +261,7 @@ PY
     mkdir -p "$build" || return $?
     modelsim_writer_compile "$build" tb_write_burst_engine "$mutant" "$TB" 0 || return $?
     local status=0
-    modelsim_writer_run "$build" tb_write_burst_engine "$build/run.log" 60 \
+    modelsim_run "$build" tb_write_burst_engine "$build/run.log" 60 \
         -gB_MAX="$burst" -gMAX_OUTSTANDING="$outstanding" -gFIFO_DEPTH="$depth" \
         -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$test_case" || status=$?
     modelsim_writer_expect_fatal "$build/run.log" "$expected" "$label" "$status" || return $?

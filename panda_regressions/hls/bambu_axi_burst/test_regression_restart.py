@@ -48,7 +48,7 @@ class RegressionRestartTests(unittest.TestCase):
         )
         modelsim_bin = self.root / "modelsim/bin"
         modelsim_bin.mkdir(parents=True)
-        for tool in ("vsim", "vlib", "vlog"):
+        for tool in ("vsim", "vlib", "vmap", "vlog"):
             self._executable(modelsim_bin / tool, "#!/usr/bin/env bash\nexit 0\n")
 
         self.fake_bin = self.root / "fake-bin"
@@ -109,7 +109,7 @@ case $script in
     fi
     echo "simulated compiler helper $mode passed"
     ;;
-  */run_verilator.sh|*/run_write_burst_engine.sh|*/run_vlog_portability.sh|*/run_generated_kernel_tests.sh|*/run_generated_wrapper_rid_tests.sh|*/test_compiler_runner_export_root.sh)
+  */run_read_burst_modelsim.sh|*/run_write_burst_engine.sh|*/run_vlog_portability.sh|*/run_generated_kernel_tests.sh|*/run_generated_wrapper_rid_tests.sh|*/test_compiler_runner_export_root.sh)
     exit 0
     ;;
   *)

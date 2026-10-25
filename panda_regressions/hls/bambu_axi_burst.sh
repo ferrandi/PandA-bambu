@@ -29,11 +29,6 @@ for mantis_arg in "${mantis_args[@]}"; do
     retain_artifacts=1
   fi
 done
-verilator_jobs=${BURST_VERILATOR_JOBS:-2}
-if [[ ! $verilator_jobs =~ ^[1-9][0-9]*$ ]]; then
-  echo "BURST_VERILATOR_JOBS must be a positive integer, got: $verilator_jobs" >&2
-  exit 2
-fi
 writer_group_jobs=${BURST_WRITER_GROUP_JOBS:-8}
 if [[ ! $writer_group_jobs =~ ^[1-9][0-9]*$ ]]; then
   echo "BURST_WRITER_GROUP_JOBS must be a positive integer, got: $writer_group_jobs" >&2
@@ -75,7 +70,7 @@ if ! bambu_modelsim_resolve; then
   exit 2
 fi
 export PATH="$BAMBU_MODELSIM_BIN${PATH:+:$PATH}"
-for modelsim_tool in vsim vlib vlog; do
+for modelsim_tool in vsim vlib vmap vlog; do
   if [[ ! -x "$BAMBU_MODELSIM_BIN/$modelsim_tool" ]]; then
     echo "ModelSim $modelsim_tool is missing beside selected vsim: $BAMBU_MODELSIM_BIN/$modelsim_tool" >&2
     exit 2
@@ -128,6 +123,8 @@ python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 BURST_TEST_TMPDIR="$scratch/tmp" python3 -B "$script_dir/bambu_axi_burst/test_modelsim_tool_lookup.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_extract_write_engine.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_write_burst_modelsim_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_read_burst_modelsim_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_generated_read_modelsim_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_vlog_portability_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
@@ -150,10 +147,10 @@ run_post_mantis_job() {
     compiler-pragma|compiler-burst-profile|compiler-xml-profile|compiler-latency-metadata|compiler-fallback-matrix|compiler-root-reinvocation|compiler-shared-resource)
       run_compiler_suite "${job#compiler-}"
       ;;
-    rtl-verilator-transactions|rtl-verilator-credits|rtl-verilator-bounds|rtl-verilator-configure)
-      local suite=${job#rtl-verilator-}
-      SIM_JOBS="$verilator_jobs" bash "$script_dir/bambu_axi_burst/rtl_tests/run_verilator.sh" \
-        "$scratch/rtl-verilator-$suite" "$suite"
+    rtl-modelsim-transactions|rtl-modelsim-credits|rtl-modelsim-bounds|rtl-modelsim-configure)
+      local suite=${job#rtl-modelsim-}
+      bash "$script_dir/bambu_axi_burst/rtl_tests/run_read_burst_modelsim.sh" \
+        "$scratch/rtl-modelsim-$suite" "$suite"
       ;;
     rtl-write-engine)
       BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 \
@@ -168,9 +165,9 @@ run_post_mantis_job() {
     generated-kernel-wrapper)
       # These checks deliberately share generated RTL and must remain serial.
       local generated_out="$scratch/generated-kernel"
-      SIM_JOBS="$verilator_jobs" bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_kernel_tests.sh" \
+      bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_kernel_tests.sh" \
         "$bambu" "$generated_out" || return $?
-      SIM_JOBS="$verilator_jobs" bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_wrapper_rid_tests.sh" \
+      bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_wrapper_rid_tests.sh" \
         "$bambu" "$generated_out/generated" "$scratch/wrapper-rid" || return $?
       ;;
     *)
@@ -194,10 +191,10 @@ if ! run_bounded_jobs "$parallelism" run_post_mantis_job \
   compiler-fallback-matrix \
   compiler-root-reinvocation \
   compiler-shared-resource \
-  rtl-verilator-transactions \
-  rtl-verilator-credits \
-  rtl-verilator-bounds \
-  rtl-verilator-configure \
+  rtl-modelsim-transactions \
+  rtl-modelsim-credits \
+  rtl-modelsim-bounds \
+  rtl-modelsim-configure \
   rtl-write-engine \
   rtl-vlog \
   generated-kernel-wrapper; then
@@ -217,8 +214,8 @@ rm -rf -- \
   "$scratch/compiler-xml-profile" "$scratch/compiler-latency-metadata" \
   "$scratch/compiler-fallback-matrix" "$scratch/compiler-root-reinvocation" \
   "$scratch/compiler-shared-resource" \
-  "$scratch/rtl-verilator-transactions" "$scratch/rtl-verilator-credits" \
-  "$scratch/rtl-verilator-bounds" "$scratch/rtl-verilator-configure" \
+  "$scratch/rtl-modelsim-transactions" "$scratch/rtl-modelsim-credits" \
+  "$scratch/rtl-modelsim-bounds" "$scratch/rtl-modelsim-configure" \
   "$scratch/rtl-write-engine" \
   "$scratch/out_axi_core_vlog_portability" \
   "$scratch/generated-kernel" "$scratch/wrapper-rid"
