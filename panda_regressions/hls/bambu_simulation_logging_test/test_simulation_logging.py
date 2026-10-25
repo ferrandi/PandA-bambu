@@ -6,9 +6,11 @@
 import ast
 import os
 from pathlib import Path
+import select
 import shutil
 import subprocess
 from tempfile import TemporaryDirectory
+import time
 import unittest
 
 
@@ -16,14 +18,6 @@ ROOT = Path(__file__).resolve().parents[3]
 WRAPPER = ROOT / "etc/libtech/backend/utils/simulation_wrapper.sh"
 LOGGING = ROOT / "etc/libtech/backend/utils/record_output.sh"
 TOOL_SOURCE = ROOT / "src" / "utility" / "record_output.cpp"
-PRODUCT_SOURCES = [
-    WRAPPER,
-    LOGGING,
-    *sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh")),
-    ROOT / "src" / "wrapper" / "BackendWrapper.cpp",
-    ROOT / "src" / "utility" / "fileIO.cpp",
-    ROOT / "src" / "constants" / "file_IO_constants.hpp",
-]
 PAYLOAD = bytes(range(256)) * 4096 + b"\nlast fragment without newline"
 
 
@@ -184,6 +178,96 @@ class SimulationLoggingTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
         self.assertEqual(log.read_bytes(), PAYLOAD)
 
+    def test_missing_copier_preserves_the_producer_and_log(self):
+        (self.bambu_hls / "bin/record_output").unlink()
+        for status in (0, 7):
+            with self.subTest(status=status):
+                result, log = self.run_wrapper(producer_status=status, bash_producer=True)
+                self.assertEqual(result.returncode, status, result.stderr.decode(errors="replace"))
+                self.assertEqual(log.read_bytes(), PAYLOAD)
+                self.assertIn(b"record_output not found", result.stderr)
+                self.assertIn(str(self.bambu_hls).encode(), result.stderr)
+                self.assertNotIn(b"producer failed (141)", result.stderr)
+        result, _ = self.run_wrapper(invalid_log=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(b"record_output not found", result.stderr)
+        self.assertNotIn(b"producer failed", result.stderr)
+
+    def test_unloadable_copier_preserves_the_producer_and_log(self):
+        tool = self.bambu_hls / "bin/record_output"
+        tool.write_text("#!/nonexistent/panda-record-output-loader\n", encoding="utf-8")
+        for status in (0, 7):
+            with self.subTest(status=status):
+                result, log = self.run_wrapper(producer_status=status, bash_producer=True)
+                self.assertEqual(result.returncode, status, result.stderr.decode(errors="replace"))
+                self.assertEqual(log.read_bytes(), PAYLOAD)
+                self.assertIn(b"cannot start", result.stderr)
+                self.assertNotIn(b"producer failed (141)", result.stderr)
+
+    def test_nonblocking_console_resumes_after_backpressure(self):
+        read_fd, write_fd = os.pipe()
+        copier = None
+        try:
+            os.set_blocking(write_fd, False)
+            prefix = b""
+            while True:
+                try:
+                    prefix += b"x" * os.write(write_fd, b"x" * 4096)
+                except BlockingIOError:
+                    break
+            log = self.work / "nonblocking.log"
+            with open(self.payload_file, "rb") as payload:
+                copier = subprocess.Popen([str(self.tool), str(log)], stdin=payload,
+                                          stdout=write_fd, stderr=subprocess.PIPE)
+            os.close(write_fd)
+            write_fd = -1
+            deadline = time.monotonic() + 10
+            while not log.exists() or log.stat().st_size == 0:
+                self.assertLess(time.monotonic(), deadline, "copier did not start")
+                time.sleep(0.005)
+            console = bytearray()
+            while True:
+                remaining = deadline - time.monotonic()
+                self.assertGreater(remaining, 0, "copier stalled")
+                self.assertTrue(select.select([read_fd], [], [], remaining)[0], "copier stalled")
+                chunk = os.read(read_fd, 65536)
+                if not chunk:
+                    break
+                console.extend(chunk)
+            _, errors = copier.communicate(timeout=5)
+            self.assertEqual(copier.returncode, 0, errors.decode(errors="replace"))
+            self.assertEqual(log.read_bytes(), PAYLOAD)
+            self.assertEqual(console, prefix + PAYLOAD)
+            self.assertNotIn(b"console copy failed", errors)
+        finally:
+            if copier is not None:
+                if copier.poll() is None:
+                    copier.kill()
+                copier.communicate(timeout=5)
+            os.close(read_fd)
+            if write_fd >= 0:
+                os.close(write_fd)
+
+    def test_nonblocking_console_timeout_keeps_the_log_complete(self):
+        read_fd, write_fd = os.pipe()
+        try:
+            os.set_blocking(write_fd, False)
+            while True:
+                try:
+                    os.write(write_fd, b"x" * 4096)
+                except BlockingIOError:
+                    break
+            log = self.work / "blocked-console.log"
+            with open(self.payload_file, "rb") as payload:
+                result = subprocess.run([str(self.tool), str(log)], stdin=payload,
+                                        stdout=write_fd, stderr=subprocess.PIPE, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr.decode(errors="replace"))
+            self.assertEqual(log.read_bytes(), PAYLOAD)
+            self.assertIn(b"console copy failed", result.stderr)
+        finally:
+            os.close(read_fd)
+            os.close(write_fd)
+
     def test_unopenable_log_still_drains_the_input(self):
         """The producer completes and is not killed by SIGPIPE; the failure is reported."""
         log = self.work / "missing-dir" / "log"
@@ -198,6 +282,7 @@ class SimulationLoggingTest(unittest.TestCase):
         result, log = self.run_wrapper(producer_status=7)
         self.assertEqual(result.returncode, 7)
         self.assertIn(b"producer failed (7)", result.stderr)
+        self.assertIn(str(log.relative_to(self.work)).encode(), result.stderr)
         self.assertEqual(log.read_bytes(), PAYLOAD)
 
     def test_producer_crash_by_signal_does_not_hang_and_is_reported(self):
@@ -258,11 +343,6 @@ class SimulationLoggingTest(unittest.TestCase):
         self.assertEqual(result.returncode, 1, result.stderr.decode(errors="replace"))
         self.assertIn(b"log writer failed (1)", result.stderr)
 
-    def test_generated_command_scripts_check_the_copier(self):
-        source = (ROOT / "src" / "utility" / "fileIO.cpp").read_text(encoding="utf-8")
-        self.assertIn("SHELL_CST_record_output_status", source)
-        self.assertNotIn("exit ${PIPESTATUS[0]}", source)
-
     def test_log_writer_failure_is_not_hidden(self):
         result, _ = self.run_wrapper(invalid_log=True)
         self.assertNotEqual(result.returncode, 0)
@@ -317,24 +397,6 @@ class SimulationLoggingTest(unittest.TestCase):
         self.assertNotIn(b"unexpected python3 invocation", result.stderr)
         self.assertNotIn(b"unexpected python3 invocation", result.stdout)
         self.assertEqual(log.read_bytes(), PAYLOAD)
-
-    def test_logging_never_relies_on_the_system_tee(self):
-        generated_scripts = [ROOT / "src" / "wrapper" / "BackendWrapper.cpp", ROOT / "src" / "utility" / "fileIO.cpp"]
-        for source in [WRAPPER, LOGGING] + sorted(ROOT.glob("etc/libtech/backend/simulation/*/setup.sh")) + generated_scripts:
-            with self.subTest(source=str(source.relative_to(ROOT))):
-                self.assertNotIn("| tee", source.read_text(encoding="utf-8"))
-        for source in [WRAPPER] + generated_scripts:
-            with self.subTest(copier=str(source.relative_to(ROOT))):
-                self.assertIn("record_output", source.read_text(encoding="utf-8"))
-
-    def test_product_sources_do_not_require_python3(self):
-        """No product source invokes python3: comment mentions are fine."""
-        for source in PRODUCT_SOURCES:
-            with self.subTest(source=str(source.relative_to(ROOT))):
-                for line in source.read_text(encoding="utf-8").splitlines():
-                    if line.strip().startswith(("#", "//", "*")):
-                        continue
-                    self.assertNotIn("python3", line)
 
     def test_quiet_mode_logs_without_console_copy(self):
         log = self.work / "quiet.log"

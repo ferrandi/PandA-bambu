@@ -151,11 +151,6 @@ static std::filesystem::path find_record_output_tool()
          return candidate;
       }
    }
-   candidate = relocate_install_path("bin/record_output");
-   if(::access(candidate.c_str(), X_OK) == 0)
-   {
-      return candidate;
-   }
    return std::filesystem::path();
 }
 
@@ -192,6 +187,17 @@ int PandaSystem(const ParameterConstRef& Param, const std::string& system_comman
    static const auto record_output_tool = find_record_output_tool();
    const bool live_console_copy =
        Param->getOption<unsigned int>(OPT_output_level) >= OUTPUT_LEVEL_PEDANTIC && !record_output_tool.empty();
+   if(live_console_copy)
+   {
+      // Probe after host_exec has adjusted the environment, before starting the producer.
+      script_file << "if ! " << shell_escape_argument(record_output_tool.string())
+                  << " --help </dev/null >/dev/null 2>&1; then\n"
+                  << "  printf '%s\\n' "
+                  << shell_escape_argument("WARNING: record_output cannot start; logging only to " +
+                                           actual_output.string())
+                  << " >&2\n(" << system_command << ") > " << shell_escape_argument(actual_output.string())
+                  << " 2>&1\nexit $?\nfi\n";
+   }
    script_file << "(" << system_command << ") ";
    if(live_console_copy)
    {
