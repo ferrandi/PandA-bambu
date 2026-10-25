@@ -1575,7 +1575,6 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       const auto process_latency_attr = [&](const key_loc_t& attr_key, const std::string& attr_value) {
          if(burst_mode == p.attrs.end() || burst_mode->second != "m_axi")
          {
-            ReportError(attr_key.loc, "AXI latency is only valid for mode=m_axi");
             return;
          }
          std::uint32_t value = 0;
