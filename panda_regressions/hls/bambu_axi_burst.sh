@@ -111,12 +111,18 @@ python3 -B "$script_dir/bambu_axi_burst/check_burst_results.py" \
 
 # Mantis and the cycle checker have completed. Put all remaining helper output
 # and temporary files beneath the selected out_ root.
+if [[ -n ${BURST_RESTART:-} ]]; then
+  # Keep prior helper evidence intact while Mantis resumes its existing case tree.
+  scratch=$(mktemp -d "$out_root/out_helpers_restart.XXXXXX")
+  export BURST_TEST_TMPDIR="$scratch"
+fi
 mkdir -p "$scratch/jobs" "$scratch/tmp"
 export TMPDIR="$scratch/tmp" TMP="$scratch/tmp" TEMP="$scratch/tmp"
 
 # Offline checks for the cycle gate, latency-metadata runner, and exported-tree
 # bootstraps do not need another Bambu invocation.
 python3 -B "$script_dir/bambu_axi_burst/test_check_burst_results.py"
+python3 -B "$script_dir/bambu_axi_burst/test_regression_restart.py"
 python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 BURST_TEST_TMPDIR="$scratch/tmp" python3 -B "$script_dir/bambu_axi_burst/test_modelsim_tool_lookup.py"
