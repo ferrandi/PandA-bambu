@@ -38,7 +38,7 @@
 /// The source code default output file
 #define STR_CST_file_IO_source_code_output_file "output.c"
 
-/// Capture both statuses immediately: a draining copier does not make the producer fail.
+/// Preserve producer failures; otherwise fail if the log could not be written completely.
 constexpr auto SHELL_CST_record_output_status =
     R"sh(pipeline_status=("${PIPESTATUS[@]}")
 if [ "${pipeline_status[1]}" -ne 0 ]; then

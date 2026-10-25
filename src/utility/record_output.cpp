@@ -30,7 +30,7 @@
  * the logged command, the simulator or the system testbench, is killed by
  * SIGPIPE and a run that was actually correct is reported as a failure.
  *
- * This copier never endangers the logged command:
+ * Log and console failures are handled without closing the input:
  * - it belongs to the distribution, so the run does not depend on external
  *   tools: neither the system tee nor python3 are needed;
  * - SIGPIPE is ignored: if the console disappears, a broken standard output,
@@ -56,6 +56,7 @@
 #include <string_view>
 
 #include <fcntl.h>
+#include <poll.h>
 #include <unistd.h>
 
 namespace
@@ -78,6 +79,19 @@ namespace
             if(errno == EINTR)
             {
                continue;
+            }
+            if(errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+               // Allow brief backpressure on inherited non-blocking descriptors.
+               struct pollfd watch
+               {
+                  fd, POLLOUT, 0
+               };
+               const int ready = ::poll(&watch, 1, 1000);
+               if(ready > 0 || (ready < 0 && errno == EINTR))
+               {
+                  continue;
+               }
             }
             return false;
          }

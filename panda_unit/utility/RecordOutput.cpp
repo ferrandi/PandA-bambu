@@ -594,7 +594,74 @@ BOOST_AUTO_TEST_CASE(record_output_generated_paths_are_shell_escaped)
              {})};
          BOOST_REQUIRE_EQUAL(0, command.wait());
          BOOST_CHECK_EQUAL(read_file(log), payload);
+         Child failed{spawn_producer(
+             [&]() {
+                Fd devnull{open_devnull()};
+                ::dup2(devnull.get(), STDOUT_FILENO);
+                const int status = PandaSystem(param, "head -c 1048576 /dev/zero; exit 7", false, log);
+                ::_exit(WIFEXITED(status) && WEXITSTATUS(status) == 7 ? 0 : 1);
+             },
+             {})};
+         BOOST_REQUIRE_EQUAL(0, failed.wait());
+         BOOST_CHECK_EQUAL(std::filesystem::file_size(log), 1048576u);
          std::filesystem::remove(log);
+      }
+   }
+}
+
+BOOST_AUTO_TEST_CASE(record_output_panda_system_without_a_copier_still_logs)
+{
+   TempPath root("missing_copier", /*as_directory=*/true);
+   const auto runner = root.path() / "unit_runner";
+   std::filesystem::copy_file("/proc/self/exe", runner);
+   for(const bool unloadable : {false, true})
+   {
+      if(unloadable)
+      {
+         const auto copier = root.path() / "record_output";
+         BOOST_REQUIRE(write_file(copier, "#!/nonexistent/panda-record-output-loader\n"));
+         std::filesystem::permissions(copier, std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
+      }
+      Child child{spawn_producer(
+          [&]() {
+             if(::setenv("BAMBU_HLS", root.path().c_str(), 1) != 0)
+             {
+                ::_exit(2);
+             }
+             ::execl(runner.c_str(), runner.c_str(),
+                     "--run_test=record_output_tool/record_output_generated_paths_are_shell_escaped", nullptr);
+             ::_exit(127);
+          },
+          {})};
+      BOOST_REQUIRE_EQUAL(0, child.wait());
+   }
+}
+
+BOOST_AUTO_TEST_CASE(record_output_panda_system_preserves_log_and_producer_failures)
+{
+   TempPath root("log_failures", /*as_directory=*/true);
+   Fd devnull{open_devnull()};
+   const auto marker = root.path() / "producer_completed";
+   for(const auto producer_status : {0, 7})
+   {
+      for(const auto& log : {root.path() / "missing/log", std::filesystem::path("/dev/full")})
+      {
+         auto param = std::make_shared<LoggingParameter>();
+         param->setOption(OPT_output_level, 3u);
+         param->setOption(OPT_output_temporary_directory, root.path().string());
+         Child child{spawn_producer(
+             [&]() {
+                ::dup2(devnull.get(), STDOUT_FILENO);
+                const std::string command = "head -c 2097152 /dev/zero; printf done > " +
+                                            shell_escape_argument(marker.string()) + "; exit " +
+                                            std::to_string(producer_status);
+                const int status = PandaSystem(param, command, false, log);
+                ::_exit(WIFEXITED(status) && WEXITSTATUS(status) == (producer_status ? producer_status : 1) ? 0 : 1);
+             },
+             {devnull.get()})};
+         BOOST_REQUIRE_EQUAL(0, child.wait());
+         BOOST_CHECK_EQUAL(read_file(marker), "done");
+         std::filesystem::remove(marker);
       }
    }
 }
