@@ -204,11 +204,12 @@ int PandaSystem(const ParameterConstRef& Param, const std::string& system_comman
    script_file << "(" << system_command << ") ";
    if(live_console_copy)
    {
-      script_file << " 2>&1 | \"" << record_output_tool.string() << "\" " << actual_output;
+      script_file << " 2>&1 | " << shell_escape_argument(record_output_tool.string()) << " "
+                  << shell_escape_argument(actual_output.string());
    }
    else
    {
-      script_file << " > " << actual_output << " 2>&1 ";
+      script_file << " > " << shell_escape_argument(actual_output.string()) << " 2>&1 ";
    }
    script_file << "\n";
    if(live_console_copy)
@@ -216,7 +217,7 @@ int PandaSystem(const ParameterConstRef& Param, const std::string& system_comman
       script_file << SHELL_CST_record_output_status;
    }
    script_file.close();
-   const std::string command = "bash -f " + script_path.string();
+   const std::string command = "bash -f " + shell_escape_argument(script_path.string());
    const auto wstatus = system(command.c_str());
    if(wstatus == -1)
    {
