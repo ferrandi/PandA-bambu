@@ -870,6 +870,7 @@ end
     reg [BITSIZE_m_axi_arlen-1:0] m_axi_arlen_reg;
     reg m_axi_arvalid_reg;
     reg fault_reg;
+    // Keep reset_n for T4B VCD tracing; reset flops use the placeholder directly for Vivado.
     wire reset_n = !(1RESET_VALUE);
 
     assign done = done_reg;
@@ -1109,7 +1110,7 @@ end
         !peer_fault_active &amp;&amp; !cfg_pending &amp;&amp; (!region_active || drain_complete);
 
     always @(posedge clock 1RESET_EDGE) begin
-        if (!reset_n) begin
+        if (1RESET_VALUE) begin
             region_active &lt;= 1'b0;
             region_base &lt;= {ADDR_BITS{1'b0}};
             region_count &lt;= {COUNT_W{1'b0}};
@@ -1339,7 +1340,7 @@ end
     end
 
     always @(posedge clock 1RESET_EDGE) begin
-        if (!reset_n || activate_configure ||
+        if (1RESET_VALUE || activate_configure ||
             (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg)) begin
             fifo_credit_committed &lt;= FIFO_DEPTH;
             fifo_credit_minus_one &lt;= FIFO_DEPTH - 1'b1;
