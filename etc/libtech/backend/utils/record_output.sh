@@ -15,8 +15,20 @@ run_logged() {
   # Probe in the producer's environment before connecting its output to a pipe.
   if [ ! -x "${bambu_record_output}" ] || ! "${bambu_record_output}" --help </dev/null >/dev/null 2>&1; then
     echo "WARNING: record_output not found or cannot start in ${BAMBU_HLS}; logging only to ${log_file}" >&2
-    "$@" > "${log_file}" 2>&1
-    return $?
+    local log_fd producer_status
+    if ! exec {log_fd}>"${log_file}"; then
+      echo "ERROR: cannot open log file: ${log_file}" >&2
+      return 1
+    fi
+    if "$@" >&"${log_fd}" 2>&1; then
+      exec {log_fd}>&-
+      return 0
+    else
+      producer_status=$?
+    fi
+    exec {log_fd}>&-
+    echo "ERROR: producer failed (${producer_status}); log: ${log_file}" >&2
+    return "${producer_status}"
   fi
   local -a pipeline_status
   # Capture both statuses even when the caller enables errexit or pipefail.
