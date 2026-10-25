@@ -268,7 +268,7 @@ def main() -> int:
         raise RuntimeError(f"supported fixed-array baseline failed; see {non_axi_seed_case}")
     non_axi_seed_xml = architecture(non_axi_seed_case)
     non_axi_bundle = bundle_from_tree(ET.parse(non_axi_seed_xml), non_axi_symbol, "a")
-    if non_axi_bundle.get("mode") != "array":
+    if non_axi_bundle.get("mode") != "array" or "latency" in non_axi_bundle.attrib:
         raise RuntimeError(f"non-AXI baseline did not infer mode=array: {non_axi_bundle.attrib}")
     non_axi_seed_ir = list(non_axi_seed_case.rglob("*.bambuir"))
     if len(non_axi_seed_ir) != 1:
@@ -405,7 +405,7 @@ def main() -> int:
                           ("latency_shared_zero_first", True),
                           ("latency_shared_default_conflict", False),
                           ("latency_shared_explicit_conflict", False),
-                          ("latency_non_axi", False)):
+                          ("latency_non_axi", True)):
         case = out / "pragma" / top
         argv = [str(bambu), str(FIXTURE), *BASE_ARGS, *select_case_defines(top), f"--top-fname={top}",
                 f"--bambu-parameter={args.burst_parameter}=1"]
@@ -413,6 +413,10 @@ def main() -> int:
         combined = result.stdout + "\n" + result.stderr
         if accepted and result.returncode != 0:
             raise RuntimeError(f"compatible/default latency pragma rejected for {top}; see {case}")
+        if top == "latency_non_axi" and accepted:
+            attrs = bundle(architecture(case), top, "a").attrib
+            if attrs.get("mode") != "array" or "latency" in attrs:
+                raise RuntimeError(f"non-AXI pragma latency was not ignored: {attrs}")
         if not accepted:
             if result.returncode == 0 or result.returncode < 0 or result.returncode >= 128:
                 raise RuntimeError(f"invalid/conflicting latency pragma accepted or crashed for {top}; see {case}")
