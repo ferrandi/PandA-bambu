@@ -1,71 +1,84 @@
 #!/usr/bin/env bash
 
-# Shared Questa/ModelSim setup for the isolated write-engine testbenches.
-# Each caller compiles and simulates from its own fresh directory, so the
-# implicit `work` library and modelsim.ini are private to that scenario group.
+# Shared Questa/ModelSim setup for isolated RTL testbench builds.
+# Each build directory owns its `work` library and modelsim.ini.
 
-modelsim_writer_resolve() {
+modelsim_resolve() {
     local selected_vsim
     if selected_vsim=$(command -v vsim 2>/dev/null) && [[ -n $selected_vsim ]]; then
-        MODELSIM_WRITER_SOURCE=PATH
-        MODELSIM_WRITER_VSIM=$selected_vsim
-        MODELSIM_WRITER_BIN=${selected_vsim%/*}
+        MODELSIM_SOURCE=PATH
+        MODELSIM_VSIM=$selected_vsim
+        MODELSIM_BIN=${selected_vsim%/*}
     else
         # Keep backend lookup identical to Bambu's own launcher.
         # shellcheck disable=SC1091
-        source "$WRITER_ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+        source "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
         if ! bambu_modelsim_resolve; then
             echo "ModelSim vsim could not be resolved using Bambu's search path" >&2
             return 2
         fi
-        MODELSIM_WRITER_SOURCE=$BAMBU_MODELSIM_SOURCE
-        MODELSIM_WRITER_VSIM=$BAMBU_MODELSIM_PATH
-        MODELSIM_WRITER_BIN=$BAMBU_MODELSIM_BIN
+        MODELSIM_SOURCE=$BAMBU_MODELSIM_SOURCE
+        MODELSIM_VSIM=$BAMBU_MODELSIM_PATH
+        MODELSIM_BIN=$BAMBU_MODELSIM_BIN
     fi
 
-    MODELSIM_WRITER_VLIB="$MODELSIM_WRITER_BIN/vlib"
-    MODELSIM_WRITER_VLOG="$MODELSIM_WRITER_BIN/vlog"
-    MODELSIM_WRITER_VMAP="$MODELSIM_WRITER_BIN/vmap"
+    MODELSIM_VLIB="$MODELSIM_BIN/vlib"
+    MODELSIM_VLOG="$MODELSIM_BIN/vlog"
+    MODELSIM_VMAP="$MODELSIM_BIN/vmap"
     local tool
-    for tool in "$MODELSIM_WRITER_VSIM" "$MODELSIM_WRITER_VLIB" "$MODELSIM_WRITER_VLOG" "$MODELSIM_WRITER_VMAP"; do
+    for tool in "$MODELSIM_VSIM" "$MODELSIM_VLIB" "$MODELSIM_VLOG" "$MODELSIM_VMAP"; do
         if [[ ! -x $tool ]]; then
             echo "required ModelSim sibling tool is not executable: $tool" >&2
             return 2
         fi
     done
-    export PATH="$MODELSIM_WRITER_BIN${PATH:+:$PATH}"
+    export PATH="$MODELSIM_BIN${PATH:+:$PATH}"
 }
 
-modelsim_writer_version() {
+modelsim_version() {
     local output
-    output=$(timeout 30s "$MODELSIM_WRITER_VSIM" -version 2>&1) || return $?
+    output=$(timeout 30s "$MODELSIM_VSIM" -version 2>&1) || return $?
     printf '%s\n' "$output" | sed -n '1,3p'
 }
 
-modelsim_writer_compile() {
-    local build=$1 top=$2 rtl=$3 tb=$4 plan_fifo=$5
+modelsim_compile() {
+    local build=$1 top=$2
+    shift 2
+    local -a sources=() extra_vlog_args=()
+    local extra=0 arg
+    for arg in "$@"; do
+        if [[ $arg == -- && $extra == 0 ]]; then
+            extra=1
+        elif (( extra )); then
+            extra_vlog_args+=("$arg")
+        else
+            sources+=("$arg")
+        fi
+    done
+    if ((${#sources[@]} == 0)); then
+        echo "at least one Verilog source is required for $top" >&2
+        return 2
+    fi
     local log="$build/compile.log"
     mkdir -p "$build" || return $?
     # A private mapping prevents an inherited MODELSIM setting from directing
     # this group's work library into another concurrent group's directory.
-    if ! (cd "$build" && timeout 180s "$MODELSIM_WRITER_VMAP" -c >vmap.log 2>&1 &&
-        timeout 180s "$MODELSIM_WRITER_VLIB" work >vlib.log 2>&1 &&
-        timeout 180s "$MODELSIM_WRITER_VMAP" -modelsimini "$build/modelsim.ini" \
+    if ! (cd "$build" && timeout 180s "$MODELSIM_VMAP" -c >vmap.log 2>&1 &&
+        timeout 180s "$MODELSIM_VLIB" work >vlib.log 2>&1 &&
+        timeout 180s "$MODELSIM_VMAP" -modelsimini "$build/modelsim.ini" \
             work "$build/work" >>vmap.log 2>&1); then
         cat "$build/vmap.log" "$build/vlib.log" >&2 2>/dev/null || true
         echo "ModelSim library setup failed for $build" >&2
         return 1
     fi
 
-    local -a vlog_args=(-sv -modelsimini "$build/modelsim.ini" -work work -timescale 1ns/1ps)
-    if [[ $plan_fifo == 1 ]]; then
-        vlog_args+=(+define+PLAN_FIFO_PRESENT)
-    fi
+    local -a vlog_args=(-sv -modelsimini "$build/modelsim.ini" -work work -timescale 1ns/1ps
+                        "${extra_vlog_args[@]}")
     local status=0
-    printf '%q ' "$MODELSIM_WRITER_VLOG" "${vlog_args[@]}" "$rtl" "$tb" >"$build/compile.command" || return $?
+    printf '%q ' "$MODELSIM_VLOG" "${vlog_args[@]}" "${sources[@]}" >"$build/compile.command" || return $?
     printf '\n' >>"$build/compile.command" || return $?
-    if (cd "$build" && timeout 180s "$MODELSIM_WRITER_VLOG" "${vlog_args[@]}" \
-        "$rtl" "$tb" >"$log" 2>&1); then
+    if (cd "$build" && timeout 180s "$MODELSIM_VLOG" "${vlog_args[@]}" \
+        "${sources[@]}" >"$log" 2>&1); then
         status=0
     else
         status=$?
@@ -82,7 +95,7 @@ modelsim_writer_compile() {
     fi
 }
 
-modelsim_writer_run() {
+modelsim_run() {
     local build=$1 top=$2 log=$3 timeout_s=$4
     shift 4
     local -a elaboration_args=() runtime_args=()
@@ -110,10 +123,10 @@ quit -code 0
 TCL
 
     local status=0
-    printf '%q ' "$MODELSIM_WRITER_VSIM" -c -modelsimini "$build/modelsim.ini" "${elaboration_args[@]}" "work.$top" \
+    printf '%q ' "$MODELSIM_VSIM" -c -modelsimini "$build/modelsim.ini" "${elaboration_args[@]}" "work.$top" \
         "${runtime_args[@]}" -do "$do_file" >"$log.command" || return $?
     printf '\n' >>"$log.command" || return $?
-    if (cd "$build" && timeout "${timeout_s}s" "$MODELSIM_WRITER_VSIM" -c -modelsimini "$build/modelsim.ini" \
+    if (cd "$build" && timeout "${timeout_s}s" "$MODELSIM_VSIM" -c -modelsimini "$build/modelsim.ini" \
         "${elaboration_args[@]}" "work.$top" "${runtime_args[@]}" \
         -do "$do_file" >"$log" 2>&1); then
         status=0
@@ -132,25 +145,10 @@ TCL
     return "$status"
 }
 
-modelsim_writer_normalize_log() {
+modelsim_normalize_log() {
     local source=$1 destination=$2
     # Questa prefixes HDL transcript output with '# '. Remove only that
     # prefix; keep diagnostics and marker contents otherwise byte-for-byte.
     sed -E 's/^# //' "$source" >"$destination"
 }
 
-modelsim_writer_expect_fatal() {
-    local log=$1 expected=$2 label=$3 status=$4 allow_elaboration=${5:-0} normalized="$1.normalized"
-    modelsim_writer_normalize_log "$log" "$normalized" || return $?
-    # Runtime fatals use effective status 1; Questa reports constant parameter
-    # checks during vopt elaboration with status 12. Only parameter tests opt in.
-    if { (( status != 1 )) && { (( ! allow_elaboration || status != 12 )); }; } || \
-       ! grep -Fq "** Fatal: $expected" "$normalized" || \
-       grep -Eq '^WRITE_BURST_ENGINE PASS CASE=|^WRITE_BURST_ENGINE PARAM PASS ' "$normalized" || \
-       [[ $(grep -Ec '^\*\* Fatal:' "$normalized" || true) != 1 ]] || \
-       grep -Eq '^\*\* Error:|Segmentation fault|stack smashing|AddressSanitizer|Aborted' "$normalized"; then
-        cat "$log" >&2
-        echo "expected one named ModelSim fatal and no PASS marker for $label (status=$status): $expected" >&2
-        return 1
-    fi
-}
