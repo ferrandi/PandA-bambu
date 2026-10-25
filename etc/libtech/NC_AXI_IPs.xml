@@ -854,8 +854,7 @@ end
     // AXI forbids a burst crossing a 4 KiB boundary.
     localparam integer BOUNDARY_BEATS = 4096 / BEAT_BYTES;
     localparam integer BOUNDARY_W = $clog2(BOUNDARY_BEATS) + 1;
-    // Element-count domain: validation proves a region holds at most 2^30
-    // elements, so the counters are one bit narrower than the count operand.
+    // The top count bit is reserved to reject values that would truncate here.
     localparam integer COUNT_W = BITSIZE_in5 - 1;
     // Burst-length domain: it must be able to hold B_MAX itself.
     localparam integer LEN_W = $clog2(B_MAX + 1);
@@ -883,9 +882,7 @@ end
 
     reg        region_active;
     reg [ADDR_BITS-1:0] region_base;
-    // Configuration validation proves count &lt;= 2^30 before this narrowing.
-    // The element-count domain is 31 bits regardless of the address width: one
-    // region holds at most 2^30 elements.
+    // Configuration rejects a set count high bit before narrowing to this field.
     reg [COUNT_W-1:0] region_count;
     reg [ADDR_BITS-1:0] next_expected_address;
     reg [COUNT_W-1:0] issued;
@@ -918,8 +915,6 @@ end
 
     reg        load_pending;
     reg        load_pending_valid;
-    reg [ADDR_BITS-1:0] pending_load_address;
-    reg [BITSIZE_in2-1:0] pending_load_size_bits;
     reg [DATA_BITS-1:0] fifo [0:FIFO_DEPTH-1];
     reg [FIFO_PTR_W-1:0] fifo_rd_ptr;
     reg [FIFO_PTR_W-1:0] fifo_wr_ptr;
@@ -1079,8 +1074,7 @@ end
             (issue_remaining[LEN_W-1:0] != 0)) &amp;&amp; !m_axi_arvalid_reg &amp;&amp;
             outstanding_after_reservation &lt; MAX_OUTSTANDING &amp;&amp; !fault_reg &amp;&amp;
             !peer_fault_active) begin
-            // issued is strictly below a validated count &lt;= 2^30, so the
-            // shift cannot overflow the address domain.
+            // The configure range check guarantees this element address fits.
             next_address = region_base + (issued &lt;&lt; BEAT_SHIFT);
             // issued-consumed includes every outstanding or buffered result.
             next_burst_length = B_MAX;
@@ -1137,8 +1131,6 @@ end
             pending_count &lt;= {COUNT_W{1'b0}};
             load_pending &lt;= 1'b0;
             load_pending_valid &lt;= 1'b0;
-            pending_load_address &lt;= {ADDR_BITS{1'b0}};
-            pending_load_size_bits &lt;= {BITSIZE_in2{1'b0}};
             fifo_rd_ptr &lt;= 0;
             fifo_wr_ptr &lt;= 0;
             fifo_count &lt;= 0;
@@ -1222,8 +1214,6 @@ end
                 else if (fifo_count == 0) begin
                     load_pending &lt;= 1'b1;
                     load_pending_valid &lt;= load_request_valid;
-                    pending_load_address &lt;= in4;
-                    pending_load_size_bits &lt;= in2;
                 end
             end
             if (fifo_load_done &amp;&amp; !peer_fault_active) begin
@@ -1883,7 +1873,6 @@ end
     reg [BITSIZE_in2-1:0] store_size;
     reg [BITSIZE_in3-1:0] store_data;
     reg [ADDR_BITS-1:0] store_address;
-    reg [BITSIZE_out1-1:0] out1_reg;
     // The clamp only keeps the derived widths well-formed. The elaboration-time check below
     // rejects MAX_OUTSTANDING outside [1,16] in simulation and in synthesis alike, so no
     // out-of-range value reaches the descriptor ring: this is a defensive width, not a policy

@@ -1613,12 +1613,18 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          bundle_attrs.emplace(key_loc_t("latency", attr_key.loc), normalized);
       };
-      const auto process_read_profile_attr = [&](const key_loc_t& attr_key, const std::string& attr_value) {
+      const auto process_profile_attr = [&](const key_loc_t& attr_key, const std::string& attr_value) {
          const auto profile_attr = to_lower(attr_key.id);
+         const bool write_profile = profile_attr == "write_burst_outstanding" ||
+                                     profile_attr == "write_fifo_depth";
+         const bool outstanding_attr = profile_attr == "num_read_outstanding" ||
+                                       profile_attr == "write_burst_outstanding";
          if(burst_mode == p.attrs.end() || burst_mode->second != "m_axi")
          {
-            ReportError(attr_key.loc,
-                        "AXI read profile attributes num_read_outstanding and read_fifo_depth are only valid for mode=m_axi");
+            const auto diagnostic = write_profile ?
+                "AXI write profile attributes write_burst_outstanding and write_fifo_depth are only valid for mode=m_axi" :
+                "AXI read profile attributes num_read_outstanding and read_fifo_depth are only valid for mode=m_axi";
+            ReportError(attr_key.loc, diagnostic);
             return;
          }
          const auto valid_integer = !attr_value.empty() &&
@@ -1629,64 +1635,18 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             ReportError(attr_key.loc, profile_attr + " must be a decimal integer in its supported range");
             return;
          }
-         // Saturate while parsing: arbitrarily long input cannot overflow.
+         // Saturate so arbitrarily long decimal values cannot overflow.
          unsigned int value = 0;
-         const unsigned int limit = profile_attr == "num_read_outstanding" ? 16U : 4096U;
+         const unsigned int limit = outstanding_attr ? 16U : 4096U;
          for(const auto digit : attr_value)
          {
             value = std::min(limit + 1U, value * 10U + static_cast<unsigned int>(digit - '0'));
          }
-         const bool valid_value = profile_attr == "num_read_outstanding" ? value >= 1U && value <= 16U :
+         const bool valid_value = outstanding_attr ? value >= 1U && value <= 16U :
                                   value >= 1U && value <= 4096U && (value & (value - 1U)) == 0U;
          if(!valid_value)
          {
-            ReportError(attr_key.loc, profile_attr + (profile_attr == "num_read_outstanding" ?
-                           " must be an integer in [1,16]" : " must be a power-of-two integer in [1,4096] beats"));
-            return;
-         }
-
-         const auto normalized_value = std::to_string(value);
-         const auto previous = std::find_if(bundle_attrs.begin(), bundle_attrs.end(), [&](const auto& entry) {
-            return iequals(entry.first.id, profile_attr.c_str());
-         });
-         if(previous != bundle_attrs.end())
-         {
-            if(previous->second != normalized_value)
-            {
-               ReportError(attr_key.loc,
-                           "Conflicting " + profile_attr + " values in interface bundle '" + ifaceBundle + "'");
-            }
-            return;
-         }
-         bundle_attrs.emplace(key_loc_t(profile_attr, attr_key.loc), normalized_value);
-      };
-      const auto process_write_profile_attr = [&](const key_loc_t& attr_key, const std::string& attr_value) {
-         const auto profile_attr = to_lower(attr_key.id);
-         if(burst_mode == p.attrs.end() || burst_mode->second != "m_axi")
-         {
-            ReportError(attr_key.loc,
-                        "AXI write profile attributes write_burst_outstanding and write_fifo_depth are only valid for mode=m_axi");
-            return;
-         }
-         const auto valid_integer = !attr_value.empty() &&
-                                    std::all_of(attr_value.begin(), attr_value.end(),
-                                                [](unsigned char c) { return std::isdigit(c); });
-         if(!valid_integer)
-         {
-            ReportError(attr_key.loc, profile_attr + " must be a decimal integer in its supported range");
-            return;
-         }
-         unsigned int value = 0;
-         const unsigned int limit = profile_attr == "write_burst_outstanding" ? 16U : 4096U;
-         for(const auto digit : attr_value)
-         {
-            value = std::min(limit + 1U, value * 10U + static_cast<unsigned int>(digit - '0'));
-         }
-         const bool valid_value = profile_attr == "write_burst_outstanding" ? value >= 1U && value <= 16U :
-                                  value >= 1U && value <= 4096U && (value & (value - 1U)) == 0U;
-         if(!valid_value)
-         {
-            ReportError(attr_key.loc, profile_attr + (profile_attr == "write_burst_outstanding" ?
+            ReportError(attr_key.loc, profile_attr + (outstanding_attr ?
                            " must be an integer in [1,16]" : " must be a power-of-two integer in [1,4096] beats"));
             return;
          }
@@ -1783,15 +1743,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          else
          {
-            const auto profile_attr = to_lower(attr.first.id);
-            if(profile_attr == "write_burst_outstanding" || profile_attr == "write_fifo_depth")
-            {
-               process_write_profile_attr(attr.first, attr.second);
-            }
-            else
-            {
-               process_read_profile_attr(attr.first, attr.second);
-            }
+            process_profile_attr(attr.first, attr.second);
          }
       }
       if(burst_mode != p.attrs.end() && burst_mode->second == "m_axi" && !has_explicit_latency)

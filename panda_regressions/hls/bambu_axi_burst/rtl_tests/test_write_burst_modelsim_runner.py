@@ -15,11 +15,8 @@ ROOT = Path(__file__).resolve().parents[4]
 RTL_TESTS = Path(__file__).resolve().parent
 RUNNER = RTL_TESTS / "run_write_burst_engine.sh"
 TMP_ROOT = Path(
-    os.environ.get(
-        "BURST_TEST_TMPDIR",
-        ROOT / "documentation" / "tmp" / "out_write_burst_modelsim_runner",
-    )
-)
+    os.environ.get("BURST_TEST_TMPDIR", Path.cwd())
+) / f"out_{Path(__file__).stem}"
 
 FAKE_MODELSIM = r'''#!/usr/bin/env bash
 set -u

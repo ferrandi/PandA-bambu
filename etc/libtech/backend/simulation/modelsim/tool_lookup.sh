@@ -50,6 +50,8 @@ bambu_modelsim_resolve() {
     return 1
   fi
 
+  [[ $candidate == /* ]] || candidate="$PWD/$candidate"
+
   # Preserve the invocation path and basename: vsim can be a dispatcher
   # symlink to vco, and the executable name selects the simulator mode.
   BAMBU_MODELSIM_PATH=$candidate

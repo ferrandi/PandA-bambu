@@ -2,7 +2,7 @@
 # Synthesis-side witness for the write-burst engine parameter guards (F2 review closure).
 #
 # The engine checks B_MAX, MAX_OUTSTANDING, FIFO_DEPTH, DATA_BITS and ADDR_BITS at elaboration
-# time. The Verilator gate proves the same checks stop a simulation build; this script proves
+# time. The ModelSim gate proves the same checks stop a simulation build; this script proves
 # they also stop a synthesis build, with a second tool that the RTL does not otherwise drive:
 # every rejected parameter set must make Vivado's synth_design fail with the guard message, and
 # one legal boundary combination must synthesize cleanly so the guard is not over-broad.

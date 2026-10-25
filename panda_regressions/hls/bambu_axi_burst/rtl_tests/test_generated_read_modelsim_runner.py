@@ -13,7 +13,7 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[4]
 RTL_TESTS = Path(__file__).resolve().parent
-TASK_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", REPO / "documentation/tmp/out_generated_read_modelsim_runner"))
+TASK_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TASK_ROOT.mkdir(parents=True, exist_ok=True)
 
 KERNEL_RUNNER = RTL_TESTS / "run_generated_kernel_tests.sh"

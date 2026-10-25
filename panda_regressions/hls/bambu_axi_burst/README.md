@@ -3,8 +3,8 @@
 Run the complete suite through `../bambu_axi_burst.sh`. The script runs the
 six Mantis cycle-gated sum cases, the boundary and negative compiler cases,
 offline gate/metadata/export/logging checks, focused compiler profile and fallback
-suites, the configure-to-read virtual-SSA check, ModelSim read- and write-engine
-suites, and a generated O=1/D=256/B=16 kernel plus wrapper-RID simulation. The
+suites, ModelSim read- and write-engine suites, and a generated O=1/D=256/B=16
+kernel plus wrapper-RID simulation. The
 read-engine suite is split into four independent output trees and dispatched
 concurrently; scenarios within each tree use one private ModelSim work library
 and run serially. The write-engine gate also runs as an independent helper job.
@@ -85,7 +85,7 @@ the maximum parallelism; the default is the `J` environment value or 1. Mantis
 root; repeated output options use the last value.
 Repeated parallelism options use their minimum value, matching Mantis. The
 Mantis regressions run first using that limit internally. Afterwards, the
-independent compiler suites, virtual-SSA check, ModelSim engine suites, and
+independent compiler suites, ModelSim engine suites, and
 generated-kernel/wrapper chain share a bounded pool of at most N jobs. The
 generated-kernel test and its wrapper-RID check remain one serial job because
 the latter consumes the former's RTL. On failure, no more jobs are launched;
