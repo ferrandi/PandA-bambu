@@ -1,5 +1,10 @@
 # Classic AXI burst regression
 
+Native Bambu end-to-end and compiler tests live here. Direct RTL tests and
+Bambu-generated RTL simulations live in
+`panda_regressions/verilog/axi_burst/`; the suite below invokes them from that
+location. T4B native Bambu runs remain in this directory's `t4b_tests/`.
+
 Run the complete suite through `../bambu_axi_burst.sh`. The script runs the
 six Mantis cycle-gated sum cases, the boundary and negative compiler cases,
 offline gate/metadata/export/logging checks, focused compiler profile and fallback
@@ -18,7 +23,7 @@ still use Verilator. The writer gate dispatches independent profiles,
 parameter rejections, and mutation checks through its own bounded pool;
 the main regression defaults `BURST_WRITER_GROUP_JOBS` to 8 and limits it to
 the outer `-j N` value. Direct invocation of
-`rtl_tests/run_write_burst_engine.sh` still requires
+`panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh` still requires
 `BURST_WRITER_SIM_OUTSIDE_SANDBOX=1`; the main regression supplies that guard
 when dispatching the gate. The standalone writer runner defaults its group
 limit to 12; set `BURST_WRITER_GROUP_JOBS` to tune either mode.

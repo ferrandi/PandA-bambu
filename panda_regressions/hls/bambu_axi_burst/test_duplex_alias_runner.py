@@ -228,8 +228,8 @@ printf 'stub compiler stdout\n'
                 "--bambu", str(self.bambu), "--settings", str(self.prefix / "settings.sh"),
                 "--plugin", str(self.prefix / "lib/panda/clang-16/ASTAnalyzer.so"),
                 "--simulator", str(self.bin / "verilator"), "--runner", str(RUNNER),
-                "--range-probe-runner", str(HERE / "rtl_tests/run_duplex_alias_range_guard.sh"),
-                "--range-probe-testbench", str(HERE / "rtl_tests/tb_duplex_alias_range_guard.sv"),
+                "--range-probe-runner", str(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/run_duplex_alias_range_guard.sh"),
+                "--range-probe-testbench", str(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/tb_duplex_alias_range_guard.sv"),
                 "--addr-bits", str(address_bits)]
         return subprocess.run(args, cwd=ROOT, env=self.env, text=True,
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -284,7 +284,7 @@ printf 'stub compiler stdout\n'
         self.assertIn("--top-module", probe_argv)
         self.assertIn(str(out / "symmetric/disjoint/kernel.v"), probe_argv)
         self.assertIn(str(out / "symmetric/disjoint/panda_libtech.v"), probe_argv)
-        self.assertIn(str(HERE / "rtl_tests/tb_duplex_alias_range_guard.sv"), probe_argv)
+        self.assertIn(str(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/tb_duplex_alias_range_guard.sv"), probe_argv)
         self.assertIn("DUPLEX_ALIAS_RANGE_PROBE PASS CASES=5 ADDR_BITS=32", (out / "rtl_range_guard_runner.log").read_text())
         for case_name in ("valid-disjoint", "read-end-overflow", "write-end-overflow",
                           "byte-count-overflow", "read-end-equals-2p32"):

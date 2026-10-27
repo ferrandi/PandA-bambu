@@ -653,9 +653,9 @@ class T4BRunnerTests(unittest.TestCase):
             env.pop("BAMBU_HLS_BACKEND_PATH", None)
             env.pop("MODELSIM_ROOT", None)
             cases = (
-                (ROOT / "panda_regressions/hls/bambu_axi_burst/rtl_tests/run_testbench_memaxi_model.sh",
+                (ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/run_testbench_memaxi_model.sh",
                  ["characterize", str(root / "memaxi-out")], root / "memaxi-out"),
-                (RUNNER.parent / "run_t4b_models.sh", [str(root / "t4b-out")], root / "t4b-out"),
+                (ROOT / "panda_regressions/verilog/axi_burst/t4b_tests/run_t4b_models.sh", [str(root / "t4b-out")], root / "t4b-out"),
             )
             for runner, args, output in cases:
                 with self.subTest(runner=runner.name):
