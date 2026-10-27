@@ -25,7 +25,8 @@ class DevelopmentRunnerTests(unittest.TestCase):
         self.script_dir.mkdir(parents=True)
         shutil.copy2(RUNNER, self.script_dir / RUNNER.name)
         self.script_dir.joinpath(RUNNER.name).chmod(0o755)
-        (self.script_dir / "rtl_tests").mkdir()
+        self.rtl_tests = self.export / "panda_regressions/verilog/axi_burst/rtl_tests"
+        self.rtl_tests.mkdir(parents=True)
         for name in (
             "run_write_compiler_tests.sh",
             "run_frontend_compatibility_tests.sh",
@@ -45,10 +46,10 @@ class DevelopmentRunnerTests(unittest.TestCase):
             path = self.script_dir / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("# exported stub target\n")
-        (self.script_dir / "rtl_tests/run_generated_write_kernel_tests.sh").write_text(
+        (self.rtl_tests / "run_generated_write_kernel_tests.sh").write_text(
             "# exported stub target\n"
         )
-        (self.script_dir / "rtl_tests/test_extract_write_engine.py").write_text(
+        (self.rtl_tests / "test_extract_write_engine.py").write_text(
             "# exported stub target\n"
         )
         self.bin_dir = self.scratch / "bin"

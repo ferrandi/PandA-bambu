@@ -978,184 +978,521 @@ localparam integer C_W = ((QUEUE_SIZE - 1) &gt; (WRITE_DELAY + 1)) ? (QUEUE_SIZE
 typedef longint unsigned timestamp_t;
 if_utils #(index, BITSIZE_data) m_utils();
 
-integer ar_head, ar_tail, ar_count, ar_beat;
-reg [BITSIZE_id-1:0] ar_id [0:C_AR-1];
-reg [BITSIZE_addr-1:0] ar_addr [0:C_AR-1];
-reg [BITSIZE_size-1:0] ar_size [0:C_AR-1];
-reg [BITSIZE_burst-1:0] ar_burst [0:C_AR-1];
-reg [BITSIZE_len-1:0] ar_len [0:C_AR-1];
-timestamp_t ar_time [0:C_AR-1];
-integer aw_head, aw_tail, aw_count;
-reg [BITSIZE_id-1:0] aw_id [0:C_AW-1];
-reg [BITSIZE_addr-1:0] aw_addr [0:C_AW-1];
-reg [BITSIZE_size-1:0] aw_size [0:C_AW-1];
-reg [BITSIZE_burst-1:0] aw_burst [0:C_AW-1];
-reg [BITSIZE_len-1:0] aw_len [0:C_AW-1];
-timestamp_t aw_time [0:C_AW-1];
-integer aw_committed [0:C_AW-1];
-reg aw_complete [0:C_AW-1];
-integer w_head, w_tail, w_count;
-reg [BITSIZE_data-1:0] w_data_q [0:C_W-1];
-reg [BITSIZE_wstrb-1:0] w_strb_q [0:C_W-1];
-reg w_last_q [0:C_W-1];
-timestamp_t w_time_q [0:C_W-1];
-timestamp_t cycle_count;
-reg rvalid_q, rlast_q;
-reg [BITSIZE_id-1:0] rid_q;
-reg [BITSIZE_data-1:0] rdata_q;
-reg [BITSIZE_rresp-1:0] rresp_q;
-reg [BITSIZE_ruser-1:0] ruser_q;
-integer init_i;
+integer ar_head_reg;
+integer ar_tail_reg;
+integer ar_count_reg;
+integer ar_beat_reg;
+reg [BITSIZE_id-1:0] ar_id_reg [0:C_AR-1];
+reg [BITSIZE_addr-1:0] ar_addr_reg [0:C_AR-1];
+reg [BITSIZE_size-1:0] ar_size_reg [0:C_AR-1];
+reg [BITSIZE_burst-1:0] ar_burst_reg [0:C_AR-1];
+reg [BITSIZE_len-1:0] ar_len_reg [0:C_AR-1];
+timestamp_t ar_time_reg [0:C_AR-1];
+integer aw_head_reg;
+integer aw_tail_reg;
+integer aw_count_reg;
+reg [BITSIZE_id-1:0] aw_id_reg [0:C_AW-1];
+reg [BITSIZE_addr-1:0] aw_addr_reg [0:C_AW-1];
+reg [BITSIZE_size-1:0] aw_size_reg [0:C_AW-1];
+reg [BITSIZE_burst-1:0] aw_burst_reg [0:C_AW-1];
+reg [BITSIZE_len-1:0] aw_len_reg [0:C_AW-1];
+timestamp_t aw_time_reg [0:C_AW-1];
+integer aw_committed_reg [0:C_AW-1];
+reg aw_complete_reg [0:C_AW-1];
+integer w_head_reg;
+integer w_tail_reg;
+integer w_count_reg;
+reg [BITSIZE_data-1:0] w_data_reg [0:C_W-1];
+reg [BITSIZE_wstrb-1:0] w_strb_reg [0:C_W-1];
+reg w_last_reg [0:C_W-1];
+timestamp_t w_time_reg [0:C_W-1];
+timestamp_t cycle_count_reg;
+reg rvalid_reg;
+reg rlast_reg;
+reg [BITSIZE_id-1:0] rid_reg;
+reg [BITSIZE_data-1:0] rdata_reg;
+reg [BITSIZE_rresp-1:0] rresp_reg;
+reg [BITSIZE_ruser-1:0] ruser_reg;
 
-assign arready = ar_count &lt; C_AR;
-assign awready = aw_count &lt; C_AW;
-assign wready = w_count &lt; C_W;
-assign rvalid = rvalid_q;
-assign rlast = rlast_q;
-assign rid = rid_q;
-assign rdata = rdata_q;
-assign rresp = rresp_q;
-assign ruser = ruser_q;
-assign bvalid = (aw_count &gt; 0) &amp;&amp; aw_complete[aw_head];
-assign bid = bvalid ? aw_id[aw_head] : '0;
+assign arready = ar_count_reg &lt; C_AR;
+assign awready = aw_count_reg &lt; C_AW;
+assign wready = w_count_reg &lt; C_W;
+assign rvalid = rvalid_reg;
+assign rlast = rlast_reg;
+assign rid = rid_reg;
+assign rdata = rdata_reg;
+assign rresp = rresp_reg;
+assign ruser = ruser_reg;
+assign bvalid = aw_count_reg &gt; 0 &amp;&amp; aw_complete_reg[aw_head_reg];
+assign bid = bvalid ? aw_id_reg[aw_head_reg] : '0;
 assign bresp = '0;
 assign buser = '0;
 
-always @(posedge clock) begin : independent_axi_model
-  integer i, n_ar_count, n_ar_head, n_ar_tail, n_ar_beat;
-  integer n_aw_count, n_aw_head, n_aw_tail, n_w_count, n_w_head, n_w_tail;
-  integer owner, owner_scan, expected_beats, beat_number, read_slot, read_beat;
-  integer write_slot;
-  logic can_load_read, last_read;
-  logic aw_is_new, w_is_new, commit_write;
-  logic [BITSIZE_id-1:0] write_id_value;
-  logic [BITSIZE_addr-1:0] write_base_value;
-  logic [BITSIZE_size-1:0] write_size_value;
-  logic [BITSIZE_burst-1:0] write_burst_value;
-  logic [BITSIZE_len-1:0] write_len_value;
-  logic [BITSIZE_data-1:0] write_data_value;
-  logic [BITSIZE_wstrb-1:0] write_strb_value;
-  logic write_last_value;
-  timestamp_t write_aw_time, write_w_time;
-  logic [BITSIZE_addr-1:0] address_value;
-  timestamp_t eligible_at;
-  if (1RESET_VALUE) begin
-    ar_head &lt;= 0; ar_tail &lt;= 0; ar_count &lt;= 0; ar_beat &lt;= 0;
-    aw_head &lt;= 0; aw_tail &lt;= 0; aw_count &lt;= 0;
-    w_head &lt;= 0; w_tail &lt;= 0; w_count &lt;= 0; cycle_count &lt;= 0;
-    rvalid_q &lt;= 0; rlast_q &lt;= 0;
-    rid_q &lt;= '0; rdata_q &lt;= '0; rresp_q &lt;= '0; ruser_q &lt;= '0;
-    for (init_i = 0; init_i &lt; C_AW; init_i = init_i + 1) begin
-      aw_complete[init_i] &lt;= 0; aw_committed[init_i] &lt;= 0; aw_time[init_i] &lt;= 0;
-    end
-    for (init_i = 0; init_i &lt; C_AR; init_i = init_i + 1) ar_time[init_i] &lt;= 0;
-    for (init_i = 0; init_i &lt; C_W; init_i = init_i + 1) w_time_q[init_i] &lt;= 0;
-  end else begin
-    cycle_count &lt;= cycle_count + 1;
-    n_ar_count = ar_count; n_ar_head = ar_head; n_ar_tail = ar_tail; n_ar_beat = ar_beat;
-    n_aw_count = aw_count; n_aw_head = aw_head; n_aw_tail = aw_tail;
-    n_w_count = w_count; n_w_head = w_head; n_w_tail = w_tail;
-    can_load_read = !rvalid_q || rready;
-    if (rvalid_q &amp;&amp; rready) begin
-      if (rlast_q) begin
-        n_ar_head = (ar_head + 1) % C_AR; n_ar_count = n_ar_count - 1; n_ar_beat = 0;
-      end else n_ar_beat = ar_beat + 1;
-      rvalid_q &lt;= 0;
-    end
-    if (can_load_read &amp;&amp; n_ar_count &gt; 0) begin
-      read_slot = n_ar_head; read_beat = n_ar_beat;
-      if (cycle_count &gt;= ar_time[read_slot] + READ_DELAY - 1) begin
-        if (ar_burst[read_slot] == 2'b00) address_value = ar_addr[read_slot];
-        else if (ar_burst[read_slot] == 2'b01)
-          address_value = ar_addr[read_slot] + read_beat * (1 &lt;&lt; ar_size[read_slot]);
-        else $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst[read_slot]);
-        rid_q &lt;= ar_id[read_slot]; rdata_q &lt;= m_utils.read_a(address_value);
-        rresp_q &lt;= '0; ruser_q &lt;= '0;
-        last_read = (read_beat == ar_len[read_slot]);
-        rlast_q &lt;= last_read; rvalid_q &lt;= 1;
-      end
-    end
-    if (bvalid &amp;&amp; bready) begin
-      aw_complete[aw_head] &lt;= 0; aw_committed[aw_head] &lt;= 0;
-      n_aw_head = (aw_head + 1) % C_AW; n_aw_count = n_aw_count - 1;
-    end
-    owner = -1;
-    aw_is_new = 0;
-    w_is_new = 0;
-    commit_write = 0;
-    write_slot = -1;
-    for (i = 0; i &lt; aw_count; i = i + 1) begin
-      owner_scan = (aw_head + i) % C_AW;
-      if (owner == -1 &amp;&amp; !aw_complete[owner_scan]) owner = owner_scan;
-    end
-    if (owner == -1 &amp;&amp; awvalid &amp;&amp; awready) begin
-      owner = n_aw_tail;
-      aw_is_new = 1;
-    end
-    if (w_count == 0 &amp;&amp; wvalid &amp;&amp; wready) w_is_new = 1;
-    if (owner != -1 &amp;&amp; (w_count &gt; 0 || w_is_new)) begin
-      if (aw_is_new) begin
-        write_id_value = awid; write_base_value = awaddr; write_size_value = awsize;
-        write_burst_value = awburst; write_len_value = awlen; write_aw_time = cycle_count;
-      end else begin
-        write_id_value = aw_id[owner]; write_base_value = aw_addr[owner]; write_size_value = aw_size[owner];
-        write_burst_value = aw_burst[owner]; write_len_value = aw_len[owner]; write_aw_time = aw_time[owner];
-      end
-      if (w_is_new) begin
-        write_data_value = wdata; write_strb_value = wstrb; write_last_value = wlast; write_w_time = cycle_count;
-      end else begin
-        write_data_value = w_data_q[w_head]; write_strb_value = w_strb_q[w_head];
-        write_last_value = w_last_q[w_head]; write_w_time = w_time_q[w_head];
-      end
-      eligible_at = write_aw_time &gt; write_w_time ? write_aw_time : write_w_time;
-      eligible_at = eligible_at + WRITE_DELAY - 1;
-      if (cycle_count &gt;= eligible_at) begin
-        commit_write = 1;
-        expected_beats = write_len_value + 1;
-        beat_number = aw_is_new ? 0 : aw_committed[owner];
-        if (write_last_value != (beat_number == expected_beats - 1))
-          $fatal(1, &quot;AXI WLAST mismatch at beat %0d of %0d&quot;, beat_number, expected_beats);
-        if (write_burst_value == 2'b00) address_value = write_base_value;
-        else if (write_burst_value == 2'b01)
-          address_value = write_base_value + beat_number * (1 &lt;&lt; write_size_value);
-        else $fatal(1, &quot;Unsupported AXI write burst type: %0d&quot;, write_burst_value);
-      end
-    end
-    if (arvalid &amp;&amp; arready) begin
-      ar_id[n_ar_tail] &lt;= arid; ar_addr[n_ar_tail] &lt;= araddr; ar_size[n_ar_tail] &lt;= arsize;
-      ar_burst[n_ar_tail] &lt;= arburst; ar_len[n_ar_tail] &lt;= arlen; ar_time[n_ar_tail] &lt;= cycle_count;
-      n_ar_tail = (n_ar_tail + 1) % C_AR; n_ar_count = n_ar_count + 1;
-    end
-    if (awvalid &amp;&amp; awready) begin
-      aw_id[n_aw_tail] &lt;= awid; aw_addr[n_aw_tail] &lt;= awaddr; aw_size[n_aw_tail] &lt;= awsize;
-      aw_burst[n_aw_tail] &lt;= awburst; aw_len[n_aw_tail] &lt;= awlen; aw_time[n_aw_tail] &lt;= cycle_count;
-      if (commit_write &amp;&amp; aw_is_new) begin
-        aw_committed[n_aw_tail] &lt;= beat_number + 1;
-        aw_complete[n_aw_tail] &lt;= (beat_number == expected_beats - 1);
-      end else begin
-        aw_committed[n_aw_tail] &lt;= 0;
-        aw_complete[n_aw_tail] &lt;= 0;
-      end
-      n_aw_tail = (n_aw_tail + 1) % C_AW; n_aw_count = n_aw_count + 1;
-    end
-    if (wvalid &amp;&amp; wready &amp;&amp; !(commit_write &amp;&amp; w_is_new)) begin
-      w_data_q[n_w_tail] &lt;= wdata; w_strb_q[n_w_tail] &lt;= wstrb; w_last_q[n_w_tail] &lt;= wlast;
-      w_time_q[n_w_tail] &lt;= cycle_count;
-      n_w_tail = (n_w_tail + 1) % C_W; n_w_count = n_w_count + 1;
-    end
-    if (commit_write) begin
-      void'(m_utils.write_strobe(write_data_value, write_strb_value, address_value));
-      if (!w_is_new) begin n_w_head = (w_head + 1) % C_W; n_w_count = n_w_count - 1; end
-      if (!aw_is_new) begin
-        aw_committed[owner] &lt;= beat_number + 1;
-        if (beat_number == expected_beats - 1) aw_complete[owner] &lt;= 1;
-      end
-    end
-    ar_head &lt;= n_ar_head; ar_tail &lt;= n_ar_tail; ar_count &lt;= n_ar_count; ar_beat &lt;= n_ar_beat;
-    aw_head &lt;= n_aw_head; aw_tail &lt;= n_aw_tail; aw_count &lt;= n_aw_count;
-    w_head &lt;= n_w_head; w_tail &lt;= n_w_tail; w_count &lt;= n_w_count;
+wire ar_push = arvalid &amp;&amp; arready;
+wire aw_push = awvalid &amp;&amp; awready;
+wire w_push = wvalid &amp;&amp; wready;
+wire b_pop = bvalid &amp;&amp; bready;
+wire r_pop = rvalid_reg &amp;&amp; rready;
+wire ar_pop = r_pop &amp;&amp; rlast_reg;
+wire [31:0] read_slot = ar_pop ? (ar_head_reg + 1) % C_AR : ar_head_reg;
+wire [31:0] read_beat = r_pop ? (rlast_reg ? 0 : ar_beat_reg + 1) : ar_beat_reg;
+wire read_load = (!rvalid_reg || rready) &amp;&amp; (ar_count_reg &gt; (ar_pop ? 1 : 0)) &amp;&amp;
+    cycle_count_reg &gt;= ar_time_reg[read_slot] + READ_DELAY - 1;
+wire [BITSIZE_addr-1:0] read_address = ar_burst_reg[read_slot] == 2'b00 ?
+    ar_addr_reg[read_slot] : ar_addr_reg[read_slot] + read_beat * (1 &lt;&lt; ar_size_reg[read_slot]);
+
+// AXI4 write data has no ID. Associate it with the oldest incomplete AW,
+// including an AW accepted on this edge when there is no older owner.
+integer queued_owner;
+always @(*)
+begin : find_write_owner
+  integer scan_i;
+  integer scan_slot;
+  queued_owner = -1;
+  scan_slot = 0;
+  for (scan_i = 0; scan_i &lt; aw_count_reg; scan_i = scan_i + 1)
+  begin
+    scan_slot = (aw_head_reg + scan_i) % C_AW;
+    if (queued_owner == -1 &amp;&amp; !aw_complete_reg[scan_slot])
+      queued_owner = scan_slot;
   end
-end"/>
+end
+
+wire aw_is_new = queued_owner == -1 &amp;&amp; aw_push;
+wire w_is_new = w_count_reg == 0 &amp;&amp; w_push;
+wire [31:0] write_owner = aw_is_new ? aw_tail_reg : queued_owner;
+wire [BITSIZE_addr-1:0] write_base = aw_is_new ? awaddr : aw_addr_reg[write_owner];
+wire [BITSIZE_size-1:0] write_size = aw_is_new ? awsize : aw_size_reg[write_owner];
+wire [BITSIZE_burst-1:0] write_burst = aw_is_new ? awburst : aw_burst_reg[write_owner];
+wire [BITSIZE_len-1:0] write_length = aw_is_new ? awlen : aw_len_reg[write_owner];
+wire [BITSIZE_data-1:0] write_data = w_is_new ? wdata : w_data_reg[w_head_reg];
+wire [BITSIZE_wstrb-1:0] write_strobe = w_is_new ? wstrb : w_strb_reg[w_head_reg];
+wire write_last = w_is_new ? wlast : w_last_reg[w_head_reg];
+wire [63:0] write_aw_time = aw_is_new ? cycle_count_reg : aw_time_reg[write_owner];
+wire [63:0] write_w_time = w_is_new ? cycle_count_reg : w_time_reg[w_head_reg];
+wire [63:0] write_eligible_at =
+    (write_aw_time &gt; write_w_time ? write_aw_time : write_w_time) + WRITE_DELAY - 1;
+wire commit_write = (queued_owner != -1 || aw_is_new) &amp;&amp; (w_count_reg &gt; 0 || w_is_new) &amp;&amp;
+    cycle_count_reg &gt;= write_eligible_at;
+wire [31:0] write_beat = aw_is_new ? 0 : aw_committed_reg[write_owner];
+wire [31:0] write_beats = {1'b0, write_length} + 1;
+wire write_final = write_beat == write_beats - 1;
+wire [BITSIZE_addr-1:0] write_address = write_burst == 2'b00 ?
+    write_base : write_base + write_beat * (1 &lt;&lt; write_size);
+wire w_enqueue = w_push &amp;&amp; !(commit_write &amp;&amp; w_is_new);
+wire w_pop = commit_write &amp;&amp; !w_is_new;
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    cycle_count_reg &lt;= 0;
+  else
+  begin
+    cycle_count_reg &lt;= cycle_count_reg + 1;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    ar_head_reg &lt;= 0;
+  else
+  begin
+    if (ar_pop)
+      ar_head_reg &lt;= (ar_head_reg + 1) % C_AR;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    ar_tail_reg &lt;= 0;
+  else
+  begin
+    if (ar_push)
+      ar_tail_reg &lt;= (ar_tail_reg + 1) % C_AR;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    ar_count_reg &lt;= 0;
+  else
+  begin
+    case ({ar_push, ar_pop})
+      2'b10: ar_count_reg &lt;= ar_count_reg + 1;
+      2'b01: ar_count_reg &lt;= ar_count_reg - 1;
+      default: ar_count_reg &lt;= ar_count_reg;
+    endcase
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    ar_beat_reg &lt;= 0;
+  else
+  begin
+    if (r_pop)
+      ar_beat_reg &lt;= rlast_reg ? 0 : ar_beat_reg + 1;
+  end
+end
+
+always @(posedge clock)
+begin : update_ar_id
+  if (!(1RESET_VALUE))
+  begin
+    if (ar_push)
+      ar_id_reg[ar_tail_reg] &lt;= arid;
+  end
+end
+
+always @(posedge clock)
+begin : update_ar_addr
+  if (!(1RESET_VALUE))
+  begin
+    if (ar_push)
+      ar_addr_reg[ar_tail_reg] &lt;= araddr;
+  end
+end
+
+always @(posedge clock)
+begin : update_ar_size
+  if (!(1RESET_VALUE))
+  begin
+    if (ar_push)
+      ar_size_reg[ar_tail_reg] &lt;= arsize;
+  end
+end
+
+always @(posedge clock)
+begin : update_ar_burst
+  if (!(1RESET_VALUE))
+  begin
+    if (ar_push)
+      ar_burst_reg[ar_tail_reg] &lt;= arburst;
+  end
+end
+
+always @(posedge clock)
+begin : update_ar_len
+  if (!(1RESET_VALUE))
+  begin
+    if (ar_push)
+      ar_len_reg[ar_tail_reg] &lt;= arlen;
+  end
+end
+
+always @(posedge clock)
+begin : update_ar_time
+  integer ar_time_i;
+  if (1RESET_VALUE)
+  begin
+    for (ar_time_i = 0; ar_time_i &lt; C_AR; ar_time_i = ar_time_i + 1)
+      ar_time_reg[ar_time_i] &lt;= 0;
+  end
+  else
+  begin
+    if (ar_push)
+      ar_time_reg[ar_tail_reg] &lt;= cycle_count_reg;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    rvalid_reg &lt;= 0;
+  else
+  begin
+    if (!rvalid_reg || rready)
+      rvalid_reg &lt;= read_load;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    rid_reg &lt;= '0;
+  else
+  begin
+    if (read_load)
+      rid_reg &lt;= ar_id_reg[read_slot];
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    rlast_reg &lt;= '0;
+  else
+  begin
+    if (read_load)
+      rlast_reg &lt;= read_beat == ar_len_reg[read_slot];
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    rresp_reg &lt;= '0;
+  else
+  begin
+    if (read_load)
+      rresp_reg &lt;= '0;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    ruser_reg &lt;= '0;
+  else
+  begin
+    if (read_load)
+      ruser_reg &lt;= '0;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    aw_head_reg &lt;= 0;
+  else
+  begin
+    if (b_pop)
+      aw_head_reg &lt;= (aw_head_reg + 1) % C_AW;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    aw_tail_reg &lt;= 0;
+  else
+  begin
+    if (aw_push)
+      aw_tail_reg &lt;= (aw_tail_reg + 1) % C_AW;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    aw_count_reg &lt;= 0;
+  else
+  begin
+    case ({aw_push, b_pop})
+      2'b10: aw_count_reg &lt;= aw_count_reg + 1;
+      2'b01: aw_count_reg &lt;= aw_count_reg - 1;
+      default: aw_count_reg &lt;= aw_count_reg;
+    endcase
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_id
+  if (!(1RESET_VALUE))
+  begin
+    if (aw_push)
+      aw_id_reg[aw_tail_reg] &lt;= awid;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_addr
+  if (!(1RESET_VALUE))
+  begin
+    if (aw_push)
+      aw_addr_reg[aw_tail_reg] &lt;= awaddr;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_size
+  if (!(1RESET_VALUE))
+  begin
+    if (aw_push)
+      aw_size_reg[aw_tail_reg] &lt;= awsize;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_burst
+  if (!(1RESET_VALUE))
+  begin
+    if (aw_push)
+      aw_burst_reg[aw_tail_reg] &lt;= awburst;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_len
+  if (!(1RESET_VALUE))
+  begin
+    if (aw_push)
+      aw_len_reg[aw_tail_reg] &lt;= awlen;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_time
+  integer aw_time_i;
+  if (1RESET_VALUE)
+  begin
+    for (aw_time_i = 0; aw_time_i &lt; C_AW; aw_time_i = aw_time_i + 1)
+      aw_time_reg[aw_time_i] &lt;= 0;
+  end
+  else
+  begin
+    if (aw_push)
+      aw_time_reg[aw_tail_reg] &lt;= cycle_count_reg;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_committed
+  integer aw_committed_i;
+  if (1RESET_VALUE)
+  begin
+    for (aw_committed_i = 0; aw_committed_i &lt; C_AW; aw_committed_i = aw_committed_i + 1)
+      aw_committed_reg[aw_committed_i] &lt;= 0;
+  end
+  else
+  begin
+    if (b_pop)
+      aw_committed_reg[aw_head_reg] &lt;= 0;
+    if (aw_push)
+      aw_committed_reg[aw_tail_reg] &lt;= (commit_write &amp;&amp; aw_is_new) ? write_beat + 1 : 0;
+    if (commit_write &amp;&amp; !aw_is_new)
+      aw_committed_reg[write_owner] &lt;= write_beat + 1;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_complete
+  integer aw_complete_i;
+  if (1RESET_VALUE)
+  begin
+    for (aw_complete_i = 0; aw_complete_i &lt; C_AW; aw_complete_i = aw_complete_i + 1)
+      aw_complete_reg[aw_complete_i] &lt;= 0;
+  end
+  else
+  begin
+    if (b_pop)
+      aw_complete_reg[aw_head_reg] &lt;= 0;
+    if (aw_push)
+      aw_complete_reg[aw_tail_reg] &lt;= commit_write &amp;&amp; aw_is_new &amp;&amp; write_final;
+    if (commit_write &amp;&amp; !aw_is_new &amp;&amp; write_final)
+      aw_complete_reg[write_owner] &lt;= 1;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    w_head_reg &lt;= 0;
+  else
+  begin
+    if (w_pop)
+      w_head_reg &lt;= (w_head_reg + 1) % C_W;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    w_tail_reg &lt;= 0;
+  else
+  begin
+    if (w_enqueue)
+      w_tail_reg &lt;= (w_tail_reg + 1) % C_W;
+  end
+end
+
+always @(posedge clock)
+begin
+  if (1RESET_VALUE)
+    w_count_reg &lt;= 0;
+  else
+  begin
+    case ({w_enqueue, w_pop})
+      2'b10: w_count_reg &lt;= w_count_reg + 1;
+      2'b01: w_count_reg &lt;= w_count_reg - 1;
+      default: w_count_reg &lt;= w_count_reg;
+    endcase
+  end
+end
+
+always @(posedge clock)
+begin : update_w_data_q
+  if (!(1RESET_VALUE))
+  begin
+    if (w_enqueue)
+      w_data_reg[w_tail_reg] &lt;= wdata;
+  end
+end
+
+always @(posedge clock)
+begin : update_w_strb_q
+  if (!(1RESET_VALUE))
+  begin
+    if (w_enqueue)
+      w_strb_reg[w_tail_reg] &lt;= wstrb;
+  end
+end
+
+always @(posedge clock)
+begin : update_w_last_q
+  if (!(1RESET_VALUE))
+  begin
+    if (w_enqueue)
+      w_last_reg[w_tail_reg] &lt;= wlast;
+  end
+end
+
+always @(posedge clock)
+begin : update_w_time_q
+  integer w_time_q_i;
+  if (1RESET_VALUE)
+  begin
+    for (w_time_q_i = 0; w_time_q_i &lt; C_W; w_time_q_i = w_time_q_i + 1)
+      w_time_reg[w_time_q_i] &lt;= 0;
+  end
+  else
+  begin
+    if (w_enqueue)
+      w_time_reg[w_tail_reg] &lt;= cycle_count_reg;
+  end
+end
+
+// Keep backend calls together and in read-before-write order. This preserves
+// the value seen by a read aliasing a write committed on the same edge.
+always @(posedge clock)
+begin : independent_axi_model
+  if (1RESET_VALUE)
+    rdata_reg &lt;= '0;
+  else
+  begin
+    if (read_load)
+    begin
+      case (ar_burst_reg[read_slot])
+        2'b00, 2'b01: rdata_reg &lt;= m_utils.read_a(read_address);
+        default: $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst_reg[read_slot]);
+      endcase
+    end
+    if (commit_write)
+    begin
+      if (write_last != write_final)
+        $fatal(1, &quot;AXI WLAST mismatch at beat %0d of %0d&quot;, write_beat, write_beats);
+      case (write_burst)
+        2'b00, 2'b01: void'(m_utils.write_strobe(write_data, write_strobe, write_address));
+        default: $fatal(1, &quot;Unsupported AXI write burst type: %0d&quot;, write_burst);
+      endcase
+    end
+  end
+end
+"/>
         </module_o>
       </circuit>
     </cell>
