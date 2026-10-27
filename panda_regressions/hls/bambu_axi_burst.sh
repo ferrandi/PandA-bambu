@@ -121,18 +121,18 @@ python3 -B "$script_dir/bambu_axi_burst/test_regression_restart.py"
 python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 BURST_TEST_TMPDIR="$scratch/tmp" python3 -B "$script_dir/bambu_axi_burst/test_modelsim_tool_lookup.py"
-python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_extract_write_engine.py"
-python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_write_burst_modelsim_runner.py"
-python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_read_burst_modelsim_runner.py"
-python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_generated_read_modelsim_runner.py"
-python3 -B "$script_dir/bambu_axi_burst/rtl_tests/test_vlog_portability_runner.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_extract_write_engine.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_write_burst_modelsim_runner.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_read_burst_modelsim_runner.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_generated_read_modelsim_runner.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_vlog_portability_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
 python3 -B "$script_dir/bambu_axi_burst/test_bundle_preanalysis_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_parallel_helpers.py"
 python3 -B "$script_dir/bambu_axi_burst/test_duplex_effect_analysis_artifacts.py"
-python3 -B "$script_dir/bambu_axi_burst/test_generated_duplex_kernel_runner.py"
-python3 -B "$script_dir/bambu_axi_burst/test_generated_duplex_runner.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/test_generated_duplex_kernel_runner.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/test_generated_duplex_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_source_restrict_provenance.py"
 bash "$script_dir/bambu_axi_burst/test_compiler_runner_export_root.sh"
 
@@ -149,25 +149,25 @@ run_post_mantis_job() {
       ;;
     rtl-modelsim-transactions|rtl-modelsim-credits|rtl-modelsim-bounds|rtl-modelsim-configure)
       local suite=${job#rtl-modelsim-}
-      bash "$script_dir/bambu_axi_burst/rtl_tests/run_read_burst_modelsim.sh" \
+      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh" \
         "$scratch/rtl-modelsim-$suite" "$suite"
       ;;
     rtl-write-engine)
       BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 \
         BURST_WRITER_GROUP_JOBS="$writer_group_jobs" \
-        bash "$script_dir/bambu_axi_burst/rtl_tests/run_write_burst_engine.sh" \
+        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh" \
           "$scratch/rtl-write-engine"
       ;;
     rtl-vlog)
-      bash "$script_dir/bambu_axi_burst/rtl_tests/run_vlog_portability.sh" \
+      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_vlog_portability.sh" \
         "$scratch/out_axi_core_vlog_portability"
       ;;
     generated-kernel-wrapper)
       # These checks deliberately share generated RTL and must remain serial.
       local generated_out="$scratch/generated-kernel"
-      bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_kernel_tests.sh" \
+      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_kernel_tests.sh" \
         "$bambu" "$generated_out" || return $?
-      bash "$script_dir/bambu_axi_burst/rtl_tests/run_generated_wrapper_rid_tests.sh" \
+      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_wrapper_rid_tests.sh" \
         "$bambu" "$generated_out/generated" "$scratch/wrapper-rid" || return $?
       ;;
     *)

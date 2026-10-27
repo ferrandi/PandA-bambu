@@ -12,8 +12,8 @@ bundle_name=shared
 activation_witness="Activated guarded distinct-base duplex for bundle $bundle_name (overlap uses serialized scalar transfers)"
 checker="$script_dir/check_duplex_alias_results.py"
 helpers="$script_dir/parallel_helpers.sh"
-range_probe_runner="$script_dir/rtl_tests/run_duplex_alias_range_guard.sh"
-range_probe_testbench="$script_dir/rtl_tests/tb_duplex_alias_range_guard.sv"
+range_probe_runner=$(realpath "$script_dir/../../verilog/axi_burst/rtl_tests/run_duplex_alias_range_guard.sh")
+range_probe_testbench=$(realpath "$script_dir/../../verilog/axi_burst/rtl_tests/tb_duplex_alias_range_guard.sv")
 
 usage() { echo "usage: BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX=1 $0 BAMBU [FRESH_OUTPUT_DIR]" >&2; }
 if (($# < 1 || $# > 2)); then usage; exit 2; fi

@@ -86,78 +86,55 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
       }
    };
 
-   const auto add_port_parametric_reg = [&](const std::string& name, port_o::port_direction dir, unsigned port_size) {
-      const auto port_name = port_prefix + "_" + name;
-      const auto port_obj = structural_manager::add_port(
-          port_name, dir, mod_cir, structural_type_descriptorRef(new structural_type_descriptor("bool", port_size)));
-      GetPointerS<port_o>(port_obj)->set_is_memory(true);
-      if(port_size)
-      {
-         np_library += " " + port_name;
-      }
-      out << "reg ";
-      if(port_size)
-      {
-         out << "[BITSIZE_" << port_name << "-1:0] ";
-      }
-      out << name << ";\n";
-      if(dir == port_o::IN)
-      {
-         internal_port_assign += "assign " + name + "=" + port_name + ";\n";
-      }
-      else
-      {
-         internal_port_assign += "assign " + port_name + "=" + name + ";\n";
-      }
-   };
+   // The wrapper only connects ports and the memory-model instance; all
+   // intermediate signals are nets. State belongs to TestbenchMEMAXI.
+   add_port_parametric_wire("awready", port_o::OUT, 0U);
+   add_port_parametric_wire("wready", port_o::OUT, 0U);
+   add_port_parametric_wire("bid", port_o::OUT, 1U);
+   add_port_parametric_wire("bresp", port_o::OUT, 2U);
+   add_port_parametric_wire("buser", port_o::OUT, 1U);
+   add_port_parametric_wire("bvalid", port_o::OUT, 0U);
+   add_port_parametric_wire("arready", port_o::OUT, 0U);
+   add_port_parametric_wire("rid", port_o::OUT, 1U);
+   add_port_parametric_wire("rdata", port_o::OUT, 1U);
+   add_port_parametric_wire("rresp", port_o::OUT, 2U);
+   add_port_parametric_wire("rlast", port_o::OUT, 0U);
+   add_port_parametric_wire("ruser", port_o::OUT, 1U);
+   add_port_parametric_wire("rvalid", port_o::OUT, 0U);
 
-   add_port_parametric_reg("awready", port_o::OUT, 0U);
-   add_port_parametric_reg("wready", port_o::OUT, 0U);
-   add_port_parametric_reg("bid", port_o::OUT, 1U);
-   add_port_parametric_reg("bresp", port_o::OUT, 2U);
-   add_port_parametric_reg("buser", port_o::OUT, 1U);
-   add_port_parametric_reg("bvalid", port_o::OUT, 0U);
-   add_port_parametric_reg("arready", port_o::OUT, 0U);
-   add_port_parametric_reg("rid", port_o::OUT, 1U);
-   add_port_parametric_reg("rdata", port_o::OUT, 1U);
-   add_port_parametric_reg("rresp", port_o::OUT, 2U);
-   add_port_parametric_reg("rlast", port_o::OUT, 0U);
-   add_port_parametric_reg("ruser", port_o::OUT, 1U);
-   add_port_parametric_reg("rvalid", port_o::OUT, 0U);
+   add_port_parametric_wire("awid", port_o::IN, 1U);
+   add_port_parametric_wire("awaddr", port_o::IN, 1U);
+   add_port_parametric_wire("awlen", port_o::IN, 1U);
+   add_port_parametric_wire("awsize", port_o::IN, 1U);
+   add_port_parametric_wire("awburst", port_o::IN, 2U);
+   add_port_parametric_wire("awlock", port_o::IN, 1U);
+   add_port_parametric_wire("awcache", port_o::IN, 1U);
+   add_port_parametric_wire("awprot", port_o::IN, 1U);
+   add_port_parametric_wire("awqos", port_o::IN, 1U);
+   add_port_parametric_wire("awregion", port_o::IN, 1U);
+   add_port_parametric_wire("awuser", port_o::IN, 1U);
+   add_port_parametric_wire("awvalid", port_o::IN, 0U);
 
-   add_port_parametric_reg("awid", port_o::IN, 1U);
-   add_port_parametric_reg("awaddr", port_o::IN, 1U);
-   add_port_parametric_reg("awlen", port_o::IN, 1U);
-   add_port_parametric_reg("awsize", port_o::IN, 1U);
-   add_port_parametric_reg("awburst", port_o::IN, 2U);
-   add_port_parametric_reg("awlock", port_o::IN, 1U);
-   add_port_parametric_reg("awcache", port_o::IN, 1U);
-   add_port_parametric_reg("awprot", port_o::IN, 1U);
-   add_port_parametric_reg("awqos", port_o::IN, 1U);
-   add_port_parametric_reg("awregion", port_o::IN, 1U);
-   add_port_parametric_reg("awuser", port_o::IN, 1U);
-   add_port_parametric_reg("awvalid", port_o::IN, 0U);
-
-   add_port_parametric_reg("wdata", port_o::IN, 1U);
-   add_port_parametric_reg("wstrb", port_o::IN, 1U);
-   add_port_parametric_reg("wlast", port_o::IN, 0U);
-   add_port_parametric_reg("wuser", port_o::IN, 1U);
-   add_port_parametric_reg("wvalid", port_o::IN, 0U);
+   add_port_parametric_wire("wdata", port_o::IN, 1U);
+   add_port_parametric_wire("wstrb", port_o::IN, 1U);
+   add_port_parametric_wire("wlast", port_o::IN, 0U);
+   add_port_parametric_wire("wuser", port_o::IN, 1U);
+   add_port_parametric_wire("wvalid", port_o::IN, 0U);
 
    add_port_parametric_wire("bready", port_o::IN, 0U);
 
-   add_port_parametric_reg("arid", port_o::IN, 1U);
-   add_port_parametric_reg("araddr", port_o::IN, 1U);
-   add_port_parametric_reg("arlen", port_o::IN, 1U);
-   add_port_parametric_reg("arsize", port_o::IN, 1U);
-   add_port_parametric_reg("arburst", port_o::IN, 2U);
-   add_port_parametric_reg("arlock", port_o::IN, 1U);
-   add_port_parametric_reg("arcache", port_o::IN, 1U);
-   add_port_parametric_reg("arprot", port_o::IN, 1U);
-   add_port_parametric_reg("arqos", port_o::IN, 1U);
-   add_port_parametric_reg("arregion", port_o::IN, 1U);
-   add_port_parametric_reg("aruser", port_o::IN, 1U);
-   add_port_parametric_reg("arvalid", port_o::IN, 0U);
+   add_port_parametric_wire("arid", port_o::IN, 1U);
+   add_port_parametric_wire("araddr", port_o::IN, 1U);
+   add_port_parametric_wire("arlen", port_o::IN, 1U);
+   add_port_parametric_wire("arsize", port_o::IN, 1U);
+   add_port_parametric_wire("arburst", port_o::IN, 2U);
+   add_port_parametric_wire("arlock", port_o::IN, 1U);
+   add_port_parametric_wire("arcache", port_o::IN, 1U);
+   add_port_parametric_wire("arprot", port_o::IN, 1U);
+   add_port_parametric_wire("arqos", port_o::IN, 1U);
+   add_port_parametric_wire("arregion", port_o::IN, 1U);
+   add_port_parametric_wire("aruser", port_o::IN, 1U);
+   add_port_parametric_wire("arvalid", port_o::IN, 0U);
    add_port_parametric_wire("rready", port_o::IN, 0U);
 
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
