@@ -90,7 +90,7 @@ ARGS=("--top-fname=$TOP_ARG" --compiler=I386_CLANG16 --generate-interface=INFER
     printf 'TMPDIR=%s\nTMP=%s\nTEMP=%s\n' "$TMPDIR" "$TMP" "$TEMP"
     printf 'source=%s\ntestbench=%s\nwrite_outstanding=%s\nargv=' "$SOURCE" "$TB" "$WRITE_OUTSTANDING"
     printf '%q ' "$BAMBU" "$SOURCE" "${ARGS[@]}"; printf '\n'
-    "$BAMBU" --version 2>&1 | head -n 2
+    "$BAMBU" --version 2>&1 | sed -n '1,2p'
     verilator --version
     sha256sum "$BAMBU" "$PLUGIN" "$SETTINGS" "$SOURCE" "$TB"
 } >"$TASK_OUT/provenance.txt"

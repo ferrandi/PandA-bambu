@@ -14,7 +14,7 @@ from pathlib import Path
 IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
 CELL_NAME = "MinimalAXI4MasterPipelinedWrite"
 TARGETS = ("MinimalAXI4MasterPipelined", CELL_NAME,
-           "MinimalAXI4Adapter", "MinimalAXI4AdapterSingleBeat")
+           "MinimalAXI4Adapter", "MinimalAXI4AdapterSingleBeat", "STD_FIFO", "STD_SDP_BRAMFW")
 
 
 def _fail(message: str) -> None:
@@ -37,12 +37,28 @@ def _raw_body(xml_path: Path, target: str) -> str:
 
 
 def extract(xml_path: Path, target: str = CELL_NAME, *, async_reset: bool = False,
-            active_low: bool = True) -> str:
+            active_low: bool = True, include_dependencies: bool = True,
+            _ancestors: tuple[str, ...] = ()) -> str:
+    if target in _ancestors:
+        _fail(f"cyclic IP_COMPONENT dependency: {' -> '.join((*_ancestors, target))}")
     try:
         root = ET.parse(xml_path).getroot()
     except (ET.ParseError, OSError) as error:
         _fail(f"cannot parse XML {xml_path}: {error}")
     cells = [cell for cell in root.findall(".//cell") if cell.findtext("name") == target]
+    # Shared components may live in the memory library rather than AXI XML.
+    # Prefer a colocated snapshot for reproducible standalone experiments.
+    if not cells:
+        memory_libraries = (xml_path.parent / "NC_MEM_IPs.xml",
+                            Path(__file__).resolve().parents[4] / "etc/libtech/NC_MEM_IPs.xml")
+        for memory_xml in dict.fromkeys(path.resolve() for path in memory_libraries):
+            if memory_xml == xml_path.resolve() or not memory_xml.is_file():
+                continue
+            memory_root = ET.parse(memory_xml).getroot()
+            if any(cell.findtext("name") == target for cell in memory_root.findall(".//cell")):
+                return extract(memory_xml, target, async_reset=async_reset,
+                               active_low=active_low, include_dependencies=include_dependencies,
+                               _ancestors=_ancestors)
     if len(cells) != 1:
         _fail(f"expected exactly one XML cell named {target}, found {len(cells)}")
     module = cells[0].find("circuit/module_o")
@@ -56,7 +72,10 @@ def extract(xml_path: Path, target: str = CELL_NAME, *, async_reset: bool = Fals
             _fail(f"invalid parameter descriptor in {target}")
         if name in parameters:
             _fail(f"duplicate parameter {name} in {target}")
-        if not re.fullmatch(r"[0-9]+", value):
+        if name == "MEMORY_INIT_file" and len(value) >= 4 and value.startswith('""') and value.endswith('""'):
+            value = value[1:-1]
+        if not re.fullmatch(r"[0-9]+", value) and not (
+                name == "MEMORY_INIT_file" and re.fullmatch(r'"[^"\\\n]*"', value)):
             _fail(f"unsupported non-integer default for parameter {name}: {value!r}")
         parameters[name] = value
 
@@ -111,14 +130,15 @@ def extract(xml_path: Path, target: str = CELL_NAME, *, async_reset: bool = Fals
     unresolved = re.search(r"1[A-Z][A-Z0-9_]*", body)
     if unresolved:
         _fail(f"unresolved HDL placeholder {unresolved.group(0)} in {target}")
-    referenced_widths = set(re.findall(r"\bBITSIZE_([A-Za-z_][A-Za-z0-9_]*)", body))
+    referenced_widths = set(re.findall(r"(?<!\.)\bBITSIZE_([A-Za-z_][A-Za-z0-9_]*)", body))
     for name in referenced_widths:
         if name not in ports:
             _fail(f"HDL references width for undeclared XML port {name}")
         if name not in library_set:
             _fail(f"NP_functionality LIBRARY is missing port {name}")
 
-    param_lines = [f"    parameter integer {name} = {value}" for name, value in parameters.items()]
+    param_lines = [f"    parameter {'integer ' if value.isdecimal() else ''}{name} = {value}"
+                   for name, value in parameters.items()]
     port_lines: list[str] = []
     for name, (direction, width) in ports.items():
         sv_direction = "input" if direction == "in" else "output"
@@ -131,7 +151,14 @@ def extract(xml_path: Path, target: str = CELL_NAME, *, async_reset: bool = Fals
     header = (f"// Generated from {xml_path.name}\nmodule {target} #(\n" +
               ",\n".join(param_lines) + "\n) (\n" +
               ",\n".join(port_lines) + "\n);\n")
-    return header + body + "\nendmodule\n"
+    result = header + body + "\nendmodule\n"
+    dependencies = (functionality.get("IP_COMPONENT") or "") if include_dependencies else ""
+    for dependency in dict.fromkeys(dependencies.split(",")):
+        dependency = dependency.strip()
+        if dependency:
+            result += "\n" + extract(xml_path, dependency, async_reset=async_reset,
+                                     active_low=active_low, _ancestors=(*_ancestors, target))
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -142,10 +169,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reset-mode", choices=("sync", "async"), default="sync")
     parser.add_argument("--reset-polarity", choices=("active-low", "active-high"),
                          default="active-low")
+    parser.add_argument("--without-dependencies", action="store_true",
+                        help="extract only this cell when dependencies are supplied separately")
     args = parser.parse_args(argv)
     try:
         text = extract(args.xml, target=args.target, async_reset=args.reset_mode == "async",
-                       active_low=args.reset_polarity == "active-low")
+                       active_low=args.reset_polarity == "active-low",
+                       include_dependencies=not args.without_dependencies)
     except (OSError, ValueError) as error:
         parser.error(str(error))
     args.out.parent.mkdir(parents=True, exist_ok=True)

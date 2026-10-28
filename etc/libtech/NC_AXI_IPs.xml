@@ -829,8 +829,7 @@ end
           <port_o id="m_axi_rready" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="MinimalAXI4MasterPipelined B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE in1 in2 in3 in4 in5 out1 peer_fault m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arid m_axi_rdata m_axi_rresp m_axi_rid" VERILOG_PROVIDED="localparam integer FIFO_PTR_W = (FIFO_DEPTH &lt;= 2) ? 1 : $clog2(FIFO_DEPTH);
-localparam integer FIFO_COUNT_W = (FIFO_DEPTH &lt;= 1) ? 1 : $clog2(FIFO_DEPTH + 1);
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelined B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE in1 in2 in3 in4 in5 out1 peer_fault m_axi_araddr m_axi_arlen m_axi_arsize m_axi_arburst m_axi_arid m_axi_rdata m_axi_rresp m_axi_rid" IP_COMPONENT="STD_FIFO" VERILOG_PROVIDED="localparam integer FIFO_COUNT_W = (FIFO_DEPTH &lt;= 1) ? 1 : $clog2(FIFO_DEPTH + 1);
 localparam integer DESC_PTR_W = (MAX_OUTSTANDING &lt;= 2) ? 1 : $clog2(MAX_OUTSTANDING);
 localparam integer DESC_COUNT_W = (MAX_OUTSTANDING &lt;= 1) ? 1 : $clog2(MAX_OUTSTANDING + 1);
 
@@ -912,10 +911,10 @@ reg [COUNT_W-1:0] pending_count_reg;
 
 reg        load_pending_reg;
 reg        load_pending_valid_reg;
-reg [DATA_BITS-1:0] fifo_reg [0:FIFO_DEPTH-1];
-reg [FIFO_PTR_W-1:0] fifo_rd_ptr_reg;
-reg [FIFO_PTR_W-1:0] fifo_wr_ptr_reg;
-reg [FIFO_COUNT_W-1:0] fifo_count_reg;
+wire [DATA_BITS-1:0] fifo_read_data;
+
+
+wire [FIFO_COUNT_W-1:0] fifo_count_reg;
 reg [LEN_W-1:0] descriptor_remaining_reg [0:MAX_OUTSTANDING-1];
 reg [DESC_PTR_W-1:0] descriptor_rd_ptr_reg;
 reg [DESC_PTR_W-1:0] descriptor_wr_ptr_reg;
@@ -926,6 +925,9 @@ wire descriptor_pop;
 wire descriptor_push;
 wire        fifo_load_done;
 wire       fifo_load_pop;
+wire       fifo_buffer_pop;
+wire       fifo_bypass;
+wire       load_waiting;
 wire        load_request_valid;
 wire       r_push;
 wire       r_structural;
@@ -1016,12 +1018,20 @@ assign configure_descriptor_valid = in2 == DATA_BITS &amp;&amp;
     (in5 == 0 || configure_range_valid);
 assign configure_capture = start &amp;&amp; in1 == OP_CONFIGURE &amp;&amp;
     !cfg_seen_reg &amp;&amp; !cfg_pipe_valid_reg;
-assign fifo_load_done = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; fifo_count_reg != 0 &amp;&amp;
+// Serve the oldest queued word, or bypass an empty FIFO on a valid response.
+// Backpressure is independent of the incoming response and the bypass path.
+// Both pointers advance on bypass; push and pop cancel in the FIFO count.
+// Keep the RAM write enable independent of LOAD for the shorter timing path.
+assign load_waiting = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp;
     ((load_pending_reg &amp;&amp; load_pending_valid_reg) ||
     (!load_pending_reg &amp;&amp; start &amp;&amp; in1 == OP_LOAD &amp;&amp; load_request_valid));
+assign fifo_buffer_pop = fifo_count_reg != 0 &amp;&amp; load_waiting;
+assign fifo_bypass = fifo_count_reg == 0 &amp;&amp; load_waiting &amp;&amp; r_good;
+assign fifo_load_done = fifo_buffer_pop || fifo_bypass;
 assign configure_complete = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; configure_ack_reg;
 assign done = fifo_load_done || configure_complete;
-assign out1 = fifo_load_done ? fifo_reg[fifo_rd_ptr_reg] : {BITSIZE_out1{1'b0}};
+assign out1 = fifo_load_done ? ((fifo_count_reg == 0) ? m_axi_rdata : fifo_read_data) :
+    {BITSIZE_out1{1'b0}};
 
 assign fifo_load_pop = fifo_load_done;
 assign peer_fault_active = (PEER_FAULT_ENABLE != 0) ? peer_fault : 1'b0;
@@ -1038,7 +1048,7 @@ assign r_fault_event = r_push &amp;&amp; (!r_structural || m_axi_rresp != 2'b00)
 // FIFO pop, never on current AXI response inputs. Accepted read credits
 // ensure a valid response cannot arrive while the FIFO is already full.
 assign m_axi_rready = (descriptor_count_reg != 0) &amp;&amp;
-    (fault_reg || (fifo_count_reg &lt; FIFO_DEPTH) || fifo_load_pop);
+    (fault_reg || (fifo_count_reg &lt; FIFO_DEPTH) || fifo_buffer_pop);
 assign descriptor_pop = r_push &amp;&amp; r_structural &amp;&amp;
     (descriptor_remaining_reg[descriptor_rd_ptr_reg] == 1);
 assign descriptor_push = m_axi_arvalid_reg &amp;&amp; m_axi_arready;
@@ -1071,6 +1081,19 @@ assign fifo_credit_nonzero = (fifo_credit_committed_reg != 0) || fifo_credit_tok
 wire activate_configure = cfg_pipe_valid_reg &amp;&amp; cfg_pipe_legal_reg &amp;&amp;
     cfg_pipe_size_reg == DATA_BITS &amp;&amp; !cfg_pipe_conflict_reg &amp;&amp; !fault_reg &amp;&amp;
     !peer_fault_active &amp;&amp; !cfg_pending_reg &amp;&amp; (!region_active_reg || drain_complete);
+
+wire fifo_configure_clear = cfg_pipe_valid_reg &amp;&amp; cfg_pipe_legal_reg &amp;&amp;
+    cfg_pipe_size_reg == DATA_BITS &amp;&amp; !cfg_pipe_conflict_reg &amp;&amp;
+    !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; !cfg_pending_reg &amp;&amp;
+    (!region_active_reg || drain_complete);
+STD_FIFO #(.n_elements(FIFO_DEPTH),
+    .BITSIZE_data_in(DATA_BITS), .BITSIZE_data_out(DATA_BITS),
+    .BITSIZE_level(FIFO_COUNT_W)) fifo (
+    .clock(clock), .reset(reset),
+    .clear(fifo_configure_clear || (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg)),
+    .push(r_good), .pop(fifo_load_pop), .data_in(m_axi_rdata),
+    .data_out(fifo_read_data), .level(fifo_count_reg), .empty(), .full());
+
 
 always @(posedge clock 1RESET_EDGE)
 begin
@@ -1498,157 +1521,6 @@ begin
   end
 end
 
-always @(posedge clock 1RESET_EDGE)
-begin
-  if (1RESET_VALUE)
-  begin
-  end
-  else
-  begin
-    if (r_push)
-    begin
-      if (r_structural)
-      begin
-        if (r_good)
-        begin
-          fifo_reg[fifo_wr_ptr_reg] &lt;= m_axi_rdata;
-        end
-      end
-    end
-  end
-end
-
-always @(posedge clock 1RESET_EDGE)
-begin
-  if (1RESET_VALUE)
-  begin
-    fifo_count_reg &lt;= 0;
-  end
-  else
-  begin
-    if (cfg_pipe_valid_reg)
-    begin
-      if (!cfg_pipe_legal_reg || cfg_pipe_size_reg != DATA_BITS || cfg_pipe_conflict_reg)
-      begin
-      end
-      else
-      begin
-        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp;
-        !cfg_pending_reg &amp;&amp;
-        (!region_active_reg || drain_complete))
-        begin
-          fifo_count_reg &lt;= 0;
-        end
-      end
-    end
-    case ({r_good, fifo_load_pop})
-      2'b10:
-      begin
-        fifo_count_reg &lt;= fifo_count_reg + 1'b1;
-      end
-      2'b01:
-      begin
-        fifo_count_reg &lt;= fifo_count_reg - 1'b1;
-      end
-      default:
-      begin
-        fifo_count_reg &lt;= fifo_count_reg;
-      end
-    endcase
-    if (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg)
-    begin
-      fifo_count_reg &lt;= 0;
-    end
-  end
-end
-
-always @(posedge clock 1RESET_EDGE)
-begin
-  if (1RESET_VALUE)
-  begin
-    fifo_rd_ptr_reg &lt;= 0;
-  end
-  else
-  begin
-    if (cfg_pipe_valid_reg)
-    begin
-      if (!cfg_pipe_legal_reg || cfg_pipe_size_reg != DATA_BITS || cfg_pipe_conflict_reg)
-      begin
-      end
-      else
-      begin
-        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp;
-        !cfg_pending_reg &amp;&amp;
-        (!region_active_reg || drain_complete))
-        begin
-          fifo_rd_ptr_reg &lt;= 0;
-        end
-      end
-    end
-    if (fifo_load_done &amp;&amp; !peer_fault_active)
-    begin
-      if (fifo_rd_ptr_reg == FIFO_DEPTH-1)
-      begin
-        fifo_rd_ptr_reg &lt;= 0;
-      end
-      else
-      begin
-        fifo_rd_ptr_reg &lt;= fifo_rd_ptr_reg + 1'b1;
-      end
-    end
-    if (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg)
-    begin
-      fifo_rd_ptr_reg &lt;= 0;
-    end
-  end
-end
-
-always @(posedge clock 1RESET_EDGE)
-begin
-  if (1RESET_VALUE)
-  begin
-    fifo_wr_ptr_reg &lt;= 0;
-  end
-  else
-  begin
-    if (cfg_pipe_valid_reg)
-    begin
-      if (!cfg_pipe_legal_reg || cfg_pipe_size_reg != DATA_BITS || cfg_pipe_conflict_reg)
-      begin
-      end
-      else
-      begin
-        if (!fault_reg &amp;&amp; !peer_fault_active &amp;&amp;
-        !cfg_pending_reg &amp;&amp;
-        (!region_active_reg || drain_complete))
-        begin
-          fifo_wr_ptr_reg &lt;= 0;
-        end
-      end
-    end
-    if (r_push)
-    begin
-      if (r_structural)
-      begin
-        if (r_good)
-        begin
-          if (fifo_wr_ptr_reg == FIFO_DEPTH-1)
-          begin
-            fifo_wr_ptr_reg &lt;= 0;
-          end
-          else
-          begin
-            fifo_wr_ptr_reg &lt;= fifo_wr_ptr_reg + 1'b1;
-          end
-        end
-      end
-    end
-    if (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg)
-    begin
-      fifo_wr_ptr_reg &lt;= 0;
-    end
-  end
-end
 
 always @(posedge clock 1RESET_EDGE)
 begin
@@ -2180,7 +2052,6 @@ begin
 end
 
 
-
 always @(posedge clock 1RESET_EDGE)
 begin
   if (1RESET_VALUE || activate_configure ||
@@ -2242,6 +2113,7 @@ begin
     end
   end
 end
+
 
 "/>
         </module_o>
@@ -2701,14 +2573,13 @@ end
           <port_o id="m_axi_bid" dir="IN"><structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/></port_o>
           <port_o id="m_axi_bvalid" dir="IN"><structural_type_descriptor type="BOOL" size="1"/></port_o>
           <port_o id="m_axi_bready" dir="OUT"><structural_type_descriptor type="BOOL" size="1"/></port_o>
-          <NP_functionality LIBRARY="MinimalAXI4MasterPipelinedWrite B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE FAST_STORE_ACK in1 in2 in3 in4 in5 out1 peer_fault m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awid m_axi_wdata m_axi_wstrb m_axi_bresp m_axi_bid" VERILOG_PROVIDED="localparam integer ADDR_BITS = BITSIZE_m_axi_awaddr;
+          <NP_functionality LIBRARY="MinimalAXI4MasterPipelinedWrite B_MAX MAX_OUTSTANDING FIFO_DEPTH PEER_FAULT_ENABLE FAST_STORE_ACK in1 in2 in3 in4 in5 out1 peer_fault m_axi_awaddr m_axi_awlen m_axi_awsize m_axi_awburst m_axi_awid m_axi_wdata m_axi_wstrb m_axi_bresp m_axi_bid" IP_COMPONENT="STD_FIFO" VERILOG_PROVIDED="localparam integer ADDR_BITS = BITSIZE_m_axi_awaddr;
 localparam integer DATA_BITS = BITSIZE_m_axi_wdata;
 localparam integer BEAT_BYTES = DATA_BITS / 8;
 localparam integer BEAT_SHIFT = $clog2(BEAT_BYTES);
 localparam integer COUNT_BITS = BITSIZE_in5;
 localparam integer COUNT_W = COUNT_BITS - 1;
 localparam integer OFFSET_W = (ADDR_BITS &gt; COUNT_W ? ADDR_BITS : COUNT_W);
-localparam integer PTR_W = (FIFO_DEPTH &lt;= 2) ? 1 : $clog2(FIFO_DEPTH);
 localparam integer FIFO_COUNT_W = $clog2(FIFO_DEPTH + 1);
 localparam integer LEN_W = (B_MAX &lt; 1) ? 1 : $clog2(B_MAX + 1);
 localparam integer END_BEAT_W = ((ADDR_BITS - BEAT_SHIFT) &gt; COUNT_BITS ?
@@ -2798,10 +2669,10 @@ reg [DESC_PTR_W-1:0] descriptor_w_ptr_reg;
 reg [DESC_PTR_W-1:0] descriptor_b_ptr_reg;
 reg [DESC_COUNT_W-1:0] descriptor_count_reg;
 reg [RESERVED_COUNT_W-1:0] reserved_data_count_reg;
-reg [BITSIZE_in3-1:0] fifo_reg [0:FIFO_DEPTH-1];
-reg [PTR_W-1:0] fifo_rd_ptr_reg;
-reg [PTR_W-1:0] fifo_wr_ptr_reg;
-reg [FIFO_COUNT_W-1:0] fifo_count_reg;
+wire [BITSIZE_in3-1:0] fifo_read_data;
+
+
+wire [FIFO_COUNT_W-1:0] fifo_count_reg;
 wire [END_BEAT_W-1:0] region_end;
 reg [LEN_W-1:0] burst_limit;
 reg [LEN_W-1:0] plan_limit;
@@ -2873,7 +2744,7 @@ assign m_axi_wstrb = {BITSIZE_m_axi_wstrb{1'b1}};
 assign m_axi_wlast = w_valid &amp;&amp; (descriptor_w_remaining_reg[descriptor_w_ptr_reg] == 1);
 assign m_axi_wvalid = w_valid;
 assign m_axi_bready = b_ready;
-assign fifo_head = fifo_reg[fifo_rd_ptr_reg];
+assign fifo_head = fifo_read_data;
 assign aw_valid = (descriptor_count_reg != 0) &amp;&amp; descriptor_valid_reg[descriptor_aw_ptr_reg] &amp;&amp;
     !descriptor_aw_done_reg[descriptor_aw_ptr_reg];
 assign w_valid = (descriptor_count_reg != 0) &amp;&amp; descriptor_valid_reg[descriptor_w_ptr_reg] &amp;&amp;
@@ -2993,6 +2864,17 @@ assign store_ack_match = store_ack_reg &amp;&amp; (store_ack_pending_reg ||
     ((in1 == OP_STORE) &amp;&amp; (in2 == store_ack_size_reg) &amp;&amp;
     (in3 == store_ack_data_reg) &amp;&amp; (in4 == store_ack_address_reg)));
 assign direct_store_ack = fast_store_accept;
+wire activate_configure = cfg_pipe_valid_reg &amp;&amp; cfg_pipe_legal_reg &amp;&amp;
+    cfg_pipe_size_reg == DATA_BITS &amp;&amp; cfg_pipe_idle_reg &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active;
+wire [BITSIZE_in3-1:0] fifo_write_data = pending_store_enqueue ? pending_data_reg :
+    (direct_store_write ? in3 : fast_pipe_data);
+STD_FIFO #(.n_elements(FIFO_DEPTH),
+    .BITSIZE_data_in(BITSIZE_in3), .BITSIZE_data_out(BITSIZE_in3),
+    .BITSIZE_level(FIFO_COUNT_W)) fifo (
+    .clock(clock), .reset(reset), .clear(activate_configure),
+    .push(fifo_write_enable), .pop(w_push), .data_in(fifo_write_data),
+    .data_out(fifo_read_data), .level(fifo_count_reg), .empty(), .full());
+
 generate
   if (FAST_STORE_ACK != 0)
   begin : g_fast_pipe_hold
@@ -3895,114 +3777,6 @@ begin
   end
 end
 
-// The FIFO has no payload reset. Keep the pipeline and pending write
-// enables independent: pending_store_enqueue already excludes the pipeline
-// and direct-store cases, so their command-validation cones need not reach
-// the pending write port.
-always @(posedge clock)
-begin
-  if (!(1RESET_VALUE))
-  begin
-    if (fast_pipe_push)
-      fifo_reg[fifo_wr_ptr_reg] &lt;= fast_pipe_data;
-    if (direct_store_write)
-      fifo_reg[fifo_wr_ptr_reg] &lt;= in3;
-    if (pending_store_enqueue)
-      fifo_reg[fifo_wr_ptr_reg] &lt;= pending_data_reg;
-  end
-end
-
-
-always @(posedge clock 1RESET_EDGE)
-begin
-  if (1RESET_VALUE)
-  begin
-    fifo_count_reg &lt;= 0;
-  end
-  else
-  begin
-    if (cfg_pipe_valid_reg)
-    begin
-      if (!cfg_pipe_legal_reg || cfg_pipe_size_reg != DATA_BITS || !cfg_pipe_idle_reg)
-      begin
-      end
-      else
-      begin
-        if (!fault_reg &amp;&amp; !peer_fault_active)
-        begin
-          fifo_count_reg &lt;= 0;
-        end
-      end
-    end
-    case ({((FAST_STORE_ACK != 0) ? fast_data_enqueue : store_enqueue), w_push})
-      2'b10:
-      begin
-        fifo_count_reg &lt;= fifo_count_reg + 1'b1;
-      end
-      2'b01:
-      begin
-        fifo_count_reg &lt;= fifo_count_reg - 1'b1;
-      end
-      default:
-      begin
-        fifo_count_reg &lt;= fifo_count_reg;
-      end
-    endcase
-  end
-end
-
-always @(posedge clock 1RESET_EDGE)
-begin
-  if (1RESET_VALUE)
-  begin
-    fifo_rd_ptr_reg &lt;= 0;
-  end
-  else
-  begin
-    if (cfg_pipe_valid_reg)
-    begin
-      if (!cfg_pipe_legal_reg || cfg_pipe_size_reg != DATA_BITS || !cfg_pipe_idle_reg)
-      begin
-      end
-      else
-      begin
-        if (!fault_reg &amp;&amp; !peer_fault_active)
-        begin
-          fifo_rd_ptr_reg &lt;= 0;
-        end
-      end
-    end
-    if (w_push)
-    begin
-      if (fifo_rd_ptr_reg == FIFO_DEPTH-1)
-      begin
-        fifo_rd_ptr_reg &lt;= 0;
-      end
-      else
-      begin
-        fifo_rd_ptr_reg &lt;= fifo_rd_ptr_reg + 1'b1;
-      end
-    end
-  end
-end
-
-wire activate_configure = cfg_pipe_valid_reg &amp;&amp; cfg_pipe_legal_reg &amp;&amp;
-    cfg_pipe_size_reg == DATA_BITS &amp;&amp; cfg_pipe_idle_reg &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active;
-
-
-always @(posedge clock 1RESET_EDGE)
-begin
-  if (1RESET_VALUE)
-    fifo_wr_ptr_reg &lt;= 0;
-  else
-  begin
-    if (activate_configure)
-      fifo_wr_ptr_reg &lt;= 0;
-    if (fifo_write_enable)
-      fifo_wr_ptr_reg &lt;= (fifo_wr_ptr_reg == FIFO_DEPTH-1) ? 0 : fifo_wr_ptr_reg + 1'b1;
-  end
-end
-
 
 always @(posedge clock 1RESET_EDGE)
 begin
@@ -4755,7 +4529,6 @@ begin
 end
 
 
-
 // Every error is sticky until reset. Parallel event detection avoids a
 // priority mux chain on the fault register and its dependent control paths.
 always @(posedge clock 1RESET_EDGE)
@@ -4778,6 +4551,7 @@ begin
     end
   end
 end
+
 
 "/>
         </module_o>

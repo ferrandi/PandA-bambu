@@ -51,7 +51,7 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$TASK_OUT/$TOP.sv" | tee "$TASK_OUT/
 {
     printf 'xml='; sha256sum "$XML"
     printf 'extractor='; sha256sum "$EXTRACTOR"
-    printf 'vivado='; "$VIVADO" -version 2>/dev/null | head -1
+    printf 'vivado='; "$VIVADO" -version 2>/dev/null | sed -n '1p'
     printf 'part=%s\n' "$PART"
     printf 'git_head=%s\n' "$(git -C "$ROOT" rev-parse HEAD)"
 } > "$TASK_OUT/provenance.txt"

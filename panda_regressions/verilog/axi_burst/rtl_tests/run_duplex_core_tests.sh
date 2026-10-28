@@ -37,7 +37,7 @@ mkdir "$TASK_OUT/build"
 python3 -B "$EXTRACTOR" --xml "$XML" --target MinimalAXI4MasterPipelined \
     --out "$TASK_OUT/MinimalAXI4MasterPipelined.sv" | tee "$TASK_OUT/extract-reader.log"
 python3 -B "$EXTRACTOR" --xml "$XML" --target MinimalAXI4MasterPipelinedWrite \
-    --out "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" | tee "$TASK_OUT/extract-writer.log"
+    --without-dependencies --out "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" | tee "$TASK_OUT/extract-writer.log"
 {
     printf 'git_head='; git -C "$ROOT" rev-parse HEAD
     printf 'xml='; sha256sum "$XML"
