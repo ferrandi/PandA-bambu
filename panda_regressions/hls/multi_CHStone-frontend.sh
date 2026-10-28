@@ -6,8 +6,7 @@ BATCH_ARGS=("--simulate" "-O0" "-fwhole-program" "--clock-period=15" "-D'printf(
 OUT_SUFFIX="multi_CHStone-frontend"
 BENCHMARKS_ROOT="${script_dir}/../../examples/CHStone/CHStone"
 
-python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
-   --args="--configuration-name=GCC49-O0-wp-NN   --compiler=I386_GCC49 ${BATCH_ARGS[*]}" \
+python3 $script_dir/../../etc/scripts/mantis.py --tool=bambu \
    --args="--configuration-name=CLANG4-O0-wp-NN  --compiler=I386_CLANG4 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG6-O0-wp-NN  --compiler=I386_CLANG6 ${BATCH_ARGS[*]}" \
    --args="--configuration-name=CLANG7-O0-wp-NN  --compiler=I386_CLANG7 ${BATCH_ARGS[*]}" \
@@ -16,4 +15,4 @@ python3 $script_dir/../../etc/scripts/test_panda.py --tool=bambu \
    --args="--configuration-name=CLANG16-O0-wp-NN --compiler=I386_CLANG16 ${BATCH_ARGS[*]}" \
    -l${BENCHMARKS_ROOT}/../chstone_list \
    -o "out_${OUT_SUFFIX}" -b${BENCHMARKS_ROOT} \
-   --name="${OUT_SUFFIX}" "$@"
+   "$@"

@@ -1,0 +1,16 @@
+adders.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12" --top-fname=adders
+multipliers.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12" --top-fname=multipliers
+mixed_operations.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12,m=13" --top-fname=mixed_operations
+if_clauses.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12" --top-fname=if_clauses
+function_call.c --generate-tb="a=1,b=2,c=3,d=4,e=5" --top-fname=main_caller --bambu-parameter=inline-max-cost=0
+memory.c --generate-tb=BENCHMARKS_ROOT/memory.xml --top-fname=memory --bambu-parameter=inline-max-cost=0
+outer_loop.c --generate-tb="a=3,b=4,c=7" --top-fname=outer_loop --bambu-parameter=inline-max-cost=0
+predicate1.c --generate-tb="a=1,b=2,c=3,d=4,e=5" --top-fname=main_caller --bambu-parameter=inline-max-cost=0
+predicate1.c --generate-tb="a=5,b=4,c=3,d=2,e=1" --top-fname=main_caller --benchmark-name=predicate1_all_calls --bambu-parameter=inline-max-cost=0
+predicate1.c --generate-tb="a=1,b=2,c=3,d=4,e=5" --top-fname=main_load_store --benchmark-name=predicate1_load_store_skip --bambu-parameter=inline-max-cost=0
+predicate1.c --generate-tb="a=5,b=4,c=3,d=2,e=1" --top-fname=main_load_store --benchmark-name=predicate1_load_store_all --bambu-parameter=inline-max-cost=0
+predicate1.c --generate-tb="a=1,b=2,c=3,d=4,e=5" --top-fname=main_void_caller --benchmark-name=predicate1_void_skip --bambu-parameter=inline-max-cost=0
+predicate1.c --generate-tb="a=5,b=4,c=3,d=2,e=1" --top-fname=main_void_caller --benchmark-name=predicate1_void_all --bambu-parameter=inline-max-cost=0
+test_constant_cyclic_2/bambu_predicate/test_cyclic_2.c --generate-tb=BENCHMARKS_ROOT/test_constant_cyclic_2/bambu_predicate/testbench_cyclic_2.c --top-fname=top_fun --benchmark-name=test_constant_cyclic_2  --bambu-parameter=inline-max-cost=0 --generate-interface=INFER
+test_cyclic_2/bambu_predicate/test_cyclic_2.c --generate-tb=BENCHMARKS_ROOT/test_cyclic_2/bambu_predicate/testbench_cyclic_2.c --top-fname=top_fun --benchmark-name=test_cyclic_2  --bambu-parameter=inline-max-cost=0  --generate-interface=INFER
+

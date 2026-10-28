@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -35,53 +23,48 @@
  * @brief Base class for all unbounded objects added to datapath
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
 #ifndef MULTI_UNBOUNDED_OBJ_HPP
 #define MULTI_UNBOUNDED_OBJ_HPP
-
-#include "custom_set.hpp"
+#include "HLS/fsm/FSMInfo.hpp"
 #include "generic_obj.hpp"
 #include "graph.hpp"
-#include "refcount.hpp"
+
+#include <vector>
 
 /**
  * class modeling a register object
  */
 class multi_unbounded_obj : public generic_obj
 {
-   vertex fsm_state;
-   CustomOrderedSet<vertex> ops;
+   FSMInfo::state_descriptor fsm_state;
+   std::vector<FSMInfo::operation_descriptor> ops;
    generic_objRef mu_enable;
 
  public:
    /**
     * This is the constructor of the multi_unbounded_obj class, with a given id
+    * @param _fsm_state is the FSM state associated with this object
+    * @param _ops is the operations controlled by this object
     * @param _name is the name of the multi_unbounded_obj
     */
-   explicit multi_unbounded_obj(vertex _fsm_state, const CustomOrderedSet<vertex>& _ops, const std::string& _name)
+   explicit multi_unbounded_obj(FSMInfo::state_descriptor _fsm_state,
+                                const std::vector<FSMInfo::operation_descriptor>& _ops, const std::string& _name)
        : generic_obj(MULTI_UNBOUNDED_OBJ, _name), fsm_state(_fsm_state), ops(_ops)
    {
    }
 
    /**
-    * Destructor.
-    */
-   ~multi_unbounded_obj() override = default;
-
-   /**
     * @return the all done object associated with a multi-unbounded controller
     */
-   vertex get_fsm_state() const
+   FSMInfo::state_descriptor get_fsm_state() const
    {
       return fsm_state;
    }
 
-   const CustomOrderedSet<vertex>& get_ops()
+   const auto& get_ops()
    {
       return ops;
    }
@@ -103,8 +86,5 @@ class multi_unbounded_obj : public generic_obj
       mu_enable = mu_en;
    }
 };
-
-/// RefCount definition for multi_unbounded_obj class
-using multi_unbounded_objRef = refcount<multi_unbounded_obj>;
 
 #endif

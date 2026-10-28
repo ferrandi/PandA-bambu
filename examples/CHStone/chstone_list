@@ -8,7 +8,7 @@ dfmul/dfmul.c
 dfsin/dfsin.c --benchmark-name=dfsin
 dfsin/dfsin.c --benchmark-name=dfsin_hls_div --hls-div=nr1
 gsm/gsm.c
-jpeg/main.c --benchmark-name=jpeg -fno-tree-pre
+jpeg/main.c --benchmark-name=jpeg
 mips/mips.c
 motion/mpeg2.c
 sha/sha_driver.c

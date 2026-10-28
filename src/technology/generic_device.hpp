@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2023-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2023-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 
@@ -50,7 +38,6 @@ CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(generic_device);
 REF_FORWARD_DECL(technology_manager);
-REF_FORWARD_DECL(BackendFlow);
 class xml_element;
 
 /// generic device description
@@ -67,6 +54,8 @@ class generic_device
 
    /// map between bash variables and values
    std::map<std::string, std::string> vars;
+
+   std::map<std::string, std::string> backends;
 
    /// The debug level
    int debug_level;
@@ -88,7 +77,7 @@ class generic_device
    /**
     * Destructor of the class
     */
-   virtual ~generic_device();
+   virtual ~generic_device() = default;
 
    /**
     * XML load specialization
@@ -106,13 +95,6 @@ class generic_device
     * Load device characteristics
     */
    void load_devices();
-
-   /**
-    * Factory method.
-    * @param Param is the global parameter class
-    * @param TM is technology manager
-    */
-   static generic_deviceRef factory(const ParameterConstRef& Param, const technology_managerRef& TM);
 
    /**
     * Returns a parameter by key.
@@ -151,10 +133,27 @@ class generic_device
       return vars;
    }
 
+   bool has_backend(const std::string& backend_id) const
+   {
+      return backends.find(backend_id) != backends.end();
+   }
+
+   const std::string& get_backend(const std::string& backend_id) const
+   {
+      return backends.at(backend_id);
+   }
+
    /**
     * Returns the technology manager
     */
    technology_managerRef get_technology_manager() const;
+
+   /**
+    * Factory method.
+    * @param Param is the global parameter class
+    * @param TM is technology manager
+    */
+   static generic_deviceRef factory(const ParameterConstRef& Param, const technology_managerRef& TM);
 };
 /// refcount definition for the class
 using generic_deviceRef = refcount<generic_device>;

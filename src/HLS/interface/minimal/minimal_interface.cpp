@@ -1,33 +1,21 @@
 /*
  *
- *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *                _/      _/    _/ _/    _/ _/   _/ _/    _/
- *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *             ***********************************************
- *                              PandA Project
- *                     URL: http://panda.dei.polimi.it
- *                       Politecnico di Milano - DEIB
- *                        System Architectures Group
- *             ***********************************************
- *              Copyright (C) 2004-2024 Politecnico di Milano
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2004-2026 Politecnico di Milano
  *
- *   This file is part of the PandA framework.
- *
- *   The PandA framework is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
 /**
@@ -49,10 +37,15 @@
 #include "copyrights_strings.hpp"
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
+#include "ir_helper.hpp"
+#include "ir_manager.hpp"
+#include "ir_node.hpp"
 #include "memory.hpp"
 #include "memory_allocation.hpp"
 #include "memory_symbol.hpp"
@@ -62,24 +55,20 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "testbench_generation.hpp"
-#include "tree_helper.hpp"
-#include "tree_manager.hpp"
-#include "tree_node.hpp"
 
+#include <filesystem>
 #include <list>
 #include <string>
 #include <utility>
 #include <vector>
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId,
-                                     const DesignFlowManagerConstRef _design_flow_manager,
+                                     const DesignFlowManager& _design_flow_manager,
                                      const HLSFlowStep_Type _hls_flow_step_type)
     : module_interface(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
    THROW_ASSERT(funId, "Function not set in minimal interface");
 }
-
-minimal_interface::~minimal_interface() = default;
 
 DesignFlowStep_Status minimal_interface::InternalExec()
 {
@@ -91,9 +80,9 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 
    const auto FB = HLSMgr->CGetFunctionBehavior(funId);
    const auto BH = FB->CGetBehavioralHelper();
-   const bool is_top = HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(BH->get_function_index());
+   const bool is_top = HLSMgr->CGetCallGraphManager().GetRootFunctions().count(BH->get_function_index());
    const auto wrappedObj = SM->get_circ();
-   const auto module_name = is_top ? BH->get_function_name() : wrappedObj->get_id() + "_minimal_interface";
+   const auto module_name = is_top ? BH->GetFunctionName() : wrappedObj->get_id() + "_minimal_interface";
 
    const structural_managerRef SM_minimal_interface(new structural_manager(parameters));
    const structural_type_descriptorRef module_type(new structural_type_descriptor(module_name));
@@ -103,14 +92,14 @@ DesignFlowStep_Status minimal_interface::InternalExec()
    // add the core to the wrapper
    wrappedObj->set_owner(interfaceObj);
    wrappedObj->set_id(wrappedObj->get_id() + "_i0");
-   GetPointerS<module>(interfaceObj)->add_internal_object(wrappedObj);
+   GetPointerS<module_o>(interfaceObj)->add_internal_object(wrappedObj);
    /// Set some descriptions and legal stuff
-   GetPointerS<module>(interfaceObj)
+   GetPointerS<module_o>(interfaceObj)
        ->set_description("Minimal interface for function: " +
-                         (is_top ? BH->get_function_name() : wrappedObj->get_typeRef()->id_type));
-   GetPointerS<module>(interfaceObj)->set_copyright(GENERATED_COPYRIGHT);
-   GetPointerS<module>(interfaceObj)->set_authors("Component automatically generated by bambu");
-   GetPointerS<module>(interfaceObj)->set_license(GENERATED_LICENSE);
+                         (is_top ? BH->GetFunctionName() : wrappedObj->get_typeRef()->id_type));
+   GetPointerS<module_o>(interfaceObj)->set_copyright(GENERATED_COPYRIGHT);
+   GetPointerS<module_o>(interfaceObj)->set_authors("Component automatically generated by bambu");
+   GetPointerS<module_o>(interfaceObj)->set_license(GENERATED_LICENSE);
 
    build_wrapper(wrappedObj, interfaceObj, SM_minimal_interface);
 
@@ -150,14 +139,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    const auto Has_intern_shared_data = HLSMgr->Rmem->has_intern_shared_data() ||
                                        (memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
                                        (memory_allocation_policy == MemoryAllocation_Policy::NO_BRAM) ||
-                                       (HLSMgr->CGetCallGraphManager()->GetRootFunctions().count(funId) ?
+                                       (HLSMgr->CGetCallGraphManager().GetRootFunctions().count(funId) ?
                                             parameters->getOption<bool>(OPT_memory_mapped_top) :
                                             HLSMgr->hasToBeInterfaced(funId));
    bool with_master = false;
    bool with_slave = false;
-   for(auto i = 0U; i < GetPointerS<module>(wrappedObj)->get_in_port_size(); ++i)
+   for(auto i = 0U; i < GetPointerS<module_o>(wrappedObj)->get_in_port_size(); ++i)
    {
-      const auto port_obj = GetPointerS<module>(wrappedObj)->get_in_port(i);
+      const auto port_obj = GetPointerS<module_o>(wrappedObj)->get_in_port(i);
       if(GetPointerS<port_o>(port_obj)->get_is_memory())
       {
          if(GetPointerS<port_o>(port_obj)->get_is_master())
@@ -195,7 +184,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    CustomOrderedSet<std::string> param_renamed;
    if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      const auto fname = FB->CGetBehavioralHelper()->GetMangledFunctionName();
+      const auto fname = FB->CGetBehavioralHelper()->GetFunctionName();
       const auto func_arch = HLSMgr->module_arch->GetArchitecture(fname);
       THROW_ASSERT(func_arch, "Expected interface architecture for function " + fname);
       for(const auto& [parm_name, attrs] : func_arch->parms)
@@ -362,7 +351,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          if(with_master && !has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
          {
-            THROW_ASSERT(channels_type != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
             structural_objectRef shared_memory;
             bool is_memory_splitted;
@@ -393,10 +381,12 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
             unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
-            std::ofstream init_file_a(init_filename);
-            std::ofstream init_file_b("0_" + init_filename);
+            const auto output_directory = parameters->getOption<std::filesystem::path>(OPT_output_directory);
+            std::filesystem::create_directories(output_directory);
+            std::ofstream init_file_a(output_directory / init_filename);
+            std::ofstream init_file_b(output_directory / ("0_" + init_filename));
 
-            auto* shared_memory_module = GetPointer<module>(shared_memory);
+            auto* shared_memory_module = GetPointer<module_o>(shared_memory);
             shared_memory_module->SetParameter("address_space_begin", STR(base_address));
             shared_memory_module->SetParameter("address_space_rangesize", STR(n_bytes));
             if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))
@@ -419,13 +409,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
             shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
-            if(has_extern_mem || has_unknown_addresses)
+            if(FB->GetOMPInfo() || !(has_extern_mem || has_unknown_addresses))
             {
-               shared_memory_module->SetParameter("BUS_PIPELINED", "0");
+               shared_memory_module->SetParameter("BUS_PIPELINED", "1");
             }
             else
             {
-               shared_memory_module->SetParameter("BUS_PIPELINED", "1");
+               shared_memory_module->SetParameter("BUS_PIPELINED", "0");
             }
             for(unsigned int i = 0; i < shared_memory_module->get_in_port_size(); i++)
             {
@@ -487,10 +477,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
                const auto splitted =
-                   TestbenchGeneration::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
+                   TestbenchGeneration::print_var_init(HLSMgr->get_ir_manager(), m->first, HLSMgr->Rmem);
                unsigned int byte_allocated = 0;
                unsigned long long int actual_byte =
-                   tree_helper::SizeAlloc(HLSMgr->get_tree_manager()->GetTreeNode(m->first)) / 8;
+                   ir_helper::SizeAlloc(HLSMgr->get_ir_manager()->GetIRNode(m->first)) / 8;
                std::vector<std::string> eightbit_string;
                for(const auto& i : splitted)
                {
@@ -904,9 +894,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    }
 
    // in ports
-   for(unsigned int i = 0; i < GetPointer<module>(wrappedObj)->get_in_port_size(); ++i)
+   for(unsigned int i = 0; i < GetPointer<module_o>(wrappedObj)->get_in_port_size(); ++i)
    {
-      structural_objectRef port_in = GetPointer<module>(wrappedObj)->get_in_port(i);
+      structural_objectRef port_in = GetPointer<module_o>(wrappedObj)->get_in_port(i);
       auto port_name = GetPointer<port_o>(port_in)->get_id();
       if(param_renamed.find(port_name) != param_renamed.end())
       {
@@ -933,6 +923,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                }
                port_o::fix_port_properties(int_port, ext_port);
                SM_minimal_interface->add_connection(int_port, ext_port);
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                             " - Connected port: " + int_port->get_path() + " to port: " + ext_port->get_path());
+               PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                             " - Connected port size: " + STR(STD_GET_SIZE(int_port->get_typeRef())) +
+                                 " to port size: " + STR(STD_GET_SIZE(ext_port->get_typeRef())));
             }
             else if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE)
             {
@@ -974,6 +969,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   }
                   port_o::fix_port_properties(int_port, ext_port);
                   SM_minimal_interface->add_connection(int_port, ext_port);
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                " - Connected port: " + int_port->get_path() + " to port: " + ext_port->get_path());
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                " - Connected port size: " + STR(STD_GET_SIZE(int_port->get_typeRef())) +
+                                    " to port size: " + STR(STD_GET_SIZE(ext_port->get_typeRef())));
                }
                else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
                {
@@ -1004,6 +1004,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                      }
                      port_o::fix_port_properties(int_port, ext_port);
                      SM_minimal_interface->add_connection(int_port, ext_port);
+                     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                   " - Connected port: " + int_port->get_path() + " to port: " + ext_port->get_path());
+                     PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                   " - Connected port size: " + STR(STD_GET_SIZE(int_port->get_typeRef())) +
+                                       " to port size: " + STR(STD_GET_SIZE(ext_port->get_typeRef())));
                   }
                   else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
                   {
@@ -1088,6 +1093,12 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                                  }
                                  port_o::fix_port_properties(int_port, ext_port);
                                  SM_minimal_interface->add_connection(int_port, ext_port);
+                                 PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                               " - Connected port: " + int_port->get_path() +
+                                                   " to port: " + ext_port->get_path());
+                                 PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                               " - Connected port size: " + STR(STD_GET_SIZE(int_port->get_typeRef())) +
+                                                   " to port size: " + STR(STD_GET_SIZE(ext_port->get_typeRef())));
                               }
                            }
                         }
@@ -1099,15 +1110,15 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                THROW_ASSERT(int_port, "unexpected condition");
-               const auto tnIndex = int_port->get_typeRef()->treenode;
+               const auto tnIndex = int_port->get_typeRef()->ir_node_id;
                if(tnIndex > 0)
                {
-                  const auto tn = HLSMgr->get_tree_manager()->GetTreeNode(tnIndex);
-                  if(tree_helper::IsPointerType(tn))
+                  const auto tn = HLSMgr->get_ir_manager()->GetIRNode(tnIndex);
+                  if(ir_helper::IsPointerType(tn))
                   {
-                     const auto pt_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
+                     const auto pt_type = ir_helper::CGetPointedType(ir_helper::CGetType(tn));
                      const structural_type_descriptorRef Intype(
-                         new structural_type_descriptor("bool", tree_helper::Size(pt_type)));
+                         new structural_type_descriptor("bool", ir_helper::Size(pt_type)));
                      ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, Intype);
                      GetPointerS<port_o>(ext_port)->set_port_interface(port_o::port_interface::PI_RNONE);
                   }
@@ -1152,6 +1163,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             port_o::fix_port_properties(port_in, ext_port);
             SM_minimal_interface->add_connection(port_in, ext_port);
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          " - Connected port: " + port_in->get_path() + " to port: " + ext_port->get_path());
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          " - Connected port size: " + STR(STD_GET_SIZE(port_in->get_typeRef())) +
+                              " to port size: " + STR(STD_GET_SIZE(ext_port->get_typeRef())));
          }
          else
          {
@@ -1171,7 +1187,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                      port_in->get_typeRef()->type == structural_type_descriptor::INT)
                   {
                      structural_type_descriptorRef vecbool = structural_type_descriptorRef(
-                         new structural_type_descriptor("bool", port_in->get_typeRef()->size));
+                         new structural_type_descriptor("bool", STD_GET_SIZE(port_in->get_typeRef())));
                      ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, vecbool);
                   }
                   else
@@ -1183,6 +1199,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
             port_o::fix_port_properties(port_in, ext_port);
             SM_minimal_interface->add_connection(port_in, ext_port);
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          " - Connected port: " + port_in->get_path() + " to port: " + ext_port->get_path());
+            PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                          " - Connected port size: " + STR(STD_GET_SIZE(port_in->get_typeRef())) +
+                              " to port size: " + STR(STD_GET_SIZE(ext_port->get_typeRef())));
          }
       }
       else if(portsToConnect.find(port_in) != portsToConnect.end())
@@ -1255,9 +1276,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    }
 
    // out ports
-   for(unsigned int i = 0; i < GetPointer<module>(wrappedObj)->get_out_port_size(); ++i)
+   for(unsigned int i = 0; i < GetPointer<module_o>(wrappedObj)->get_out_port_size(); ++i)
    {
-      structural_objectRef port_out = GetPointer<module>(wrappedObj)->get_out_port(i);
+      structural_objectRef port_out = GetPointer<module_o>(wrappedObj)->get_out_port(i);
       auto port_name = GetPointer<port_o>(port_out)->get_id();
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
@@ -1329,6 +1350,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             port_name = parameters->getOption<std::string>(OPT_done_name);
          }
+         else if(parameters->isOption(OPT_idle_name) && port_name == IDLE_PORT_NAME)
+         {
+            port_name = parameters->getOption<std::string>(OPT_idle_name);
+         }
          structural_objectRef ext_port;
          if(port_out->get_kind() == port_vector_o_K)
          {
@@ -1341,17 +1366,17 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
             {
                auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
-               std::string library_name = TM->get_library(VIEW_CONVERT_STD_INT);
+               std::string library_name = TM->get_library(BITCAST_STD_INT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
-                   port_name + "_" + VIEW_CONVERT_STD_INT, VIEW_CONVERT_STD_INT, library_name, interfaceObj, TM);
+                   port_name + "_" + BITCAST_STD_INT, BITCAST_STD_INT, library_name, interfaceObj, TM);
                auto bit_size_port = port_out->get_typeRef()->size;
-               structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
+               structural_objectRef in1 = GetPointer<module_o>(c_obj)->get_in_port(0);
                in1->type_resize(bit_size_port);
                structural_objectRef sign =
                    SM_minimal_interface->add_sign("out_" + c_obj->get_id(), interfaceObj, port_out->get_typeRef());
                SM_minimal_interface->add_connection(port_out, sign);
                SM_minimal_interface->add_connection(sign, in1);
-               structural_objectRef out0 = GetPointer<module>(c_obj)->get_out_port(0);
+               structural_objectRef out0 = GetPointer<module_o>(c_obj)->get_out_port(0);
                out0->type_resize(bit_size_port);
                THROW_ASSERT(out0->get_typeRef()->size, "size greater than one expected");
                structural_type_descriptorRef vecbool =
@@ -1362,17 +1387,17 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
             {
                auto TM = HLSMgr->get_HLS_device()->get_technology_manager();
-               std::string library_name = TM->get_library(VIEW_CONVERT_STD_UINT);
+               std::string library_name = TM->get_library(BITCAST_STD_UINT);
                auto c_obj = SM_minimal_interface->add_module_from_technology_library(
-                   port_name + "_" + VIEW_CONVERT_STD_UINT, VIEW_CONVERT_STD_UINT, library_name, interfaceObj, TM);
+                   port_name + "_" + BITCAST_STD_UINT, BITCAST_STD_UINT, library_name, interfaceObj, TM);
                auto bit_size_port = port_out->get_typeRef()->size;
-               structural_objectRef in1 = GetPointer<module>(c_obj)->get_in_port(0);
+               structural_objectRef in1 = GetPointer<module_o>(c_obj)->get_in_port(0);
                in1->type_resize(bit_size_port);
                structural_objectRef sign =
                    SM_minimal_interface->add_sign("out_" + c_obj->get_id(), interfaceObj, port_out->get_typeRef());
                SM_minimal_interface->add_connection(port_out, sign);
                SM_minimal_interface->add_connection(sign, in1);
-               structural_objectRef out0 = GetPointer<module>(c_obj)->get_out_port(0);
+               structural_objectRef out0 = GetPointer<module_o>(c_obj)->get_out_port(0);
                out0->type_resize(bit_size_port);
                THROW_ASSERT(out0->get_typeRef()->size, "size greater than one expected");
                structural_type_descriptorRef vecbool =
@@ -1430,12 +1455,18 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
          }
       }
+      else if(port_out->get_kind() == port_o_K && !GetPointer<port_o>(port_out)->find_bounded_object())
+      {
+         const std::string name = "null_out_signal_" + port_out->get_owner()->get_id() + "_" + port_out->get_id();
+         const auto sign = SM_minimal_interface->add_sign(name, interfaceObj, port_out->get_typeRef());
+         SM_minimal_interface->add_connection(port_out, sign);
+      }
    }
 
    // in-out ports
-   for(unsigned int i = 0; i < GetPointer<module>(wrappedObj)->get_in_out_port_size(); ++i)
+   for(unsigned int i = 0; i < GetPointer<module_o>(wrappedObj)->get_in_out_port_size(); ++i)
    {
-      structural_objectRef port_in_out = GetPointer<module>(wrappedObj)->get_in_out_port(i);
+      structural_objectRef port_in_out = GetPointer<module_o>(wrappedObj)->get_in_out_port(i);
       structural_objectRef ext_port;
       if(port_in_out->get_kind() == port_vector_o_K)
       {

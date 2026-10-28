@@ -1,34 +1,23 @@
 /*
- *                 _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *                _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *               _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *              _/      _/    _/ _/    _/ _/   _/ _/    _/
- *             _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- *           ***********************************************
- *                            PandA Project
- *                   URL: http://panda.dei.polimi.it
- *                     Politecnico di Milano - DEIB
- *                      System Architectures Group
- *           ***********************************************
- *            Copyright (C) 2004-2024 Politecnico di Milano
+ *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *     _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
  *
- * This file is part of the PandA framework.
+ *  ***********************************************
+ *                   PandA Project
+ *   URL: https://github.com/ferrandi/PandA-bambu
+ *            Politecnico di Milano - DEIB
+ *             System Architectures Group
+ *  ***********************************************
+ *   Copyright (C) 2012-2026 Politecnico di Milano
  *
- * The PandA framework is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
+ * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 /**
  * @author Marco Minutoli <mminutoli@gmail.com>
  * @file
@@ -50,12 +39,7 @@ class WB4Intercon_interface : public WB4_interface
     * Constructor.
     */
    WB4Intercon_interface(const ParameterConstRef Param, const HLS_managerRef HLSManager, unsigned int functionId,
-                         const DesignFlowManagerConstRef design_flow_manager);
-
-   /**
-    * Destructor.
-    */
-   ~WB4Intercon_interface() override;
+                         const DesignFlowManager& design_flow_manager);
 
    virtual void exec();
 };

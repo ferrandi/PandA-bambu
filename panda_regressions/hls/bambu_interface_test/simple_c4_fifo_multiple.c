@@ -5,7 +5,7 @@
 void sum3numbers(short* a, short* b, short* c, short* d)
 {
    int i;
-#pragma nounroll
+#pragma HLS UNROLL off=true
    for(i = 0; i < 8; ++i)
       d[i] = a[i] + b[i] + c[i];
 }

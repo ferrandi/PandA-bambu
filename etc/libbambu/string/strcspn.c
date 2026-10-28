@@ -4,6 +4,7 @@
  *
  */
 /* Public domain.  */
+
 #include <stddef.h>
 
 size_t strcspn(const char* s, const char* reject)

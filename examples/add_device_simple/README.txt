@@ -1,5 +1,5 @@
 This example shows how to add a non-supported device to the bambu synthesis flow.
-The file xc7z045-2ffg900-VVD.xml has copied from the framework distribution etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml and then renamed in xc7z045-2ffg900-VVD.xml.
+The file xc7z045-2ffg900.xml has copied from the framework distribution etc/devices/Xilinx_devices/xc7z020-1clg484.xml and then renamed in xc7z045-2ffg900.xml.
 After copying the file few changes have been made. All of them relates to the new device characteristics: model, package and speed grade.
 Here it follows the changed part of the xml file:
     <model value="xc7z045"/>
@@ -7,8 +7,8 @@ Here it follows the changed part of the xml file:
     <speed_grade value="-2"/>
 
 Note that the field 
-    <family value="Zynq-VVD"/>
-refers to the synthesis script stored in etc/devices/Xilinx_devices/Zynq-VVD.xml.
+    <family value="Zynq"/>
+refers to the synthesis script stored in etc/devices/Xilinx_devices/Zynq.xml.
 So, the bambu.sh will first simulate and then synthesize the C based description using the above specified Zynq device. More detailed information about this process is available in documentation/bambu101/new_device_support.
 
 Note that, this example shows another nice feature of the HLS framework. The file module.c contains the C specification of the factorial function in its recursive form.

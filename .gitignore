@@ -53,3 +53,5 @@ build/
 build_release/
 obj/
 panda_dist/
+install/
+documentation/tmp/

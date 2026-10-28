@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<target>
+  <device>
+    <vendor value="Generic"/>
+    <family value="Generic-yosysOpenROAD"/>
+    <model value="nangate45"/>
+    <package value="none"/>
+    <speed_grade value="std"/>
+    <BRAM_bitsize_max value="4096"/>
+    <BRAM_bitsize_min value="8"/>
+    <DSPs_rx_sizes value="16"/>
+    <DSPs_ry_sizes value="16"/>
+    <DSPs_x_sizes value="16"/>
+    <DSPs_y_sizes value="16"/>
+    <max_lut_size value="6"/>
+    <PLATFORM is_bash_var="1" value="nangate45"/>
+    <PLACE_DENSITY is_bash_var="1" value="0.30"/>
+    <CORE_UTILIZATION is_bash_var="1" value="&quot;10&quot;"/>
+  </device>
+  <backend>
+    <!-- OpenROAD flow scripts path is required:
+         set OPENROAD_FLOW_DATA_INSTALLDIR (and optional OPENROAD_USE_DOCKER/OR_IMAGE). -->
+    <flow id="synthesis" env="openroad/flow"/>
+    <flow id="characterization" env="openroad/flowC"/>
+  </backend>
+</target>

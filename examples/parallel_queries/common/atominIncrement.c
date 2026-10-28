@@ -1,8 +1,5 @@
-__attribute__((noinline))
-void atomicIncrement(unsigned * var, unsigned value)
+__attribute__((noinline)) void atomicIncrement(unsigned* var, unsigned value)
 {
 #pragma omp atomic
-  *var += value;
+   *var += value;
 }
-
-

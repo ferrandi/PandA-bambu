@@ -3,6 +3,8 @@
  * January, 27 2016.
  *
  */
+/* Public domain.  */
+
 #include <stddef.h>
 
 char* stpncpy(char* __restrict s1, const char* __restrict s2, size_t n)

@@ -1,7 +1,0 @@
-EXTRA_DIST += \
-   %D%/arf_list \
-   %D%/constraints_STD.xml \
-   %D%/generic_arf.sh \
-   %D%/module.c \
-   %D%/README.txt \
-   %D%/test.xml 

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+    <id>eu.bambuhls.panda</id>
+
+    <name>PandA</name>
+    <summary>PandA Bambu HLS is a high-level synthesis tool that converts C/C++ designs into hardware descriptions for FPGA/ASIC implementation</summary>
+    <developer id="eu.bambuhls">
+        <name>PandA Bambu Team</name>
+    </developer>
+     <url type="homepage">https://panda.dei.polimi.it/</url>
+
+    <metadata_license>FSFAP</metadata_license>
+    <project_license>Apache-2.0 WITH LLVM-exception</project_license>
+
+    <description>
+        <p>
+            The PandA framework includes methodologies supporting the research on the high-level synthesis of hardware accelerators, parallelism extraction for embedded systems, hardware/software partitioning and mapping, metrics for performance estimation of embedded software applications, and dynamically reconfigurable devices.
+        </p>
+    </description>
+
+    <icon type="stock">eu.bambuhls.panda</icon>
+
+    <categories>
+        <category>Development</category>
+        <category>Building</category>
+    </categories>
+
+    <provides>
+        @APPIMAGE_PROVIDES@
+    </provides>
+</component>
