@@ -9973,6 +9973,116 @@ begin
       </circuit>
     </cell>
     <cell>
+      <name>STD_FIFO</name>
+      <circuit>
+        <module_o id="STD_FIFO">
+          <description>Complete synchronous head FIFO with forwarding RAM storage and accepted push/pop commands.</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="STD_FIFO"/>
+          <parameter name="n_elements">64</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="clear" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="push" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="pop" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="data_in" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="data_out" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="32"/>
+          </port_o>
+          <port_o id="level" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="7"/>
+          </port_o>
+          <port_o id="empty" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="full" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="STD_FIFO n_elements data_in data_out level" IP_COMPONENT="STD_SDP_BRAMFW" VERILOG_PROVIDED="// Accepted-command FIFO: data_out is the current head before pop.
+// The caller prevents overflow/underflow; simultaneous push/pop at empty is
+// permitted for an external bypass. clear discards queued data and wins over
+// commands. Payload is not reset, and is valid only while !empty.
+localparam integer ADDRESS_BITS = (n_elements &lt;= 2) ? 1 : $clog2(n_elements);
+localparam integer COUNT_BITS = $clog2(n_elements + 1);
+    reg [ADDRESS_BITS-1:0] write_pointer_reg;
+    reg [ADDRESS_BITS-1:0] read_pointer_reg;
+    reg [COUNT_BITS-1:0] count_reg;
+    wire [ADDRESS_BITS-1:0] write_pointer_next =
+        write_pointer_reg == n_elements-1 ? 0 : write_pointer_reg + 1'b1;
+    wire [ADDRESS_BITS-1:0] read_pointer_next =
+        read_pointer_reg == n_elements-1 ? 0 : read_pointer_reg + 1'b1;
+    wire [ADDRESS_BITS-1:0] read_address = (1RESET_VALUE) || clear ? 0 :
+        (pop ? read_pointer_next : read_pointer_reg);
+    assign level = count_reg;
+    assign empty = count_reg == 0;
+    assign full = count_reg == n_elements;
+
+    always @(posedge clock 1RESET_EDGE)
+    begin
+        if ((1RESET_VALUE) || clear)
+        begin
+            write_pointer_reg &lt;= 0;
+        end
+        else if (push)
+        begin
+            write_pointer_reg &lt;= write_pointer_next;
+        end
+    end
+
+    always @(posedge clock 1RESET_EDGE)
+    begin
+        if ((1RESET_VALUE) || clear)
+        begin
+            read_pointer_reg &lt;= 0;
+        end
+        else
+        begin
+            read_pointer_reg &lt;= read_address;
+        end
+    end
+
+    always @(posedge clock 1RESET_EDGE)
+    begin
+        if ((1RESET_VALUE) || clear)
+        begin
+            count_reg &lt;= 0;
+        end
+        else
+        begin
+            case ({push, pop})
+                2'b10: count_reg &lt;= count_reg + 1'b1;
+                2'b01: count_reg &lt;= count_reg - 1'b1;
+                default: count_reg &lt;= count_reg;
+            endcase
+        end
+    end
+
+    STD_SDP_BRAMFW #(
+        .BITSIZE_address_inr(ADDRESS_BITS), .BITSIZE_address_inw(ADDRESS_BITS),
+        .BITSIZE_data_in(BITSIZE_data_in), .BITSIZE_data_out(BITSIZE_data_out),
+        .n_elements(n_elements), .MEMORY_INIT_file(&quot;&quot;), .READ_ONLY_MEMORY(0),
+        .HIGH_LATENCY(0)) storage (
+        .clock(clock), .write_enable(!(1RESET_VALUE) &amp;&amp; !clear &amp;&amp; push),
+        .address_inw(write_pointer_reg), .address_inr(read_address),
+        .data_in(data_in), .data_out(data_out));
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>STD_SDP_BRAMFW</name>
       <circuit>
         <module_o id="STD_SDP_BRAMFW">
@@ -10006,14 +10116,11 @@ begin
           <NP_functionality LIBRARY="STD_SDP_BRAMFW data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" VERILOG_PROVIDED="
 wire [BITSIZE_address_inr-1:0] address_inr_mem;
 reg [BITSIZE_address_inr-1:0] address_inr1;
-reg [BITSIZE_address_inr-1:0] address_inr_mem1;
 wire [BITSIZE_address_inw-1:0] address_inw_mem;
 reg [BITSIZE_address_inw-1:0] address_inw1;
-reg [BITSIZE_address_inw-1:0] address_inw_mem1;
 
 wire write_enable_mem;
 reg write_enable1;
-reg write_enable_mem1;
 
 reg [BITSIZE_data_out-1:0] data_out_mem_temp;
 reg [BITSIZE_data_out-1:0] data_out1;
@@ -10050,17 +10157,46 @@ begin
   data_out_mem_temp &lt;= memory[address_inr_mem];
 end
 
-assign data_out_mem = write_enable_mem1 &amp;&amp; (address_inr_mem1 == address_inw_mem1) ? data_in_mem1 : data_out_mem_temp;
 
 assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
 always @(posedge clock)
   data_out1 &lt;= data_out_mem;
 
-always @ (posedge clock)
+// Both forms preserve the same forwarding contract. Larger memories use
+// separate match/enable registers to shorten the write-enable input path.
+generate
+  if (n_elements &lt; 512)
+  begin : COMBINED_FORWARDING
+    reg forward_valid_reg;
+
+    always @(posedge clock)
+    begin
+      forward_valid_reg &lt;= write_enable_mem &amp;&amp; (address_inr_mem == address_inw_mem);
+    end
+
+    assign data_out_mem = forward_valid_reg ? data_in_mem1 : data_out_mem_temp;
+  end
+  else
+  begin : SPLIT_FORWARDING
+    reg forward_match_reg;
+    reg write_enable_reg;
+
+    always @(posedge clock)
+    begin
+      forward_match_reg &lt;= (address_inr_mem == address_inw_mem);
+    end
+
+    always @(posedge clock)
+    begin
+      write_enable_reg &lt;= write_enable_mem;
+    end
+
+    assign data_out_mem = write_enable_reg &amp;&amp; forward_match_reg ? data_in_mem1 : data_out_mem_temp;
+  end
+endgenerate
+
+always @(posedge clock)
 begin
-  address_inr_mem1 &lt;= address_inr_mem;
-  address_inw_mem1 &lt;= address_inw_mem;
-  write_enable_mem1 &lt;= write_enable_mem;
   data_in_mem1 &lt;= data_in_mem;
 end
 

@@ -56,6 +56,40 @@ class WriteEngineExtractorTests(unittest.TestCase):
         self.assertIn("assign m_axi_wstrb", generated)
         self.assertTrue(generated.endswith("endmodule\n"))
 
+    def test_cli_extracts_shared_memory_with_string_default(self):
+        output = self.scratch / "memory.sv"
+        result = subprocess.run(
+            [sys.executable, str(EXTRACTOR_PATH), "--xml", str(XML.with_name("NC_MEM_IPs.xml")),
+             "--out", str(output), "--target", "STD_SDP_BRAMFW"],
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('parameter MEMORY_INIT_file = "array_a.mem"', output.read_text())
+
+    def test_fifo_includes_shared_memory_dependency(self):
+        generated = EXTRACTOR.extract(XML.with_name("NC_MEM_IPs.xml"), "STD_FIFO")
+        self.assertEqual(generated.count("module STD_SDP_BRAMFW #("), 1)
+        self.assertIn('parameter MEMORY_INIT_file = "array_a.mem"', generated)
+        self.assertIn('.MEMORY_INIT_file("")', generated)
+        self.assertIn('.HIGH_LATENCY(0)', generated)
+
+    def test_fifo_without_dependencies_only_emits_controller(self):
+        generated = EXTRACTOR.extract(XML.with_name("NC_MEM_IPs.xml"), "STD_FIFO", include_dependencies=False)
+        self.assertIn("STD_SDP_BRAMFW #(", generated)
+        self.assertNotIn("module STD_SDP_BRAMFW", generated)
+
+    def test_dependency_uses_colocated_memory_snapshot(self):
+        axi_snapshot = self.scratch / "NC_AXI_IPs.xml"
+        axi_snapshot.write_bytes(XML.read_bytes())
+        memory = ET.parse(XML.with_name("NC_MEM_IPs.xml"))
+        cell = next(cell for cell in memory.getroot().findall(".//cell")
+                    if cell.findtext("name") == "STD_SDP_BRAMFW")
+        implementation = cell.find("circuit/module_o/NP_functionality")
+        implementation.set("VERILOG_PROVIDED",
+                           implementation.get("VERILOG_PROVIDED") + "\n// colocated-memory-snapshot\n")
+        memory.write(self.scratch / "NC_MEM_IPs.xml", encoding="unicode")
+        generated = EXTRACTOR.extract(axi_snapshot, "MinimalAXI4MasterPipelined")
+        self.assertIn("// colocated-memory-snapshot", generated)
+
     def test_serialize_until_b_mutation_targets_active_outstanding_guard(self):
         generated = EXTRACTOR.extract(XML)
         target = "(descriptor_count_reg >= MAX_OUTSTANDING)"
@@ -139,6 +173,7 @@ class WriteEngineExtractorTests(unittest.TestCase):
     def test_async_reader_vivado_ooc_both_reset_polarities(self):
         vivado = os.environ.get("VIVADO_BIN") or shutil.which("vivado")
         self.assertTrue(vivado, "VIVADO_BIN or vivado on PATH is required for OOC synthesis")
+        part = os.environ.get("VIVADO_PART", "xcu250-figd2104-2L-e")
 
         for active_low, polarity in ((True, "active-low"), (False, "active-high")):
             with self.subTest(polarity=polarity):
@@ -153,7 +188,7 @@ class WriteEngineExtractorTests(unittest.TestCase):
                     "    exit 1\n"
                     "}\n"
                     "if {[catch {synth_design -top MinimalAXI4MasterPipelined "
-                    "-part xcu250-figd2104-2L-e -mode out_of_context} synth_error]} {\n"
+                    f"-part {part} -mode out_of_context}} synth_error]}} {{\n"
                     '    puts stderr "ASYNC_READ_OOC_SYNTH_FAILED: $synth_error"\n'
                     "    exit 1\n"
                     "}\n"

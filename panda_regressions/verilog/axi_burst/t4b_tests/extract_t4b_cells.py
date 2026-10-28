@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
+import importlib.util
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -173,6 +174,15 @@ def extract(axi_xml: Path, testbench_xml: Path, outdir: Path) -> dict[str, objec
             mem_module, normalize_questa_body("TestbenchMEMAXI", mem_body), memory=True
         ),
     }
+    dependencies = (engine_module.find("NP_functionality").get("IP_COMPONENT") or "").split(",")
+    if any(dependency.strip() for dependency in dependencies):
+        extractor_path = Path(__file__).resolve().parents[1] / "rtl_tests/extract_write_engine.py"
+        spec = importlib.util.spec_from_file_location("axi_dependency_extractor", extractor_path)
+        extractor = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(extractor)
+        prefix = "".join(extractor.extract(axi_xml, dependency.strip())
+                         for dependency in dict.fromkeys(dependencies) if dependency.strip())
+        outputs["MinimalAXI4MasterPipelined.sv"] = prefix + outputs["MinimalAXI4MasterPipelined.sv"]
     source_hashes = {str(path): sha256(path) for path in (axi_xml, testbench_xml)}
     output_hashes: dict[str, str] = {}
     for filename, text in outputs.items():

@@ -156,6 +156,11 @@ if [[ $SUITE == all || $SUITE == transactions ]]; then
     run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O2-D64" tb_burst_engine AQC FAULT_STALLED_AR RRESP_STALLED_AR RESET_MULTI PENDING_SECOND
     run_build tb_burst_engine 16 "$TB" "" 3 64 no
     run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D64" tb_burst_engine BOUNDARY_PENDING RRESP_RESERVATION_RACE RREADY_SIDEBAND
+    # Alternate bypass and queued consumption, including depth-one and BRAM FIFOs.
+    for depth in 1 2 16 64 512 4096; do
+        run_build tb_burst_engine 16 "$TB" "" 3 "$depth" no
+        run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D${depth}" tb_burst_engine SKID_STREAM
+    done
     for polarity in active-low active-high; do run_async_reset_build "$polarity"; done
 fi
 

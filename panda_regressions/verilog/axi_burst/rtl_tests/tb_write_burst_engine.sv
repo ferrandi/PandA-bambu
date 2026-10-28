@@ -1786,7 +1786,7 @@ module tb_write_burst_engine #(
             if (fault || awvalid || wvalid || dut.descriptor_count_reg != 0 || dut.region_active_reg ||
                 dut.store_pending_reg || dut.accepted_reg != 0 || dut.scheduled_reg != 0 ||
                 dut.completed_reg != 0 || dut.fifo_count_reg != 0 || dut.reserved_data_count_reg != 0 ||
-                dut.fifo_rd_ptr_reg != 0 || dut.fifo_wr_ptr_reg != 0 ||
+                dut.fifo.read_pointer_reg != 0 || dut.fifo.write_pointer_reg != 0 ||
                 dut.descriptor_alloc_ptr_reg != 0 || dut.descriptor_aw_ptr_reg != 0 ||
                 dut.descriptor_w_ptr_reg != 0 || dut.descriptor_b_ptr_reg != 0
 `ifdef PLAN_FIFO_PRESENT

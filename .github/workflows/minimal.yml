@@ -415,6 +415,33 @@ jobs:
         shell: bash
         run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
+  verilog-axi-burst:
+    needs: [build]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted, mentor]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Run functional Verilog component tests
+        shell: bash
+        run: |
+          source "${{env.dist-dir}}/settings.sh"
+          bash panda_regressions/verilog/axi_burst.sh "${{env.report-dir}}/verilog-axi-burst"
+      - name: Upload Verilog component reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: ./.github/actions/artifact-upload
+        with:
+          name: verilog_axi_burst
+          path: ${{env.report-dir}}/verilog-axi-burst
+
   bambu-axi-burst:
     needs: [build]
     if: ${{!cancelled() && needs.build.result == 'success' }}

@@ -1633,7 +1633,7 @@ endgenerate"/>
                <port_o id="M_back_pressure_local" dir="OUT">
                   <structural_type_descriptor type="BOOL" size="1"/>
                </port_o>
-               <NP_functionality LIBRARY="kmp_bambu_general_memory_interface USE_FILTER ROOT_SPACE_ALIGNMENT EXTERNAL_BASE_ADDRESS FORK_CALL_ID_START FORK_CALL_ID_END FORK_NUMBER USE_CS INNER_TAG CONTEXT_NUMBER_SIZE Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag Mout_addr_ram_memory Mout_Wdata_ram_memory Mout_data_ram_size_memory Mout_tag_memory Mout_addr_ram_local Mout_Wdata_ram_local Mout_data_ram_size_local Mout_tag_local M_Rdata_ram_memory M_Rdata_ram_local M_Rdata_ram M_tag_memory M_tag_local M_tag" IP_COMPONENT="kmp_bambu_memory_filter_in,kmp_bambu_memory_filter_out,simple_fifo" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="kmp_bambu_general_memory_interface USE_FILTER ROOT_SPACE_ALIGNMENT EXTERNAL_BASE_ADDRESS FORK_CALL_ID_START FORK_CALL_ID_END FORK_NUMBER USE_CS INNER_TAG CONTEXT_NUMBER_SIZE Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag Mout_addr_ram_memory Mout_Wdata_ram_memory Mout_data_ram_size_memory Mout_tag_memory Mout_addr_ram_local Mout_Wdata_ram_local Mout_data_ram_size_local Mout_tag_local M_Rdata_ram_memory M_Rdata_ram_local M_Rdata_ram M_tag_memory M_tag_local M_tag" IP_COMPONENT="kmp_bambu_memory_filter_in,kmp_bambu_memory_filter_out,STD_FIFO" VERILOG_PROVIDED="
 reg Mout_oe_ram_temp;
 reg Mout_we_ram_temp;
 reg [BITSIZE_Mout_addr_ram_memory-1:0] Mout_addr_ram_memory_temp;
@@ -1644,47 +1644,29 @@ reg [BITSIZE_Mout_tag-1:0] Mout_tag_temp;
 generate
    if(USE_CS)
    begin
+      localparam integer FIFO_DATA_BITS = 1 + BITSIZE_Mout_addr_ram + BITSIZE_Mout_Wdata_ram +
+          BITSIZE_Mout_data_ram_size + BITSIZE_Mout_tag;
       wire register_valid;
-      reg register_valid_reg;
       wire fifo_wr;
       wire fifo_rd;
-      reg fifo_rd_reg;
       wire fifo_empty;
-      wire fifo_empty_next;
-      wire [BITSIZE_Mout_addr_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_tag : 0] fifo_data_out;
-
-      simple_fifo #(.ADDR_WIDTH(CONTEXT_NUMBER_SIZE),
-      .BITSIZE_data_in(1+BITSIZE_Mout_addr_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_tag),
-      .BITSIZE_data_out(1+BITSIZE_Mout_addr_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_tag)) fifo (.clock(clock),
-      .reset(reset),
-      .data_in({Mout_oe_ram,Mout_addr_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_tag}),
-      .data_out(fifo_data_out),
-      .empty(fifo_empty),
-      .rd_en(fifo_rd),
-      .wr_en(fifo_wr));
-
-      assign register_valid = (Mout_back_pressure_memory &amp;&amp; (Mout_oe_ram_memory || Mout_we_ram_memory));
-      assign fifo_wr = (Mout_oe_ram || Mout_we_ram);
-      assign fifo_rd = (fifo_wr || !fifo_empty) &amp;&amp; !register_valid;
+      wire [FIFO_DATA_BITS-1:0] fifo_data_out;
+      STD_FIFO #(.n_elements(1 &lt;&lt; CONTEXT_NUMBER_SIZE),
+          .BITSIZE_data_in(FIFO_DATA_BITS), .BITSIZE_data_out(FIFO_DATA_BITS),
+          .BITSIZE_level(CONTEXT_NUMBER_SIZE+1)) fifo (
+          .clock(clock), .reset(reset), .clear(1'b0),
+          .push(fifo_wr), .pop(fifo_rd),
+          .data_in({Mout_oe_ram,Mout_addr_ram,Mout_Wdata_ram,Mout_data_ram_size,Mout_tag}),
+          .data_out(fifo_data_out), .empty(fifo_empty), .full(), .level());
+      assign register_valid = Mout_back_pressure_memory &amp;&amp; (Mout_oe_ram_memory || Mout_we_ram_memory);
+      assign fifo_wr = Mout_oe_ram || Mout_we_ram;
+      // Keep the head stable while the selected destination stalls.
+      assign fifo_rd = !fifo_empty &amp;&amp; !register_valid;
       assign Mout_back_pressure = 0;
-
-      always @(posedge clock)
-      begin
-         if(1RESET_VALUE)
-         begin
-            register_valid_reg &lt;= 0;
-            fifo_rd_reg &lt;= 0;
-         end 
-         else 
-         begin
-            register_valid_reg &lt;= register_valid;
-            fifo_rd_reg &lt;= fifo_rd;
-         end
-      end
 
       always @(*)
       begin
-         if(register_valid_reg || fifo_rd_reg)
+         if(!fifo_empty)
          begin
             Mout_oe_ram_temp = fifo_data_out[BITSIZE_Mout_addr_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_tag] == 1;
             Mout_we_ram_temp = fifo_data_out[BITSIZE_Mout_addr_ram+BITSIZE_Mout_Wdata_ram+BITSIZE_Mout_data_ram_size+BITSIZE_Mout_tag] == 0;
@@ -1796,132 +1778,6 @@ generate
       assign Mout_tag_local = {BITSIZE_Mout_tag_local{1&apos;b0}}; 
    end
 endgenerate"/>
-            </module_o>
-         </circuit>
-      </cell>
-      <cell>
-         <name>simple_fifo</name>
-         <circuit>
-            <module_o id="simple_fifo">
-               <structural_type_descriptor id_type="simple_fifo"/>
-               <parameter name="ADDR_WIDTH">1</parameter>
-               <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
-               <copyright>Copyright (C) 2016-2026 Politecnico di Milano</copyright>
-               <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
-               <license>MIT</license>
-               <port_o id="clock" dir="IN" is_clock="1">
-                  <structural_type_descriptor type="BOOL" size="1"/>
-               </port_o>
-               <port_o id="reset" dir="IN">
-                  <structural_type_descriptor type="BOOL" size="1"/>
-               </port_o>
-               <port_o id="empty" dir="OUT">
-                  <structural_type_descriptor type="BOOL" size="1"/>
-               </port_o>
-               <port_o id="data_in" dir="IN">
-                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-               </port_o>
-               <port_o id="data_out" dir="OUT">
-                  <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-               </port_o>
-               <port_o id="rd_en" dir="IN">
-                  <structural_type_descriptor type="BOOL" size="1"/>
-               </port_o>
-               <port_o id="wr_en" dir="IN">
-                  <structural_type_descriptor type="BOOL" size="1"/>
-               </port_o>
-               <NP_functionality LIBRARY="simple_fifo data_in data_out ADDR_WIDTH" IP_COMPONENT="STD_SDP_BRAMFW" VERILOG_PROVIDED="
-parameter RAM_DEPTH = (1 &lt;&lt; ADDR_WIDTH);
-
-reg [ADDR_WIDTH-1:0] wr_pointer;
-reg [ADDR_WIDTH-1:0] wr_pointer_next;
-reg [ADDR_WIDTH-1:0] rd_pointer;
-reg [ADDR_WIDTH-1:0] rd_pointer_next;
-reg [ADDR_WIDTH :0] status_cnt_reg;
-wire [BITSIZE_data_in-1:0] data_ram ;
-
-assign empty = status_cnt_reg == 0;
-
-always @(posedge clock 1RESET_EDGE)
-begin : WRITE_POINTER
-  if(1RESET_VALUE) 
-  begin
-    wr_pointer = 0;
-  end 
-  else 
-  begin
-    wr_pointer = wr_pointer_next;
-  end
-end
-
-always @(*)
-begin
-  if(wr_en)
-  begin
-    wr_pointer_next = wr_pointer + 1;
-  end
-  else
-  begin
-    wr_pointer_next = wr_pointer;
-  end
-end
-
-always @(posedge clock 1RESET_EDGE)
-begin : READ_POINTER
-  if(1RESET_VALUE) 
-  begin
-    rd_pointer = 0;
-  end 
-  else
-  begin
-    rd_pointer = rd_pointer_next;
-  end
-end
-
-always @(*)
-begin
-  if(rd_en)
-  begin
-    rd_pointer_next = rd_pointer + 1;
-  end
-  else
-  begin
-    rd_pointer_next = rd_pointer;
-  end
-end
-
-always @(posedge clock 1RESET_EDGE)
-begin : STATUS_COUNTER
-  if(1RESET_VALUE) 
-  begin
-    status_cnt_reg &lt;= 0;
-  end 
-  else if (rd_en &amp;&amp; !wr_en  &amp;&amp; (status_cnt_reg != 0)) 
-  begin
-    status_cnt_reg &lt;= status_cnt_reg - 1;
-  end 
-  else if (wr_en &amp;&amp; !rd_en &amp;&amp; (status_cnt_reg != RAM_DEPTH)) 
-  begin
-    status_cnt_reg &lt;= status_cnt_reg + 1;
-  end
-end
-
-STD_SDP_BRAMFW #(
-  .BITSIZE_address_inr(ADDR_WIDTH),
-  .BITSIZE_address_inw(ADDR_WIDTH),
-  .BITSIZE_data_in(BITSIZE_data_in),
-  .BITSIZE_data_out(BITSIZE_data_out),
-  .MEMORY_INIT_file(&quot;&quot;),
-  .n_elements(RAM_DEPTH),
-  .READ_ONLY_MEMORY(0),
-  .HIGH_LATENCY(0)
-  ) BRAM (
-  .clock(clock),
-  .write_enable(wr_en),
-  .address_inr(rd_pointer_next),
-  .address_inw(wr_pointer_next),
-  .data_in(data_in),
-  .data_out(data_out));"/>
             </module_o>
          </circuit>
       </cell>

@@ -65,8 +65,8 @@ module tb_burst_engine #(
     logic prev_stalled = 1'b0;
     logic [31:0] stalled_addr;
     logic [7:0] stalled_len;
-    logic [31:0] seen_addr [0:2047];
-    logic [7:0] seen_len [0:2047];
+    logic [31:0] seen_addr [0:8191];
+    logic [7:0] seen_len [0:8191];
     integer r_beat_count = 0;
     integer before_ar;
     integer fifo_write_wraps = 0;
@@ -246,9 +246,9 @@ module tb_burst_engine #(
                 if (dut.descriptor_count_reg > peak_descriptors)
                     peak_descriptors <= dut.descriptor_count_reg;
             end
-            if (dut.r_good && dut.fifo_wr_ptr_reg == FIFO_DEPTH-1)
+            if (dut.r_good && dut.fifo.write_pointer_reg == FIFO_DEPTH-1)
                 fifo_write_wraps <= fifo_write_wraps + 1;
-            if (dut.fifo_load_pop && dut.fifo_rd_ptr_reg == FIFO_DEPTH-1)
+            if (dut.fifo_load_pop && dut.fifo.read_pointer_reg == FIFO_DEPTH-1)
                 fifo_read_wraps <= fifo_read_wraps + 1;
             if (dut.r_push && dut.fifo_load_pop)
                 simultaneous_push_pop <= simultaneous_push_pop + 1;
@@ -272,7 +272,7 @@ module tb_burst_engine #(
             begin
                 if (arsize != 2 || arburst != 2'b01 || arid != 0)
                     $fatal(1, "unexpected AXI profile");
-                if (ar_count >= 2048)
+                if (ar_count >= 8192)
                     $fatal(1, "descriptor scoreboard overflow");
                 seen_addr[ar_count] <= araddr;
                 seen_len[ar_count] <= arlen;
@@ -767,6 +767,102 @@ module tb_burst_engine #(
         end
     endtask
 
+    integer skid_checked_words_reg = 0;
+    integer skid_bypass_words_reg = 0;
+    integer skid_buffered_words_reg = 0;
+    integer skid_empty_waits_reg = 0;
+    integer skid_first_r_cycle_reg = -1;
+    integer skid_first_load_cycle_reg = -1;
+    reg [31:0] skid_base_reg;
+    reg skid_checking_reg = 0;
+    always @(posedge clk)
+    begin
+        if (reset_n && skid_checking_reg)
+        begin
+            if (fault)
+            begin
+                $fatal(1, "Unexpected fault");
+            end
+            if (rvalid && rready && skid_first_r_cycle_reg < 0)
+            begin
+                skid_first_r_cycle_reg = clock_cycles;
+            end
+            if (dut.fifo_count_reg == 0 && !rvalid)
+            begin
+                skid_empty_waits_reg = skid_empty_waits_reg + 1;
+            end
+            if (dut.fifo_load_done)
+            begin
+                if (data_out !== (skid_base_reg >> 2) + skid_checked_words_reg)
+                    $fatal(1, "Wrong data word=%0d got=%h expected=%h", skid_checked_words_reg, data_out, (skid_base_reg >> 2)+skid_checked_words_reg);
+                if (skid_first_load_cycle_reg < 0)
+                begin
+                    skid_first_load_cycle_reg = clock_cycles;
+                end
+                if (dut.fifo_count_reg == 0)
+                begin
+                    if (!(rvalid && rready)) $fatal(1, "Bypass without transfer");
+                    skid_bypass_words_reg = skid_bypass_words_reg + 1;
+                end
+                else
+                begin
+                    skid_buffered_words_reg = skid_buffered_words_reg + 1;
+                end
+                skid_checked_words_reg = skid_checked_words_reg + 1;
+            end
+        end
+    end
+    task automatic exercise_skid_stream;
+        begin
+            integer n, guard, round, before_bypass, before_buffer;
+            for (round=0; round<4; round=round+1)
+            begin
+                skid_base_reg = 32'h10000 + round*32'h20000;
+                n = FIFO_DEPTH*2+7;
+                skid_checked_words_reg = 0;
+                before_bypass = skid_bypass_words_reg;
+                before_buffer = skid_buffered_words_reg;
+                skid_first_r_cycle_reg = -1;
+                skid_first_load_cycle_reg = -1;
+                stall_ar = 1;
+                configure(skid_base_reg,n);
+                skid_checking_reg = 1;
+                // First capture one LOAD while R is unavailable.
+                @(negedge clk);
+                start = 1; opcode = 0; size_bits = 32; byte_address = skid_base_reg;
+                @(negedge clk);
+                start = 0; byte_address = 32'hdeadbeec; size_bits = 16;
+                stall_ar = 0;
+                guard = 0;
+                // Wait on the clocked completion scoreboard, not a late DONE sample.
+                while (skid_checked_words_reg == 0 && guard < 100000)
+                begin
+                    @(negedge clk);
+                    guard = guard + 1;
+                end
+                if (skid_checked_words_reg != 1) $fatal(1, "First pending LOAD lost");
+                if (skid_first_load_cycle_reg != skid_first_r_cycle_reg) $fatal(1, "First-word latency R=%0d LOAD=%0d", skid_first_r_cycle_reg, skid_first_load_cycle_reg);
+                while (skid_checked_words_reg < n && guard < 150000)
+                begin
+                    // Alternate rapid consumption and pauses long enough to queue words.
+                    start = !((guard % 53) >= 9 && (guard % 53) <= 35);
+                    opcode = 0; size_bits = 32; byte_address = skid_base_reg + skid_checked_words_reg*4;
+                    @(negedge clk);
+                    guard = guard + 1;
+                end
+                start = 0;
+                if (skid_checked_words_reg != n) $fatal(1, "Timeout got=%0d expected=%0d", skid_checked_words_reg,n);
+                skid_checking_reg = 0;
+                wait_drained();
+                if (skid_bypass_words_reg == before_bypass || skid_buffered_words_reg == before_buffer)
+                    $fatal(1, "Missing bypass/buffer coverage");
+                $display("SKID_ROUND_PASS D=%0d round=%0d words=%0d", FIFO_DEPTH, round,n);
+            end
+            $display("SKID_STREAM_PASS D=%0d bypass=%0d buffered=%0d skid_empty_waits_reg=%0d", FIFO_DEPTH,skid_bypass_words_reg,skid_buffered_words_reg,skid_empty_waits_reg);
+            $finish;
+        end
+    endtask
+
     initial
     begin
         if (!$value$plusargs("CASE=%s", selected_case))
@@ -785,7 +881,7 @@ module tb_burst_engine #(
             "FAULT_STALLED_AR", "AQC", "PENDING_SECOND", "BOUNDARY_PENDING",
             "RRESP_STALLED_AR", "RRESP_RESERVATION_RACE", "RREADY_SIDEBAND",
             "DEPTH4096", "MULTI", "ASYNC_RESET",
-            "CREDIT_LIMIT", "CREDIT_POP", "READY_CREDIT_PROOF", "SMOKE":
+            "CREDIT_LIMIT", "CREDIT_POP", "READY_CREDIT_PROOF", "SKID_STREAM", "SMOKE":
             begin
             end
             default: $fatal(1, "unknown exact CASE selector: %s", selected_case);
@@ -796,6 +892,11 @@ module tb_burst_engine #(
         repeat (4) @(posedge clk);
         reset_n = 1'b1;
         repeat (2) @(posedge clk);
+
+        if (selected_case == "SKID_STREAM")
+        begin
+            exercise_skid_stream();
+        end
 
         if ($test$plusargs("CONFIG_PIPELINE_VALID"))
         begin

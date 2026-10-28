@@ -319,76 +319,53 @@ module tb_duplex_cores #(
         end
     endtask
 
-    task automatic issue_load_and_check(input [31:0] address);
-        integer cycles;
-        bit completed;
+    integer completed_load_count_reg = 0;
+    logic [31:0] completed_load_data_reg;
+    always @(posedge clock)
+    begin
+        if (!reset)
         begin
-            @(negedge clock); read_op=OP_LOAD; read_size=32; read_base=address; read_start=1;
-            #1;
-            completed=read_done;
-            if (completed && read_data !== read_snapshot[address/4])
-                $fatal(1, "LOAD_DATA_MISMATCH address=%h got=%h expected=%h", address, read_data, read_snapshot[address/4]);
-            if (!completed)
+            completed_load_count_reg = 0;
+        end
+        else if (reader.fifo_load_done)
+        begin
+            completed_load_count_reg = completed_load_count_reg + 1;
+        end
+    end
+
+    always @(posedge clock)
+    begin
+        if (reset && reader.fifo_load_done)
+        begin
+            completed_load_data_reg = read_data;
+        end
+    end
+
+    task automatic issue_load_capture(input [31:0] address, output logic [31:0] captured_data);
+        integer before_load, cycles;
+        begin
+            @(negedge clock);
+            before_load=completed_load_count_reg;
+            read_op=OP_LOAD; read_size=32; read_base=address; read_start=1;
+            @(posedge clock);
+            @(negedge clock); read_start=0;
+            cycles=0;
+            while (completed_load_count_reg == before_load && !read_fault && cycles<4000)
             begin
-                @(posedge clock); #1;
-                completed=read_done;
-                if (completed && read_data !== read_snapshot[address/4])
-                    $fatal(1, "LOAD_DATA_MISMATCH address=%h got=%h expected=%h", address, read_data, read_snapshot[address/4]);
+                @(negedge clock); cycles=cycles+1;
             end
-            if (!completed)
-            begin
-                @(negedge clock); read_start=0;
-                cycles=0;
-                while (!read_done && cycles<4000)
-                begin
-                  @(negedge clock); #1; cycles=cycles+1;
-                end
-                if (!read_done) $fatal(1, "LOAD_DONE_TIMEOUT address=%h", address);
-                if (read_data !== read_snapshot[address/4])
-                    $fatal(1, "LOAD_DATA_MISMATCH address=%h got=%h expected=%h", address, read_data, read_snapshot[address/4]);
-                @(posedge clock);
-                @(negedge clock);
-            end
-            else
-            begin
-                @(posedge clock);
-                @(negedge clock); read_start=0;
-            end
+            if (completed_load_count_reg != before_load+1 || read_fault)
+                $fatal(1, "LOAD_DONE_TIMEOUT_OR_DUPLICATION address=%h", address);
+            captured_data=completed_load_data_reg;
         end
     endtask
 
-    task automatic issue_load_capture(input [31:0] address, output logic [31:0] captured_data);
-        integer cycles;
-        bit completed;
+    task automatic issue_load_and_check(input [31:0] address);
+        logic [31:0] value;
         begin
-            @(negedge clock); read_op=OP_LOAD; read_size=32; read_base=address; read_start=1;
-            #1;
-            completed=read_done;
-            if (completed) captured_data=read_data;
-            if (!completed)
-            begin
-                @(posedge clock); #1;
-                completed=read_done;
-                if (completed) captured_data=read_data;
-            end
-            if (!completed)
-            begin
-                @(negedge clock); read_start=0;
-                cycles=0;
-                while (!read_done && cycles<4000)
-                begin
-                  @(negedge clock); #1; cycles=cycles+1;
-                end
-                if (!read_done) $fatal(1, "LOAD_DONE_TIMEOUT address=%h", address);
-                captured_data=read_data;
-                @(posedge clock);
-                @(negedge clock);
-            end
-            else
-            begin
-                @(posedge clock);
-                @(negedge clock); read_start=0;
-            end
+            issue_load_capture(address,value);
+            if (value !== read_snapshot[address/4])
+                $fatal(1, "LOAD_DATA_MISMATCH address=%h got=%h expected=%h", address,value,read_snapshot[address/4]);
         end
     endtask
 
@@ -494,13 +471,14 @@ module tb_duplex_cores #(
                         $fatal(1, "READ_PROGRESS_BEFORE_R_RELEASE");
                     stall_r=0;
                     timeout_cycles=0;
-                    while (!read_done && !read_fault && timeout_cycles<1000)
+                    while (completed_load_count_reg == 0 && !read_fault && timeout_cycles<1000)
                     begin
                         @(negedge clock); timeout_cycles=timeout_cycles+1;
                     end
-                    if (read_fault || read_beats <= before_r || !read_done || read_data !== read_snapshot[READ_BASE])
+                    if (read_fault || read_beats <= before_r || completed_load_count_reg != 1 || completed_load_data_reg !== read_snapshot[READ_BASE])
                         $fatal(1, "LOAD_DID_NOT_RESUME_AFTER_R done=%b fault=%b beats=%0d data=%h expected=%h",
-                               read_done, read_fault, read_beats, read_data, read_snapshot[READ_BASE]);
+                               completed_load_count_reg != 0, read_fault, read_beats,
+                               completed_load_data_reg, read_snapshot[READ_BASE]);
                     drain_write(1); expected_write_beats=8; check_write_counts(expected_write_beats);
                     verify_region(WRITE_BASE,8);
                 end
@@ -616,11 +594,20 @@ module tb_duplex_cores #(
                     if (read_beats != 3) $fatal(1, "SIMULTANEOUS_R_BEAT_LIMIT_MISMATCH beats=%0d", read_beats);
                     issue_load(READ_BASE*4+12);
                     if (read_done) $fatal(1, "FINAL_LOAD_COMPLETED_BEFORE_FINAL_R");
+                    // Align the B transfer with the bypassed final LOAD.
                     b_delay=0;
-                    r_beat_limit=4;
+                    stall_r=1;
                     stall_b=0;
+                    timeout_cycles=0;
+                    while (!bvalid && timeout_cycles<1000)
+                    begin
+                        @(negedge clock); timeout_cycles=timeout_cycles+1;
+                    end
+                    if (!bvalid) $fatal(1, "B_RESPONSE_NOT_READY");
+                    r_beat_limit=4;
+                    stall_r=0;
                     @(posedge clock); #1;
-                    if (!read_done || read_data !== read_snapshot[READ_BASE+3])
+                    if (completed_load_count_reg != 4 || completed_load_data_reg !== read_snapshot[READ_BASE+3])
                         $fatal(1, "SIMULTANEOUS_READ_NOT_READY");
                     timeout_cycles=0;
                     while (coincident_completions == 0 && timeout_cycles<2000)

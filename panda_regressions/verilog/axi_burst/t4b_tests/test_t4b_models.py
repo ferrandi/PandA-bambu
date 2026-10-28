@@ -59,7 +59,7 @@ class T4BModelHarnessTests(unittest.TestCase):
         self.assertIn("localparam integer BITSIZE_in5 = 32;", engine_hdl)
         self.assertIn("localparam integer BITSIZE_out1 = 32;", engine_hdl)
         self.assertIn("MAX_OUTSTANDING", engine_hdl)
-        declared_widths = set(re.findall(r"localparam integer (BITSIZE_\w+) =", engine_hdl))
+        declared_widths = set(re.findall(r"(?:localparam|parameter) integer (BITSIZE_\w+) =", engine_hdl))
         referenced_widths = set(re.findall(r"\bBITSIZE_\w+\b", engine_hdl))
         self.assertEqual(referenced_widths - declared_widths, set())
 
