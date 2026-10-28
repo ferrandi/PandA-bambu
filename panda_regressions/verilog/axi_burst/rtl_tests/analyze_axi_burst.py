@@ -44,6 +44,26 @@ def abstract_payload_fifo(rtl, target):
     with a shared arbitrary read word therefore covers every payload value.
     Descriptor and planner arrays are still checked without abstraction.
     """
+    # Keep the abstraction compatible with both the original inline array and
+    # the synchronous storage component. The latter's prefetch/forwarding
+    # contract is verified separately; this proof compares the masters' logical
+    # head pointers and write commands, with an arbitrary common head word.
+    rtl = re.sub(r'\bfifo_reg\b', 'fifo', rtl)
+    rtl = re.sub(r'\bfifo_rd_ptr_reg\b', 'fifo_rd_ptr', rtl)
+    rtl = re.sub(r'\bfifo_wr_ptr_reg\b', 'fifo_wr_ptr', rtl)
+    if 'AXIBurstFIFOStorage #' in rtl:
+        rtl = rtl[:rtl.index('\nendmodule') + len('\nendmodule')]
+        rtl, count = re.subn(r'AXIBurstFIFOStorage\s*#\(.*?\)\s+fifo_storage\s*\(.*?\);',
+                             'assign fifo_read_data = fifo[fifo_rd_ptr];', rtl, flags=re.S)
+        if count != 1:
+            raise ValueError('expected one synchronous FIFO storage instance')
+        width = 'BITSIZE_in3' if target.endswith('Write') else 'DATA_BITS'
+        enable = 'fifo_write_enable' if target.endswith('Write') else 'r_good'
+        data = 'fifo_write_data' if target.endswith('Write') else 'm_axi_rdata'
+        model = (f'\nreg [{width}-1:0] fifo [0:FIFO_DEPTH-1];\n'
+                 f'always @(posedge clock) begin\n'
+                 f'  if (reset && {enable}) fifo[fifo_wr_ptr] <= {data};\nend\n')
+        rtl = rtl.replace('\nendmodule', model + '\nendmodule')
     data_width = 'BITSIZE_m_axi_wdata' if target.endswith('Write') else 'BITSIZE_m_axi_rdata'
     ptr_width = '((FIFO_DEPTH <= 2) ? 1 : $clog2(FIFO_DEPTH))'
     ports = (f",\n    input wire [{data_width}-1:0] fifo_model_read_data,"
@@ -140,7 +160,7 @@ def main():
             (directory / f'{version}.v').write_text(rtl[version])
             setup = (f'chparam -set B_MAX {burst} -set MAX_OUTSTANDING {outstanding} '
                      f'-set FIFO_DEPTH {depth} {target}; ')
-            script = (f'read_verilog -sv {version}.v; {setup}'
+            script = (f'read_verilog -sv -defer {version}.v; {setup}'
                       f'synth -top {target} -flatten -lut 6; stat; ltp -noff; '
                       f'write_json {version}-mapped.json')
             status = run_tool(yosys, directory, version, script, args.timeout)
@@ -169,12 +189,12 @@ def main():
             for fast in ((0, 1) if target.endswith('Write') else (1,)):
                 script = ''
                 for version, source in (('gold', 'proof-baseline.v'), ('gate', 'proof-candidate.v')):
-                    script += f'read_verilog -sv {source}; '
+                    script += f'read_verilog -sv -defer {source}; '
                     script += (f'chparam -set B_MAX {burst} -set MAX_OUTSTANDING {outstanding} '
                                f'-set FIFO_DEPTH {depth} -set PEER_FAULT_ENABLE 1 ')
                     if target.endswith('Write'):
                         script += f'-set FAST_STORE_ACK {fast} '
-                    script += f'{target}; proc; memory_map; opt; rename {target} {version}; '
+                    script += f'{target}; hierarchy -top {target}; flatten; proc; memory_map; opt; rename {target} {version}; '
                     if version == 'gold':
                         script += 'design -stash baseline; '
                 script += ('design -copy-from baseline -as gold gold; equiv_make gold gate equiv; '

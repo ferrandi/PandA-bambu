@@ -105,7 +105,8 @@ grep -Eq 'module MinimalAXI4MasterPipelined\(' "$LIB" || {
 }
 # These checks intentionally bind the test to the generated resource's real
 # FIFO consume path. A hierarchy refactor must update/review this qualification.
-grep -Eq 'fifo_load_pop' "$LIB" && grep -Eq 'fifo_reg \[0:FIFO_DEPTH-1\]' "$LIB" || {
+grep -Eq 'fifo_load_pop' "$LIB" && grep -Eq 'module STD_FIFO\(' "$LIB" &&
+  grep -Eq 'module STD_SDP_BRAMFW\(' "$LIB" || {
   echo "generated burst engine no longer exposes the expected FIFO consume path" >&2; exit 2;
 }
 grep -Eq 'src_bambu_artificial_ParmMgr_modgen_16_i0 \(' "$RTL" &&

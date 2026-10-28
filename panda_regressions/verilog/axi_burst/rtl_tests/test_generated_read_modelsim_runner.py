@@ -53,7 +53,7 @@ if "--version" in sys.argv:
     raise SystemExit(0)
 cwd = pathlib.Path.cwd()
 (cwd / "kernel.v").write_text("""module kernel(\n  MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(1), .FIFO_DEPTH(256), .BITSIZE_m_axi_araddr(32), .BITSIZE_m_axi_rdata(32), .BITSIZE_in5(32)) src_bambu_artificial_ParmMgr_modgen_16_i0 ();\nendmodule\nmodule src_bambu_artificial_ParmMgr_modgen();\nwire burst_rid = |p_m_axi_src_rid;\nendmodule\n""")
-(cwd / "panda_libtech.v").write_text("""module MinimalAXI4MasterPipelined(\n);\nwire fifo_load_pop;\nreg [31:0] fifo_reg [0:FIFO_DEPTH-1];\nendmodule\n""")
+(cwd / "panda_libtech.v").write_text("""module MinimalAXI4MasterPipelined(\n);\nwire fifo_load_pop;\nendmodule\nmodule STD_FIFO(\n);\nSTD_SDP_BRAMFW memory();\nendmodule\nmodule STD_SDP_BRAMFW(\n);\nendmodule\n""")
 print("Configured read burst regions for bundle src (B=16)", file=sys.stderr)
 '''
 
