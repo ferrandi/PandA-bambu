@@ -8,7 +8,10 @@
 # turns SIZE into the byte count (4 instead of 2 for a 32-bit port). This guard therefore
 #   1. statically rejects any backtick-log2 invocation in the component XML, and
 #   2. simulates the extracted adapters with and without _SIM_HAVE_CLOG2 and requires the same
-#      SIZE values from both branches (2 for a 32-bit port, 3 for a 64-bit port).
+#      SIZE values from both branches (0/2/3 for 8/32/64-bit ports), on accepted
+#      and stalled AXI address transactions for both adapter implementations.
+#   3. disconnects the AXI SIZE outputs in a negative-control bench and requires
+#      the active-transaction checks to fail while size_next remains unchanged.
 #
 # Run outside the file sandbox:
 #   BURST_ADAPTER_SIM_OUTSIDE_SANDBOX=1 ./run_adapter_size_guard.sh <fresh-output-directory>
@@ -20,6 +23,7 @@ ROOT=$(realpath "$SCRIPT_DIR/../../../../")
 EXTRACTOR="$SCRIPT_DIR/extract_write_engine.py"
 TB="$SCRIPT_DIR/tb_adapter_size.sv"
 XML="$ROOT/etc/libtech/NC_AXI_IPs.xml"
+source "$SCRIPT_DIR/modelsim_helpers.sh"
 
 if (($# != 1)); then
     echo "usage: $0 <fresh-output-directory>" >&2
@@ -29,11 +33,7 @@ if [[ ${BURST_ADAPTER_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
     echo "refusing RTL simulation unless BURST_ADAPTER_SIM_OUTSIDE_SANDBOX=1 is set" >&2
     exit 2
 fi
-if ! command -v verilator >/dev/null 2>&1; then
-    echo "verilator is required" >&2
-    exit 2
-fi
-SIM_JOBS=${SIM_JOBS:-2}
+modelsim_resolve
 
 OUT_ARG=$1
 OUT_PARENT=$(realpath -m -- "$(dirname "$OUT_ARG")")
@@ -59,7 +59,8 @@ echo "ADAPTER_SIZE_STATIC_PASS no backtick log2 invocation in the component XML"
     printf 'xml='; sha256sum "$XML"
     printf 'extractor='; sha256sum "$EXTRACTOR"
     printf 'testbench='; sha256sum "$TB"
-    printf 'verilator='; verilator --version
+    printf 'modelsim=%s\n' "$MODELSIM_VSIM"
+    printf '%s\n' "$(modelsim_version)"
     printf 'git_head=%s\n' "$(git -C "$ROOT" rev-parse HEAD)"
 } > "$TASK_OUT/provenance.txt"
 
@@ -74,32 +75,25 @@ done
 
 for mode in log2_function clog2; do
     build="$TASK_OUT/build-$mode"
-    mkdir -p "$build/obj"
     extra=()
-    [[ $mode == clog2 ]] && extra+=(-D_SIM_HAVE_CLOG2)
-    if ! timeout 300s verilator --binary -j "$SIM_JOBS" --timing --assert -Wall -Wno-fatal \
-        -Wno-UNUSEDSIGNAL -Wno-UNDRIVEN -Wno-PINMISSING -CFLAGS -O0 \
-        --top-module tb_adapter_size "${extra[@]}" --Mdir "$build/obj" \
+    [[ $mode == clog2 ]] && extra+=(+define+_SIM_HAVE_CLOG2)
+    if ! modelsim_compile "$build" tb_adapter_size \
         "$TASK_OUT/MinimalAXI4Adapter.sv" "$TASK_OUT/MinimalAXI4AdapterSingleBeat.sv" "$TB" \
-        > "$build/compile.log" 2>&1; then
-        tail -n 60 "$build/compile.log" >&2
+        -- "${extra[@]}"; then
         echo "adapter size bench compile failed for mode=$mode" >&2
         exit 1
     fi
+    raw="$build/run.raw.log"
     log="$build/run.log"
-    if ! timeout 60s "$build/obj/Vtb_adapter_size" > "$log" 2>&1; then
-        cat "$log" >&2
+    if ! modelsim_run "$build" tb_adapter_size "$raw" 60; then
+        cat "$raw" >&2
         echo "adapter size bench failed for mode=$mode" >&2
         exit 1
     fi
+    modelsim_normalize_log "$raw" "$log"
     if ! grep -q "^ADAPTER_SIZE_PASS .*path=$mode\$" "$log"; then
         cat "$log" >&2
         echo "missing adapter SIZE marker for mode=$mode" >&2
-        exit 1
-    fi
-    if grep -q '^ADAPTER_SIZE_MISMATCH' "$log"; then
-        cat "$log" >&2
-        echo "adapter SIZE mismatch for mode=$mode" >&2
         exit 1
     fi
     grep -E '^ADAPTER_SIZE' "$log" >> "$TASK_OUT/results.log"
@@ -107,5 +101,35 @@ for mode in log2_function clog2; do
         "$(grep -m1 '^ADAPTER_SIZE_PASS' "$log" | cut -d' ' -f2-)" >> "$TASK_OUT/results.log"
 done
 
-grep -E "ADAPTER_SIZE_BUS_REG" "$TASK_OUT/results.log" || true
-echo "ADAPTER_SIZE_GUARD_PASS modes=log2_function,clog2 size32=2 size64=3" | tee -a "$TASK_OUT/results.log"
+mutant_tb="$TASK_OUT/tb_adapter_size_disconnected.sv"
+sed -e 's/\.m_axi_arsize(arsize)/.m_axi_arsize()/g' \
+    -e 's/\.m_axi_awsize(awsize)/.m_axi_awsize()/g' "$TB" > "$mutant_tb"
+if [[ $(grep -c '\.m_axi_arsize()' "$mutant_tb") -ne 2 ||
+      $(grep -c '\.m_axi_awsize()' "$mutant_tb") -ne 2 ]]; then
+    echo "failed to create disconnected SIZE negative control" >&2
+    exit 1
+fi
+negative="$TASK_OUT/build-disconnected"
+if ! modelsim_compile "$negative" tb_adapter_size \
+    "$TASK_OUT/MinimalAXI4Adapter.sv" "$TASK_OUT/MinimalAXI4AdapterSingleBeat.sv" "$mutant_tb"; then
+    tail -n 60 "$negative/compile.log" >&2
+    echo "disconnected SIZE negative-control compile failed" >&2
+    exit 1
+fi
+raw="$negative/run.raw.log"
+log="$negative/run.log"
+if modelsim_run "$negative" tb_adapter_size "$raw" 60; then
+    modelsim_normalize_log "$raw" "$log"
+    cat "$log" >&2
+    echo "disconnected SIZE negative control unexpectedly passed" >&2
+    exit 1
+fi
+modelsim_normalize_log "$raw" "$log"
+if ! grep -q 'ADAPTER_SIZE_MISMATCH phase=read-valid ARSIZE' "$log" ||
+   grep -q 'ADAPTER_SIZE_PASS' "$log"; then
+    cat "$log" >&2
+    echo "disconnected SIZE negative control failed for an unexpected reason" >&2
+    exit 1
+fi
+echo "ADAPTER_SIZE_NEGATIVE_CONTROL_PASS mutation=disconnect_AXSIZE size_next=unchanged" | tee -a "$TASK_OUT/results.log"
+echo "ADAPTER_SIZE_GUARD_PASS modes=log2_function,clog2 widths=8,32,64 adapters=both" | tee -a "$TASK_OUT/results.log"

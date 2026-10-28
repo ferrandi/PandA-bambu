@@ -102,6 +102,28 @@ class CheckerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "read component address is not wired"):
             check_case(args)
 
+    def test_copy_requires_exact_distinct_read_and_write_profiles(self):
+        self.write_copy_success_artifacts()
+        args = type("Args", (), {
+            "output": self.root,
+            "kind": "accepted",
+            "count_pattern": None,
+            "copy": True,
+            "expected_read_burst": 16,
+            "expected_write_burst": 16,
+            "expected_read_bundle": "input",
+            "expected_write_bundle": "output",
+        })()
+        self.assertEqual(check_case(args), 0)
+        self.write("stderr.log", "Configured read burst regions for bundle shared (B=16)\n"
+                    "Configured write burst region for bundle shared (B=16)\n")
+        with self.assertRaisesRegex(ValueError, "distinct bundles"):
+            check_case(args)
+        self.write("stderr.log", "Configured read burst regions for bundle input (B=8)\n"
+                    "Configured write burst region for bundle output (B=16)\n")
+        with self.assertRaisesRegex(ValueError, "read region uses B=8, expected B=16"):
+            check_case(args)
+
     def test_inactive_shared_bundle_requires_one_writer_and_no_legacy_adapter(self):
         self.write_write_success_artifacts()
         self.write("design.v", "MinimalAXI4MasterPipelinedWrite burst_engine();\n"
@@ -160,7 +182,7 @@ class CheckerTests(unittest.TestCase):
         self.assertEqual(check_case(args), 0)
 
     def test_feature_off_requires_exact_diagnostic_and_legacy_structure(self):
-        self.write("stderr.log", "    Keeping legacy m_axi writes for bundle data: explicit write-burst request ignored because experimental-m-axi-burst=0\n")
+        self.write("stderr.log", "    Keeping legacy m_axi writes for bundle data: explicit write-burst request ignored because m-axi-burst=0\n")
         self.write("design.v", "MinimalAXI4AdapterSingleBeat adapter();\n")
         args = type("Args", (), {"output": self.root, "kind": "fallback", "bundle": "data",
                                   "direction": "writes", "reason": "feature-off", "feature_off": True})()
@@ -169,8 +191,22 @@ class CheckerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "reason mismatch"):
             check_case(args)
 
+    def test_feature_off_read_fallback_accepts_exact_read_diagnostic(self):
+        self.write("stderr.log", "    Keeping legacy m_axi reads for bundle input: "
+                    "explicit read-burst request ignored because m-axi-burst=0\n")
+        self.write("design.v", "MinimalAXI4AdapterSingleBeat adapter();\n")
+        args = type("Args", (), {
+            "output": self.root,
+            "kind": "fallback",
+            "bundle": "input",
+            "direction": "reads",
+            "reason": "explicit read-burst request ignored because m-axi-burst=0",
+            "feature_off": False,
+        })()
+        self.assertEqual(check_case(args), 0)
+
     def test_legacy_without_burst_request_rejects_feature_off_diagnostic(self):
-        self.write("stdout.log", "    Keeping legacy m_axi writes for bundle data: explicit write-burst request ignored because experimental-m-axi-burst=0\n")
+        self.write("stdout.log", "    Keeping legacy m_axi writes for bundle data: explicit write-burst request ignored because m-axi-burst=0\n")
         self.write("design.v", "MinimalAXI4AdapterSingleBeat adapter();\n")
         args = type("Args", (), {"output": self.root, "kind": "legacy", "bundle": "data",
                                   "require_legacy": True})()
@@ -320,6 +356,41 @@ class CheckerTests(unittest.TestCase):
             self.assertIn("bundle=input", block)
             self.assertIn("dst[i] = src[i]", block)
 
+    def test_float_copy_has_bit_preserving_fixture_and_modelsims_on_off_gate(self):
+        directory = pathlib.Path(__file__).parent
+        source = (directory / "write_compiler_cases" / "write_cases.cpp").read_text()
+        block = self._fixture_block(source, "copy_float_payload")
+        self.assertEqual(block.count("__restrict"), 2)
+        self.assertIn("float *__restrict dst", block)
+        self.assertIn("const float *__restrict src", block)
+        self.assertIn("bundle=output max_write_burst_length=16", block)
+        self.assertIn("bundle=input max_read_burst_length=16", block)
+        self.assertIn("dst[i] = src[i]", block)
+
+        testbench = (directory / "bambu_axi_burst_write_tb.cpp").read_text()
+        float_testbench = testbench.split("#ifdef BURST_TEST_FLOAT_COPY", 1)[1].split("#else", 1)[0]
+        self.assertIn("memcpy", float_testbench)
+        self.assertIn("__m_param_size(0)", float_testbench)
+        self.assertIn("__m_param_size(1)", float_testbench)
+        self.assertIn("0x80000000u", float_testbench)
+        self.assertIn("AXI_BURST_FLOAT_COPY_GOLDEN_PASS N=%d", float_testbench)
+        self.assertIn("const int n = 257", float_testbench)
+        self.assertGreater(float_testbench.index("copy_float_payload(dst, src, n)"),
+                           float_testbench.index("memcpy(&dst[i], &canary"))
+        self.assertGreater(float_testbench.index("if (__m_param_size(0)"),
+                           float_testbench.index("copy_float_payload(dst, src, n)"))
+        self.assertIn("BURST_TEST_MAXN * sizeof(float)", float_testbench)
+
+        gate = (directory / "run_write_compiler_tests.sh").read_text()
+        self.assertIn("run_accepted copy_float_payload", gate)
+        self.assertIn("--expected-read-bundle input --expected-write-bundle output", gate)
+        self.assertIn("--simulate --simulator=MODELSIM", gate)
+        self.assertIn("for feature in 1 0", gate)
+        self.assertIn("--tb-param-size=src:16384 --tb-param-size=dst:16384", gate)
+        self.assertIn("--bundle input --direction reads", gate)
+        self.assertIn("1 input accesses", gate)
+        self.assertNotIn("--simulator=VERILATOR", gate)
+
     def test_unused_nonrestrict_write_owner_does_not_block_cross_bundle_copy(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_cases.cpp").read_text()
         block = self._fixture_block(source, "copy_distinct_with_unused_write_owner")
@@ -434,12 +505,10 @@ class CheckerTests(unittest.TestCase):
             "write_burst_257.cpp": "max_write_burst_length=257",
             "write_outstanding_zero.cpp": "write_burst_outstanding=0",
             "write_fifo_out_of_range.cpp": "write_fifo_depth=4097",
-            "write_outstanding_without_burst.cpp": "write_burst_outstanding=1",
             "write_attributes_non_m_axi.cpp": "mode=array",
             "invalid_write_outstanding.cpp": "write_burst_outstanding=17",
             "invalid_write_fifo_non_power_two.cpp": "write_fifo_depth=48",
             "invalid_write_fifo_too_shallow.cpp": "write_fifo_depth=8",
-            "invalid_write_fifo_without_burst.cpp": "write_fifo_depth=64",
             "conflicting_write_burst_profile.cpp": "max_write_burst_length=32",
             "conflicting_write_fifo_profile.cpp": "write_fifo_depth=64",
         }
@@ -448,13 +517,21 @@ class CheckerTests(unittest.TestCase):
             self.assertEqual(text.count('extern "C" void '), 1, filename)
             self.assertIn(pragma, text, filename)
 
-    def test_accepted_outstanding_profiles_are_not_invalid_fixtures(self):
-        """write_burst_outstanding in [2,16] is a supported profile, not a rejected one."""
+    def test_profiles_with_default_burst_are_not_invalid_fixtures(self):
+        """An omitted burst max uses 16 beats, so explicit outstanding/FIFO values are valid."""
         cases = pathlib.Path(__file__).parent / "write_compiler_cases"
         self.assertFalse((cases / "invalid_profiles" / "outstanding_two_profile.cpp").exists())
         text = (cases / "outstanding_two_profile.cpp").read_text()
         self.assertEqual(text.count('extern "C" void '), 1)
         self.assertIn("write_burst_outstanding=2", text)
+        default_burst = (cases / "write_outstanding_with_default_burst.cpp").read_text()
+        self.assertEqual(default_burst.count('extern "C" void '), 1)
+        self.assertIn("write_burst_outstanding=1", default_burst)
+        self.assertNotIn("max_write_burst_length", default_burst)
+        default_fifo = (cases / "write_fifo_with_default_burst.cpp").read_text()
+        self.assertEqual(default_fifo.count('extern "C" void '), 1)
+        self.assertIn("write_fifo_depth=64", default_fifo)
+        self.assertNotIn("max_write_burst_length", default_fifo)
 
     def test_profile_matrix_covers_supported_boundaries_and_inactive_attributes(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_profile_matrix.cpp").read_text()

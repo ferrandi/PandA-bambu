@@ -551,6 +551,72 @@ def parse_manifest(path: Path) -> dict[str, str]:
     return fields
 
 
+def verify_functional(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
+                      checker: Path, runner: Path) -> None:
+    """Check generated RTL and its provenance without development-only IR dumps."""
+    need(top in ACTIVATED_CASES, f"functional duplex gate does not support case: {top}")
+    need(not output.is_symlink() and output.is_dir(), f"invalid output directory: {output}")
+    manifest_path = output / "provenance.txt"
+    safe_file(manifest_path, "provenance manifest")
+    manifest: dict[str, str] = {}
+    for line in manifest_path.read_text(encoding="utf-8").splitlines():
+        if not line or "=" not in line:
+            raise CheckError(f"malformed provenance line: {line!r}")
+        key, value = line.split("=", 1)
+        need(key not in manifest and value, f"duplicate or empty provenance field: {key}")
+        manifest[key] = value
+    required = {"top", "source", "source_sha256", "bambu", "bambu_sha256", "plugin", "plugin_sha256",
+                "checker", "checker_sha256", "runner", "runner_sha256", "rtl", "rtl_sha256",
+                "architecture", "architecture_sha256", "stdout", "stdout_sha256", "stderr", "stderr_sha256"}
+    need(manifest.keys() == required, "functional provenance fields are missing or unexpected")
+    need(manifest["top"] == top, "provenance top does not match selected case")
+    inputs = {"source": source, "bambu": bambu, "plugin": plugin, "checker": checker, "runner": runner}
+    for name, path in inputs.items():
+        safe_file(path, f"{name} provenance input")
+        need(Path(manifest[name]).resolve() == path.resolve(), f"wrong {name} provenance path")
+        need(manifest[f"{name}_sha256"] == sha256(path), f"wrong {name} provenance digest")
+
+    artifacts = {
+        "rtl": output / f"{top}.v",
+        "architecture": output / "panda-temp/architecture.xml",
+        "stdout": output / "stdout.log",
+        "stderr": output / "stderr.log",
+    }
+    for name, expected_path in artifacts.items():
+        path = Path(manifest[name])
+        if name in {"stdout", "stderr"}:
+            need(not path.is_symlink() and path.is_file(), f"generated {name} log is missing or a symlink")
+        else:
+            safe_file(path, f"generated {name}")
+        need(not expected_path.parent.is_symlink(), f"generated {name} parent directory is a symlink")
+        need(path.resolve() == expected_path.resolve(), f"wrong generated {name} path")
+        need(os.path.commonpath((str(path.resolve()), str(output.resolve()))) == str(output.resolve()),
+             f"generated {name} escapes compiler output directory")
+        need(manifest[f"{name}_sha256"] == sha256(path), f"wrong generated {name} digest")
+
+    try:
+        root = ET.parse(artifacts["architecture"]).getroot()
+    except ET.ParseError as exc:
+        raise CheckError(f"malformed architecture XML: {exc}") from exc
+    functions = [node for node in root.findall(".//function") if node.get("name") == top]
+    need(len(functions) == 1, f"architecture XML must contain exactly one function named {top}")
+    bundles = [node for node in functions[0].findall("./bundles/bundle") if node.get("name") == "shared"]
+    need(len(bundles) == 1, "architecture XML must retain exactly one shared bundle")
+    attrs = bundles[0].attrib
+    read_burst, read_outstanding, write_burst, write_outstanding = EXPECTED_PROFILES.get(
+        top, ("16", "1", "16", "1"))
+    need(attrs.get("mode") == "m_axi" and attrs.get("max_read_burst_length") == read_burst and
+         attrs.get("max_write_burst_length") == write_burst and
+         attrs.get("write_burst_outstanding") == write_outstanding and
+         attrs.get("num_read_outstanding", "1") == read_outstanding,
+         "architecture XML does not preserve requested read/write m_axi profiles")
+    logs = artifacts["stdout"].read_text(encoding="utf-8", errors="replace") + "\n" + \
+        artifacts["stderr"].read_text(encoding="utf-8", errors="replace")
+    check_production_duplex(artifacts["rtl"].read_text(encoding="utf-8", errors="replace"),
+                            logs, top, attrs)
+    print(f"DUPLEX EFFECT FUNCTIONAL CHECK PASS CASE={top} ACTIVATED=1")
+
+
 NODE_LINE = re.compile(r"^@(\d+) ([a-zA-Z0-9_]+)(?: (.*))?$")
 REF = re.compile(r"(?:^|\s)([a-zA-Z_][a-zA-Z0-9_]*): @(\d+)")
 
@@ -1656,9 +1722,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--plugin", required=True, type=Path)
     parser.add_argument("--checker", required=True, type=Path)
     parser.add_argument("--runner", required=True, type=Path)
+    parser.add_argument("--functional-only", action="store_true",
+                        help="check generated functional RTL without development-only IR proof dumps")
     args = parser.parse_args(argv)
     try:
-        verify(args.output, args.top, args.source, args.bambu, args.plugin, args.checker, args.runner)
+        if args.functional_only:
+            verify_functional(args.output, args.top, args.source, args.bambu, args.plugin, args.checker, args.runner)
+        else:
+            verify(args.output, args.top, args.source, args.bambu, args.plugin, args.checker, args.runner)
     except (OSError, ET.ParseError, CheckError, ValueError) as exc:
         print(f"DUPLEX EFFECT ANALYSIS CHECK FAILED: {exc}", file=sys.stderr)
         return 1

@@ -82,7 +82,7 @@ class CopyBaselineGateTests(unittest.TestCase):
                       "--tb-queue-size=32 --memory-allocation-policy=NO_BRAM --distram-threshold=0 "
                       "--clock-period=3.33 --simulate --simulator=MODELSIM "
                       "--generate-tb=copy_baseline_tb.cpp --no-clean "
-                      "--bambu-parameter=experimental-m-axi-burst=1 "
+                      "--bambu-parameter=m-axi-burst=1 "
                       f"--extra-cc-options=-DCOPY_BASELINE_PROFILE={macro}"]
         for path in (self.source, self.testbench, self.bambu, self.settings, self.plugin):
             provenance.append(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path}")

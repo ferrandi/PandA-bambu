@@ -106,7 +106,7 @@ def check_provenance(case_dir, source, testbench, bambu, settings, plugin, macro
         "--mem-delay-read=64", "--mem-delay-write=2", "--tb-queue-size=32",
         "--memory-allocation-policy=NO_BRAM", "--distram-threshold=0", "--clock-period=3.33",
         "--simulate", "--simulator=MODELSIM", "--generate-tb=", "--no-clean",
-        "--bambu-parameter=experimental-m-axi-burst=1",
+        "--bambu-parameter=m-axi-burst=1",
         f"-DCOPY_BASELINE_PROFILE={macro}")
     if not argv or any(argument not in argv.group(1) for argument in required_args):
         fail(f"{case_dir.name}: provenance argv has an incorrect/missing compile or simulation setting")

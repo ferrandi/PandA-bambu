@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -28,13 +29,9 @@ REASON = "distinct-base restricted pointwise read-before-write candidate"
 ACTIVATION = f"Activated distinct-base restricted pointwise duplex m_axi bundle shared for root {TOP}"
 WARNING = ("WARNING: distinct-base duplex relies on the caller's __restrict contract; the caller must "
            "ensure the accessed regions do not overlap (no runtime range validation is performed)")
-EXPECTED_INTERMEDIATE_FALLBACKS = (
-    "Keeping legacy m_axi writes for bundle shared: write-burst CFG/SSA/effect recognition failed",
-    "Keeping legacy m_axi reads for bundle shared: read-burst CFG/SSA recognition failed or bundle is not exclusive",
-)
 ARTIFACT_SUFFIXES = {".v", ".sv", ".xml", ".log", ".raw"}
 INPUTS = ("source", "testbench", "checker", "runner", "bambu", "settings", "plugin", "simulator",
-          "parallel_helper")
+          "parallel_helper", "shared_runner")
 
 
 def safe_file(path: Path, label: str, root: Path | None = None) -> Path:
@@ -100,6 +97,7 @@ def check_provenance(profile_dir: Path, profile: str, args: argparse.Namespace) 
     provenance = parse_key_values(profile_dir / "provenance.txt", "provenance.txt")
     expected: dict[str, str] = {
         "profile": profile, "macro": PROFILE_DATA[profile]["macro"], "feature": "1",
+        "proof_mode": "developer" if args.developer_proof else "functional",
         "output": str(profile_dir.resolve()),
         "read_profile": "/".join(PROFILE_DATA[profile]["read"]),
         "write_profile": "/".join(PROFILE_DATA[profile]["write"]),
@@ -110,27 +108,45 @@ def check_provenance(profile_dir: Path, profile: str, args: argparse.Namespace) 
         "runner": args.runner, "bambu": args.bambu, "settings": args.settings,
         "plugin": args.plugin, "simulator": args.simulator,
         "parallel_helper": args.runner.resolve().parent / "parallel_helpers.sh",
+        "shared_runner": args.runner.resolve().parent / "run_duplex_generated_family.sh",
     }
     for name, path in paths.items():
         safe_file(path, f"provenance input {name}")
         expected[name] = str(path.resolve())
         expected[f"{name}_sha256"] = sha256(path)
+    invocation = args.simulator_invocation
+    need(invocation.is_absolute() and invocation.is_file(),
+         "simulator invocation is missing or not an absolute file path")
+    need(invocation.resolve(strict=True) == args.simulator.resolve(strict=True),
+         "simulator invocation does not resolve to the selected simulator")
+    expected["simulator_invocation"] = str(invocation)
+    try:
+        version_result = subprocess.run(
+            [str(invocation), "-version"], stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, text=True, check=False, timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise ValueError(f"cannot query selected simulator version: {error}") from error
+    expected["simulator_version"] = version_result.stdout.splitlines()[0] if version_result.stdout else ""
+    need(bool(expected["simulator_version"]), "selected simulator version is missing")
     for key, value in expected.items():
         need(provenance.get(key) == value, f"provenance {key} does not match the selected run")
     need(bool(re.fullmatch(r"[0-9a-fA-F]{7,40}", provenance.get("git_head", ""))),
          "provenance git_head is missing or malformed")
     argv = provenance.get("argv", "")
-    need(argv and "--bambu-parameter=experimental-m-axi-burst=1" in argv and
+    need(argv and "--bambu-parameter=m-axi-burst=1" in argv and
          f"-DDUPLEX_INDEPENDENT_PROFILE={PROFILE_DATA[profile]['macro']}" in argv and
-         f"--top-fname={TOP}" in argv and "--simulator=VERILATOR" in argv,
+         f"--top-fname={TOP}" in argv and "--simulator=MODELSIM" in argv and
+         (("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based" in argv) ==
+          args.developer_proof),
          "provenance argv does not enable the feature and selected fixture profile")
     need(set(provenance) == set(expected) | {"git_head", "argv"},
          "provenance fields are missing or unexpected")
     return provenance
 
 
-def check_architecture(profile_dir: Path, profile: str, raw_text: str,
-                       proof: dict[str, object]) -> dict[str, str]:
+def check_architecture(profile_dir: Path, profile: str, raw_text: str | None,
+                       proof: dict[str, object] | None) -> dict[str, str]:
     path = safe_file(profile_dir / "panda-temp/architecture.xml", "architecture.xml", profile_dir)
     root = ET.parse(path).getroot()
     functions = [node for node in root.findall(".//function") if node.get("name") == TOP]
@@ -148,18 +164,26 @@ def check_architecture(profile_dir: Path, profile: str, raw_text: str,
          "architecture XML does not preserve the requested independent read/write profile")
     parameters = functions[0].find("./parameters")
     need(parameters is not None, "architecture XML has no parameter metadata")
-    raw_nodes, function_node, _blocks, _reachable = function_graph(raw_text, TOP)
-    args_in_order = [int(value) for value in fields(raw_nodes[function_node]).get("arg", [])]
-    expected_owners = (("src", int(proof["read_owner_argument_index"])),
-                       ("dst", int(proof["write_owner_argument_index"])))
     by_index: dict[int, list[ET.Element]] = {}
     for parameter in parameters.findall("./parameter"):
         index = parameter.get("index")
         if index is not None and index.isdecimal():
             by_index.setdefault(int(index), []).append(parameter)
-    for port, owner in expected_owners:
-        need(owner in args_in_order, f"{port} proof owner is not a formal argument")
-        entries = by_index.get(args_in_order.index(owner), [])
+    if proof is not None:
+        assert raw_text is not None
+        raw_nodes, function_node, _blocks, _reachable = function_graph(raw_text, TOP)
+        args_in_order = [int(value) for value in fields(raw_nodes[function_node]).get("arg", [])]
+        expected_owners = (("src", int(proof["read_owner_argument_index"])),
+                           ("dst", int(proof["write_owner_argument_index"])))
+        expected_indices = ((port, args_in_order.index(owner)) for port, owner in expected_owners
+                            if owner in args_in_order)
+        need(sum(owner in args_in_order for _port, owner in expected_owners) == 2,
+             "proof owners are not both formal arguments")
+        parameter_checks = list(expected_indices)
+    else:
+        parameter_checks = [("src", 0), ("dst", 1)]
+    for port, index in parameter_checks:
+        entries = by_index.get(index, [])
         need(len(entries) == 1 and entries[0].get("port") == port and
              entries[0].get("bundle") == "shared" and entries[0].get("source_restrict") == "1",
              f"architecture XML does not retain restricted shared-bundle metadata for {port}")
@@ -171,7 +195,9 @@ def check_profile(profile_dir: Path, profile: str, args: argparse.Namespace) -> 
          f"profile directory missing or invalid: {profile_dir}")
     profile_dir = profile_dir.resolve(strict=True)
     required = ["bambu_results.xml", "stdout.log", "stderr.log", "HLS_output/simulation/testbench.log",
-                f"{TOP}.v", "panda-temp/before_Frontend::InterfaceInfer.raw", "panda-temp/architecture.xml"]
+                f"{TOP}.v", "panda-temp/architecture.xml"]
+    if args.developer_proof:
+        required.append("panda-temp/before_Frontend::InterfaceInfer.raw")
     for name in required:
         safe_file(profile_dir / name, name, profile_dir)
     manifest = check_manifest(profile_dir)
@@ -189,43 +215,47 @@ def check_profile(profile_dir: Path, profile: str, args: argparse.Namespace) -> 
     fallback_lines = [re.sub(r"^\s*(?:---)?", "", line).strip()
                       for line in combined.splitlines()
                       if re.match(r"^\s*(?:---)?Keeping legacy m_axi\b", line)]
-    need(sorted(fallback_lines) == sorted(EXPECTED_INTERMEDIATE_FALLBACKS),
-         "compiler emitted missing, unexpected, or duplicate legacy fallback diagnostics")
+    need(not fallback_lines,
+         "compiler unexpectedly fell back to legacy m_axi accesses for the recognized duplex profile")
     need(len(re.findall(rf"(?m)^\s*(?:---)?{re.escape(ACTIVATION)}\s*$", combined)) == 1,
          "real distinct-base activation marker is missing or duplicated")
     need(len(re.findall(rf"(?m)^\s*{re.escape(WARNING)}\s*$", combined)) == 1,
          "caller __restrict non-overlap contract warning is missing or duplicated")
-    traces = list(TRACE.finditer(stderr))
-    trace_lines = [line for line in stderr.splitlines() if "AXI_BURST_PREANALYSIS" in line]
-    need(len(traces) == 2 and len(trace_lines) == 2,
-         "expected exactly two well-formed preanalysis owner records")
-    owners: set[str] = set()
-    directions: set[tuple[str, str]] = set()
-    for trace in traces:
-        (bundle, owner, reads, writes, read_requested, read_recognized, read_fallback,
-         write_requested, write_recognized, write_fallback, candidate, reason,
-         activated, activation_reason) = trace.groups()
-        need(bundle == "shared" and owner not in owners, "preanalysis owner records are not unique shared-bundle entries")
-        owners.add(owner)
-        need((read_requested, write_requested, candidate, reason, activated, activation_reason) ==
-             ("1", "1", "1", REASON, "1", "frozen application-wide proof and profile accepted"),
-             "preanalysis does not prove requested, recognized, activated duplex for both owners")
-        need(read_fallback == "-" and write_fallback == "-",
-             "preanalysis owner record contains a fallback reason")
-        directions.add((reads, writes, read_recognized, write_recognized))
-    need(directions == {("1", "0", "1", "0"), ("0", "1", "0", "1")},
-         "preanalysis records do not identify one read owner and one write owner")
+    raw_text = None
+    proof = None
+    if args.developer_proof:
+        traces = list(TRACE.finditer(stderr))
+        trace_lines = [line for line in stderr.splitlines() if "AXI_BURST_PREANALYSIS" in line]
+        need(len(traces) == 2 and len(trace_lines) == 2,
+             "expected exactly two well-formed preanalysis owner records")
+        owners: set[str] = set()
+        directions: set[tuple[str, str]] = set()
+        for trace in traces:
+            (bundle, owner, reads, writes, read_requested, read_recognized, read_fallback,
+             write_requested, write_recognized, write_fallback, candidate, reason,
+             activated, activation_reason) = trace.groups()
+            need(bundle == "shared" and owner not in owners,
+                 "preanalysis owner records are not unique shared-bundle entries")
+            owners.add(owner)
+            need((read_requested, write_requested, candidate, reason, activated, activation_reason) ==
+                 ("1", "1", "1", REASON, "1", "frozen application-wide proof and profile accepted"),
+                 "preanalysis does not prove requested, recognized, activated duplex for both owners")
+            need(read_fallback == "-" and write_fallback == "-",
+                 "preanalysis owner record contains a fallback reason")
+            directions.add((reads, writes, read_recognized, write_recognized))
+        need(directions == {("1", "0", "1", "0"), ("0", "1", "0", "1")},
+             "preanalysis records do not identify one read owner and one write owner")
 
-    raw_path = profile_dir / "panda-temp/before_Frontend::InterfaceInfer.raw"
-    raw_text = raw_path.read_text(encoding="utf-8", errors="replace")
-    proof_records = parse_proof_records(stderr)
-    need(len(proof_records) == 1, "expected exactly one structured semantic proof record")
-    proof = proof_records[0]
-    need(proof.get("bundle") == "shared" and proof.get("semantic_proof") is True and
-         proof.get("semantic_reason") == REASON and proof.get("proof_kind") == "distinct_base_restricted_pointwise" and
-         proof.get("profile_eligible") is True and proof.get("profile_reason") == "read/write profile is eligible",
-         "structured semantic proof does not witness the expected restricted pointwise candidate")
-    verify_success_record(proof, raw_text, TOP, require_load_store_data_dependency=False)
+        raw_path = profile_dir / "panda-temp/before_Frontend::InterfaceInfer.raw"
+        raw_text = raw_path.read_text(encoding="utf-8", errors="replace")
+        proof_records = parse_proof_records(stderr)
+        need(len(proof_records) == 1, "expected exactly one structured semantic proof record")
+        proof = proof_records[0]
+        need(proof.get("bundle") == "shared" and proof.get("semantic_proof") is True and
+             proof.get("semantic_reason") == REASON and proof.get("proof_kind") == "distinct_base_restricted_pointwise" and
+             proof.get("profile_eligible") is True and proof.get("profile_reason") == "read/write profile is eligible",
+             "structured semantic proof does not witness the expected restricted pointwise candidate")
+        verify_success_record(proof, raw_text, TOP, require_load_store_data_dependency=False)
     attrs = check_architecture(profile_dir, profile, raw_text, proof)
     rtl_path = profile_dir / f"{TOP}.v"
     rtl = rtl_path.read_text(encoding="utf-8", errors="replace")
@@ -267,8 +297,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--settings", required=True, type=Path)
     parser.add_argument("--plugin", required=True, type=Path)
     parser.add_argument("--simulator", required=True, type=Path)
+    parser.add_argument("--simulator-invocation", required=True, type=Path)
     parser.add_argument("--runner", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
+    parser.add_argument("--developer-proof", action="store_true")
     return parser.parse_args(argv)
 
 

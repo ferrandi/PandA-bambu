@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -19,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from check_duplex_effect_analysis_artifacts import (  # noqa: E402
     ACCESS_COUNTS, ACTIVATED_CASES, CASES, DISTINCT_BASE_CASES, RESTRICT_METADATA_CASES,
     CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS,
-    verify, verify_restrict_architecture_metadata,
+    verify, verify_functional, verify_restrict_architecture_metadata,
     verify_success_record, check_production_duplex, expected_owner_recognition,
     verify_configure_count_expressions,
     verify_unsigned_prefix_comparison,
@@ -34,10 +35,11 @@ from check_duplex_activation_matrix import (
 from check_duplex_activation_matrix import (
     EXPECTED_ROOTS, POSITIVE_ROOTS, require_raw, root_calls, verify_architecture,
     verify_backend_guard, verify_backend_rtl, verify_call_contract, verify_drain_exit,
-    verify_burst_call_arguments, DATAFLOW_ANALYSIS_ORDER, verify_dataflow_analysis_order,
+    verify_burst_call_arguments, DATAFLOW_ANALYSIS_ORDER, MIXED_FLOAT_CASES, TYPE_VETOES,
+    verify_compatible_profiles, verify_dataflow_analysis_order,
     verify_dataflow_task_call, verify_dataflow_task_memory,
     verify_no_duplex_backend_rtl, verify_no_legacy_access_contract, verify_preanalysis_veto,
-    verify_unused_peer_veto, pointer_argument_ids,
+    verify_unused_peer_veto, pointer_argument_ids, verify_type_veto_fixture,
 )
 
 
@@ -144,8 +146,12 @@ RECORD_RUNTIME_DISTINCT = dict(
 
 class DuplexEffectArtifactTests(unittest.TestCase):
     def test_activation_matrix_has_explicit_multi_root_contracts(self):
-        self.assertEqual(ALL_CASES, set(range(1, 18)))
+        self.assertEqual(ALL_CASES, set(range(1, 24)))
         self.assertEqual(INCOMPATIBLE, {13, 14})
+        self.assertEqual(MIXED_FLOAT_CASES, {18, 19})
+        self.assertEqual(TYPE_VETOES, {20, 21, 22, 23})
+        self.assertEqual(POSITIVE_ROOTS[18], {"matrix_candidate", "matrix_peer"})
+        self.assertEqual(POSITIVE_ROOTS[19], {"matrix_candidate", "matrix_peer"})
         self.assertNotIn(12, VETO_REASON)
         self.assertNotIn(12, VETO_REASON_FIELD)
         self.assertEqual(POSITIVE_ROOTS[1], {"matrix_candidate", "matrix_peer"})
@@ -206,6 +212,31 @@ class DuplexEffectArtifactTests(unittest.TestCase):
                         f'activation_reason="{reason}"', 'activation_reason="unrelated"'),
                         reason, VETO_REASON_FIELD[case], {3, 6})
 
+    def test_unsupported_peer_types_veto_global_activation_in_both_orders(self):
+        for case in sorted(TYPE_VETOES):
+            reason = VETO_REASON[case]
+            self.assertEqual(VETO_REASON_FIELD[case], "activation_reason")
+            for owner_order in ((3, 6), (6, 3)):
+                traces = [
+                    'AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=%d '
+                    'read_accesses=1 write_accesses=1 read_requested=1 read_recognized=1 '
+                    'read_fallback="-" write_requested=1 write_recognized=1 write_fallback="-" '
+                    'same_base_duplex_candidate=1 '
+                    'same_base_duplex_reason="same-base pointwise read-before-write candidate" '
+                    'production_activated=0 activation_reason="%s"' % (owner, reason)
+                    for owner in owner_order
+                ]
+                verify_preanalysis_veto("\n".join(traces), reason, "activation_reason", {3, 6})
+                verify_preanalysis_veto("\n".join(traces), reason, "activation_reason", {3, 6},
+                                        require_each_owner=True)
+                with self.assertRaisesRegex(ValueError, "does not cover every selected pointer owner"):
+                    verify_preanalysis_veto("\n".join(traces[:1]), reason, "activation_reason", {3, 6},
+                                            require_each_owner=True)
+                with self.assertRaisesRegex(ValueError, "no shared-bundle preanalysis record"):
+                    verify_preanalysis_veto("\n".join(traces).replace(
+                        f'activation_reason="{reason}"', 'activation_reason="unexpected"'),
+                        reason, "activation_reason", {3, 6})
+
     def test_vetoed_multi_root_allows_legacy_rtl_but_rejects_duplex_aggregator(self):
         verify_no_duplex_backend_rtl(self.output)
         top = self.output / "top.v"
@@ -217,9 +248,23 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         top.write_text(
             "module datapath_matrix_candidate();\n"
             "  MinimalAXI4AdapterSingleBeat legacy_adapter();\n"
+            "  shared_duplex_read_endpoint_modgen duplex_reader();\n"
+            "endmodule\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "unexpectedly instantiates duplex engines"):
+            verify_no_duplex_backend_rtl(self.output)
+        top.write_text(
+            "module datapath_matrix_candidate();\n"
+            "  MinimalAXI4AdapterSingleBeat legacy_adapter();\n"
+            "  shared_duplex_write_endpoint_modgen duplex_writer();\n"
+            "endmodule\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "unexpectedly instantiates duplex engines"):
+            verify_no_duplex_backend_rtl(self.output)
+        top.write_text(
+            "module datapath_matrix_candidate();\n"
+            "  MinimalAXI4AdapterSingleBeat legacy_adapter();\n"
             "  shared_duplex_aggregator duplex_adapter();\n"
             "endmodule\n", encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "unexpectedly instantiates a duplex aggregator"):
+        with self.assertRaisesRegex(ValueError, "unexpectedly instantiates duplex engines"):
             verify_no_duplex_backend_rtl(self.output)
         top.write_text("", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "nonempty regular file"):
@@ -568,6 +613,74 @@ class DuplexEffectArtifactTests(unittest.TestCase):
 ''')
             with self.assertRaisesRegex(ValueError, "wrong read profile"):
                 verify_architecture(architecture, EXPECTED_ROOTS[13], 13)
+
+    def test_mixed_integer_float_requires_identical_complete_hardware_profiles(self):
+        with tempfile.TemporaryDirectory(dir=TMP_ROOT) as directory:
+            architecture = Path(directory) / "architecture.xml"
+            profile = ('mode="m_axi" max_read_burst_length="16" max_write_burst_length="16" '
+                       'num_read_outstanding="1" read_fifo_depth="32" '
+                       'write_burst_outstanding="1"')
+            architecture.write_text(
+                f'<architecture><function symbol="matrix_candidate"><bundles><bundle name="shared" {profile}/>'
+                f'</bundles></function><function symbol="matrix_peer"><bundles><bundle name="shared" {profile}/>'
+                '</bundles></function></architecture>', encoding="utf-8")
+            verify_compatible_profiles(architecture, EXPECTED_ROOTS[18])
+            architecture.write_text(architecture.read_text(encoding="utf-8").replace(
+                'read_fifo_depth="32" write_burst_outstanding="1"',
+                'read_fifo_depth="64" write_burst_outstanding="1"', 1), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "identical hardware profiles"):
+                verify_compatible_profiles(architecture, EXPECTED_ROOTS[18])
+
+    def test_mixed_integer_float_compares_latency_when_declared(self):
+        with tempfile.TemporaryDirectory(dir=TMP_ROOT) as directory:
+            architecture = Path(directory) / "architecture.xml"
+            base = ('mode="m_axi" max_read_burst_length="16" max_write_burst_length="16" '
+                    'num_read_outstanding="1" read_fifo_depth="32" write_burst_outstanding="1"')
+            architecture.write_text(
+                f'<architecture><function symbol="matrix_candidate"><bundles><bundle name="shared" {base} latency="1"/>'
+                f'</bundles></function><function symbol="matrix_peer"><bundles><bundle name="shared" {base} latency="2"/>'
+                '</bundles></function></architecture>', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "identical hardware profiles"):
+                verify_compatible_profiles(architecture, EXPECTED_ROOTS[18])
+
+    def test_type_veto_fixture_checks_exact_peer_pointee_and_shared_bundle(self):
+        raw = '''COMPILER_VERSION: "fixture"
+@1 function_val_node name: @2 arg: @3 arg: @4 body: @5
+@2 identifier_node strg: "matrix_peer"
+@3 argument_val_node name: @6 type: @7 parent: @1
+@4 argument_val_node name: @8 type: @9 parent: @1
+@5 statement_list_node bloc: 0 loop_id: 0
+@6 identifier_node strg: "data"
+@7 pointer_ty_node bitsizealloc: 32 ptd: @10
+@8 identifier_node strg: "unsupported"
+@9 pointer_ty_node bitsizealloc: 32 ptd: @11
+@10 integer_ty_node bitsizealloc: 32 bitsize: 32
+@11 real_ty_node bitsizealloc: 64 bitsize: 64
+@12 integer_ty_node bitsizealloc: 8 bitsize: 8
+@13 vector_ty_node bitsizealloc: 32 nelements: 4 elts: @12
+'''
+        architecture = '''<architecture><function symbol="matrix_peer">
+<bundles><bundle name="shared" mode="m_axi" max_read_burst_length="16" max_write_burst_length="16"/></bundles>
+<parameters><parameter port="data" bundle="shared"/><parameter port="unsupported" bundle="shared"/></parameters>
+</function></architecture>'''
+        with tempfile.TemporaryDirectory(dir=TMP_ROOT) as directory:
+            before = Path(directory) / "before.raw"
+            arch = Path(directory) / "architecture.xml"
+            before.write_text(raw, encoding="utf-8")
+            arch.write_text(architecture, encoding="utf-8")
+            verify_type_veto_fixture(before, arch, 20)
+            before.write_text(raw.replace(
+                "@11 real_ty_node bitsizealloc: 64 bitsize: 64",
+                "@11 vector_ty_node bitsizealloc: 32 nelements: 4 elts: @12"), encoding="utf-8")
+            verify_type_veto_fixture(before, arch, 22)
+            with self.assertRaisesRegex(ValueError, "direct 64-bit floating-point owner"):
+                verify_type_veto_fixture(before, arch, 20)
+            before.write_text(raw, encoding="utf-8")
+            arch.write_text(architecture.replace(
+                'port="unsupported" bundle="shared"',
+                'port="unsupported" bundle="other"'), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "both active and unsupported pointers"):
+                verify_type_veto_fixture(before, arch, 20)
 
     def configure_incompatible_matrix_failure(self, diagnostic: str = INCOMPATIBLE_PROFILE_DIAGNOSTIC) -> None:
         (self.output / "same_base_pointwise.v").unlink(missing_ok=True)
@@ -966,6 +1079,40 @@ class DuplexEffectArtifactTests(unittest.TestCase):
 
     def check(self, top: str = "same_base_pointwise") -> None:
         verify(self.output, top, self.source, self.bambu, self.plugin, self.checker, self.runner)
+
+    def test_functional_gate_checks_rtl_without_debug_ir(self) -> None:
+        top = "same_base_pointwise"
+        rtl = self.output / f"{top}.v"
+        architecture = self.output / "panda-temp/architecture.xml"
+        stdout = self.output / "stdout.log"
+        stderr = self.output / "stderr.log"
+        rtl.write_text(self.activated_rtl(top), encoding="utf-8")
+        architecture.write_text(self.architecture(top), encoding="utf-8")
+        stdout.write_text("compiler completed\n", encoding="utf-8")
+        stderr.write_text(f"Activated same-base pointwise duplex m_axi bundle shared for root {top}\n",
+                          encoding="utf-8")
+        for raw in (self.output / "panda-temp/before_Frontend::InterfaceInfer.raw",
+                    self.output / "panda-temp/after_Frontend::InterfaceInfer.raw"):
+            raw.unlink()
+        artifacts = {"rtl": rtl, "architecture": architecture, "stdout": stdout, "stderr": stderr}
+        paths = {"source": self.source, "bambu": self.bambu, "plugin": self.plugin,
+                 "checker": self.checker, "runner": self.runner}
+        rows = [f"top={top}"]
+        for name, path in paths.items():
+            rows.extend((f"{name}={path}", f"{name}_sha256={hashlib.sha256(path.read_bytes()).hexdigest()}"))
+        for name, path in artifacts.items():
+            rows.extend((f"{name}={path}", f"{name}_sha256={hashlib.sha256(path.read_bytes()).hexdigest()}"))
+        (self.output / "provenance.txt").write_text("\n".join(rows) + "\n", encoding="utf-8")
+
+        verify_functional(self.output, top, self.source, self.bambu, self.plugin, self.checker, self.runner)
+
+        stderr.write_text("compiler completed without an activation record\n", encoding="utf-8")
+        manifest = (self.output / "provenance.txt").read_text(encoding="utf-8")
+        manifest = re.sub(r"(?m)^stderr_sha256=.*$",
+                          f"stderr_sha256={hashlib.sha256(stderr.read_bytes()).hexdigest()}", manifest)
+        (self.output / "provenance.txt").write_text(manifest, encoding="utf-8")
+        with self.assertRaisesRegex(CheckError, "production activation marker is missing"):
+            verify_functional(self.output, top, self.source, self.bambu, self.plugin, self.checker, self.runner)
 
     def configure_fallback_case(self, top: str, reason: str, reads: int, writes: int,
                                 read_fallback: str, write_fallback: str) -> None:

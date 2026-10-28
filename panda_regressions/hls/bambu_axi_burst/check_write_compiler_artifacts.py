@@ -10,9 +10,9 @@ from check_burst_results import _parameterized_instances
 
 ARTIFACT_SUFFIXES = {".v", ".sv", ".log", ".txt", ".ll", ".bambuir", ".raw", ".ir"}
 WRITE_SUCCESS = re.compile(r"(?m)^\s*(?:---)?Configured write burst region for bundle ([A-Za-z0-9_.-]+) \(B=(\d+)\)\s*$")
-READ_SUCCESS = re.compile(r"(?m)^\s*(?:---)?Configured read burst regions for bundle ([A-Za-z0-9_.-]+) \(B=\d+\)\s*$")
+READ_SUCCESS = re.compile(r"(?m)^\s*(?:---)?Configured read burst regions for bundle ([A-Za-z0-9_.-]+) \(B=(\d+)\)\s*$")
 FALLBACK_DIAGNOSTIC = re.compile(
-    r"^\s*(?:---)?Keeping legacy m_axi (?P<direction>writes|accesses) for bundle "
+    r"^\s*(?:---)?Keeping legacy m_axi (?P<direction>reads|writes|accesses) for bundle "
     r"(?P<bundle>[A-Za-z0-9_.-]+): (?P<reason>.+?)\s*$"
 )
 GUARDED_DUPLEX_ACTIVATION = re.compile(
@@ -108,8 +108,11 @@ def check_case(args):
         if getattr(args, "copy", False):
             read_matches = list(READ_SUCCESS.finditer(log))
             write_matches = list(WRITE_SUCCESS.finditer(log))
-            if not read_matches:
-                missing.append("copy read-region success diagnostic absent from compiler output")
+            if len(read_matches) != 1:
+                missing.append("copy read-region success diagnostic must be unique "
+                               f"(found {len(read_matches)})")
+            if len(write_matches) != 1:
+                missing.append("copy requires exactly one write-region success diagnostic")
             if not READ_COMPONENT.search(top_rtl):
                 missing.append("copy read-burst component instance absent from top-level RTL")
             for operation, pattern in READ_OPERATIONS.items():
@@ -119,6 +122,20 @@ def check_case(args):
                 missing.append("copy read component address is not wired to its diagnosed bundle")
             if write_matches and not check_bundle_wiring(top_rtl, write_matches[-1].group(1), "write"):
                 missing.append("copy write component address is not wired to its diagnosed bundle")
+            if len(read_matches) == 1 and len(write_matches) == 1:
+                read_bundle = read_matches[0].group(1)
+                write_bundle = write_matches[0].group(1)
+                if read_bundle == write_bundle:
+                    missing.append("copy read and write regions must use distinct bundles")
+                expected_read_bundle = getattr(args, "expected_read_bundle", None)
+                if expected_read_bundle and read_bundle != expected_read_bundle:
+                    missing.append(f"copy read region uses bundle {read_bundle}, expected {expected_read_bundle}")
+                expected_write_bundle = getattr(args, "expected_write_bundle", None)
+                if expected_write_bundle and write_bundle != expected_write_bundle:
+                    missing.append(f"copy write region uses bundle {write_bundle}, expected {expected_write_bundle}")
+                expected_read_burst = getattr(args, "expected_read_burst", None)
+                if expected_read_burst is not None and int(read_matches[0].group(2)) != expected_read_burst:
+                    missing.append(f"copy read region uses B={read_matches[0].group(2)}, expected B={expected_read_burst}")
         if args.count_pattern and not re.search(args.count_pattern, ir, re.M):
             missing.append("runtime count pattern absent from retained compiler IR")
         if missing:
@@ -161,7 +178,7 @@ def check_case(args):
         if not matches_expected:
             raise ValueError(f"legacy fallback diagnostic absent for bundle {args.bundle} "
                              f"and direction {args.direction}")
-        expected_reason = ("explicit write-burst request ignored because experimental-m-axi-burst=0"
+        expected_reason = ("explicit write-burst request ignored because m-axi-burst=0"
                            if getattr(args, "feature_off", False) else args.reason)
         if not any(match.group("reason") == expected_reason for match in matches_expected):
             actual = sorted({match.group("reason") for match in matches_expected})
@@ -181,7 +198,7 @@ def check_case(args):
         if any(pattern.search(top_rtl) for pattern in (*WRITE_OPERATIONS.values(), *READ_OPERATIONS.values())) or \
            BURST_COMPONENT.search(top_rtl):
             raise ValueError("legacy top-level RTL contains residual read/write burst signals or resources")
-        feature_off_reason = "explicit write-burst request ignored because experimental-m-axi-burst=0"
+        feature_off_reason = "explicit write-burst request ignored because m-axi-burst=0"
         for line in log.splitlines():
             match = FALLBACK_DIAGNOSTIC.match(line)
             if match and match.group("bundle") == args.bundle and match.group("reason") == feature_off_reason:
@@ -226,7 +243,7 @@ def main(argv=None):
     parser.add_argument("--output", required=True, type=pathlib.Path)
     parser.add_argument("--reason", help="exact fallback reason or diagnostic regex for invalid cases")
     parser.add_argument("--bundle", help="bundle name required in the complete fallback diagnostic")
-    parser.add_argument("--direction", choices=("writes", "accesses"), default="writes")
+    parser.add_argument("--direction", choices=("reads", "writes", "accesses"), default="writes")
     parser.add_argument("--feature-off", action="store_true",
                         help="require the exact diagnostic for an explicit request with the feature disabled")
     parser.add_argument("--require-legacy", action="store_true",
@@ -238,6 +255,10 @@ def main(argv=None):
                         help="require exactly one write burst engine and no legacy resource on this bundle")
     parser.add_argument("--expected-write-burst", type=int,
                         help="require exactly one configured write-burst diagnostic with this B value")
+    parser.add_argument("--expected-read-burst", type=int,
+                        help="for --copy, require exactly one configured read-burst diagnostic with this B value")
+    parser.add_argument("--expected-read-bundle", help="for --copy, require this exact read bundle")
+    parser.add_argument("--expected-write-bundle", help="for --copy, require this exact write bundle")
     parser.add_argument("--expect-profile-attribute", action="append", default=[],
                         help="required exact key=value in an architecture.xml bundle")
     parser.add_argument("--expect-engine-parameter", action="append", default=[],

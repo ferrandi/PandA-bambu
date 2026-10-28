@@ -2297,10 +2297,14 @@ void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
 
-   const auto experimental_m_axi_burst = GetParameter<std::string>("experimental-m-axi-burst");
-   if(experimental_m_axi_burst != "0" && experimental_m_axi_burst != "1")
+   if(IsParameter("experimental-m-axi-burst"))
    {
-      THROW_ERROR_USAGE("experimental-m-axi-burst must be exactly 0 or 1");
+      THROW_ERROR_USAGE("Parameter 'experimental-m-axi-burst' has been renamed to 'm-axi-burst'.");
+   }
+   const auto m_axi_burst = GetParameter<std::string>("m-axi-burst");
+   if(m_axi_burst != "0" && m_axi_burst != "1")
+   {
+      THROW_ERROR_USAGE("m-axi-burst must be exactly 0 or 1");
    }
 
    setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/bambu_time_simulation.txt");
@@ -3324,10 +3328,7 @@ void BambuParameter::CheckParameters()
 
 void BambuParameter::SetDefaults()
 {
-   // Burst coalescing is on by default, but only takes effect on interfaces
-   // whose pragma requests it (max_read_burst_length). Pass =0 to force the
-   // legacy scalar m_axi path for scripts that need it.
-   SetPandaParameter("experimental-m-axi-burst", "1");
+   SetPandaParameter("m-axi-burst", "1");
 
    /// Debugging level
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);

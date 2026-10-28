@@ -39,9 +39,9 @@ def parse_uint32_decimal(text):
     return value
 
 
-def agree_for_shared_bundle(root_values):
-    """Absent metadata has the specified zero default; reject any mismatch."""
-    values = [0 if value is None else parse_uint32_decimal(value) for value in root_values]
+def explicit_values_compatible(port_values):
+    """Omitted port metadata does not constrain an explicit bundle value."""
+    values = [parse_uint32_decimal(value) for value in port_values if value is not None]
     return len(set(values)) <= 1
 
 
@@ -89,16 +89,37 @@ class AxiLatencyMetadataTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     parse_uint32_decimal(value)
 
-    def test_absent_and_zero_agree_in_either_order(self):
-        self.assertTrue(agree_for_shared_bundle([None, "0"]))
-        self.assertTrue(agree_for_shared_bundle(["0", None]))
-        self.assertTrue(agree_for_shared_bundle([None, None]))
+    def test_omitted_values_do_not_conflict_with_explicit_values(self):
+        self.assertTrue(explicit_values_compatible([None, "0"]))
+        self.assertTrue(explicit_values_compatible(["0", None]))
+        self.assertTrue(explicit_values_compatible([None, None]))
+        self.assertTrue(explicit_values_compatible([None, "64"]))
+        self.assertTrue(explicit_values_compatible(["64", None]))
 
-    def test_nonzero_mismatch_rejected_independent_of_root_order(self):
-        self.assertFalse(agree_for_shared_bundle(["64", "128"]))
-        self.assertFalse(agree_for_shared_bundle(["128", "64"]))
-        self.assertFalse(agree_for_shared_bundle([None, "64"]))
-        self.assertFalse(agree_for_shared_bundle(["64", None]))
+    def test_conflicting_explicit_values_rejected_independent_of_port_order(self):
+        self.assertFalse(explicit_values_compatible(["64", "128"]))
+        self.assertFalse(explicit_values_compatible(["128", "64"]))
+
+    def test_generated_testbench_delay_parser(self):
+        with TemporaryDirectory(dir=TMP_ROOT) as temporary:
+            path = Path(temporary) / "bambu_testbench.v"
+            path.write_text("""if_m_axi_src #(.index(2),
+  .READ_DELAY(7),
+  .WRITE_DELAY(5),
+  .BITSIZE_m_axi_src_rdata(32)) if_m_axi_src_fu ();
+""", encoding="utf-8")
+            self.assertEqual(load_runner().testbench_delays(path), (7, 5))
+
+    def test_generated_write_delay_clamp_keeps_model_delay_positive(self):
+        with TemporaryDirectory(dir=TMP_ROOT) as temporary:
+            path = Path(temporary) / "bambu_testbench.v"
+            path.write_text("""TestbenchMEMAXI #(.index(index),
+  .WRITE_DELAY(WRITE_DELAY ? (WRITE_DELAY > 1 ? WRITE_DELAY - 1 : 1) : 1),
+  .READ_DELAY(READ_DELAY ? READ_DELAY - 1 : 1)) axi4_tb ();
+""", encoding="utf-8")
+            clamp = load_runner().effective_model_write_delay
+            self.assertEqual(clamp(path, 0), (1, 1))
+            self.assertEqual(clamp(path, 1), (1, 1))
 
     def test_production_paths_keep_latency_as_metadata_only(self):
         plugin = (ROOT / "etc/clang_plugin/plugin_ASTAnalyzer.cpp").read_text(encoding="utf-8")
@@ -108,6 +129,7 @@ class AxiLatencyMetadataTest(unittest.TestCase):
 
         self.assertIn('attr_id == "latency"', plugin)
         self.assertIn('std::numeric_limits<std::uint32_t>::max()', plugin)
+        self.assertNotIn('key_loc_t("latency", SourceLocation())', plugin)
         self.assertIn("Invalid AXI interface attribute 'latency' for bundle '", manager_cpp)
         self.assertIn('mode->second != "m_axi"', manager_cpp)
         self.assertIn("ParseAXIInterfaceLatency(iface_attr, bundle_name)", manager_cpp)
@@ -120,6 +142,12 @@ class AxiLatencyMetadataTest(unittest.TestCase):
         self.assertIn('existing_latency_value != requested_latency_value', infer)
         self.assertNotIn('set_execution_time(requested_axi_latency', infer)
         self.assertNotIn('mem_delay_read', infer[infer.find('ParseAXIInterfaceLatency(iface_attrs, bundle_name)'):])
+
+        generator = (ROOT / "src/HLS/simulation/hdl_testbench_generation.cpp").read_text(encoding="utf-8")
+        self.assertNotIn("bundle_latency", generator)
+        self.assertNotIn('SetParameter("READ_DELAY", bundle', generator)
+        self.assertIn("OPT_mem_delay_read", generator)
+        self.assertIn("OPT_mem_delay_write", generator)
 
 
 if __name__ == "__main__":

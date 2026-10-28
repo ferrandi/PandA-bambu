@@ -9,7 +9,7 @@ extern "C" int configured32(const int *src, int n) {
 #elif defined(SHARED_PROFILE_D_CONFLICT_FIRST)
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=16 read_fifo_depth=8
 #elif defined(SHARED_PROFILE_DEFAULT_MATCH_FIRST)
-#pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=32
+#pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=16 num_read_outstanding=16 read_fifo_depth=256
 #else
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=32
 #endif
@@ -20,11 +20,19 @@ extern "C" int configured32(const int *src, int n) {
 #endif
 
 #if defined(SHARED_RESOURCE_LEGACY_FIRST)
-#include "unsupported_loops.cpp"
-#include "recognized_loops.cpp"
+#define AXI_ANALYSIS_CASE_07
+#include "axi_analysis_cases.cpp"
+#undef AXI_ANALYSIS_CASE_07
+#define AXI_ANALYSIS_CASE_04
+#include "axi_analysis_cases.cpp"
+#undef AXI_ANALYSIS_CASE_04
 #else
-#include "recognized_loops.cpp"
-#include "unsupported_loops.cpp"
+#define AXI_ANALYSIS_CASE_04
+#include "axi_analysis_cases.cpp"
+#undef AXI_ANALYSIS_CASE_04
+#define AXI_ANALYSIS_CASE_07
+#include "axi_analysis_cases.cpp"
+#undef AXI_ANALYSIS_CASE_07
 #endif
 
 #if !defined(SHARED_PROFILE_B32_FIRST) && !defined(SHARED_PROFILE_O_CONFLICT_FIRST) && \
@@ -35,7 +43,7 @@ extern "C" int configured32(const int *src, int n) {
 #elif defined(SHARED_PROFILE_D_CONFLICT)
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=16 read_fifo_depth=8
 #elif defined(SHARED_PROFILE_DEFAULT_MATCH)
-#pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=32
+#pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=16 num_read_outstanding=16 read_fifo_depth=256
 #else
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=data max_read_burst_length=32
 #endif

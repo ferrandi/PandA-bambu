@@ -123,7 +123,7 @@ run_copy_job() {
   mkdir "$case_dir/tmp"
   export TMPDIR="$case_dir/tmp" TMP="$case_dir/tmp" TEMP="$case_dir/tmp"
   marker="COPY_COMPARISON_GOLDEN_PASS PROFILE=$profile N=1024"
-  local -a args=("${common[@]}" "--bambu-parameter=experimental-m-axi-burst=$feature"
+  local -a args=("${common[@]}" "--bambu-parameter=m-axi-burst=$feature"
     "--extra-cc-options=-DCOPY_COMPARISON_PROFILE=$macro")
   {
     printf 'profile=%s\nrun=%s\nmacro=%s\nfeature=%s\nsource=%s\ntestbench=%s\nmarker=%s\n' \

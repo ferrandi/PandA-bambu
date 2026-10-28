@@ -33,13 +33,20 @@ class RegressionRestartTests(unittest.TestCase):
         self.repo = self.root / "repo"
         family = self.repo / "panda_regressions/hls/bambu_axi_burst"
         family.mkdir(parents=True)
+        shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o5.cpp", family)
         shutil.copy2(WRAPPER, self.repo / "panda_regressions/hls/bambu_axi_burst.sh")
         shutil.copy2(PARALLEL_HELPERS, family / "parallel_helpers.sh")
+        regressions = self.repo / "panda_regressions/hls"
+        shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst_list", regressions)
+        fixed_device_dir = self.repo / "etc/libtech/xilinx"
+        fixed_device_dir.mkdir(parents=True)
+        shutil.copy2(ROOT / "etc/libtech/xilinx/xcu250-2Lfigd2104.xml", fixed_device_dir)
         modelsim = self.repo / "etc/libtech/backend/simulation/modelsim"
         modelsim.mkdir(parents=True)
         shutil.copy2(MODELSIM_LOOKUP, modelsim / "tool_lookup.sh")
 
         install = self.root / "install"
+        self.install = install
         bindir = install / "bin"
         bindir.mkdir(parents=True)
         self._executable(bindir / "bambu", "#!/usr/bin/env bash\nexit 0\n")
@@ -56,6 +63,8 @@ class RegressionRestartTests(unittest.TestCase):
         self._executable(self.fake_bin / "python3", self._python_stub())
         self._executable(self.fake_bin / "bash", self._bash_stub())
         self.out_root = self.root / "out_bambu_axi_burst"
+        self.mantis_args_file = self.root / "mantis-args"
+        self.mantis_argv_file = self.root / "mantis-argv"
 
     @staticmethod
     def _executable(path: Path, contents: str) -> None:
@@ -71,6 +80,12 @@ fi
 case ${{1:-}} in
   */mantis.py)
     shift
+    if [[ -n ${{FAKE_MANTIS_ARGS_FILE:-}} ]]; then
+      printf '%s' "$*" >>"$FAKE_MANTIS_ARGS_FILE"
+    fi
+    if [[ -n ${{FAKE_MANTIS_ARGV_FILE:-}} ]]; then
+      printf '%s\\0' "$@" >"$FAKE_MANTIS_ARGV_FILE"
+    fi
     while (($#)); do
       if [[ $1 == -o ]]; then
         mkdir -p "$2/AXI-BURST"
@@ -102,6 +117,9 @@ case $script in
       exit 92
     fi
     mkdir "$destination"
+    if [[ -n ${FAKE_BURST_SIM_FILE:-} ]]; then
+      printf '%s' "${BURST_SIMULATE:-unset}" >>"$FAKE_BURST_SIM_FILE"
+    fi
     printf 'mode=%s\n' "$mode" >"$destination/restart-sentinel.txt"
     if [[ ${FAKE_HELPER_FAIL:-0} == 1 ]]; then
       echo 'simulated compiler helper failure' >&2
@@ -109,7 +127,26 @@ case $script in
     fi
     echo "simulated compiler helper $mode passed"
     ;;
-  */run_read_burst_modelsim.sh|*/run_write_burst_engine.sh|*/run_vlog_portability.sh|*/run_generated_kernel_tests.sh|*/run_generated_wrapper_rid_tests.sh|*/test_compiler_runner_export_root.sh)
+  */run_write_compiler_tests.sh|*/run_frontend_compatibility_tests.sh)
+    mode=${2:-unknown}
+    destination=${4:-}
+    mkdir -p "$destination"
+    printf '%s\n' "${script##*/}:$mode" >>"${FAKE_JOB_LOG_FILE:?}"
+    [[ ${FAKE_FAIL_JOB:-} != "${script##*/}" ]] || exit 9
+    ;;
+  */run_read_burst_modelsim.sh|*/run_write_burst_engine.sh|*/run_vlog_portability.sh|*/run_generated_kernel_tests.sh|*/run_generated_wrapper_rid_tests.sh|*/test_compiler_runner_export_root.sh|*/run_burst_fault_diagnostics.sh|*/run_axi_width_contract.sh|*/run_duplex_core_tests.sh|*/run_generated_duplex_tests.sh|*/run_generated_duplex_kernel_tests.sh|*/run_generated_write_kernel_tests.sh|*/run_duplex_alias_tests.sh|*/run_duplex_fallback_tests.sh|*/run_duplex_independent_tests.sh|*/run_adapter_size_guard.sh|*/run_mdpi_extent_tests.sh|*/run_testbench_memaxi_model.sh|*/run_default_burst_tests.sh|*/run_default_duplex_reduction_modelsims.sh)
+    name=${script##*/}
+    printf '%s\n' "$name" >>"${FAKE_JOB_LOG_FILE:?}"
+    if [[ $name == run_default_duplex_reduction_modelsims.sh ]]; then
+      printf '%s|%s|%s|%s\n' "$name" "${2:-}" "${3:-}" \
+        "${BURST_DUPLEX_DEFAULT_SIM_OUTSIDE_SANDBOX:-unset}" >>"${FAKE_JOB_ARGS_FILE:?}"
+    fi
+    destination=${!#}
+    mkdir -p "$destination"
+    if [[ ${FAKE_FAIL_JOB:-} == "$name" ]]; then
+      printf 'failure marker\n' >"$destination/failure-marker.txt"
+      exit 9
+    fi
     exit 0
     ;;
   *)
@@ -119,7 +156,12 @@ case $script in
 esac
 """
 
-    def run_regression(self, *args: str, helper_failure: bool = False) -> subprocess.CompletedProcess[str]:
+    def run_regression(
+        self,
+        *args: str,
+        helper_failure: bool = False,
+        env_overrides: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
         env.update(
             {
@@ -128,9 +170,15 @@ esac
                 "TMP": str(self.root),
                 "TEMP": str(self.root),
                 "FAKE_HELPER_FAIL": "1" if helper_failure else "0",
+                "FAKE_MANTIS_ARGS_FILE": str(self.mantis_args_file),
+                "FAKE_MANTIS_ARGV_FILE": str(self.mantis_argv_file),
+                "FAKE_BURST_SIM_FILE": str(self.root / "burst-sim-values"),
+                "FAKE_JOB_LOG_FILE": str(self.root / "job-calls"),
+                "FAKE_JOB_ARGS_FILE": str(self.root / "job-args"),
                 "BAMBU_HLS_BACKEND_PATH": "",
             }
         )
+        env.update(env_overrides or {})
         return subprocess.run(
             ["/bin/bash", str(self.repo / "panda_regressions/hls/bambu_axi_burst.sh"), *args],
             cwd=self.root,
@@ -188,6 +236,155 @@ esac
                 failed_root / "compiler-pragma/restart-sentinel.txt", failed_root
             )
         )
+
+    def test_compiler_group_skips_mantis_and_modelsim_preflight(self) -> None:
+        lookup_sentinel = self.root / "modelsim-lookup-called"
+        lookup = self.repo / "etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+        lookup.write_text(
+            'printf called >>"$FAKE_MODELSIM_LOOKUP_FILE"\n'
+            'bambu_modelsim_resolve() { printf resolved >>"$FAKE_MODELSIM_LOOKUP_FILE"; return 91; }\n',
+            encoding="utf-8",
+        )
+        output = self.root / "out_compiler_group"
+        result = self.run_regression(
+            "--group=compiler",
+            "--no-clean",
+            "-j1",
+            "-o",
+            str(output),
+            env_overrides={"FAKE_MODELSIM_LOOKUP_FILE": str(lookup_sentinel)},
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(lookup_sentinel.exists())
+        self.assertFalse(self.mantis_args_file.exists())
+        self.assertEqual((self.root / "burst-sim-values").read_text(), "0000000")
+        calls = (self.root / "job-calls").read_text(encoding="utf-8")
+        self.assertIn("run_write_compiler_tests.sh:all", calls)
+        self.assertIn("run_frontend_compatibility_tests.sh", calls)
+        self.assertIn("run_default_burst_tests.sh", calls)
+        self.assertTrue((output / "compiler-default-burst").is_dir())
+        self.assertIn("compiler-shared-resource", result.stdout)
+
+    def test_functional_group_strips_selector_before_mantis(self) -> None:
+        output = self.root / "out_functional_group"
+        result = self.run_regression(
+            "--group=functional", "--no-clean", "-j1", "-o", str(output),
+            "--timeout=4m", "--commonargs=--max-sim-cycles=1200000",
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue((output / "mantis/AXI-BURST").is_dir())
+        self.assertTrue(self.mantis_args_file.is_file())
+        mantis_args = self.mantis_args_file.read_text(encoding="utf-8")
+        self.assertNotIn("--group", mantis_args)
+        self.assertIn("--parallel=1", mantis_args)
+        self.assertNotIn("--bambu-parameter=m-axi-burst=1", mantis_args)
+        self.assertIn("--max-sim-cycles=1000000", mantis_args)
+        self.assertLess(mantis_args.index("--timeout=30m"), mantis_args.index("--timeout=4m"))
+        self.assertLess(
+            mantis_args.index("--max-sim-cycles=1000000"),
+            mantis_args.index("--commonargs=--max-sim-cycles=1200000"),
+        )
+        self.assertFalse((output / "compiler-pragma").exists())
+        calls = (self.root / "job-calls").read_text(encoding="utf-8")
+        for runner in (
+            "run_burst_fault_diagnostics.sh", "run_axi_width_contract.sh",
+            "run_duplex_core_tests.sh", "run_generated_duplex_tests.sh",
+            "run_generated_duplex_kernel_tests.sh", "run_generated_write_kernel_tests.sh",
+            "run_default_duplex_reduction_modelsims.sh",
+            "run_duplex_alias_tests.sh", "run_duplex_fallback_tests.sh",
+            "run_duplex_independent_tests.sh", "run_adapter_size_guard.sh",
+            "run_mdpi_extent_tests.sh", "run_testbench_memaxi_model.sh",
+            "run_write_compiler_tests.sh",
+        ):
+            self.assertIn(runner, calls)
+        self.assertEqual(calls.count("run_generated_write_kernel_tests.sh"), 3)
+        self.assertEqual(calls.count("run_duplex_alias_tests.sh"), 2)
+        job_args = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(len(job_args), 1, job_args)
+        runner, bambu, destination, guard = job_args[0].split("|")
+        self.assertEqual(runner, "run_default_duplex_reduction_modelsims.sh")
+        self.assertEqual(bambu, str((self.install / "bin/bambu").resolve()))
+        self.assertEqual(destination, str((output / "rtl-default-duplex-reduction").resolve()))
+        self.assertEqual(guard, "1")
+        self.assertTrue(Path(destination).is_dir())
+
+    def test_fixed_fallback_arguments_preserve_shell_special_paths(self) -> None:
+        marker = self.root / "shell-injection-marker"
+        special_repo = self.root / "repo space ' ;$(touch shell-injection-marker)"
+        self.repo.rename(special_repo)
+        self.repo = special_repo
+        output = self.root / "out space ' ;$(touch shell-injection-marker)"
+        output.mkdir()
+        result = self.run_regression("--group=functional", "--restart", "--no-clean", "-j1", "-o", str(output))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(marker.exists(), "path metadata was evaluated as a shell command")
+
+        argv = self.mantis_argv_file.read_bytes().split(b"\0")
+        argv = [item.decode() for item in argv if item]
+        self.assertIn("--restart", argv)
+        self.assertIn("--no-clean", argv)
+        self.assertIn("--returnfail", argv)
+        list_path = Path(argv[argv.index("-l") + 1])
+        lines = list_path.read_text(encoding="utf-8").splitlines()
+        self.assertGreater(len(lines), 1)
+        legacy_write = shlex.split(next(line for line in lines if "--benchmark-name=plain-m-axi-write-n1024" in line))
+        self.assertIn("--bambu-parameter=m-axi-burst=0", legacy_write)
+        default_read = shlex.split(next(line for line in lines if "--benchmark-name=plain-m-axi-no-latency" in line))
+        self.assertNotIn("--bambu-parameter=m-axi-burst=0", default_read)
+        fixed_case = shlex.split(lines[-1])
+        expected_source = str(self.repo.resolve() / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o5.cpp")
+        self.assertTrue(Path(expected_source).is_file())
+        expected_tb = str(self.repo.resolve() / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_tb.cpp")
+        expected_device = str(output.resolve() / "fixed-burst-fallback-inputs/xcu250-fixed.xml")
+        self.assertTrue(Path(expected_device).is_file())
+        self.assertFalse((self.repo / "panda_regressions/hls/fixed-burst-fallback-inputs").exists())
+        expected_post_argv = [
+            "python3", "-B", str(self.repo.resolve() / "panda_regressions/hls/bambu_axi_burst/check_fixed_burst_fallback.py"),
+            "--output", ".", "--target-file", expected_device,
+        ]
+        expected_fixed_case = [
+            "BENCHMARK_ENV=MANTIS_POST_CHECK=" + shlex.join(expected_post_argv),
+            expected_source, "--top-fname=kernel", f"--generate-tb={expected_tb}",
+            "--tb-arg=1024", "--tb-param-size=src:16384", "--extra-cc-options=-DBAMBU",
+            "--extra-cc-options=-DBURST_TEST_DEFAULT_N=1024", f"--target-file={expected_device}",
+            "--benchmark-name=fixed-burst-fallback",
+        ]
+        self.assertEqual(fixed_case, expected_fixed_case)
+        post_argv = shlex.split(fixed_case[0].split("MANTIS_POST_CHECK=", 1)[1])
+        self.assertEqual(post_argv, expected_post_argv)
+        self.assertFalse(marker.exists(), "post-check argv triggered shell expansion")
+
+        bambu_args = next(item.split("=", 1)[1] for item in argv if item.startswith("--args="))
+        parsed_bambu_args = shlex.split(bambu_args)
+        self.assertEqual(parsed_bambu_args, [
+            "--configuration-name=AXI-BURST", "--compiler=I386_CLANG16",
+            "--experimental-setup=BAMBU", "--generate-interface=INFER",
+            "--device-name=xcu250,-2L,figd2104", "--AXI-burst-type=INCREMENTAL",
+            "--max-sim-cycles=1000000",
+            "--mem-delay-read=64", "--mem-delay-write=2", "--tb-queue-size=32",
+            "--memory-allocation-policy=NO_BRAM", "--distram-threshold=0", "--clock-period=3.33",
+            "--generate-vcd", "--no-clean", "--extra-cc-options=-DNOCACHE", "--simulate",
+            "--simulator=MODELSIM", f"--mentor-root={self.root / 'modelsim'}",
+        ])
+
+    def test_functional_gate_failure_retains_no_clean_output(self) -> None:
+        output = self.root / "out_failed_functional_gate"
+        result = self.run_regression(
+            "--group=functional", "--no-clean", "-j1", "-o", str(output),
+            env_overrides={"FAKE_FAIL_JOB": "run_adapter_size_guard.sh"},
+        )
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("AXI burst helper suite failed", result.stderr)
+        markers = list(output.rglob("failure-marker.txt"))
+        self.assertEqual(len(markers), 1, markers)
+        self.assertTrue((output / "jobs/rtl-adapter-size.log").is_file())
+
+    def test_invalid_group_fails_before_creating_output(self) -> None:
+        output = self.root / "out_invalid_group"
+        result = self.run_regression("--group=invalid", "-o", str(output))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("invalid group", result.stderr)
+        self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

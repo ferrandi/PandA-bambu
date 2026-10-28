@@ -27,23 +27,34 @@ class DuplexIndependentArtifactTests(unittest.TestCase):
         self.inputs = self.root / "inputs"
         self.inputs.mkdir()
         self.paths = {}
-        for name in ("bambu", "settings", "plugin", "simulator", "runner", "parallel_helper"):
-            path = self.inputs / ("parallel_helpers.sh" if name == "parallel_helper" else name)
+        for name in ("bambu", "settings", "plugin", "runner", "parallel_helper", "shared_runner"):
+            filename = {"parallel_helper": "parallel_helpers.sh",
+                        "shared_runner": "run_duplex_generated_family.sh"}.get(name, name)
+            path = self.inputs / filename
             path.write_text(f"{name} fixture\n", encoding="utf-8")
-            if name in {"bambu", "simulator"}:
+            if name == "bambu":
                 path.chmod(0o755)
             self.paths[name] = path
+        simulator = self.inputs / "vco"
+        simulator.write_text("#!/bin/sh\nprintf '%s\\n' 'Questa Sim fixture version'\n", encoding="utf-8")
+        simulator.chmod(0o755)
+        self.paths["simulator"] = simulator
+        self.paths["simulator_invocation"] = self.inputs / "vsim"
+        self.paths["simulator_invocation"].symlink_to(simulator.name)
         self.paths["runner"] = self.inputs / "runner"
         (self.inputs / "parallel_helpers.sh").write_text("parallel helper fixture\n", encoding="utf-8")
-        source = Path(__file__).with_name(checker.SOURCE_NAME)
-        testbench = Path(__file__).with_name(checker.TESTBENCH_NAME)
+        source = self.inputs / checker.SOURCE_NAME
+        testbench = self.inputs / checker.TESTBENCH_NAME
+        source.write_bytes((Path(__file__).resolve().parent / checker.SOURCE_NAME).read_bytes())
+        testbench.write_bytes((Path(__file__).resolve().parent / checker.TESTBENCH_NAME).read_bytes())
         self.paths["source"] = source
         self.paths["testbench"] = testbench
         self.args = type("Args", (), {
             "source": source, "testbench": testbench,
             "bambu": self.paths["bambu"], "settings": self.paths["settings"],
             "plugin": self.paths["plugin"], "simulator": self.paths["simulator"],
-            "runner": self.paths["runner"],
+            "simulator_invocation": self.paths["simulator_invocation"],
+            "runner": self.paths["runner"], "developer_proof": False,
         })()
         self.profile("symmetric")
         self.profile("asymmetric")
@@ -85,7 +96,7 @@ class DuplexIndependentArtifactTests(unittest.TestCase):
                 f'same_base_duplex_candidate=1 same_base_duplex_reason="{checker.REASON}" '
                 'production_activated=1 activation_reason="frozen application-wide proof and profile accepted"')
         stderr = (f"    {checker.ACTIVATION}\n{checker.WARNING}\n" +
-                  "\n".join(checker.EXPECTED_INTERMEDIATE_FALLBACKS) + "\n" + "\n".join(traces) +
+                  "\n".join(traces) +
                   "\nAXI_BURST_DUPLEX_PROOF " + json.dumps(shared_fixtures.RECORD_DISTINCT,
                                                          separators=(",", ":")) + "\n")
         self.write(profile_dir, "stderr.log", stderr)
@@ -127,11 +138,16 @@ class DuplexIndependentArtifactTests(unittest.TestCase):
                 "feature=1", f"output={profile_dir.resolve()}",
                 f"read_profile={'/'.join(checker.PROFILE_DATA[profile]['read'])}",
                 f"write_profile={'/'.join(checker.PROFILE_DATA[profile]['write'])}",
+                f"proof_mode={'developer' if self.args.developer_proof else 'functional'}",
                 f"cwd={profile_dir.resolve()}", f"TMPDIR={(profile_dir / 'tmp').resolve()}",
                 "git_head=0123456789abcdef",
-                f"argv=bambu --top-fname={checker.TOP} --simulator=VERILATOR "
-                "--bambu-parameter=experimental-m-axi-burst=1 "
-                f"-DDUPLEX_INDEPENDENT_PROFILE={checker.PROFILE_DATA[profile]['macro']}"]
+                f"simulator_invocation={self.paths['simulator_invocation']}",
+                "simulator_version=Questa Sim fixture version",
+                f"argv=bambu --top-fname={checker.TOP} --simulator=MODELSIM "
+                "--bambu-parameter=m-axi-burst=1 "
+                f"-DDUPLEX_INDEPENDENT_PROFILE={checker.PROFILE_DATA[profile]['macro']}" +
+                (" --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based"
+                 if self.args.developer_proof else "")]
         for name in checker.INPUTS:
             path = inputs[name].resolve()
             rows.extend((f"{name}={path}", f"{name}_sha256={self.digest(path)}"))
@@ -156,6 +172,45 @@ class DuplexIndependentArtifactTests(unittest.TestCase):
     def test_valid_symmetric_and_asymmetric_profiles_pass(self) -> None:
         self.check()
 
+    def test_functional_mode_does_not_require_debug_proof_or_raw_ir(self) -> None:
+        for profile in ("symmetric", "asymmetric"):
+            profile_dir = self.run / profile
+            raw = profile_dir / "panda-temp/before_Frontend::InterfaceInfer.raw"
+            raw.unlink()
+            stderr = profile_dir / "stderr.log"
+            stderr.write_text("\n".join(
+                line for line in stderr.read_text(encoding="utf-8").splitlines()
+                if "AXI_BURST_PREANALYSIS" not in line and "AXI_BURST_DUPLEX_PROOF" not in line
+            ) + "\n", encoding="utf-8")
+            self.manifest(profile_dir)
+        self.check()
+
+    def test_developer_proof_mode_preserves_raw_and_preanalysis_requirements(self) -> None:
+        self.args.developer_proof = True
+        for profile in ("symmetric", "asymmetric"):
+            self.refresh(profile)
+        self.check()
+        raw = self.run / "symmetric/panda-temp/before_Frontend::InterfaceInfer.raw"
+        raw.unlink()
+        self.manifest(self.run / "symmetric")
+        with self.assertRaisesRegex(ValueError, "required non-empty panda-temp/before_Frontend::InterfaceInfer.raw"):
+            checker.check_profile(self.run / "symmetric", "symmetric", self.args)
+
+    def test_simulator_invocation_must_resolve_to_selected_simulator(self) -> None:
+        self.args.simulator_invocation = self.paths["bambu"]
+        with self.assertRaisesRegex(ValueError, "does not resolve to the selected simulator"):
+            checker.check_profile(self.run / "symmetric", "symmetric", self.args)
+
+    def test_simulator_version_must_match_selected_invocation(self) -> None:
+        profile = self.run / "symmetric"
+        provenance = profile / "provenance.txt"
+        contents = provenance.read_text(encoding="utf-8")
+        provenance.write_text(contents.replace(
+            "simulator_version=Questa Sim fixture version",
+            "simulator_version=untrusted simulator version"), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "provenance simulator_version does not match"):
+            checker.check_profile(profile, "symmetric", self.args)
+
     def test_run_inventory_accepts_runner_logs_but_rejects_unexpected_directories(self) -> None:
         (self.run / "job_logs").mkdir()
         checker.check_run_inventory(self.run)
@@ -163,20 +218,18 @@ class DuplexIndependentArtifactTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "run directory inventory mismatch"):
             checker.check_run_inventory(self.run)
 
-    def test_expected_intermediate_fallback_pair_is_accepted_but_extras_are_rejected(self) -> None:
+    def test_legacy_fallback_diagnostics_are_rejected(self) -> None:
         path = self.run / "symmetric/stderr.log"
         original = path.read_text()
-        self.assertEqual(sum(line in original.splitlines() for line in checker.EXPECTED_INTERMEDIATE_FALLBACKS),
-                         len(checker.EXPECTED_INTERMEDIATE_FALLBACKS))
+        self.assertNotIn("Keeping legacy m_axi", original)
         checker.check_profile(self.run / "symmetric", "symmetric", self.args)
-        path.write_text(original + "Keeping legacy m_axi accesses for bundle shared: unexpected reason\n")
+        path.write_text(original +
+                        "Keeping legacy m_axi writes for bundle shared: write-burst CFG/SSA/effect recognition failed\n")
         self.refresh("symmetric")
-        with self.assertRaisesRegex(ValueError, "missing, unexpected, or duplicate"):
+        with self.assertRaisesRegex(ValueError, "unexpectedly fell back to legacy m_axi accesses"):
             checker.check_profile(self.run / "symmetric", "symmetric", self.args)
-        path.write_text(original + checker.EXPECTED_INTERMEDIATE_FALLBACKS[0] + "\n")
+        path.write_text(original)
         self.refresh("symmetric")
-        with self.assertRaisesRegex(ValueError, "missing, unexpected, or duplicate"):
-            checker.check_profile(self.run / "symmetric", "symmetric", self.args)
         path.write_text(original.replace(f"    {checker.ACTIVATION}\n", f"---{checker.ACTIVATION}\n", 1))
         self.refresh("symmetric")
         checker.check_profile(self.run / "symmetric", "symmetric", self.args)
@@ -272,9 +325,23 @@ class DuplexIndependentArtifactTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "symlink"):
             checker.check_profile(profile, "symmetric", self.args)
 
+    def test_shared_runner_digest_and_symlink_fail_closed(self) -> None:
+        profile = self.run / "symmetric"
+        path = self.paths["shared_runner"]
+        original = path.read_text(encoding="utf-8")
+        path.write_text(original + "# changed\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "shared_runner_sha256"):
+            checker.check_profile(profile, "symmetric", self.args)
+        path.unlink()
+        outside = self.inputs / "outside-runner.sh"
+        outside.write_text(original, encoding="utf-8")
+        path.symlink_to(outside)
+        with self.assertRaisesRegex(ValueError, "shared_runner is a symlink"):
+            checker.check_profile(profile, "symmetric", self.args)
+
     def test_manifest_allows_internal_directory_symlink_but_rejects_artifact_and_escape(self) -> None:
         profile = self.run / "symmetric"
-        backend = profile / "HLS_output/simulation/verilator_backend/work"
+        backend = profile / "HLS_output/simulation/modelsim_backend/work"
         backend.mkdir(parents=True)
         (backend / "HLS_output").symlink_to(profile / "HLS_output", target_is_directory=True)
         checker.check_profile(profile, "symmetric", self.args)

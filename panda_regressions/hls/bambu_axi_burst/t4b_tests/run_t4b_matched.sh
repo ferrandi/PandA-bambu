@@ -133,12 +133,12 @@ if [[ $FIXTURE == independent || $FIXTURE == mulxor ]]; then
   ARGS+=(--tb-param-size=src:16384)
 fi
 if [[ $MODE == scheduler-off ]]; then
-  ARGS+=(--bambu-parameter=experimental-m-axi-burst=1 --bambu-parameter=print-ir-manager=1
+  ARGS+=(--bambu-parameter=m-axi-burst=1 --bambu-parameter=print-ir-manager=1
     --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based --print-dot)
 else
   ARGS+=(--simulate --simulator=MODELSIM "--mentor-root=$MODELSIM_MENTOR_ROOT")
-  if [[ $MODE == burst ]]; then ARGS+=(--bambu-parameter=experimental-m-axi-burst=1)
-  else ARGS+=(--bambu-parameter=experimental-m-axi-burst=0); fi
+  if [[ $MODE == burst ]]; then ARGS+=(--bambu-parameter=m-axi-burst=1)
+  else ARGS+=(--bambu-parameter=m-axi-burst=0); fi
 fi
 
 printf '%q ' "$BAMBU" "${ARGS[@]}" >"$OUT/command.txt"

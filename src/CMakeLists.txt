@@ -329,6 +329,8 @@ target_link_libraries(panda_hdl_generators PRIVATE panda_core)
 # Panda unit test executable (mirrors automake check target)
 set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/main_tests.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/OrdinaryMemoryAccess.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/AXIBurstProfiles.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/VectorAllocationCharacterization.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/VectorMaskType.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/algorithms/BasicBlockReachability.cpp"
@@ -337,6 +339,7 @@ set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/algorithms/SdcSolver.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/APInt.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/AreaEstimation.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/BoundedDecimal.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/ConstDivMagic.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/KcmConstMul.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/Range.cpp"

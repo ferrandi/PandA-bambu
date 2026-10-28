@@ -53,6 +53,8 @@
 
 #include <pugixml.hpp>
 
+#include "bounded_decimal.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -437,7 +439,8 @@ class HLSPragmaHandler : public PragmaHandler
                auto& attr_val = p.attrs[key_loc_t(PP.getSpelling(Tok), Tok.getLocation())];
                attr_val = "";
                const auto attr_id = to_lower(PP.getSpelling(Tok));
-               const auto is_axi_profile_attr = attr_id == "num_read_outstanding" || attr_id == "read_fifo_depth" ||
+               const auto is_axi_profile_attr = attr_id == "num_read_outstanding" || attr_id == "num_write_outstanding" ||
+                                                attr_id == "read_fifo_depth" ||
                                                 attr_id == "write_burst_outstanding" ||
                                                 attr_id == "write_fifo_depth" || attr_id == "latency";
                const auto attr_loc = Tok.getLocation();
@@ -1579,25 +1582,11 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
          std::uint32_t value = 0;
          constexpr auto maximum = std::numeric_limits<std::uint32_t>::max();
-         if(attr_value.empty())
+         if(panda::utility::parse_bounded_ascii_decimal(attr_value, 0U, maximum, value) !=
+            panda::utility::bounded_decimal_result::valid)
          {
             ReportError(attr_key.loc, "latency must be an ASCII decimal integer in [0,4294967295]");
             return;
-         }
-         for(const char ch : attr_value)
-         {
-            if(ch < '0' || ch > '9')
-            {
-               ReportError(attr_key.loc, "latency must be an ASCII decimal integer in [0,4294967295]");
-               return;
-            }
-            const auto digit = static_cast<std::uint32_t>(ch - '0');
-            if(value > (maximum - digit) / 10U)
-            {
-               ReportError(attr_key.loc, "latency must be an ASCII decimal integer in [0,4294967295]");
-               return;
-            }
-            value = value * 10U + digit;
          }
          const auto normalized = std::to_string(value);
          const auto previous = std::find_if(bundle_attrs.begin(), bundle_attrs.end(), [](const auto& entry) {
@@ -1614,7 +1603,9 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          bundle_attrs.emplace(key_loc_t("latency", attr_key.loc), normalized);
       };
       const auto process_profile_attr = [&](const key_loc_t& attr_key, const std::string& attr_value) {
-         const auto profile_attr = to_lower(attr_key.id);
+         const auto source_attr = to_lower(attr_key.id);
+         const std::string profile_attr =
+             source_attr == "num_write_outstanding" ? "write_burst_outstanding" : source_attr;
          const bool write_profile = profile_attr == "write_burst_outstanding" ||
                                      profile_attr == "write_fifo_depth";
          const bool outstanding_attr = profile_attr == "num_read_outstanding" ||
@@ -1622,31 +1613,24 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          if(burst_mode == p.attrs.end() || burst_mode->second != "m_axi")
          {
             const auto diagnostic = write_profile ?
-                "AXI write profile attributes write_burst_outstanding and write_fifo_depth are only valid for mode=m_axi" :
+                "AXI write profile attributes num_write_outstanding, write_burst_outstanding and write_fifo_depth are only valid for mode=m_axi" :
                 "AXI read profile attributes num_read_outstanding and read_fifo_depth are only valid for mode=m_axi";
             ReportError(attr_key.loc, diagnostic);
             return;
          }
-         const auto valid_integer = !attr_value.empty() &&
-                                    std::all_of(attr_value.begin(), attr_value.end(),
-                                                [](unsigned char c) { return std::isdigit(c); });
-         if(!valid_integer)
+         std::uint32_t value = 0;
+         const auto limit = outstanding_attr ? 16U : 4096U;
+         const auto parse_result = panda::utility::parse_bounded_ascii_decimal(attr_value, 1U, limit, value);
+         if(parse_result == panda::utility::bounded_decimal_result::invalid_format)
          {
-            ReportError(attr_key.loc, profile_attr + " must be a decimal integer in its supported range");
+            ReportError(attr_key.loc, source_attr + " must be a decimal integer in its supported range");
             return;
          }
-         // Saturate so arbitrarily long decimal values cannot overflow.
-         unsigned int value = 0;
-         const unsigned int limit = outstanding_attr ? 16U : 4096U;
-         for(const auto digit : attr_value)
-         {
-            value = std::min(limit + 1U, value * 10U + static_cast<unsigned int>(digit - '0'));
-         }
-         const bool valid_value = outstanding_attr ? value >= 1U && value <= 16U :
-                                  value >= 1U && value <= 4096U && (value & (value - 1U)) == 0U;
+         const bool valid_value = parse_result == panda::utility::bounded_decimal_result::valid &&
+                                  (outstanding_attr || (value & (value - 1U)) == 0U);
          if(!valid_value)
          {
-            ReportError(attr_key.loc, profile_attr + (outstanding_attr ?
+            ReportError(attr_key.loc, source_attr + (outstanding_attr ?
                            " must be an integer in [1,16]" : " must be a power-of-two integer in [1,4096] beats"));
             return;
          }
@@ -1659,8 +1643,9 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          {
             if(previous->second != normalized_value)
             {
+               const auto diagnostic_attr = source_attr == "num_write_outstanding" ? source_attr : profile_attr;
                ReportError(attr_key.loc,
-                           "Conflicting " + profile_attr + " values in interface bundle '" + ifaceBundle + "'");
+                           "Conflicting " + diagnostic_attr + " values in interface bundle '" + ifaceBundle + "'");
             }
             return;
          }
@@ -1669,13 +1654,14 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
       for(auto& attr : p.attrs)
       {
          if(iequals(attr.first.id, "num_read_outstanding") || iequals(attr.first.id, "read_fifo_depth") ||
+            iequals(attr.first.id, "num_write_outstanding") ||
             iequals(attr.first.id, "write_burst_outstanding") || iequals(attr.first.id, "write_fifo_depth") ||
             iequals(attr.first.id, "latency"))
          {
             // These attributes are validated below from the occurrence-preserving list.
          }
          else if(iequals(attr.first.id, "register") || iequals(attr.first.id, "register_mode") ||
-            iequals(attr.first.id, "num_write_outstanding") || iequals(attr.first.id, "depth"))
+            iequals(attr.first.id, "depth"))
          {
             auto it_res = bundle_attrs.emplace(key_loc_t(to_lower(attr.first.id), attr.first.loc), attr.second);
             if(!it_res.second && it_res.first->second != attr.second)
@@ -1695,22 +1681,14 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             const auto burst_attr = to_lower(attr.first.id);
             if(burst_mode == p.attrs.end() || burst_mode->second != "m_axi")
             {
-               ReportError(attr.first.loc,
-                           "Maximum AXI burst length attributes are only valid for mode=m_axi");
+               const auto mode_name = burst_mode == p.attrs.end() ? "<unspecified>" : burst_mode->second;
+               Report(attr.first.loc, DiagnosticsEngine::Warning,
+                      "Ignoring " + burst_attr + " for non-m_axi interface mode '" + mode_name + "'");
                continue;
             }
-            if(attr.second.empty() ||
-               !std::all_of(attr.second.begin(), attr.second.end(), [](unsigned char c) { return std::isdigit(c); }))
-            {
-               ReportError(attr.first.loc, "Maximum AXI burst length must be an integer in [1,256]");
-               continue;
-            }
-            unsigned int burst_length = 0;
-            for(const auto digit : attr.second)
-            {
-               burst_length = std::min(257U, burst_length * 10U + static_cast<unsigned int>(digit - '0'));
-            }
-            if(burst_length < 1 || burst_length > 256)
+            std::uint32_t burst_length = 0;
+            if(panda::utility::parse_bounded_ascii_decimal(attr.second, 1U, 256U, burst_length) !=
+               panda::utility::bounded_decimal_result::valid)
             {
                ReportError(attr.first.loc, "Maximum AXI burst length must be an integer in [1,256]");
                continue;
@@ -1733,31 +1711,15 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             bundle_attrs.emplace(key_loc_t(burst_attr, attr.first.loc), normalized_burst_length);
          }
       }
-      bool has_explicit_latency = false;
       for(const auto& attr : p.axi_profile_attrs)
       {
          if(iequals(attr.first.id, "latency"))
          {
-            has_explicit_latency = true;
             process_latency_attr(attr.first, attr.second);
          }
          else
          {
             process_profile_attr(attr.first, attr.second);
-         }
-      }
-      if(burst_mode != p.attrs.end() && burst_mode->second == "m_axi" && !has_explicit_latency)
-      {
-         const auto previous = std::find_if(bundle_attrs.begin(), bundle_attrs.end(), [](const auto& entry) {
-            return iequals(entry.first.id, "latency");
-         });
-         if(previous == bundle_attrs.end())
-         {
-            bundle_attrs.emplace(key_loc_t("latency", SourceLocation()), "0");
-         }
-         else if(previous->second != "0")
-         {
-            ReportError(p.loc, "Conflicting latency values in interface bundle '" + ifaceBundle + "'");
          }
       }
 

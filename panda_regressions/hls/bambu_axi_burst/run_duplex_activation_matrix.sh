@@ -10,8 +10,9 @@ CORE_SOURCE="$ROOT/src/frontend_analysis/IR_analysis/InterfaceInfer.cpp"
 PARALLEL_HELPERS="$TESTS/parallel_helpers.sh"
 CASES=(compatible compatible_reversed unproved unproved_reversed single_direction single_direction_reversed
   unused unused_reversed dataflow dataflow_reversed reserved feature_off incompatible incompatible_reversed
-  unrelated_dataflow called architectureless)
-CASE_IDS=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17)
+  unrelated_dataflow called architectureless mixed_float32 mixed_float32_reversed
+  incompatible_double incompatible_double_reversed incompatible_vector32 incompatible_vector32_reversed)
+CASE_IDS=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23)
 
 if [[ $# -lt 1 || $# -gt 2 ]]; then
   echo "usage: $0 <bambu> [<fresh-output-directory>]" >&2
@@ -72,9 +73,9 @@ run_case() {
     "--extra-cc-options=-DDUPLEX_MATRIX_CASE=$case_id")
   if [[ $name == *_reversed ]]; then args+=(--extra-cc-options=-DDUPLEX_MATRIX_REVERSED); fi
   if [[ $case_id == 12 ]]; then
-    args+=(--bambu-parameter=experimental-m-axi-burst=0)
+    args+=(--bambu-parameter=m-axi-burst=0)
   else
-    args+=(--bambu-parameter=experimental-m-axi-burst=1)
+    args+=(--bambu-parameter=m-axi-burst=1)
   fi
   {
     printf 'git_head=%s\ncase=%s\ncase_id=%s\nbambu=%s\nbambu_sha256=%s\nplugin=%s\nplugin_sha256=%s\nsource=%s\nsource_sha256=%s\ncore_source=%s\ncore_source_sha256=%s\nchecker=%s\nchecker_sha256=%s\nrunner=%s\nrunner_sha256=%s\nparallel_helpers=%s\nparallel_helpers_sha256=%s\n' \

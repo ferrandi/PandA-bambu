@@ -184,6 +184,51 @@ extern "C" void matrix_candidate(int *data, int n) {
   for (int i = 0; i < n; ++i) { const int value = data[i]; data[i] = value + 1; }
 }
 extern "C" void unrelated_architectureless(int *data, int n) { data[0] = n; }
+#elif DUPLEX_MATRIX_CASE >= 18 && DUPLEX_MATRIX_CASE <= 23
+#if DUPLEX_MATRIX_CASE <= 19
+using matrix_peer_element = float;
+#elif DUPLEX_MATRIX_CASE <= 21
+using matrix_peer_element = double;
+#else
+using matrix_peer_element = signed char __attribute__((vector_size(4)));
+#endif
+#if defined(DUPLEX_MATRIX_REVERSED)
+#if DUPLEX_MATRIX_CASE <= 19
+extern "C" void matrix_peer(matrix_peer_element *data, int n) {
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=32
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_write_burst_length=16 write_burst_outstanding=1
+  for (int i = 0; i < n; ++i) data[i] = data[i] + data[i];
+}
+#else
+extern "C" void matrix_peer(int *data, matrix_peer_element *unsupported, int n) {
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=32
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_write_burst_length=16 write_burst_outstanding=1
+#pragma HLS interface mode=m_axi port=unsupported offset=direct bundle=shared
+  for (int i = 0; i < n; ++i) data[i] = data[i] + data[i];
+}
+#endif
+#endif
+extern "C" void matrix_candidate(int *data, int n) {
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=32
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_write_burst_length=16 write_burst_outstanding=1
+  for (int i = 0; i < n; ++i) data[i] = data[i] + data[i];
+}
+#if !defined(DUPLEX_MATRIX_REVERSED)
+#if DUPLEX_MATRIX_CASE <= 19
+extern "C" void matrix_peer(matrix_peer_element *data, int n) {
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=32
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_write_burst_length=16 write_burst_outstanding=1
+  for (int i = 0; i < n; ++i) data[i] = data[i] + data[i];
+}
+#else
+extern "C" void matrix_peer(int *data, matrix_peer_element *unsupported, int n) {
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_read_burst_length=16 num_read_outstanding=1 read_fifo_depth=32
+#pragma HLS interface mode=m_axi port=data offset=direct bundle=shared max_write_burst_length=16 write_burst_outstanding=1
+#pragma HLS interface mode=m_axi port=unsupported offset=direct bundle=shared
+  for (int i = 0; i < n; ++i) data[i] = data[i] + data[i];
+}
+#endif
+#endif
 #else
 #error Unknown DUPLEX_MATRIX_CASE
 #endif

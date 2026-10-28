@@ -21,7 +21,7 @@ mkdir -p -- "$(dirname -- "$OUT")"
 mkdir "$OUT"
 mkdir -p "$OUT/tmp"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
-FIXTURE="$HERE/compiler_cases/duplex_effects/source_restrict_provenance.cpp"
+FIXTURE="$HERE/compiler_cases/duplex_effect_family_cases.cpp"
 CHECKER="$HERE/check_source_restrict_provenance.py"
 RUNNER="$HERE/run_source_restrict_provenance_tests.sh"
 CORE_SOURCE="$ROOT/src/frontend_analysis/IR_analysis/InterfaceInfer.cpp"
@@ -51,7 +51,7 @@ for top in restrict_both restrict_typedef restrict_absent restrict_one; do
   mkdir -p "$case_dir"
   args=("--top-fname=$top" --compiler=I386_CLANG16 --generate-interface=INFER
     --device-name=xcu250,-2L,figd2104 --no-clean --extra-cc-options=-DNDEBUG
-    --extra-cc-options=-DBAMBU)
+    --extra-cc-options=-DBAMBU --extra-cc-options=-DAXI_DUPLEX_EFFECT_CASE_18)
   printf '%q ' "$BAMBU" "$FIXTURE" "${args[@]}" >"$case_dir/argv.txt"
   printf '\n' >>"$case_dir/argv.txt"
   (cd "$case_dir" && "$BAMBU" "$FIXTURE" "${args[@]}" >stdout.log 2>stderr.log)

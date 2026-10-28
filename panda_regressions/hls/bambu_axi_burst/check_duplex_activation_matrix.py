@@ -27,9 +27,10 @@ EXPECTED_ROOTS = {
     15: ("matrix_candidate", "matrix_peer"),
     16: ("matrix_helper", "matrix_candidate", "matrix_peer"),
     17: ("matrix_candidate", "unrelated_architectureless"),
+    **{case: ("matrix_candidate", "matrix_peer") for case in range(18, 24)},
 }
 SINGLE_ROOTS = {11: ("matrix_candidate",), 12: ("matrix_candidate",)}
-REVERSED = {2, 4, 6, 8, 10, 14}
+REVERSED = {2, 4, 6, 8, 10, 14, 19, 21, 23}
 DATAFLOW_ANALYSIS_ORDER = {
     9: ("matrix_dataflow_task", "matrix_candidate", "matrix_peer"),
     10: ("matrix_dataflow_task", "matrix_peer", "matrix_candidate"),
@@ -40,7 +41,11 @@ DATAFLOW_TASKS = {9: "matrix_dataflow_task", 10: "matrix_dataflow_task",
 POSITIVE_ROOTS = {
     1: {"matrix_candidate", "matrix_peer"}, 2: {"matrix_candidate", "matrix_peer"},
     15: {"matrix_candidate"}, 17: {"matrix_candidate"},
+    18: {"matrix_candidate", "matrix_peer"}, 19: {"matrix_candidate", "matrix_peer"},
 }
+MIXED_FLOAT_CASES = {18, 19}
+TYPE_VETOES = {20, 21, 22, 23}
+TYPE_VETO_REASON = "bundle element must be a direct 32-bit integer or floating-point element"
 VETO_REASON = {
     3: "read/write accesses do not share one canonical loop",
     4: "read/write accesses do not share one canonical loop",
@@ -51,10 +56,14 @@ VETO_REASON = {
     9: "DATAFLOW/forwarded bundle ownership is unsupported",
     10: "DATAFLOW/forwarded bundle ownership is unsupported",
     11: "DATAFLOW/forwarded bundle ownership is unsupported",
+    20: TYPE_VETO_REASON, 21: TYPE_VETO_REASON,
+    22: TYPE_VETO_REASON, 23: TYPE_VETO_REASON,
 }
 VETO_REASON_FIELD = {
     5: "activation_reason", 6: "activation_reason",
     7: "activation_reason", 8: "activation_reason",
+    20: "activation_reason", 21: "activation_reason",
+    22: "activation_reason", 23: "activation_reason",
 }
 INCOMPATIBLE = {13, 14}
 INCOMPATIBLE_PROFILE_DIAGNOSTIC = (
@@ -364,8 +373,90 @@ def pointer_argument_ids(path: Path, roots: tuple[str, ...]) -> set[int]:
     return owner_ids
 
 
+def pointer_argument_ids_named(path: Path, roots: tuple[str, ...], wanted_name: str) -> set[int]:
+    nodes = require_raw(path, path.name)
+    funcs = function_nodes(nodes)
+    identifiers = {node: re.search(r'\bstrg:\s*"([^"]+)"', attrs).group(1)
+                   for node, (kind, attrs) in nodes.items()
+                   if kind == "identifier_node" and re.search(r'\bstrg:\s*"([^"]+)"', attrs)}
+    result = set()
+    for root in roots:
+        need(root in funcs and len(funcs[root]) == 1,
+             f"{path.name} lacks one selected owner function {root}")
+        for argument in refs(nodes[funcs[root][0]][1], "arg"):
+            if argument not in nodes or nodes[argument][0] != "argument_val_node":
+                continue
+            names = [identifiers.get(ref) for ref in refs(nodes[argument][1], "name")]
+            if wanted_name in names and any(
+                    ref in nodes and nodes[ref][0] == "pointer_ty_node"
+                    for ref in refs(nodes[argument][1], "type")):
+                result.add(int(argument.lstrip("@")))
+    return result
+
+
+def verify_type_veto_fixture(before: Path, architecture: Path, case: int) -> None:
+    nodes = require_raw(before, before.name)
+    funcs = function_nodes(nodes)
+    need("matrix_peer" in funcs and len(funcs["matrix_peer"]) == 1,
+         "type-veto pre-IR lacks one matrix_peer root")
+    identifiers = {node: re.search(r'\bstrg:\s*"([^"]+)"', attrs).group(1)
+                   for node, (kind, attrs) in nodes.items()
+                   if kind == "identifier_node" and re.search(r'\bstrg:\s*"([^"]+)"', attrs)}
+    arguments = {}
+    for argument in refs(nodes[funcs["matrix_peer"][0]][1], "arg"):
+        if argument in nodes and nodes[argument][0] == "argument_val_node":
+            names = [identifiers.get(ref) for ref in refs(nodes[argument][1], "name")]
+            for name in names:
+                if name in {"data", "unsupported"}:
+                    need(name not in arguments, f"matrix_peer duplicates the {name} pointer argument")
+                    arguments[name] = argument
+    need(set(arguments) == {"data", "unsupported"},
+         "type-veto matrix_peer must retain active data and unused unsupported pointer arguments")
+
+    def pointee(argument: str, label: str) -> tuple[str, str]:
+        type_refs = refs(nodes[argument][1], "type")
+        need(len(type_refs) == 1 and type_refs[0] in nodes and nodes[type_refs[0]][0] == "pointer_ty_node",
+             f"matrix_peer {label} argument is not a direct pointer")
+        pointees = refs(nodes[type_refs[0]][1], "ptd")
+        need(len(pointees) == 1 and pointees[0] in nodes,
+             f"matrix_peer {label} pointer has no unique pointee type")
+        return nodes[pointees[0]]
+
+    data_kind, data_attrs = pointee(arguments["data"], "data")
+    need(data_kind == "integer_ty_node" and
+         re.search(r"\bbitsizealloc:\s*32\b", data_attrs) and
+         re.search(r"\bbitsize:\s*32\b", data_attrs),
+         "matrix_peer active data pointer must be direct integer32")
+    unsupported_kind, unsupported_attrs = pointee(arguments["unsupported"], "unsupported")
+    if case in {20, 21}:
+        need(unsupported_kind == "real_ty_node" and
+             re.search(r"\bbitsizealloc:\s*64\b", unsupported_attrs) and
+             re.search(r"\bbitsize:\s*64\b", unsupported_attrs),
+             "double veto fixture lost its direct 64-bit floating-point owner")
+    else:
+        need(unsupported_kind == "vector_ty_node" and
+             re.search(r"\bbitsizealloc:\s*32\b", unsupported_attrs) and
+             re.search(r"\bnelements:\s*4\b", unsupported_attrs),
+             "vector veto fixture lost its direct 32-bit vector owner")
+        element_refs = refs(unsupported_attrs, "elts")
+        need(len(element_refs) == 1 and element_refs[0] in nodes and
+             nodes[element_refs[0]][0] == "integer_ty_node" and
+             re.search(r"\bbitsizealloc:\s*8\b", nodes[element_refs[0]][1]) and
+             re.search(r"\bbitsize:\s*8\b", nodes[element_refs[0]][1]),
+             "vector veto fixture is not four 8-bit integer elements")
+
+    root = ET.parse(architecture).getroot()
+    peer = [node for node in root.findall(".//function") if node.get("symbol") == "matrix_peer"]
+    need(len(peer) == 1, "type-veto architecture lacks one matrix_peer function")
+    params = {node.get("port"): node for node in peer[0].findall("./parameters/parameter")}
+    need({"data", "unsupported"}.issubset(params) and
+         params["data"].get("bundle") == "shared" and
+         params["unsupported"].get("bundle") == "shared",
+         "type-veto architecture did not retain both active and unsupported pointers on shared")
+
+
 def verify_preanalysis_veto(combined: str, expected_reason: str, reason_field: str,
-                            expected_owners: set[int]) -> None:
+                            expected_owners: set[int], require_each_owner: bool = False) -> None:
     need(reason_field in {"same_base_duplex_reason", "activation_reason"},
          f"unsupported preanalysis veto field {reason_field}")
     pattern = re.compile(
@@ -383,6 +474,19 @@ def verify_preanalysis_veto(combined: str, expected_reason: str, reason_field: s
             matched.append((candidate, activated))
     need(matched and all(activated == "0" for _candidate, activated in matched),
          f"no shared-bundle preanalysis record for the selected pointer owner carries veto reason: {expected_reason}")
+    if require_each_owner:
+        owner_traces = [trace for trace in traces
+                        if trace.group(1) == "shared" and int(trace.group(2)) in expected_owners]
+        matched_owners = {
+            int(trace.group(2)) for trace in traces
+            if trace.group(1) == "shared" and int(trace.group(2)) in expected_owners and
+            (trace.group(4) if reason_field == "same_base_duplex_reason" else trace.group(6)) == expected_reason and
+            trace.group(5) == "0"
+        }
+        need(matched_owners == expected_owners and
+             all(trace.group(5) == "0" for trace in owner_traces),
+             f"global veto does not cover every selected pointer owner: expected {expected_owners}, "
+             f"observed {matched_owners}")
 
 
 def verify_no_duplex_backend_rtl(output: Path) -> None:
@@ -395,11 +499,17 @@ def verify_no_duplex_backend_rtl(output: Path) -> None:
     modules = [match.group(3) for match in re.finditer(
         r"(?ms)^\s*module\s+([A-Za-z_$][\w$]*)\s*\((.*?)\);(.*?)^\s*endmodule\b", code)]
     need(modules, "vetoed multi-root top.v contains no parseable modules")
-    aggregator_instances = [instance for body in modules
-                            for module_type, instance, _ports in named_instances(body)
-                            if re.search(r"_duplex_aggregator(?:_modgen)?$", module_type)]
-    need(not aggregator_instances,
-         "preanalysis-vetoed multi-root top.v unexpectedly instantiates a duplex aggregator")
+    duplex_instances = [
+        (module_type, instance)
+        for body in modules
+        for module_type, instance, _ports in named_instances(body)
+        if re.search(r"(?:^|_)duplex_(?:aggregator|read_endpoint|write_endpoint)(?:_|$)",
+                     module_type)
+        or re.search(r"(?:^|_)duplex_(?:aggregator|read_endpoint|write_endpoint)(?:_|$)",
+                     instance)
+    ]
+    need(not duplex_instances,
+         f"preanalysis-vetoed multi-root top.v unexpectedly instantiates duplex engines: {duplex_instances}")
 
 
 def verify_architecture(path: Path, roots: tuple[str, ...], case: int) -> None:
@@ -483,6 +593,25 @@ def verify_incompatible_profiles(path: Path, roots: tuple[str, ...]) -> None:
         profiles.append(tuple(bundles[0].get(field) for field in profile_fields))
     need(len(profiles) == 2 and profiles[0] != profiles[1],
          "incompatible root bundle profiles are not distinct")
+
+
+def verify_compatible_profiles(path: Path, roots: tuple[str, ...]) -> None:
+    root = ET.parse(path).getroot()
+    fields = ("max_read_burst_length", "max_write_burst_length", "latency",
+              "num_read_outstanding", "read_fifo_depth", "write_burst_outstanding")
+    required_fields = set(fields) - {"latency"}
+    profiles = []
+    for symbol in roots:
+        functions = [node for node in root.findall(".//function") if node.get("symbol") == symbol]
+        need(len(functions) == 1, f"architecture XML must contain exactly one root {symbol}")
+        bundles = [bundle for bundle in functions[0].findall("./bundles/bundle")
+                   if bundle.get("name") == "shared"]
+        need(len(bundles) == 1 and bundles[0].get("mode") == "m_axi" and
+             all(bundles[0].get(field) is not None for field in required_fields),
+             f"mixed integer/float root {symbol} lacks a complete shared m_axi profile")
+        profiles.append(tuple(bundles[0].get(field) for field in fields))
+    need(len(profiles) == 2 and profiles[0] == profiles[1],
+         "mixed integer/float roots do not have identical hardware profiles")
 
 
 def named_instances(body: str) -> list[tuple[str, str, dict[str, str]]]:
@@ -816,6 +945,7 @@ def verify_case16_profiles(path: Path) -> None:
     root = ET.parse(path).getroot()
     fields = ("max_read_burst_length", "max_write_burst_length", "latency",
               "num_read_outstanding", "read_fifo_depth", "write_burst_outstanding")
+    required_fields = set(fields) - {"latency"}
     profiles = []
     for symbol in ("matrix_helper", "matrix_peer"):
         functions = [node for node in root.findall(".//function") if node.get("symbol") == symbol]
@@ -823,11 +953,42 @@ def verify_case16_profiles(path: Path) -> None:
         bundles = [node for node in functions[0].findall("./bundles/bundle")
                    if node.get("name") == "shared"]
         need(len(bundles) == 1 and bundles[0].get("mode") == "m_axi" and
-             all(bundles[0].get(field) is not None for field in fields),
+             all(bundles[0].get(field) is not None for field in required_fields),
              f"case 16 {symbol} lacks a complete explicit shared m_axi profile")
         profiles.append(tuple(bundles[0].get(field) for field in fields))
     need(profiles[0] == profiles[1],
          "case 16 helper and independent peer do not have compatible shared profiles")
+
+
+def verify_type_veto_case(case: int, output: Path, combined: str, return_code: int,
+                          roots: tuple[str, ...]) -> None:
+    ordered_roots = tuple(reversed(roots)) if case in REVERSED else roots
+    verify_completed_root_order(combined, ordered_roots)
+    verify_backend_guard(combined, return_code)
+
+    before = output / "panda-temp/before_Frontend::InterfaceInfer.raw"
+    after = output / "panda-temp/after_Frontend::InterfaceInfer.raw"
+    require_raw(before, "pre-InterfaceInfer type veto")
+    require_raw(after, "post-InterfaceInfer type veto")
+    verify_call_contract(before, roots, set(), "pre-InterfaceInfer type veto")
+    verify_call_contract(after, roots, set(), "post-InterfaceInfer type veto")
+    verify_legacy_access_contract(after, {root: {"read", "write"} for root in roots})
+    verify_legacy_bundle_contract(
+        after, {root: {"shared": {"read", "write"}} for root in roots})
+    active_owners = pointer_argument_ids_named(before, roots, "data")
+    need(len(active_owners) == len(roots),
+         "type-veto fixture does not retain one active data pointer per root")
+    verify_preanalysis_veto(combined, TYPE_VETO_REASON, "activation_reason",
+                            active_owners, require_each_owner=True)
+    need(not activation_markers(combined),
+         "unsupported scalar/vector contribution unexpectedly activated a duplex bundle")
+
+    architecture = output / "panda-temp/architecture.xml"
+    need(architecture.is_file() and architecture.stat().st_size > 0,
+         "type-veto architecture XML is missing")
+    verify_architecture(architecture, roots, case)
+    verify_type_veto_fixture(before, architecture, case)
+    verify_no_duplex_backend_rtl(output)
 
 
 def verify(case: int, output: Path, return_code: int) -> None:
@@ -838,6 +999,9 @@ def verify(case: int, output: Path, return_code: int) -> None:
     combined = stdout + "\n" + stderr
     roots = EXPECTED_ROOTS.get(case, SINGLE_ROOTS.get(case))
     need(roots is not None, "selected roots are not defined")
+    if case in TYPE_VETOES:
+        verify_type_veto_case(case, output, combined, return_code, roots)
+        return
     if case in INCOMPATIBLE:
         need(return_code > 0 and return_code < 128, "incompatible profiles must fail as a usage error, not crash")
         need(combined.count(INCOMPATIBLE_PROFILE_DIAGNOSTIC) == 1,
@@ -914,6 +1078,8 @@ def verify(case: int, output: Path, return_code: int) -> None:
     architecture = output / "panda-temp/architecture.xml"
     need(architecture.is_file() and architecture.stat().st_size > 0, "multi-root architecture XML is missing")
     verify_architecture(architecture, roots, case)
+    if case in MIXED_FLOAT_CASES:
+        verify_compatible_profiles(architecture, roots)
     if case == 16:
         verify_case16_profiles(architecture)
 

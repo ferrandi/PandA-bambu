@@ -112,16 +112,16 @@ class CopyComparisonTests(unittest.TestCase):
             stdout = "legacy profile compiled without burst requests\n"
             stderr = (
                 f"Keeping legacy m_axi reads for bundle {read_bundle}: explicit read-burst request ignored "
-                "because experimental-m-axi-burst=0\n"
+                "because m-axi-burst=0\n"
                 f"Keeping legacy m_axi writes for bundle {write_bundle}: explicit write-burst request ignored "
-                "because experimental-m-axi-burst=0\n")
+                "because m-axi-burst=0\n")
         (directory / "kernel.v").write_text(rtl, encoding="utf-8")
         (directory / "stdout.log").write_text(stdout, encoding="utf-8")
         (directory / "stderr.log").write_text(stderr, encoding="utf-8")
         args = [str(self.inputs["bambu"]), str(self.inputs["source"]),
                 *checker.COMMON_ARGS[:-2], f"--generate-tb={self.inputs['testbench']}",
                 *checker.COMMON_ARGS[-2:],
-                f"--bambu-parameter=experimental-m-axi-burst={config['feature']}",
+                f"--bambu-parameter=m-axi-burst={config['feature']}",
                 f"--extra-cc-options=-DCOPY_COMPARISON_PROFILE={macro}"]
         metadata = [f"profile={profile}", f"run={run}", f"macro={macro}",
                     f"feature={config['feature']}",
@@ -406,28 +406,28 @@ class CopyComparisonTests(unittest.TestCase):
     def test_wrong_feature_flag_in_provenance_is_rejected(self):
         path = self.output / "legacy-shared" / "run1" / "provenance.txt"
         text = path.read_text(encoding="utf-8").replace(
-            "--bambu-parameter=experimental-m-axi-burst=0",
-            "--bambu-parameter=experimental-m-axi-burst=1")
+            "--bambu-parameter=m-axi-burst=0",
+            "--bambu-parameter=m-axi-burst=1")
         path.write_text(text, encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "expected exactly one experimental-m-axi-burst=0"):
+        with self.assertRaisesRegex(ValueError, "expected exactly one m-axi-burst=0"):
             self.verify_run("legacy-shared")
 
     def test_missing_feature_flag_in_provenance_is_rejected(self):
         path = self.output / "legacy-shared" / "run1" / "provenance.txt"
         text = path.read_text(encoding="utf-8").replace(
-            "--bambu-parameter=experimental-m-axi-burst=0 ", "")
+            "--bambu-parameter=m-axi-burst=0 ", "")
         path.write_text(text, encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "expected exactly one experimental-m-axi-burst=0"):
+        with self.assertRaisesRegex(ValueError, "expected exactly one m-axi-burst=0"):
             self.verify_run("legacy-shared")
 
     def test_duplicate_feature_flag_in_provenance_is_rejected(self):
         path = self.output / "legacy-shared" / "run1" / "provenance.txt"
         text = path.read_text(encoding="utf-8")
-        text = text.replace("--bambu-parameter=experimental-m-axi-burst=0",
-                            "--bambu-parameter=experimental-m-axi-burst=0 "
-                            "--bambu-parameter=experimental-m-axi-burst=0")
+        text = text.replace("--bambu-parameter=m-axi-burst=0",
+                            "--bambu-parameter=m-axi-burst=0 "
+                            "--bambu-parameter=m-axi-burst=0")
         path.write_text(text, encoding="utf-8")
-        with self.assertRaisesRegex(ValueError, "expected exactly one experimental-m-axi-burst=0"):
+        with self.assertRaisesRegex(ValueError, "expected exactly one m-axi-burst=0"):
             self.verify_run("legacy-shared")
 
     def test_generate_tb_order_in_provenance_is_enforced(self):
@@ -505,7 +505,7 @@ class CopyComparisonTests(unittest.TestCase):
     def test_legacy_feature_off_diagnostic_on_stdout_is_rejected(self):
         run = self.output / "legacy-shared" / "run1"
         diagnostic = ("Keeping legacy m_axi reads for bundle shared: explicit read-burst request ignored "
-                      "because experimental-m-axi-burst=0\n")
+                      "because m-axi-burst=0\n")
         stderr = run / "stderr.log"
         stderr.write_text(stderr.read_text(encoding="utf-8").replace(diagnostic, ""), encoding="utf-8")
         stdout = run / "stdout.log"

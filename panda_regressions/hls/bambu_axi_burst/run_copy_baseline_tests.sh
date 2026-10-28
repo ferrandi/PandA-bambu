@@ -60,7 +60,7 @@ common=(--compiler=I386_CLANG16 --generate-interface=INFER --device-name=xcu250,
   --AXI-burst-type=INCREMENTAL --mem-delay-read=64 --mem-delay-write=2 --tb-queue-size=32
   --memory-allocation-policy=NO_BRAM --distram-threshold=0 --clock-period=3.33
   --no-clean --simulate --simulator=MODELSIM "--mentor-root=$BAMBU_MODELSIM_ROOT" "--generate-tb=$testbench"
-  --bambu-parameter=experimental-m-axi-burst=1 --extra-cc-options=-DNDEBUG
+  --bambu-parameter=m-axi-burst=1 --extra-cc-options=-DNDEBUG
   --extra-cc-options=-DBAMBU)
 {
   printf 'repo_root=%s\noutput=%s\nbambu=%s\nprefix=%s\nsettings=%s\nplugin=%s\n' \

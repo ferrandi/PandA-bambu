@@ -37,8 +37,16 @@ for scenario in READ_RESET READ_PEER_FAULT; do
     raw="$BUILD/$scenario.raw.log"
     log="$BUILD/$scenario.log"
     status=0
-    modelsim_run "$BUILD" tb_configure_read_pipeline "$raw" 30 -- "+CASE=$scenario" || status=$?
+    runtime_args=("+CASE=$scenario")
+    if [[ $scenario == READ_PEER_FAULT ]]; then
+        runtime_args+=(+AXI_BURST_EXPECT_FAULT)
+    fi
+    modelsim_run "$BUILD" tb_configure_read_pipeline "$raw" 30 -- "${runtime_args[@]}" || status=$?
     modelsim_normalize_log "$raw" "$log"
+    if [[ $scenario == READ_PEER_FAULT ]]; then
+        expected_fault='AXI_BURST_PEER_FAULT engine=read reason=peer instance=tb_configure_read_pipeline.dut.report_axi_read_diagnostic opcode=-1 size=0 address=00000000 count=0 resp=00 id=0 last=0 descriptors=0 remaining=0'
+        modelsim_expect_fault_log "$raw" continue reader-configure-peer-fault "$expected_fault" || exit 1
+    fi
     if ((status != 0)) || ! grep -Eq "^READ_CONFIG_PIPELINE PASS CASE=$scenario$" "$log"; then
         cat "$log" >&2 || true
         echo "reader configure pipeline scenario failed or lacks exact marker: $scenario (status=$status)" >&2

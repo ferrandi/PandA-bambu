@@ -16,7 +16,8 @@ TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(_
 TMP_ROOT.mkdir(parents=True, exist_ok=True)
 os.environ.update(TMPDIR=str(TMP_ROOT), TMP=str(TMP_ROOT), TEMP=str(TMP_ROOT))
 RUNNER = HERE / "run_duplex_alias_tests.sh"
-SCENARIOS = {1: "disjoint", 2: "forward-overlap", 3: "reverse-overlap", 4: "zero-trip"}
+SCENARIOS = {1: "disjoint", 2: "forward-overlap", 3: "reverse-overlap", 4: "zero-trip",
+             5: "nested-changing-base", 6: "nested-changing-count"}
 
 
 class DuplexAliasRunnerTests(unittest.TestCase):
@@ -34,9 +35,10 @@ class DuplexAliasRunnerTests(unittest.TestCase):
         self.bambu.chmod(0o755)
         self.bin = self.root / "bin"
         self.bin.mkdir()
-        verilator = self.bin / "verilator"
-        verilator.write_text(self.verilator_stub())
-        verilator.chmod(0o755)
+        for tool in ("vsim", "vlib", "vlog", "vmap"):
+            simulator_tool = self.bin / tool
+            simulator_tool.write_text(self.modelsim_stub())
+            simulator_tool.chmod(0o755)
         self.env = os.environ.copy()
         self.env.update(PATH=f"{self.bin}:{os.environ['PATH']}", TMPDIR=str(TMP_ROOT),
                         TMP=str(TMP_ROOT), TEMP=str(TMP_ROOT), PYTHONDONTWRITEBYTECODE="1")
@@ -45,40 +47,33 @@ class DuplexAliasRunnerTests(unittest.TestCase):
         self.temp.cleanup()
 
     @staticmethod
-    def verilator_stub() -> str:
+    def modelsim_stub() -> str:
         return r'''#!/usr/bin/env bash
 set -eu
-if [[ ${1:-} == --version ]]; then echo 'Verilator 5.0 offline stub'; exit 0; fi
-mdir=
-for ((index = 1; index <= $#; ++index)); do
-  if [[ ${!index} == --Mdir ]]; then
-    next=$((index + 1))
-    mdir=${!next}
-    break
-  fi
-done
-[[ -n $mdir ]]
-mkdir -p "$mdir"
-printf 'VERILATOR_PROBE_STUB_BUILD PASS argv=%s\n' "$*"
-cat > "$mdir/Vtb_duplex_alias_range_guard" <<'EOF'
-#!/usr/bin/env bash
-set -eu
-if [[ ${RANGE_PROBE_MODE:-good} != missing ]]; then
-  case_name=${1#+CASE=}
-  case ${1:-} in
-    +CASE=valid-disjoint) marker='DUPLEX_ALIAS_RANGE_PASS CASE=valid-disjoint ARLEN=15' ;;
-    +CASE=read-end-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=read-end-overflow ARLEN=0' ;;
-    +CASE=write-end-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=write-end-overflow ARLEN=0' ;;
-    +CASE=byte-count-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=byte-count-overflow ARLEN=0' ;;
-    +CASE=read-end-equals-2p32) marker='DUPLEX_ALIAS_RANGE_PASS CASE=read-end-equals-2p32 ARLEN=15' ;;
-    +CASE=high-bit-valid-disjoint) marker='DUPLEX_ALIAS_RANGE_PASS CASE=high-bit-valid-disjoint ARLEN=15 ARADDR=0000000080001000' ;;
-    *) exit 3 ;;
-  esac
-  printf '%s\n%s\n' "$marker" 'DUPLEX_ALIAS_RANGE_GUARD_PASS CASES=1 NO_AXI_HANDSHAKES=1'
-  printf '$enddefinitions $end\n#0\n' > "range_guard_${case_name}.vcd"
-fi
-EOF
-chmod +x "$mdir/Vtb_duplex_alias_range_guard"
+name=${0##*/}
+case $name in
+  vlib) mkdir -p work ;;
+  vmap) printf 'modelsim.ini\n' > modelsim.ini ;;
+  vlog) printf 'ModelSim vlog offline stub\n' ;;
+  vsim)
+    [[ ${1:-} != -version && ${1:-} != --version ]] || { echo 'QuestaSim offline stub'; exit 0; }
+    case_name=
+    for arg in "$@"; do [[ $arg != +CASE=* ]] || case_name=${arg#+CASE=}; done
+    [[ -n $case_name ]]
+    if [[ ${RANGE_PROBE_MODE:-good} == missing ]]; then exit 0; fi
+    case $case_name in
+      valid-disjoint) marker='DUPLEX_ALIAS_RANGE_PASS CASE=valid-disjoint ARLEN=15' ;;
+      read-end-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=read-end-overflow ARLEN=0' ;;
+      write-end-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=write-end-overflow ARLEN=0' ;;
+      byte-count-overflow) marker='DUPLEX_ALIAS_RANGE_PASS CASE=byte-count-overflow ARLEN=0' ;;
+      read-end-equals-2p32) marker='DUPLEX_ALIAS_RANGE_PASS CASE=read-end-equals-2p32 ARLEN=15' ;;
+      high-bit-valid-disjoint) marker='DUPLEX_ALIAS_RANGE_PASS CASE=high-bit-valid-disjoint ARLEN=15 ARADDR=0000000080001000' ;;
+      *) exit 3 ;;
+    esac
+    printf '# %s\n# DUPLEX_ALIAS_RANGE_GUARD_PASS CASES=1 NO_AXI_HANDSHAKES=1\n' "$marker"
+    printf '$enddefinitions $end\n#0\n' > "range_guard_${case_name}.vcd"
+    ;;
+esac
 '''
 
     @staticmethod
@@ -88,10 +83,12 @@ set -eu
 if [[ ${1:-} == --version ]]; then echo "stub bambu 1"; exit 0; fi
 if [[ ${FAKE_BAMBU_FAIL:-} == 1 ]]; then echo "forced compiler failure" >&2; exit 9; fi
 profile= case_id= address_bits=
+float_payload=0
 for arg in "$@"; do
   case $arg in
     --extra-cc-options=-DDUPLEX_ALIAS_PROFILE=*) profile=${arg##*=};;
     --extra-cc-options=-DDUPLEX_ALIAS_CASE=*) case_id=${arg##*=};;
+    --extra-cc-options=-DDUPLEX_ALIAS_FLOAT_BITS) float_payload=1;;
     --addr-bus-bitsize=*) address_bits=${arg#*=};;
   esac
 done
@@ -99,31 +96,47 @@ done
 case ${SCENARIO_MARKER_MODE:-good} in
   wrong) scenario=unexpected ;;
   missing) scenario= ;;
-  *) case $case_id in 1) scenario=disjoint;; 2) scenario=forward-overlap;; 3) scenario=reverse-overlap;; 4) scenario=zero-trip;; esac ;;
+  *) case $case_id in 1) scenario=disjoint;; 2) scenario=forward-overlap;; 3) scenario=reverse-overlap;; 4) scenario=zero-trip;; 5) scenario=nested-changing-base;; 6) scenario=nested-changing-count;; esac ;;
 esac
-case ${ACTIVATION_MODE:-good} in
-  missing) ;;
-  replaced) printf '%s\n' 'Activated same-base pointwise duplex m_axi bundle shared for root kernel' ;;
-  *) printf '%s\n' '---Activated guarded distinct-base duplex for bundle shared (overlap uses serialized scalar transfers)' ;;
-esac
+if [[ $scenario == nested-changing-base || $scenario == nested-changing-count ]]; then
+  [[ ${NESTED_FALLBACK_MODE:-good} != activation ]] ||
+    printf '%s\n' '---Activated guarded distinct-base duplex for bundle shared (overlap uses serialized scalar transfers)'
+else
+  case ${ACTIVATION_MODE:-good} in
+    missing) ;;
+    replaced) printf '%s\n' 'Activated same-base pointwise duplex m_axi bundle shared for root kernel' ;;
+    *) printf '%s\n' '---Activated guarded distinct-base duplex for bundle shared (overlap uses serialized scalar transfers)' ;;
+  esac
+fi
 proof='{"bundle":"shared","semantic_proof":true,"runtime_range_guard":true,"proof_kind":"distinct_base_runtime_guarded_pointwise"}'
-case ${PROOF_MODE:-good} in
-  missing) ;;
-  malformed) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {not-json}' ;;
-  no-semantic) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"shared","semantic_proof":false,"runtime_range_guard":true,"proof_kind":"distinct_base_runtime_guarded_pointwise"}' ;;
-  no-runtime-guard) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"shared","semantic_proof":true,"runtime_range_guard":false,"proof_kind":"distinct_base_runtime_guarded_pointwise"}' ;;
-  wrong-kind) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"shared","semantic_proof":true,"runtime_range_guard":true,"proof_kind":"distinct_base_restricted_pointwise"}' ;;
-  wrong-bundle) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"other","semantic_proof":true,"runtime_range_guard":true,"proof_kind":"distinct_base_runtime_guarded_pointwise"}' ;;
-  duplicate) printf 'AXI_BURST_DUPLEX_PROOF %s\nAXI_BURST_DUPLEX_PROOF %s\n' "$proof" "$proof" ;;
-  *) printf 'AXI_BURST_DUPLEX_PROOF %s\n' "$proof" ;;
-esac
+if [[ $scenario == nested-changing-base || $scenario == nested-changing-count ]]; then
+  proof='{"bundle":"shared","semantic_proof":false,"semantic_reason":"runtime alias fallback requires one straight-line shared access block","runtime_range_guard":false}'
+  [[ ${NESTED_FALLBACK_MODE:-good} != proof-success ]] ||
+    proof='{"bundle":"shared","semantic_proof":true,"runtime_range_guard":true,"proof_kind":"distinct_base_runtime_guarded_pointwise"}'
+fi
+debug_proof=0
+for arg in "$@"; do [[ $arg != --debug-classes=InterfaceInfer,BuildVirtualPhi ]] || debug_proof=1; done
+if ((debug_proof)); then
+  case ${PROOF_MODE:-good} in
+    missing) ;;
+    malformed) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {not-json}' ;;
+    no-semantic) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"shared","semantic_proof":false,"runtime_range_guard":true,"proof_kind":"distinct_base_runtime_guarded_pointwise"}' ;;
+    no-runtime-guard) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"shared","semantic_proof":true,"runtime_range_guard":false,"proof_kind":"distinct_base_runtime_guarded_pointwise"}' ;;
+    wrong-kind) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"shared","semantic_proof":true,"runtime_range_guard":true,"proof_kind":"distinct_base_restricted_pointwise"}' ;;
+    wrong-bundle) printf '%s\n' 'AXI_BURST_DUPLEX_PROOF {"bundle":"other","semantic_proof":true,"runtime_range_guard":true,"proof_kind":"distinct_base_runtime_guarded_pointwise"}' ;;
+    duplicate) printf 'AXI_BURST_DUPLEX_PROOF %s\nAXI_BURST_DUPLEX_PROOF %s\n' "$proof" "$proof" ;;
+    *) printf 'AXI_BURST_DUPLEX_PROOF %s\n' "$proof" ;;
+  esac
+fi
 mkdir -p HLS_output/simulation
 printf '<results/\n' > bambu_results.xml
 read_outstanding=1; write_burst=16; write_fifo=32
 [[ $profile != 2 ]] || { read_outstanding=2; write_burst=8; write_fifo=16; }
 read_addr=$address_bits; write_addr=$address_bits
 if [[ ${RTL_PROFILE_MODE:-good} == mismatch64 ]]; then read_addr=32; write_addr=32; fi
-if [[ ${RTL_PROFILE_MODE:-good} == split ]]; then
+if [[ ($scenario == nested-changing-base || $scenario == nested-changing-count) && ${NESTED_FALLBACK_MODE:-good} != engine ]]; then
+  printf 'module kernel; MinimalAXI4AdapterSingleBeat #(.BURST_TYPE(1)) scalar_adapter (); endmodule\n' > kernel.v
+elif [[ ${RTL_PROFILE_MODE:-good} == split ]]; then
   printf 'module kernel; MinimalAXI4MasterPipelined #(.B_MAX(16), .MAX_OUTSTANDING(%s), .FIFO_DEPTH(64), .BITSIZE_in4(32), .BITSIZE_m_axi_araddr(16), .BITSIZE_in5(32), .BITSIZE_m_axi_rdata(32)) read_profile_engine (); MinimalAXI4MasterPipelined #(.B_MAX(8), .MAX_OUTSTANDING(%s), .FIFO_DEPTH(64), .BITSIZE_in4(32), .BITSIZE_m_axi_araddr(32), .BITSIZE_in5(32), .BITSIZE_m_axi_rdata(32)) read_width_engine (); MinimalAXI4MasterPipelinedWrite #(.B_MAX(%s), .MAX_OUTSTANDING(1), .FIFO_DEPTH(%s), .BITSIZE_in4(32), .BITSIZE_m_axi_awaddr(32), .BITSIZE_in5(32), .BITSIZE_in3(32), .BITSIZE_m_axi_wdata(32)) write_engine (); endmodule\n' \
     "$read_outstanding" "$read_outstanding" "$write_burst" "$write_fifo" > kernel.v
 else
@@ -134,8 +147,11 @@ printf 'module library_stub; endmodule\n' > panda_libtech.v
 if [[ -n $scenario ]]; then
   count=64
   [[ $scenario != zero-trip ]] || count=0
+  [[ $scenario != nested-changing-base && $scenario != nested-changing-count ]] || count=4
   marker="DUPLEX_ALIAS_GOLDEN_PASS CASE=$scenario profile=$profile N=$count"
   [[ $scenario != zero-trip ]] || marker+=" NO_DATA_CHANGE=1"
+  [[ $scenario != nested-changing-base && $scenario != nested-changing-count ]] || marker+=" OUTER=4"
+  [[ $float_payload == 0 ]] || marker+=" PAYLOAD=FLOAT32_BITS"
   printf '%s\n' "$marker" > HLS_output/simulation/testbench.log
   if [[ $scenario == zero-trip ]]; then
     case ${VCD_MODE:-good} in
@@ -164,6 +180,7 @@ import os
 from pathlib import Path
 
 mode = os.environ.get("VCD_MODE", "good")
+clock_mode = os.environ.get("CLOCK_MODE", "good")
 events = {cycle: [] for cycle in range(1, 5000)}
 for index in range(64):
     base = index * 67 + 1
@@ -174,37 +191,50 @@ for index in range(64):
     response = base + (5 if mode == "short-b-delay" else 66)
     events[response].append("b")
 
-signals = {"ar": '"', "aw": "$", "w": "&", "b": "("}
+signals = {"ar": "!", "aw": "%", "w": "'", "b": ")"}
+system_clocks = {
+    "good": ['$var wire 1 # clock $end'],
+    "missing-system": [],
+    "ambiguous-system": ['$var wire 1 q clock $end', '$var wire 1 r clock $end'],
+}[clock_mode]
 lines = [
     "$version synthetic duplex alias testbench $end",
     "$timescale 1ps $end",
+    "$scope module clocked_bambu_testbench $end",
+    '$var reg 1 " clock $end',
     "$scope module bambu_testbench $end",
-    "$var wire 1 ! clock $end",
-    "$var wire 1 ! clock $end",
-    "$var wire 1 \" sig_m_axi_shared_arvalid $end",
-    "$var wire 1 # sig_m_axi_shared_arready $end",
-    "$var wire 1 $ sig_m_axi_shared_awvalid $end",
-    "$var wire 1 % sig_m_axi_shared_awready $end",
-    "$var wire 1 & sig_m_axi_shared_wvalid $end",
-    "$var wire 1 ' sig_m_axi_shared_wready $end",
-    "$var wire 1 ( sig_m_axi_shared_bvalid $end",
-    "$var wire 1 ) sig_m_axi_shared_bready $end",
+    "$var wire 1 # clock $end",
+    "$scope module system $end",
+    *system_clocks,
+    "$var wire 1 ! sig_m_axi_shared_arvalid $end",
+    "$var wire 1 $ sig_m_axi_shared_arready $end",
+    "$var wire 1 % sig_m_axi_shared_awvalid $end",
+    "$var wire 1 & sig_m_axi_shared_awready $end",
+    "$var wire 1 ' sig_m_axi_shared_wvalid $end",
+    "$var wire 1 ( sig_m_axi_shared_wready $end",
+    "$var wire 1 ) sig_m_axi_shared_bvalid $end",
+    "$var wire 1 + sig_m_axi_shared_bready $end",
+    "$upscope $end",
+    "$upscope $end",
     "$upscope $end",
     "$enddefinitions $end",
-    "#0", "0!", "0\"", "1#", "0$", "1%", "0&", "1'", "0(", "1)",
+    "#0", "0#", '0"', "0!", "1$", "0%", "1&", "0'", "1(", "0)", "1+",
 ]
 for cycle in range(1, max(events) + 1):
     time = cycle * 10
     active = events.get(cycle, [])
     lines.append(f"#{time}")
-    lines.append("1!")
+    lines.append("1#")
     lines.extend(f"1{signals[event]}" for event in active)
     lines.append(f"#{time + 1}")
     lines.extend(f"0{signals[event]}" for event in active)
     lines.append(f"#{time + 2}")
-    lines.append("0!")
+    lines.append("0#")
 Path("HLS_output/simulation/test.vcd").write_text("\n".join(lines) + "\n")
 PY
+  fi
+  if [[ $scenario != zero-trip && $scenario != forward-overlap && $scenario != reverse-overlap ]]; then
+    : > HLS_output/simulation/test.vcd
   fi
 else
   printf 'simulation completed without the expected marker\n' > HLS_output/simulation/testbench.log
@@ -221,16 +251,17 @@ printf 'stub compiler stdout\n'
         return subprocess.run(args, cwd=ROOT, env=env, text=True,
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-    def check_output(self, out: Path, address_bits: int) -> subprocess.CompletedProcess[str]:
+    def check_output(self, out: Path, address_bits: int,
+                     proof_mode: str = "functional") -> subprocess.CompletedProcess[str]:
         args = ["python3", "-B", str(HERE / "check_duplex_alias_results.py"), str(out),
                 "--source", str(HERE / "bambu_axi_burst_duplex_alias.cpp"),
                 "--testbench", str(HERE / "bambu_axi_burst_duplex_alias_tb.cpp"),
                 "--bambu", str(self.bambu), "--settings", str(self.prefix / "settings.sh"),
                 "--plugin", str(self.prefix / "lib/panda/clang-16/ASTAnalyzer.so"),
-                "--simulator", str(self.bin / "verilator"), "--runner", str(RUNNER),
+                "--simulator", str(self.bin / "vsim"), "--runner", str(RUNNER),
                 "--range-probe-runner", str(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/run_duplex_alias_range_guard.sh"),
                 "--range-probe-testbench", str(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/tb_duplex_alias_range_guard.sv"),
-                "--addr-bits", str(address_bits)]
+                "--addr-bits", str(address_bits), "--proof-mode", proof_mode]
         return subprocess.run(args, cwd=ROOT, env=self.env, text=True,
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
@@ -238,17 +269,24 @@ printf 'stub compiler stdout\n'
         out = self.root / "fresh-output"
         result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1", DUPLEX_ALIAS_JOBS="3")
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertIn("DUPLEX_ALIAS_CHECK PASS PROFILES=2 SCENARIOS=8", result.stdout)
+        self.assertIn("DUPLEX_ALIAS_CHECK PASS PROFILES=2 SCENARIOS=12", result.stdout)
         self.assertEqual((out / "aggregate.log").read_text().splitlines()[0].split()[0], "DUPLEX_ALIAS_PASS")
+        float_out = out / "float_payload"
+        float_result = self.check_output(float_out, 32)
+        self.assertEqual(float_result.returncode, 0, float_result.stdout)
+        self.assertIn("DUPLEX_ALIAS_CHECK PASS PAYLOAD=FLOAT32_BITS PROFILES=1 SCENARIOS=3", float_result.stdout)
+        self.assertIn("payload_bits=1", (float_out / "provenance.txt").read_text())
         directories = []
         for profile, profile_id in (("symmetric", "1"), ("asymmetric", "2")):
             for case_id, scenario in SCENARIOS.items():
                 case_dir = out / profile / scenario
                 directories.append(case_dir)
-                count = 0 if scenario == "zero-trip" else 64
+                count = 0 if scenario == "zero-trip" else 4 if scenario.startswith("nested-") else 64
                 marker = f"DUPLEX_ALIAS_GOLDEN_PASS CASE={scenario} profile={profile_id} N={count}"
                 if scenario == "zero-trip":
                     marker += " NO_DATA_CHANGE=1"
+                if scenario.startswith("nested-"):
+                    marker += " OUTER=4"
                 self.assertEqual((case_dir / "HLS_output/simulation/testbench.log").read_text().strip(), marker)
                 self.assertTrue((case_dir / "tmp").is_dir())
                 provenance = (case_dir / "provenance.txt").read_text()
@@ -256,8 +294,12 @@ printf 'stub compiler stdout\n'
                 self.assertIn("source_sha256=", provenance)
                 self.assertIn("runner_sha256=", provenance)
                 argv = shlex.split(next(line for line in provenance.splitlines() if line.startswith("argv="))[5:])
-                self.assertIn("--simulator=VERILATOR", argv)
-                self.assertIn("--debug-classes=InterfaceInfer,BuildVirtualPhi", argv)
+                self.assertIn("--simulator=MODELSIM", argv)
+                self.assertNotIn("--debug-classes=InterfaceInfer,BuildVirtualPhi", argv)
+                self.assertEqual(dict(line.split("=", 1) for line in provenance.splitlines()
+                                      if "=" in line).get("proof_mode"), "functional")
+                self.assertNotIn("AXI_BURST_DUPLEX_PROOF", "\n".join(
+                    (case_dir / name).read_text() for name in ("stdout.log", "stderr.log")))
                 self.assertIn("--tb-memory-mapping=SHARED", argv)
                 self.assertIn("--memory-allocation-policy=NO_BRAM", argv)
                 self.assertNotIn("--device-name", argv)
@@ -269,8 +311,15 @@ printf 'stub compiler stdout\n'
                 for row in (case_dir / "artifact-sha256.txt").read_text().splitlines():
                     digest, relative = row.split("  ", 1)
                     self.assertEqual(hashlib.sha256((case_dir / relative).read_bytes()).hexdigest(), digest)
-                self.assertEqual((case_dir / "HLS_output/simulation/test.vcd").is_file(), expected_vcd)
-        self.assertEqual(len({path.resolve() for path in directories}), 8)
+                vcd = case_dir / "HLS_output/simulation/test.vcd"
+                self.assertTrue(vcd.is_file())
+                self.assertEqual(vcd.stat().st_size > 0, expected_vcd)
+        for scenario in ("disjoint", "forward-overlap", "reverse-overlap"):
+            case_dir = float_out / "symmetric" / scenario
+            marker = f"DUPLEX_ALIAS_GOLDEN_PASS CASE={scenario} profile=1 N=64 PAYLOAD=FLOAT32_BITS"
+            self.assertEqual((case_dir / "HLS_output/simulation/testbench.log").read_text().strip(), marker)
+            self.assertIn("payload_bits=1", (case_dir / "provenance.txt").read_text())
+        self.assertEqual(len({path.resolve() for path in directories}), 12)
         self.assertTrue(all(path.is_dir() for path in directories))
         probe_dir = out / "rtl_range_guard"
         probe_log = (probe_dir / "probe.log").read_text()
@@ -278,12 +327,9 @@ printf 'stub compiler stdout\n'
         probe_provenance = (probe_dir / "provenance.txt").read_text()
         probe_argv = shlex.split(next(line for line in probe_provenance.splitlines()
                                       if line.startswith("argv="))[5:])
-        self.assertIn("--binary", probe_argv)
-        self.assertIn("--timing", probe_argv)
-        self.assertIn("--trace", probe_argv)
-        self.assertIn("--top-module", probe_argv)
-        self.assertIn(str(out / "symmetric/disjoint/kernel.v"), probe_argv)
-        self.assertIn(str(out / "symmetric/disjoint/panda_libtech.v"), probe_argv)
+        self.assertIn("-sv", probe_argv)
+        self.assertIn(str((out / "symmetric/disjoint/kernel.v").resolve()), probe_argv)
+        self.assertIn(str((out / "symmetric/disjoint/panda_libtech.v").resolve()), probe_argv)
         self.assertIn(str(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/tb_duplex_alias_range_guard.sv"), probe_argv)
         self.assertIn("DUPLEX_ALIAS_RANGE_PROBE PASS CASES=5 ADDR_BITS=32", (out / "rtl_range_guard_runner.log").read_text())
         for case_name in ("valid-disjoint", "read-end-overflow", "write-end-overflow",
@@ -372,7 +418,7 @@ printf 'stub compiler stdout\n'
             with self.subTest(mode=mode):
                 out = self.root / f"activation-{mode}"
                 result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
-                                     ACTIVATION_MODE=mode)
+                                     DUPLEX_ALIAS_PROOF_MODE="development", ACTIVATION_MODE=mode)
                 self.assertNotEqual(result.returncode, 0, result.stdout)
                 self.assertIn("runtime-guard activation witness", result.stdout)
                 self.assertFalse((out / "aggregate.log").read_text().startswith("DUPLEX_ALIAS_PASS"))
@@ -390,10 +436,60 @@ printf 'stub compiler stdout\n'
         for mode, expected_error in expected_errors.items():
             with self.subTest(mode=mode):
                 out = self.root / f"proof-{mode}"
-                result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1", PROOF_MODE=mode)
+                result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
+                                     DUPLEX_ALIAS_PROOF_MODE="development", PROOF_MODE=mode)
                 self.assertNotEqual(result.returncode, 0, result.stdout)
                 self.assertIn(expected_error, result.stdout)
                 self.assertFalse((out / "aggregate.log").read_text().startswith("DUPLEX_ALIAS_PASS"))
+
+    def test_development_proof_mode_keeps_the_debug_proof_gate(self) -> None:
+        out = self.root / "development-proof"
+        result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
+                             DUPLEX_ALIAS_PROOF_MODE="development", DUPLEX_ALIAS_FLOAT_BITS="1")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        case_dir = out / "symmetric/disjoint"
+        provenance = (case_dir / "provenance.txt").read_text()
+        argv = shlex.split(next(line for line in provenance.splitlines() if line.startswith("argv="))[5:])
+        self.assertIn("--debug-classes=InterfaceInfer,BuildVirtualPhi", argv)
+        compiler_output = (case_dir / "stdout.log").read_text() + (case_dir / "stderr.log").read_text()
+        self.assertIn("AXI_BURST_DUPLEX_PROOF", compiler_output)
+        self.assertIn("DUPLEX_ALIAS_CHECK PASS PAYLOAD=FLOAT32_BITS PROFILES=1 SCENARIOS=3", result.stdout)
+
+    def test_nested_fallbacks_require_rejection_no_activation_and_no_burst_engines(self) -> None:
+        out = self.root / "nested-fallbacks"
+        result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        for profile in ("symmetric", "asymmetric"):
+            for scenario in ("nested-changing-base", "nested-changing-count"):
+                case_dir = out / profile / scenario
+                output = (case_dir / "stdout.log").read_text() + (case_dir / "stderr.log").read_text()
+                self.assertNotIn("AXI_BURST_DUPLEX_PROOF", output)
+                rtl = (case_dir / "kernel.v").read_text()
+                self.assertNotIn("MinimalAXI4MasterPipelined #(", rtl)
+                self.assertNotIn("MinimalAXI4MasterPipelinedWrite #(", rtl)
+        for mode, expected_error in (("activation", "conservatively fall back"),
+                                     ("proof-success", "must conservatively reject"),
+                                     ("engine", "must not instantiate a burst read engine")):
+            with self.subTest(mode=mode):
+                bad_out = self.root / f"nested-fallback-{mode}"
+                result = self.invoke(bad_out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
+                                     DUPLEX_ALIAS_PROOF_MODE="development", NESTED_FALLBACK_MODE=mode)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn(expected_error, result.stdout)
+                self.assertFalse((bad_out / "aggregate.log").read_text().startswith("DUPLEX_ALIAS_PASS"))
+
+    def test_development_proof_mode_checks_nested_fallback_records(self) -> None:
+        out = self.root / "nested-development-proof"
+        result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1",
+                             DUPLEX_ALIAS_PROOF_MODE="development")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        for profile in ("symmetric", "asymmetric"):
+            for scenario in ("nested-changing-base", "nested-changing-count"):
+                case_dir = out / profile / scenario
+                output = (case_dir / "stdout.log").read_text() + (case_dir / "stderr.log").read_text()
+                self.assertEqual(output.count("AXI_BURST_DUPLEX_PROOF"), 1)
+                self.assertIn('"semantic_proof":false', output)
+                self.assertIn('"runtime_range_guard":false', output)
 
     def test_zero_trip_requires_known_low_arvalid_and_awvalid_in_vcd(self) -> None:
         for mode, expected_error in (("missing", "missing nonempty VCD for the AXI witness"),
@@ -422,6 +518,40 @@ printf 'stub compiler stdout\n'
                     self.assertNotEqual(result.returncode, 0, result.stdout)
                     self.assertIn(expected_error, result.stdout)
                     self.assertFalse((out / "aggregate.log").read_text().startswith("DUPLEX_ALIAS_PASS"))
+
+    def test_overlap_requires_one_system_clock_for_axi_signals(self) -> None:
+        for mode in ("missing-system", "ambiguous-system"):
+            with self.subTest(mode=mode):
+                out = self.root / f"overlap-clock-{mode}"
+                result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1", CLOCK_MODE=mode)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn("must define exactly one effective system CLOCK signal", result.stdout)
+                self.assertFalse((out / "aggregate.log").read_text().startswith("DUPLEX_ALIAS_PASS"))
+
+    def test_checker_rejects_empty_required_vcds_with_matching_manifest_digest(self) -> None:
+        for scenario, expected_error in (("zero-trip", "zero-trip simulation VCD is empty"),
+                                         ("forward-overlap", "overlap AXI simulation VCD is empty")):
+            with self.subTest(scenario=scenario):
+                out = self.root / f"empty-required-vcd-{scenario}"
+                result = self.invoke(out, BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX="1")
+                self.assertEqual(result.returncode, 0, result.stdout)
+                case_dir = out / "symmetric" / scenario
+                vcd = case_dir / "HLS_output/simulation/test.vcd"
+                vcd.write_bytes(b"")
+                manifest = case_dir / "artifact-sha256.txt"
+                rows = manifest.read_text().splitlines()
+                entry = "HLS_output/simulation/test.vcd"
+                replacement = f"{hashlib.sha256(b'').hexdigest()}  {entry}"
+                for index, row in enumerate(rows):
+                    if row.endswith(f"  {entry}"):
+                        rows[index] = replacement
+                        break
+                else:
+                    self.fail(f"missing VCD manifest entry for {scenario}")
+                manifest.write_text("\n".join(rows) + "\n")
+                checked = self.check_output(out, 32)
+                self.assertNotEqual(checked.returncode, 0, checked.stdout)
+                self.assertIn(expected_error, checked.stdout)
 
     def test_range_probe_missing_witness_fails_closed(self) -> None:
         out = self.root / "range-probe-missing"

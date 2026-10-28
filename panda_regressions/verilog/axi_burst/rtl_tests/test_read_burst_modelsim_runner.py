@@ -28,6 +28,45 @@ with open(os.environ["FAKE_MODELSIM_CALLS"], "a", encoding="utf-8") as stream:
     stream.write("vsim " + " ".join(args) + "\n")
 case = next((arg.split("=", 1)[1] for arg in args if arg.startswith("+CASE=")), "")
 top = next((arg for arg in args if arg.startswith("work.")), "")
+expected_read_faults = {
+    "ERROR": ["RRESP"],
+    "BADALIGN": ["CONFIGURE_INVALID"], "OVERFLOW": ["CONFIGURE_INVALID"],
+    "BADSIZE_CONFIG": ["CONFIGURE_INVALID"], "STORE": ["UNSUPPORTED_STORE"],
+    "PENDING_SECOND": ["CONFIGURE_INVALID"],
+    "COUNT_TRUNC_64": ["CONFIGURE_INVALID"], "RANGE_TOP_COUNT": ["CONFIGURE_INVALID"],
+    "RANGE_LAST_BEAT_2": ["CONFIGURE_INVALID"],
+    "RANGE_HIGH_MAX_CARRY_NONZERO": ["CONFIGURE_INVALID"],
+    "RANGE_ZERO_MISALIGNED": ["CONFIGURE_INVALID"],
+    "FALLBACK_WIDE_IN4": ["CONFIGURE_INVALID"],
+    "RANGE_OVER_BASE4": ["CONFIGURE_INVALID"], "RANGE_OVER_PLUS1": ["CONFIGURE_INVALID"],
+    "RANGE_OVER_HALF": ["CONFIGURE_INVALID"], "RANGE_OVER_MAX": ["CONFIGURE_INVALID"],
+    "RANGE_TOP_OVER": ["CONFIGURE_INVALID"],
+    "BADADDR_EMPTY": ["LOAD_INVALID"], "BADSIZE_EMPTY": ["LOAD_INVALID"],
+    "BADADDR_FULL": ["LOAD_INVALID"], "BADSIZE_FULL": ["LOAD_INVALID"],
+    "ADJACENT_CFG_TRUNC": ["CONFIGURE_INVALID"], "ADJACENT_CFG_SIZE": ["CONFIGURE_INVALID"],
+    "BADRID": ["RID"], "FAULT_STALLED_AR": ["RID"],
+    "EARLY_RLAST": ["RLAST_MISMATCH"], "MISSING_RLAST": ["RLAST_MISMATCH"],
+    "CONFIG_PIPELINE_INVALID": ["CONFIGURE_INVALID"],
+    "RRESP_FIRST": ["RRESP"], "RRESP_INTERMEDIATE": ["RRESP"], "RRESP_FINAL": ["RRESP"],
+    "RRESP_STALLED_AR": ["RRESP"], "RRESP_RESERVATION_RACE": ["RRESP"],
+    "RREADY_SIDEBAND": ["RRESP"],
+}
+fault_reasons = ["CONFIGURE_INVALID"] * 15 if case == "RANGE_ORACLE" else expected_read_faults.get(case, [])
+if fault_reasons and "+AXI_BURST_EXPECT_FAULT" not in args:
+    print("** Fatal: AXI_BURST_FAULT engine=read reason=" + fault_reasons[0])
+    raise SystemExit(1)
+for reason in fault_reasons:
+    diagnostic = ("AXI_BURST_FAULT engine=read reason=" + reason +
+                  " instance=" + (top.partition("work.")[2] or "tb_burst_engine") +
+                  ".dut.report_axi_read_diagnostic opcode=-1 size=0 "
+                  "address=00001000 count=1 resp=00 id=0 last=0 descriptors=1 remaining=1")
+    mode = os.environ.get("FAKE_MODELSIM_MODE")
+    if mode == "wrong-instance":
+        top_name = top.partition("work.")[2] or "tb_burst_engine"
+        diagnostic = diagnostic.replace(top_name + ".dut", top_name + ".other")
+    elif mode == "missing-fault-field":
+        diagnostic = diagnostic.replace(" id=0", "")
+    print(diagnostic)
 if case == "SMOKE":
     max_out = next((arg.split("=", 1)[1] for arg in args if arg.startswith("-gMAX_OUTSTANDING=")), "1")
     depth = next((arg.split("=", 1)[1] for arg in args if arg.startswith("-gFIFO_DEPTH=")), "256")
@@ -50,6 +89,20 @@ if case == "SMOKE":
 if os.environ.get("FAKE_MODELSIM_MODE") == "unrelated-error":
     print("** Error: unrelated simulator error")
     raise SystemExit(1)
+if top == "work.tb_configure_read_pipeline" and case == "READ_PEER_FAULT":
+    diagnostic = ("AXI_BURST_PEER_FAULT engine=read reason=peer "
+                  "instance=tb_configure_read_pipeline.dut.report_axi_read_diagnostic "
+                  "opcode=-1 size=0 address=00000000 count=0 resp=00 id=0 last=0 "
+                  "descriptors=0 remaining=0")
+    if "+AXI_BURST_EXPECT_FAULT" not in args:
+        print("** Fatal: " + diagnostic)
+        raise SystemExit(1)
+    mode = os.environ.get("FAKE_MODELSIM_MODE")
+    if mode == "wrong-instance":
+        diagnostic = diagnostic.replace(".dut.", ".other.")
+    elif mode == "missing-fault-field":
+        diagnostic = diagnostic.replace(" id=0", "")
+    print(diagnostic)
 if top == "work.tb_configure_read_pipeline":
     print("READ_CONFIG_PIPELINE PASS CASE=" + case)
 else:
@@ -116,6 +169,12 @@ class ReadBurstModelSimRunnerTests(unittest.TestCase):
         self.assertIn("DUPLEX_READ PASS CASE=CREDIT_LIMIT", aggregate)
         self.assertNotIn("verilator ", self.calls.read_text(encoding="utf-8"))
 
+        configure_fault = (
+            "AXI_BURST_PEER_FAULT engine=read reason=peer "
+            "instance=tb_configure_read_pipeline.dut.report_axi_read_diagnostic "
+            "opcode=-1 size=0 address=00000000 count=0 resp=00 id=0 last=0 "
+            "descriptors=0 remaining=0"
+        )
         configure = subprocess.run(
             ["bash", str(RTL_TESTS / "run_configure_read_pipeline.sh"), str(self.root / "configure")],
             cwd=REPO, env=self.env, text=True, stdout=subprocess.PIPE,
@@ -124,6 +183,18 @@ class ReadBurstModelSimRunnerTests(unittest.TestCase):
         self.assertEqual(configure.returncode, 0, configure.stderr)
         self.assertIn("READ_CONFIG_PIPELINE PASS CASE=READ_RESET", configure.stdout)
         self.assertIn("READ_CONFIG_PIPELINE PASS CASE=READ_PEER_FAULT", configure.stdout)
+        self.assertIn(configure_fault, configure.stdout)
+        self.assertIn("+CASE=READ_PEER_FAULT +AXI_BURST_EXPECT_FAULT", self.calls.read_text(encoding="utf-8"))
+
+    def test_configure_peer_fault_rejects_wrong_diagnostic(self) -> None:
+        env = self.env.copy()
+        env["FAKE_MODELSIM_MODE"] = "wrong-instance"
+        result = subprocess.run(
+            ["bash", str(RTL_TESTS / "run_configure_read_pipeline.sh"), str(self.root / "bad-configure")],
+            cwd=REPO, env=env, text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, timeout=30, check=False,
+        )
+        self.assertNotEqual(result.returncode, 0)
 
     def test_relative_path_tools_survive_runner_build_directory_changes(self) -> None:
         env = self.env.copy()
@@ -177,6 +248,55 @@ class ReadBurstModelSimRunnerTests(unittest.TestCase):
                 result = self.run_runner(f"invalid-status-{mode}", "bounds", mode)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(f"status={status}", result.stderr)
+
+    def test_fault_containment_scenarios_use_plusarg_and_exact_reason_sets(self) -> None:
+        result = self.run_runner("transactions", "transactions")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        calls = self.calls.read_text(encoding="utf-8").splitlines()
+        fault_cases = (
+            "ERROR", "BADALIGN", "OVERFLOW", "BADSIZE_CONFIG", "STORE", "RANGE_OVER_BASE4",
+            "RANGE_OVER_PLUS1", "RANGE_OVER_HALF", "RANGE_OVER_MAX", "RANGE_TOP_OVER",
+            "RANGE_ORACLE", "BADADDR_EMPTY", "BADSIZE_EMPTY", "BADADDR_FULL", "BADSIZE_FULL",
+            "ADJACENT_CFG_TRUNC", "ADJACENT_CFG_SIZE", "PENDING_SECOND", "BADRID", "FAULT_STALLED_AR",
+            "EARLY_RLAST", "MISSING_RLAST", "CONFIG_PIPELINE_INVALID", "RRESP_FIRST",
+            "RRESP_INTERMEDIATE", "RRESP_FINAL", "RRESP_STALLED_AR", "RRESP_RESERVATION_RACE",
+            "RREADY_SIDEBAND",
+        )
+        for case in fault_cases:
+            matching = [line for line in calls if f"+CASE={case}" in line]
+            self.assertTrue(matching, f"scenario did not run: {case}")
+            self.assertTrue(all("+AXI_BURST_EXPECT_FAULT" in line for line in matching), case)
+        normal = [line for line in calls if "+CASE=CONTINUOUS_CFG" in line]
+        self.assertTrue(normal)
+        self.assertTrue(all("+AXI_BURST_EXPECT_FAULT" not in line for line in normal))
+
+    def test_count_trunc_faults_use_plusarg_and_exact_top_instance(self) -> None:
+        result = self.run_runner("count-trunc", "bounds")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        calls = self.calls.read_text(encoding="utf-8").splitlines()
+        aggregate = (self.root / "count-trunc" / "aggregate.log").read_text(encoding="utf-8")
+        fault_cases = (
+            "COUNT_TRUNC_64", "RANGE_TOP_COUNT", "RANGE_LAST_BEAT_2",
+            "RANGE_HIGH_MAX_CARRY_NONZERO", "RANGE_ZERO_MISALIGNED", "FALLBACK_WIDE_IN4",
+        )
+        self.assertEqual(aggregate.count(
+            "AXI_BURST_FAULT engine=read reason=CONFIGURE_INVALID "
+            "instance=tb_count_trunc.dut.report_axi_read_diagnostic"), len(fault_cases))
+        for case in fault_cases:
+            with self.subTest(case=case):
+                matching = [line for line in calls if f"+CASE={case}" in line]
+                self.assertTrue(matching, f"scenario did not run: {case}")
+                self.assertTrue(all("+AXI_BURST_EXPECT_FAULT" in line for line in matching), case)
+        wrong_instance = self.run_runner("count-trunc-wrong-instance", "bounds", "wrong-instance")
+        self.assertNotEqual(wrong_instance.returncode, 0)
+        self.assertIn("wrong instance or incomplete payload schema", wrong_instance.stderr)
+
+    def test_fault_containment_rejects_wrong_instance_and_missing_payload_field(self) -> None:
+        for mode in ("wrong-instance", "missing-fault-field"):
+            with self.subTest(mode=mode):
+                result = self.run_runner(mode, "transactions", mode)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("wrong instance or incomplete payload schema", result.stderr)
 
 
 if __name__ == "__main__":

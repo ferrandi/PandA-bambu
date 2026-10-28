@@ -5,6 +5,8 @@ set -Eeuo pipefail
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 repo_root=$(git -C "$script_dir/../../.." rev-parse --show-toplevel)
+ROOT=$repo_root
+source "$script_dir/../../verilog/axi_burst/rtl_tests/modelsim_helpers.sh"
 runner_file=$(realpath "${BASH_SOURCE[0]}")
 source_file="$script_dir/bambu_axi_burst_duplex_alias.cpp"
 testbench="$script_dir/bambu_axi_burst_duplex_alias_tb.cpp"
@@ -25,6 +27,14 @@ address_bits=${DUPLEX_ALIAS_ADDRESS_BITS:-32}
 if [[ $address_bits != 32 && $address_bits != 64 ]]; then
   echo "DUPLEX_ALIAS_ADDRESS_BITS must be 32 or 64 (got '$address_bits')" >&2; exit 2
 fi
+payload_bits=${DUPLEX_ALIAS_FLOAT_BITS:-0}
+if [[ $payload_bits != 0 && $payload_bits != 1 ]]; then
+  echo "DUPLEX_ALIAS_FLOAT_BITS must be 0 or 1 (got '$payload_bits')" >&2; exit 2
+fi
+proof_mode=${DUPLEX_ALIAS_PROOF_MODE:-functional}
+if [[ $proof_mode != functional && $proof_mode != development ]]; then
+  echo "DUPLEX_ALIAS_PROOF_MODE must be functional or development (got '$proof_mode')" >&2; exit 2
+fi
 export PYTHONDONTWRITEBYTECODE=1
 
 bambu_arg=$1
@@ -35,9 +45,10 @@ else
   [[ -z $bambu ]] || bambu=$(realpath "$bambu")
 fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
-for tool in verilator grep python3 sha256sum; do
+for tool in grep python3 sha256sum; do
   command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }
 done
+modelsim_resolve || exit 2
 [[ -r $source_file && -r $testbench && -r $checker && -r $helpers && -x $range_probe_runner && -r $range_probe_testbench ]] || {
   echo "duplex alias sources, checker, parallel helper, or range-guard probe are missing" >&2; exit 2;
 }
@@ -51,7 +62,7 @@ source "$settings"
 [[ $(realpath -m "${BAMBU_HLS:-}") == "$(realpath "$prefix")" ]] || {
   echo "settings.sh selected an unexpected BAMBU_HLS=${BAMBU_HLS:-<unset>}" >&2; exit 2;
 }
-simulator=$(realpath "$(command -v verilator)")
+simulator=$(realpath "$MODELSIM_VSIM")
 
 requested_jobs=${DUPLEX_ALIAS_JOBS:-2}
 if [[ ! $requested_jobs =~ ^[0-9]+$ ]]; then
@@ -79,8 +90,8 @@ export TMPDIR="$out/tmp" TMP="$out/tmp" TEMP="$out/tmp"
 digest() { sha256sum -- "$1" | awk '{print $1}'; }
 git_head=$(git -C "$repo_root" rev-parse HEAD)
 {
-  printf 'git_head=%s\nrepo_root=%s\noutput=%s\nbambu=%s\nsettings=%s\nplugin=%s\nsimulator=%s\njobs=%s\naddr_bits=%s\n' \
-    "$git_head" "$repo_root" "$out" "$bambu" "$(realpath "$settings")" "$plugin" "$simulator" "$requested_jobs" "$address_bits"
+  printf 'git_head=%s\nrepo_root=%s\noutput=%s\nbambu=%s\nsettings=%s\nplugin=%s\nsimulator=%s\njobs=%s\naddr_bits=%s\npayload_bits=%s\nproof_mode=%s\n' \
+    "$git_head" "$repo_root" "$out" "$bambu" "$(realpath "$settings")" "$plugin" "$simulator" "$requested_jobs" "$address_bits" "$payload_bits" "$proof_mode"
   printf 'range_probe_runner=%s\nrange_probe_testbench=%s\n' "$range_probe_runner" "$range_probe_testbench"
   for entry in "source:$source_file" "testbench:$testbench" "checker:$checker" "runner:$runner_file" \
                "range_probe_runner:$range_probe_runner" "range_probe_testbench:$range_probe_testbench" \
@@ -88,7 +99,7 @@ git_head=$(git -C "$repo_root" rev-parse HEAD)
     name=${entry%%:*}; path=${entry#*:}
     printf '%s=%s\n%s_sha256=%s\n' "$name" "$path" "$name" "$(digest "$path")"
   done
-  printf 'simulator_version='; "$simulator" --version 2>&1 | sed -n '1p'
+  printf 'simulator_version='; modelsim_version 2>&1 | sed -n '1p'
   printf 'bambu_version_begin\n'; "$bambu" --version 2>&1 | sed -n '1,3p'; printf 'bambu_version_end\n'
 } >"$out/provenance.txt"
 
@@ -96,30 +107,38 @@ source "$helpers"
 BURST_JOB_LOG_DIR="$out/jobs"
 BURST_QUIET_JOB_STATUS=0
 profiles=(symmetric asymmetric)
-scenarios=(disjoint forward-overlap reverse-overlap zero-trip)
+scenarios=(disjoint forward-overlap reverse-overlap zero-trip nested-changing-base nested-changing-count)
+if [[ $payload_bits == 1 ]]; then
+  profiles=(symmetric)
+  scenarios=(disjoint forward-overlap reverse-overlap)
+fi
 run_case() {
   local job=$1 profile=${1%%__*} scenario=${1#*__} profile_id case_id case_dir marker count
   case "$profile" in symmetric) profile_id=1 ;; asymmetric) profile_id=2 ;; *) return 2 ;; esac
-  case "$scenario" in disjoint) case_id=1 ;; forward-overlap) case_id=2 ;; reverse-overlap) case_id=3 ;; zero-trip) case_id=4 ;; *) return 2 ;; esac
+  case "$scenario" in disjoint) case_id=1 ;; forward-overlap) case_id=2 ;; reverse-overlap) case_id=3 ;; zero-trip) case_id=4 ;; nested-changing-base) case_id=5 ;; nested-changing-count) case_id=6 ;; *) return 2 ;; esac
   case_dir="$out/$profile/$scenario"
   mkdir -p "$case_dir"
   mkdir "$case_dir/tmp"
   export TMPDIR="$case_dir/tmp" TMP="$case_dir/tmp" TEMP="$case_dir/tmp"
   count=64
   if [[ $scenario == zero-trip ]]; then count=0; fi
+  if [[ $scenario == nested-changing-base || $scenario == nested-changing-count ]]; then count=4; fi
   marker="DUPLEX_ALIAS_GOLDEN_PASS CASE=$scenario profile=$profile_id N=$count"
   if [[ $scenario == zero-trip ]]; then marker+=" NO_DATA_CHANGE=1"; fi
+  if [[ $scenario == nested-changing-base || $scenario == nested-changing-count ]]; then marker+=" OUTER=4"; fi
+  if [[ $payload_bits == 1 ]]; then marker+=" PAYLOAD=FLOAT32_BITS"; fi
   local -a args=(--top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER "--addr-bus-bitsize=$address_bits"
     --tb-memory-mapping=SHARED
     --memory-allocation-policy=NO_BRAM
-    --AXI-burst-type=INCREMENTAL --no-clean --simulate --simulator=VERILATOR
-    --debug-classes=InterfaceInfer,BuildVirtualPhi
+    --AXI-burst-type=INCREMENTAL --no-clean --simulate --simulator=MODELSIM
     # Unbounded pointer parameters: size the co-simulation image of the streamed memory.
     --tb-param-size=src:1024 --tb-param-size=dst:1024
-    "--generate-tb=$testbench" --bambu-parameter=experimental-m-axi-burst=1
+    "--generate-tb=$testbench" --bambu-parameter=m-axi-burst=1
     --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
     "--extra-cc-options=-DDUPLEX_ALIAS_PROFILE=$profile_id"
     "--extra-cc-options=-DDUPLEX_ALIAS_CASE=$case_id")
+  [[ $proof_mode != development ]] || args+=(--debug-classes=InterfaceInfer,BuildVirtualPhi)
+  [[ $payload_bits == 0 ]] || args+=(--extra-cc-options=-DDUPLEX_ALIAS_FLOAT_BITS)
   if [[ $scenario == zero-trip || $scenario == forward-overlap || $scenario == reverse-overlap ]]; then
     args+=(--generate-vcd)
   fi
@@ -127,8 +146,8 @@ run_case() {
     args+=(--mem-delay-write=64)
   fi
   {
-    printf 'git_head=%s\nprofile=%s\nprofile_id=%s\nscenario=%s\nscenario_id=%s\nfeature=1\naddr_bits=%s\noutput=%s\n' \
-      "$git_head" "$profile" "$profile_id" "$scenario" "$case_id" "$address_bits" "$case_dir"
+    printf 'git_head=%s\nprofile=%s\nprofile_id=%s\nscenario=%s\nscenario_id=%s\nfeature=1\naddr_bits=%s\npayload_bits=%s\nproof_mode=%s\noutput=%s\n' \
+      "$git_head" "$profile" "$profile_id" "$scenario" "$case_id" "$address_bits" "$payload_bits" "$proof_mode" "$case_dir"
     printf 'source=%s\ntestbench=%s\nchecker=%s\nrunner=%s\nbambu=%s\nsettings=%s\nplugin=%s\nsimulator=%s\n' \
       "$source_file" "$testbench" "$checker" "$runner_file" "$bambu" "$(realpath "$settings")" "$plugin" "$simulator"
     for entry in "source:$source_file" "testbench:$testbench" "checker:$checker" "runner:$runner_file" \
@@ -147,11 +166,19 @@ run_case() {
   fi
   local activation_count
   activation_count=$( (grep -F -o -- "$activation_witness" "$case_dir/stdout.log" "$case_dir/stderr.log" || true) | wc -l)
-  [[ $activation_count == 1 ]] || {
-    echo "$profile/$scenario requires exactly one runtime-guard activation witness; found $activation_count" >&2
-    tail -n 80 "$case_dir/stdout.log" "$case_dir/stderr.log" >&2 || true
-    return 1
-  }
+  if [[ $proof_mode == development ]]; then
+    if [[ $scenario == nested-changing-base || $scenario == nested-changing-count ]]; then
+      [[ $activation_count == 0 ]] || {
+        echo "$profile/$scenario must conservatively fall back without a runtime-guard activation; found $activation_count" >&2
+        tail -n 80 "$case_dir/stdout.log" "$case_dir/stderr.log" >&2 || true
+        return 1
+      }
+    elif [[ $activation_count != 1 ]]; then
+      echo "$profile/$scenario requires exactly one runtime-guard activation witness; found $activation_count" >&2
+      tail -n 80 "$case_dir/stdout.log" "$case_dir/stderr.log" >&2 || true
+      return 1
+    fi
+  fi
   local testbench_log="$case_dir/HLS_output/simulation/testbench.log"
   [[ -s $testbench_log ]] || { echo "$profile/$scenario missing nonempty testbench log" >&2; return 1; }
   grep -F -x -q "$marker" "$testbench_log" || {
@@ -192,10 +219,23 @@ cat "$out/rtl_range_guard_runner.log"
 python3 -B "$checker" "$out" --source "$source_file" --testbench "$testbench" \
   --bambu "$bambu" --settings "$settings" --plugin "$plugin" --simulator "$simulator" \
   --runner "$runner_file" --range-probe-runner "$range_probe_runner" \
-  --range-probe-testbench "$range_probe_testbench" --addr-bits "$address_bits" >"$out/checker.log" 2>&1 || {
+  --range-probe-testbench "$range_probe_testbench" --addr-bits "$address_bits" \
+  --proof-mode "$proof_mode" >"$out/checker.log" 2>&1 || {
   cat "$out/checker.log" >&2
   printf 'DUPLEX_ALIAS_FAILED output=%s\n' "$out" | tee -a "$out/aggregate.log" >&2
   exit 1
 }
 cat "$out/checker.log"
-printf 'DUPLEX_ALIAS_PASS profiles=symmetric,asymmetric scenarios=8 output=%s\n' "$out" | tee "$out/aggregate.log"
+if [[ $payload_bits == 0 ]]; then
+  DUPLEX_ALIAS_FLOAT_BITS=1 bash "$runner_file" "$bambu" "$out/float_payload"
+fi
+payload_name=int32
+profile_list=symmetric,asymmetric
+scenario_count=12
+[[ $payload_bits == 0 ]] || payload_name=float32-bits
+if [[ $payload_bits == 1 ]]; then
+  profile_list=symmetric
+  scenario_count=3
+fi
+printf 'DUPLEX_ALIAS_PASS profiles=%s scenarios=%s payload=%s output=%s\n' \
+  "$profile_list" "$scenario_count" "$payload_name" "$out" | tee "$out/aggregate.log"

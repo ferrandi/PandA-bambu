@@ -76,7 +76,8 @@ LEGACY_INSTANCE = re.compile(
 BURST = re.compile(r"\b(?:MinimalAXI4MasterPipelined(?:Write)?|MinimalAXI4(?:Read)?Burst)\b")
 BURST_OP = re.compile(r"\bfuselector_[A-Za-z0-9_]*(?:configure_(?:read|write)|burst_read|store_write|drain_write)\b")
 ARTIFACT_SUFFIXES = {".v", ".sv", ".xml", ".log"}
-PROVENANCE_HASH_FIELDS = ("source", "testbench", "checker", "runner", "bambu", "settings", "plugin", "simulator")
+PROVENANCE_HASH_FIELDS = ("source", "testbench", "checker", "runner", "shared_runner", "bambu", "settings",
+                          "plugin", "simulator")
 
 
 class CheckError(ValueError):
@@ -194,11 +195,13 @@ def check_provenance(profile_dir: Path, profile: str, args: argparse.Namespace) 
         "profile": profile,
         "macro": PROFILES[profile]["macro"],
         "feature": "1",
+        "proof_mode": "developer" if args.developer_proof else "functional",
         "output": str(profile_dir.resolve()),
         "source": str(args.source.resolve()),
         "testbench": str(args.testbench.resolve()),
         "checker": str(Path(__file__).resolve()),
         "runner": str(args.runner.resolve()),
+        "shared_runner": str((args.runner.resolve().parent / "run_duplex_generated_family.sh").resolve()),
         "bambu": str(args.bambu.resolve()),
         "settings": str(args.settings.resolve()),
         "plugin": str(args.plugin.resolve()),
@@ -214,10 +217,13 @@ def check_provenance(profile_dir: Path, profile: str, args: argparse.Namespace) 
         digest_key = f"{key}_sha256"
         need(fields.get(digest_key) == sha256(path), f"provenance digest mismatch for {key}")
     argv = fields.get("argv", "")
-    need(argv and "--bambu-parameter=experimental-m-axi-burst=1" in argv,
-         "provenance argv does not enable experimental-m-axi-burst=1")
+    need(argv and "--bambu-parameter=m-axi-burst=1" in argv,
+         "provenance argv does not enable m-axi-burst=1")
     need(f"-DDUPLEX_FALLBACK_PROFILE={PROFILES[profile]['macro']}" in argv,
          "provenance argv does not select the expected profile macro")
+    need(("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based" in argv) ==
+         args.developer_proof,
+         "provenance debug classes do not match the selected proof mode")
     return fields
 
 
@@ -252,27 +258,28 @@ def check_profile(profile_dir: Path, profile: str, args: argparse.Namespace) -> 
         need(len(matches) == 1,
              f"expected one exact InterfaceInfer {direction} fallback {reason!r}; got "
              f"{[(match.group('direction'), match.group('reason')) for match in fallback_lines]!r}")
-    trace_matches = [match for match in PREANALYSIS.finditer(combined_log)]
-    matching_traces = []
-    for match in trace_matches:
-        fields_match = (match.group("read_requested") == "1" and
-                        match.group("write_requested") == "1" and
-                        match.group("candidate") == "0" and
-                        match.group("activated") == "0" and
-                        match.group("read_reason") == expected["read_reason"] and
-                        match.group("write_reason") == expected["write_reason"])
-        if "read_accesses" in expected:
-            fields_match = (fields_match and
-                            match.group("read_accesses") == expected["read_accesses"] and
-                            match.group("write_accesses") == expected["write_accesses"])
-        if expected.get("require_unrecognized"):
-            fields_match = (fields_match and match.group("read_recognized") == "0" and
-                            match.group("write_recognized") == "0" and
-                            match.group("duplex_reason") == expected["same_base_duplex_reason"])
-        if fields_match:
-            matching_traces.append(match)
-    need(len(matching_traces) == 1,
-         "AXI_BURST_PREANALYSIS trace does not witness both requested directions and exact fallback reasons")
+    if args.developer_proof:
+        trace_matches = [match for match in PREANALYSIS.finditer(combined_log)]
+        matching_traces = []
+        for match in trace_matches:
+            fields_match = (match.group("read_requested") == "1" and
+                            match.group("write_requested") == "1" and
+                            match.group("candidate") == "0" and
+                            match.group("activated") == "0" and
+                            match.group("read_reason") == expected["read_reason"] and
+                            match.group("write_reason") == expected["write_reason"])
+            if "read_accesses" in expected:
+                fields_match = (fields_match and
+                                match.group("read_accesses") == expected["read_accesses"] and
+                                match.group("write_accesses") == expected["write_accesses"])
+            if expected.get("require_unrecognized"):
+                fields_match = (fields_match and match.group("read_recognized") == "0" and
+                                match.group("write_recognized") == "0" and
+                                match.group("duplex_reason") == expected["same_base_duplex_reason"])
+            if fields_match:
+                matching_traces.append(match)
+        need(len(matching_traces) == 1,
+             "AXI_BURST_PREANALYSIS trace does not witness both requested directions and exact fallback reasons")
     need(DUPLEX_ACTIVATION.search(combined_log) is None,
          "fallback compiler log contains a final duplex activation marker")
 
@@ -314,6 +321,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--simulator", required=True, type=Path)
     parser.add_argument("--runner", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
+    parser.add_argument("--developer-proof", action="store_true")
     return parser.parse_args(argv)
 
 

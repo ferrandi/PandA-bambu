@@ -215,8 +215,8 @@ def main():
                         help="check generated RTL's five-input burst engine and runtime-count fan-in")
     parser.add_argument("--expected-burst-max", type=int,
                         help="expected B_MAX for --configured-contract")
-    parser.add_argument("--expected-outstanding", type=int, default=1,
-                        help="expected MAX_OUTSTANDING for --configured-contract (default: 1)")
+    parser.add_argument("--expected-outstanding", type=int, default=16,
+                        help="expected MAX_OUTSTANDING for --configured-contract (default: Bambu read default 16)")
     parser.add_argument("--expected-fifo-depth", type=int,
                         help="expected FIFO_DEPTH for --configured-contract "
                              "(default: derived as the next power of two of "

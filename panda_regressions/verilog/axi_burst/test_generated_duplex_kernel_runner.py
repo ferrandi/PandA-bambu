@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import shutil
 import subprocess
 import unittest
@@ -17,6 +18,8 @@ PREFIX_SOURCE = FAMILY / "bambu_axi_burst_duplex_prefix.cpp"
 OBSERVER = RTL_TESTS / "duplex_load_observer.sv"
 OBSERVER_UNIT_TB = RTL_TESTS / "tb_duplex_load_observer.sv"
 PARALLELISM_CHECKER = FAMILY / "check_duplex_parallelism_results.py"
+MODELSIM_HELPERS = FAMILY / "rtl_tests/modelsim_helpers.sh"
+MODELSIM_LOOKUP = ROOT / "etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
 SCRATCH_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 PROFILES = ("symmetric", "asymmetric")
 KINDS = ("inplace", "copy")
@@ -28,6 +31,20 @@ CASES = (
 
 
 class GeneratedDuplexKernelRunnerTests(unittest.TestCase):
+    @staticmethod
+    def _contains_canonical_path(record, expected):
+        expected = Path(expected).resolve()
+        if "  " in record and len(record.split("  ", 1)[0]) == 64:
+            candidates = [record.split("  ", 1)[1]]
+        else:
+            command = record.split("|", 1)[1] if "|" in record else record
+            candidates = shlex.split(command)
+        for candidate in candidates:
+            path = Path(candidate)
+            if path.is_absolute() and path.exists() and path.resolve() == expected:
+                return True
+        return False
+
     def test_copy_carrier_requires_restrict_on_both_owners(self):
         import re
 
@@ -51,6 +68,10 @@ class GeneratedDuplexKernelRunnerTests(unittest.TestCase):
         self.family.mkdir(parents=True, exist_ok=True)
         shutil.copy2(RUNNER, self.rtl_tests / RUNNER.name)
         shutil.copy2(FAMILY / "parallel_helpers.sh", self.family / "parallel_helpers.sh")
+        shutil.copy2(MODELSIM_HELPERS, self.rtl_tests / MODELSIM_HELPERS.name)
+        lookup = self.repo / "etc/libtech/backend/simulation/modelsim"
+        lookup.mkdir(parents=True)
+        shutil.copy2(MODELSIM_LOOKUP, lookup / MODELSIM_LOOKUP.name)
         (self.family / "bambu_axi_burst_duplex.cpp").write_text("// stub source\n")
         (self.family / "bambu_axi_burst_duplex_copy.cpp").write_text("// stub source\n")
         (self.family / "bambu_axi_burst_duplex_copy_tb.cpp").write_text("// stub golden\n")
@@ -73,7 +94,8 @@ class GeneratedDuplexKernelRunnerTests(unittest.TestCase):
         plugin.write_text("plugin stub\n")
         self.bin = self.scratch / "bin"
         self.bin.mkdir()
-        self._stub("verilator", self._verilator_stub())
+        for tool in ("vsim", "vlog", "vlib", "vmap"):
+            self._stub(tool, self._modelsim_stub())
         self.env = os.environ.copy()
         self.env.update({
             "PATH": f"{self.bin}:{self.env['PATH']}",
@@ -84,7 +106,8 @@ class GeneratedDuplexKernelRunnerTests(unittest.TestCase):
             "SIM_MAX_FILE": str(self.scratch / "max_active"),
             "SIM_CWD_FILE": str(self.scratch / "scenario-cwds"),
             "SIM_GEN_FILE": str(self.scratch / "generated-profiles"),
-            "SIM_BUILD_FILE": str(self.scratch / "verilator-build-args"),
+            "SIM_BUILD_FILE": str(self.scratch / "modelsim-build-args"),
+            "SIM_SHARED_LIB_PARALLEL_FILE": str(self.scratch / "shared-library-parallelism"),
             "SIM_ARG_FILE": str(self.scratch / "scenario-args"),
             "SIM_CHECKER_FILE": str(self.scratch / "checker-invocations"),
             "SIM_UNIT_FILE": str(self.scratch / "observer-unit-invocations"),
@@ -138,63 +161,96 @@ RTL
 """
 
     @staticmethod
-    def _verilator_stub():
-        return """#!/bin/bash
+    def _modelsim_stub():
+        return r'''#!/usr/bin/env bash
 set -euo pipefail
-if [[ ${1:-} == --version ]]; then echo 'Verilator stub 5.0'; exit 0; fi
-mdir=
-kind=inplace
-top=
-args=$(printf '%q ' "$@")
-while (($#)); do
-  if [[ $1 == --Mdir ]]; then mdir=$2; shift 2
-  elif [[ $1 == --top-module ]]; then top=$2; shift 2
-  elif [[ $1 == -DCOPY_MODE ]]; then kind=copy; shift
-  elif [[ $1 == -DPREFIX_MODE ]]; then kind=prefix; shift
-  else shift; fi
-done
-printf '%s|%s\\n' "$mdir" "$args" >>"$SIM_BUILD_FILE"
-mkdir -p "$mdir"
-if [[ $top == tb_duplex_load_observer ]]; then
-  cat >"$mdir/Vtb_duplex_load_observer" <<'PROGRAM'
-#!/bin/bash
-set -euo pipefail
-printf '%s\\n' "$(printf '%q ' "$@")" >>"$SIM_UNIT_FILE"
-echo 'DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2'
-PROGRAM
-  chmod +x "$mdir/Vtb_duplex_load_observer"
+tool=${0##*/}
+if [[ $tool == vsim && ${1:-} == -version ]]; then echo 'Questa fake 2026.1'; exit 0; fi
+if [[ $tool == vmap ]]; then
+  [[ ${1:-} != -c ]] || printf '[Library]\n' > modelsim.ini
   exit 0
 fi
-{
-printf '#!/bin/bash\nset -euo pipefail\nkind=%q\n' "$kind"
-cat <<'PROGRAM'
-scenario=${1#*=}
-printf '%s|%s\\n' "$kind" "$(printf '%q ' "$@")" >>"$SIM_ARG_FILE"
-profile=${0%/obj/Vtb_generated_duplex_kernel}; profile=${profile##*/}
-[[ $kind == copy ]] && profile=${profile%_copy}
-[[ $kind == prefix ]] && profile=${profile%_prefix}
-if [[ $kind == copy ]]; then marker=DUPLEX_KERNEL_COPY_G2
-elif [[ $kind == prefix ]]; then marker=DUPLEX_KERNEL_PREFIX_G2
-else marker=DUPLEX_KERNEL_G2; fi
-mode=${SIM_MODE:-pass}
-if [[ $mode == nonzero && $scenario == PAGE_BOUNDARY ]]; then exit 27; fi
-if [[ $mode == absent && $scenario == PAGE_BOUNDARY ]]; then exit 0; fi
-if [[ $mode == wrong && $scenario == COUNT38_SPLITS ]]; then echo "DUPLEX_KERNEL_G2 PASS CASE=WRONG PROFILE=$profile"; exit 0; fi
-if [[ $mode == prefix-absent && $kind == prefix && $scenario == READ_LONGER ]]; then exit 0; fi
-if [[ $mode == absent-g3 && $scenario == COPY_PARALLELISM_256 ]]; then exit 0; fi
-if [[ $mode == wrong-g3 && $scenario == COPY_PARALLELISM_256 ]]; then echo "DUPLEX_KERNEL_COPY_G2 PASS CASE=WRONG PROFILE=$profile"; exit 0; fi
+if [[ $tool == vlib ]]; then mkdir -p "${1:-work}"; exit 0; fi
+if [[ $tool == vlog ]]; then
+  printf '%s|%s\n' "$PWD" "$(printf '%q ' "$@")" >>"$SIM_BUILD_FILE"
+  [[ ${SIM_MODE:-pass} != compile-fail ]] || { echo 'fake vlog compile error' >&2; exit 9; }
+  exit 0
+fi
+[[ $tool == vsim ]] || exit 2
+build=
+top=
+scenario=
+for ((i=1; i<=$#; i++)); do
+  arg=${!i}
+  case $arg in
+    -modelsimini) next=$((i + 1)); build=$(dirname "${!next}") ;;
+    work.*) top=${arg#work.} ;;
+    +CASE=*) scenario=${arg#+CASE=} ;;
+  esac
+done
+if [[ $top == tb_duplex_load_observer ]]; then
+  printf '%q ' "$@" >>"$SIM_UNIT_FILE"; printf '\n' >>"$SIM_UNIT_FILE"
+  echo 'DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2'
+  exit 0
+fi
+instance=$(basename "$(dirname "$build")")
+if [[ $instance == *_copy ]]; then profile=${instance%_copy}; kind=copy
+elif [[ $instance == *_prefix ]]; then profile=${instance%_prefix}; kind=prefix
+else profile=$instance; kind=inplace; fi
+printf '%s|%s|%s|%s\n' "$profile" "$kind" "$scenario" "$(printf '%s ' "$@")" >>"$SIM_ARG_FILE"
+printf '%s|%s|%s\n' "$profile" "$kind" "$scenario" >>"$SIM_CWD_FILE"
+if [[ ${SIM_MODE:-pass} == nonzero && $scenario == PAGE_BOUNDARY ]]; then exit 27; fi
+if [[ ${SIM_MODE:-pass} == timeout && $scenario == PAGE_BOUNDARY ]]; then echo 'fake timeout reached' >&2; exit 124; fi
+if [[ ${SIM_MODE:-pass} == fatal-zero && $scenario == PAGE_BOUNDARY ]]; then echo '** Fatal: injected fatal with zero simulator exit'; exit 0; fi
+if [[ ${SIM_MODE:-pass} == absent && $scenario == PAGE_BOUNDARY ]]; then exit 0; fi
+if [[ ${SIM_MODE:-pass} == wrong && $scenario == COUNT38_SPLITS ]]; then echo "DUPLEX_KERNEL_G2 PASS CASE=WRONG PROFILE=$profile"; exit 0; fi
+if [[ ${SIM_MODE:-pass} == prefix-absent && $kind == prefix && $scenario == READ_LONGER ]]; then exit 0; fi
+if [[ ${SIM_MODE:-pass} == absent-g3 && $scenario == COPY_PARALLELISM_256 ]]; then exit 0; fi
+if [[ ${SIM_MODE:-pass} == wrong-g3 && $scenario == COPY_PARALLELISM_256 ]]; then echo "DUPLEX_KERNEL_COPY_G2 PASS CASE=WRONG PROFILE=$profile"; exit 0; fi
+fault_expected=0
+[[ $scenario == RRESP_FAULT_RESET || $scenario == BRESP_FAULT_RESET ]] && fault_expected=1
+fault_arg=0
+for arg in "$@"; do [[ $arg == +AXI_BURST_EXPECT_FAULT ]] && fault_arg=1; done
+[[ $fault_expected == $fault_arg ]] || { echo "unexpected expected-fault plusarg selection" >&2; exit 41; }
 exec 9>"${SIM_ACTIVE_FILE}.lock"
 flock 9
 active=$(cat "$SIM_ACTIVE_FILE" 2>/dev/null || echo 0); active=$((active + 1)); echo "$active" >"$SIM_ACTIVE_FILE"
 max=$(cat "$SIM_MAX_FILE" 2>/dev/null || echo 0); (( active <= max )) || echo "$active" >"$SIM_MAX_FILE"
+lib_active=$(cat "$build/.active" 2>/dev/null || echo 0)
+(( lib_active == 0 )) || echo "$build" >"$SIM_SHARED_LIB_PARALLEL_FILE"
+echo "$((lib_active + 1))" >"$build/.active"
 flock -u 9
-pwd >>"$SIM_CWD_FILE"
 sleep 0.03
 flock 9
 active=$(cat "$SIM_ACTIVE_FILE"); echo "$((active - 1))" >"$SIM_ACTIVE_FILE"
+lib_active=$(cat "$build/.active"); echo "$((lib_active - 1))" >"$build/.active"
 flock -u 9
+if [[ $kind == copy ]]; then marker=DUPLEX_KERNEL_COPY_G2
+elif [[ $kind == prefix ]]; then marker=DUPLEX_KERNEL_PREFIX_G2
+else marker=DUPLEX_KERNEL_G2; fi
 echo "$marker PASS CASE=$scenario PROFILE=$profile"
-if [[ $scenario == COPY_PARALLELISM_256 ]]; then echo "SIMULATOR_ARGS $(printf '%q ' "$@")"; fi
+if [[ ${SIM_MODE:-pass} == missing-diagnostic && $scenario == RRESP_FAULT_RESET ]]; then exit 0; fi
+case $scenario in
+  RRESP_FAULT_RESET)
+    echo 'AXI_BURST_FAULT engine=read reason=RRESP instance=kernel.read_engine.report_axi_read_diagnostic opcode=0 size=32 address=00002000 count=17 resp=10 id=0 last=0 descriptors=1 remaining=17'
+    echo 'AXI_BURST_PEER_FAULT engine=write reason=peer instance=kernel.write_engine.report_axi_write_diagnostic opcode=-1 size=0 address=00000000 count=0 payload=00000000 resp=00 id=0 descriptors=0 remaining=0'
+    if [[ ${SIM_MODE:-pass} != missing-return-peer ]]; then
+      echo 'AXI_BURST_PEER_FAULT engine=read reason=peer instance=kernel.read_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00002000 count=17 resp=00 id=0 last=0 descriptors=1 remaining=17'
+    fi ;;
+  BRESP_FAULT_RESET)
+    echo 'AXI_BURST_FAULT engine=write reason=BRESP instance=kernel.write_engine.report_axi_write_diagnostic opcode=1 size=32 address=00002000 count=17 payload=00000000 resp=10 id=0 descriptors=1 remaining=17'
+    echo 'AXI_BURST_PEER_FAULT engine=read reason=peer instance=kernel.read_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00000000 count=0 resp=00 id=0 last=0 descriptors=0 remaining=0'
+    if [[ ${SIM_MODE:-pass} != missing-return-peer ]]; then
+      echo 'AXI_BURST_PEER_FAULT engine=write reason=peer instance=kernel.write_engine.report_axi_write_diagnostic opcode=-1 size=0 address=00002000 count=17 payload=00000000 resp=00 id=0 descriptors=0 remaining=0'
+    fi ;;
+esac
+if [[ ${SIM_MODE:-pass} == bad-diagnostic && $scenario == COUNT38_SPLITS ]]; then
+  echo 'AXI_BURST_FAULT engine=read reason=RRESP instance=kernel.read_engine.report_axi_read_diagnostic opcode=0 size=32 address=00002000 count=1 resp=10 id=0 last=0 descriptors=1 remaining=1'
+fi
+if [[ ${SIM_MODE:-pass} == extra-diagnostic && $scenario == COUNTS_0_1_15_16_17 ]]; then
+  echo 'AXI_BURST_FAULT engine=read reason=RRESP instance=unexpected.report_axi_read_diagnostic opcode=0 size=32 address=00002000 count=1 resp=10 id=0 last=0 descriptors=1 remaining=1'
+fi
+if [[ $scenario == COPY_PARALLELISM_256 ]]; then echo "SIMULATOR_ARGS $(printf '%q ' "$@" | sed -E 's/.*(\+CASE=[^ ]+ \+G3_METRICS).*/\1/')"; fi
 if [[ $kind == prefix ]]; then
   case $scenario in
     READ_LONGER) reads=38; writes=17; ar=3; aw=2 ;;
@@ -206,18 +262,12 @@ if [[ $kind == prefix ]]; then
     PAGE_SPLITS) reads=23; writes=35; ar=3; aw=3 ;;
   esac
   if [[ $profile == asymmetric ]]; then
-    case $scenario in
-      READ_LONGER|ZERO_READ_WRITE_TAIL|BOUNDS_CLAMP) aw=3 ;;
-      WRITE_LONGER|PAGE_SPLITS) aw=5 ;;
-    esac
+    case $scenario in READ_LONGER|ZERO_READ_WRITE_TAIL|BOUNDS_CLAMP) aw=3 ;; WRITE_LONGER|PAGE_SPLITS) aw=5 ;; esac
   fi
-  [[ $mode != prefix-wrong-counts || $scenario != READ_LONGER ]] || reads=$((reads + 1))
+  [[ ${SIM_MODE:-pass} != prefix-wrong-counts || $scenario != READ_LONGER ]] || reads=$((reads + 1))
   echo "DUPLEX_KERNEL_PREFIX_COUNTS CASE=$scenario PROFILE=$profile AR_BURSTS=$ar R_BEATS=$reads AW_BURSTS=$aw W_BEATS=$writes B_RESPONSES=$aw"
 fi
-PROGRAM
-} >"$mdir/Vtb_generated_duplex_kernel"
-chmod +x "$mdir/Vtb_generated_duplex_kernel"
-"""
+'''
 
     @staticmethod
     def _checker_stub():
@@ -267,6 +317,21 @@ for profile in ("symmetric", "asymmetric"):
         self.assertIn("BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1", result.stderr)
         self.assertFalse(output.exists())
 
+    def test_unexpected_normal_diagnostic_is_rejected(self):
+        result, _ = self._run("extra-diagnostic", "unexpected-diagnostic")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("wrong AXI diagnostic count", result.stderr)
+
+    def test_missing_fault_record_is_rejected(self):
+        result, _ = self._run("missing-diagnostic", "missing-fault-record")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("wrong AXI diagnostic count", result.stderr)
+
+    def test_missing_return_peer_record_is_rejected(self):
+        result, _ = self._run("missing-return-peer", "missing-return-peer")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("wrong AXI diagnostic count", result.stderr)
+
     def test_invalid_parallelism_fails_before_output_creation(self):
         result, output = self._run(output_name="invalid-jobs", job_overrides={"DUPLEX_G2_JOBS": "0"})
         self.assertNotEqual(result.returncode, 0)
@@ -302,9 +367,15 @@ for profile in ("symmetric", "asymmetric"):
                 self.assertIn(message, result.stderr)
 
     def test_nonzero_simulation_status_is_rejected(self):
+        compile_failure, _ = self._run("compile-fail", "compile-failure-output")
+        self.assertNotEqual(compile_failure.returncode, 0)
+        self.assertIn("ModelSim compile failed", compile_failure.stderr)
         result, _ = self._run("nonzero", "nonzero-output")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("failed rc=27", result.stderr)
+        fatal, _ = self._run("fatal-zero", "fatal-zero-output")
+        self.assertNotEqual(fatal.returncode, 0)
+        self.assertIn("failed rc=1", fatal.stderr)
 
     def test_manifest_mismatch_is_rejected(self):
         real_sha = shutil.which("sha256sum", path=self.env["PATH"].split(":", 1)[1])
@@ -320,6 +391,7 @@ exec {real_sha} \"$@\"
         self.assertIn("FAILED", result.stderr)
 
     def test_scenario_directories_manifests_and_bounded_parallelism(self):
+        self.assertNotIn("verilator", (self.rtl_tests / RUNNER.name).read_text().lower())
         result, output = self._run()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("GENERATED_DUPLEX_KERNEL_G2 PASS: 48 scenarios; includes two G3.1 parallelism scenarios", result.stdout)
@@ -365,51 +437,76 @@ exec {real_sha} \"$@\"
         generated = (self.scratch / "generated-profiles").read_text().splitlines()
         self.assertCountEqual(generated, ("1:inplace", "1:copy", "1:prefix", "2:inplace", "2:copy", "2:prefix"))
         artifact_entries = (output / "artifact-sha256.txt").read_text().splitlines()
-        self.assertEqual(len(artifact_entries), len(PROFILES) * (len(KINDS) * (5 + len(CASES)) + 5 + len(PREFIX_CASES)) + 8)
+        self.assertEqual(len(artifact_entries), len(PROFILES) * (len(KINDS) * (5 + len(CASES)) + 5 + len(PREFIX_CASES)) + 57)
         self.assertTrue(all((output / line.split("  ", 1)[1]).is_file() for line in artifact_entries))
         self.assertTrue((output / "parallelism-check.log").is_file())
-        self.assertEqual((self.scratch / "checker-invocations").read_text().strip(), str(output))
+        checker_output = Path((self.scratch / "checker-invocations").read_text().strip())
+        self.assertEqual(checker_output.resolve(), output.resolve())
         self.assertEqual(len((self.scratch / "scenario-args").read_text().splitlines()), 48)
         g3_args = [line for line in (self.scratch / "scenario-args").read_text().splitlines()
                    if "COPY_PARALLELISM_256" in line]
         self.assertEqual(len(g3_args), 2)
         self.assertTrue(all("+CASE=COPY_PARALLELISM_256 +G3_METRICS" in line for line in g3_args))
-        build_args = (self.scratch / "verilator-build-args").read_text().splitlines()
+        build_args = (self.scratch / "modelsim-build-args").read_text().splitlines()
         self.assertEqual(len(build_args), 7)
-        unit_builds = [line for line in build_args if "/observer-unit/obj" in line]
+        unit_builds = [line for line in build_args if "/observer-unit/sim" in line]
         self.assertEqual(len(unit_builds), 1)
-        self.assertIn(str(self.rtl_tests / OBSERVER.name), unit_builds[0])
-        self.assertIn(str(self.rtl_tests / OBSERVER_UNIT_TB.name), unit_builds[0])
+        self.assertTrue(self._contains_canonical_path(unit_builds[0], self.rtl_tests / OBSERVER.name))
+        self.assertTrue(self._contains_canonical_path(unit_builds[0], self.rtl_tests / OBSERVER_UNIT_TB.name))
+        self.assertIn("-mfcu", unit_builds[0])
+        self.assertIn("-cuname duplex_load_observer_unit_cu", unit_builds[0])
+        self.assertNotIn("-cuname tb_duplex_load_observer", unit_builds[0])
+        unit_args = shlex.split(unit_builds[0].split("|", 1)[1])
+        resolved_unit_tb = (self.rtl_tests / OBSERVER_UNIT_TB.name).resolve()
+        resolved_observer = (self.rtl_tests / OBSERVER.name).resolve()
+        unit_tb_index = next(i for i, item in enumerate(unit_args)
+                             if Path(item).is_absolute() and Path(item).exists() and Path(item).resolve() == resolved_unit_tb)
+        observer_index = next(i for i, item in enumerate(unit_args)
+                              if Path(item).is_absolute() and Path(item).exists() and Path(item).resolve() == resolved_observer)
+        self.assertLess(unit_tb_index, observer_index)
         unit_invocations = (self.scratch / "observer-unit-invocations").read_text().splitlines()
         self.assertEqual(len(unit_invocations), 1)
+        self.assertIn("-voptargs=+acc", unit_invocations[0])
         self.assertIn("+G3_METRICS +CASE=COPY_PARALLELISM_256", unit_invocations[0])
         unit_log = (output / "observer-unit/observer-unit.log").read_text()
         self.assertIn(
             "DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2",
             unit_log,
         )
-        for mdir_and_args in build_args:
-            mdir, args = mdir_and_args.split("|", 1)
-            if "/observer-unit/obj" in mdir:
+        for build_and_args in build_args:
+            build, args = build_and_args.split("|", 1)
+            if "/observer-unit/sim" in build:
                 continue
-            self.assertIn(str(self.rtl_tests / OBSERVER.name), args)
-            if "/symmetric" in mdir:
-                self.assertIn("-GREAD_FIFO_DEPTH=64", args)
-                self.assertIn("-GWRITE_FIFO_DEPTH=32", args)
-            elif "/asymmetric" in mdir:
-                self.assertIn("-GREAD_FIFO_DEPTH=64", args)
-                self.assertIn("-GWRITE_FIFO_DEPTH=16", args)
-            else:
-                self.fail(f"unexpected profile build directory: {mdir}")
-        self.assertTrue(any(str(self.rtl_tests / OBSERVER.name) in line for line in artifact_entries))
-        self.assertTrue(any(str(self.rtl_tests / OBSERVER_UNIT_TB.name) in line for line in artifact_entries))
-        self.assertTrue(any(str(self.family / PARALLELISM_CHECKER.name) in line for line in artifact_entries))
+            self.assertTrue(self._contains_canonical_path(f"{profile}|{args}", self.rtl_tests / OBSERVER.name))
+            self.assertIn("tb_generated_duplex_kernel.sv", args)
+            self.assertIn("-mfcu", args)
+            self.assertIn("-cuname duplex_load_observer_unit_cu", args)
+        self.assertEqual(sum("+define+COPY_MODE" in line for line in build_args), 2)
+        self.assertEqual(sum("+define+PREFIX_MODE" in line for line in build_args), 2)
+        self.assertEqual(sum("+define+COPY_MODE" not in line and "+define+PREFIX_MODE" not in line for line in build_args), 3)
+        self.assertTrue(any(self._contains_canonical_path(line, self.rtl_tests / OBSERVER.name)
+                            for line in artifact_entries))
+        self.assertTrue(any(self._contains_canonical_path(line, self.rtl_tests / OBSERVER_UNIT_TB.name)
+                            for line in artifact_entries))
+        self.assertTrue(any(self._contains_canonical_path(line, self.family / PARALLELISM_CHECKER.name)
+                            for line in artifact_entries))
         maximum = int((self.scratch / "max_active").read_text())
         self.assertGreater(maximum, 1)
         self.assertLessEqual(maximum, 3)
         cwd_entries = (self.scratch / "scenario-cwds").read_text().splitlines()
-        self.assertEqual(len(set(cwd_entries)), len(PROFILES) * (len(KINDS) * len(CASES) + len(PREFIX_CASES) + 1))
+        self.assertEqual(len(set(cwd_entries)), 48)
+        self.assertFalse((self.scratch / "shared-library-parallelism").exists(),
+                         "scenarios sharing one ModelSim work library ran concurrently")
         self.assertIn("scenario_jobs=3", (output / "provenance.txt").read_text())
+        invocations = (self.scratch / "scenario-args").read_text().splitlines()
+        for line in invocations:
+            profile, _kind, _scenario, args = line.split("|", 3)
+            if profile == "symmetric":
+                self.assertIn("-gREAD_OUTSTANDING=1", args)
+                self.assertIn("-gWRITE_FIFO_DEPTH=32", args)
+            else:
+                self.assertIn("-gREAD_OUTSTANDING=2", args)
+                self.assertIn("-gWRITE_FIFO_DEPTH=16", args)
 
 
 if __name__ == "__main__":

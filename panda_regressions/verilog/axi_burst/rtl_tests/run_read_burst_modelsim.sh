@@ -69,8 +69,39 @@ run_one_scenario() {
     local build=$1 top=$2 scenario=$3 log="$build/scenario-${3}.raw.log"
     local normalized="$build/scenario-${scenario}.log"
     read_elaboration_args "$build"
+    local -a expected_fault_reasons=() runtime_args=("+$scenario" "+CASE=$scenario")
+    case "$scenario" in
+        BADALIGN|OVERFLOW|BADSIZE_CONFIG|RANGE_OVER_BASE4|RANGE_OVER_PLUS1|RANGE_OVER_HALF|RANGE_OVER_MAX|RANGE_TOP_OVER|ADJACENT_CFG_TRUNC|ADJACENT_CFG_SIZE|CONFIG_PIPELINE_INVALID|PENDING_SECOND)
+            expected_fault_reasons=(CONFIGURE_INVALID)
+            ;;
+        COUNT_TRUNC_64|RANGE_TOP_COUNT|RANGE_LAST_BEAT_2|RANGE_HIGH_MAX_CARRY_NONZERO|RANGE_ZERO_MISALIGNED|FALLBACK_WIDE_IN4)
+            expected_fault_reasons=(CONFIGURE_INVALID)
+            ;;
+        BADADDR_EMPTY|BADSIZE_EMPTY|BADADDR_FULL|BADSIZE_FULL)
+            expected_fault_reasons=(LOAD_INVALID)
+            ;;
+        STORE)
+            expected_fault_reasons=(UNSUPPORTED_STORE)
+            ;;
+        BADRID|FAULT_STALLED_AR)
+            expected_fault_reasons=(RID)
+            ;;
+        EARLY_RLAST|MISSING_RLAST)
+            expected_fault_reasons=(RLAST_MISMATCH)
+            ;;
+        ERROR|RRESP_FIRST|RRESP_INTERMEDIATE|RRESP_FINAL|RRESP_STALLED_AR|RRESP_RESERVATION_RACE|RREADY_SIDEBAND)
+            expected_fault_reasons=(RRESP)
+            ;;
+        RANGE_ORACLE)
+            # The fixed seed contains fifteen invalid samples, each separated by reset.
+            for _ in {1..15}; do expected_fault_reasons+=(CONFIGURE_INVALID); done
+            ;;
+    esac
+    if ((${#expected_fault_reasons[@]})); then
+        runtime_args+=(+AXI_BURST_EXPECT_FAULT)
+    fi
     local status=0
-    modelsim_run "$build" "$top" "$log" 120 "${ELAB_ARGS[@]}" -- "+$scenario" "+CASE=$scenario" || status=$?
+    modelsim_run "$build" "$top" "$log" 120 "${ELAB_ARGS[@]}" -- "${runtime_args[@]}" || status=$?
     modelsim_normalize_log "$log" "$normalized"
     if ((status != 0)); then
         cat "$normalized" >&2 || true
@@ -82,6 +113,13 @@ run_one_scenario() {
         echo "FAIL scenario $scenario: missing exact PASS marker; log: $normalized" >&2
         return 1
     fi
+    if ((${#expected_fault_reasons[@]})); then
+        modelsim_expect_read_fault_set "$log" "$scenario" "$top" "${expected_fault_reasons[@]}" || return $?
+    elif grep -Eq '^AXI_BURST_' "$normalized"; then
+        cat "$normalized" >&2 || true
+        echo "FAIL scenario $scenario: unexpected AXI burst diagnostic; log: $normalized" >&2
+        return 1
+    fi
     if [[ $scenario == READY_CREDIT_PROOF ]] && {
         ! grep -Eq '^PASS READY_CREDIT_PROOF FULL O=' "$normalized" ||
         ! grep -Eq '^PASS READY_CREDIT_PROOF O=.* full-LOAD-credit-AR-response-drain N=' "$normalized";
@@ -91,6 +129,50 @@ run_one_scenario() {
         return 1
     fi
     cat "$normalized" >> "$TASK_OUT/aggregate.log"
+}
+
+modelsim_expect_read_fault_set() {
+    local log=$1 label=$2 top=$3 normalized="${1}.read-fault-normalized" raw_status effective_status
+    shift 3
+    if (($# == 0)) || [[ ! -r $log || ! -r $log.raw-status || ! -r $log.status ]]; then
+        echo "missing ModelSim transcript/status or expected diagnostic set for $label: $log" >&2
+        return 1
+    fi
+    raw_status=$(<"$log.raw-status")
+    effective_status=$(<"$log.status")
+    if [[ $raw_status != 0 || $effective_status != 0 ]]; then
+        echo "expected normal ModelSim completion for contained reader fault $label (raw=$raw_status effective=$effective_status)" >&2
+        return 1
+    fi
+    modelsim_normalize_log "$log" "$normalized" || return $?
+    if grep -Eqi 'segmentation fault|stack smashing|addresssanitizer|core dumped|watchdog|timed out|aborted' "$normalized" ||
+       grep -Eq '^\*\* (Fatal|Error):' "$normalized"; then
+        echo "ModelSim error, crash, watchdog, or timeout in contained reader fault $label" >&2
+        return 1
+    fi
+    local -a records=() observed=()
+    mapfile -t records < <(grep -E '^AXI_BURST_' "$normalized" || true)
+    if ((${#records[@]} != $#)); then
+        echo "wrong reader fault diagnostic count for $label: expected=$# observed=${#records[@]}" >&2
+        return 1
+    fi
+    local record_re="^AXI_BURST_FAULT engine=read reason=([[:alnum:]_]+) instance=${top}\\.dut\\.report_axi_read_diagnostic opcode=-?[0-9]+ size=-?[0-9]+ address=[[:xdigit:]]+ count=[0-9]+ resp=[01]{2} id=-?[0-9]+ last=-?[0-9]+ descriptors=[0-9]+ remaining=[0-9]+$"
+    local record expected
+    for record in "${records[@]}"; do
+        if [[ ! $record =~ $record_re ]]; then
+            echo "reader diagnostic has the wrong instance or incomplete payload schema for $label: $record" >&2
+            return 1
+        fi
+        observed+=("${BASH_REMATCH[1]}")
+    done
+    local expected_index=0
+    for expected in "$@"; do
+        if [[ ${observed[expected_index]} != "$expected" ]]; then
+            echo "wrong reader fault diagnostic for $label at index $expected_index: expected='$expected' observed='${observed[expected_index]}'" >&2
+            return 1
+        fi
+        expected_index=$((expected_index + 1))
+    done
 }
 
 run_scenarios() {

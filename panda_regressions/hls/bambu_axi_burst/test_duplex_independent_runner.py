@@ -35,7 +35,7 @@ if macro not in profiles:
     print("wrong profile macro", file=sys.stderr)
     raise SystemExit(3)
 profile = profiles[macro]
-if "--bambu-parameter=experimental-m-axi-burst=1" not in args:
+if "--bambu-parameter=m-axi-burst=1" not in args:
     print("feature was not enabled", file=sys.stderr)
     raise SystemExit(4)
 state = pathlib.Path(os.environ["STUB_STATE"])
@@ -61,8 +61,9 @@ time.sleep(0.15)
 cwd = pathlib.Path.cwd()
 (cwd / "bambu_results.xml").write_text("<results/>\n")
 (cwd / "bambu_axi_burst_duplex_independent.v").write_text("module bambu_axi_burst_duplex_independent; endmodule\n")
-(cwd / "panda-temp").mkdir()
-(cwd / "panda-temp" / "before_Frontend::InterfaceInfer.raw").write_text("raw IR witness\n")
+if any(arg.startswith("--debug-classes=") for arg in args):
+    (cwd / "panda-temp").mkdir()
+    (cwd / "panda-temp" / "before_Frontend::InterfaceInfer.raw").write_text("raw IR witness\n")
 log_dir = cwd / "HLS_output" / "simulation"
 log_dir.mkdir(parents=True)
 marker_profile = profile
@@ -72,6 +73,9 @@ log = "no golden marker\n"
 if os.environ.get("STUB_MODE") != "missing-marker" or profile != os.environ.get("STUB_PROFILE"):
     log = f"DUPLEX_INDEPENDENT_GOLDEN_PASS PROFILE={marker_profile} N=38\n"
 (log_dir / "testbench.log").write_text(log)
+if os.environ.get("STUB_MODE") == "shared-runner-modified" and profile == os.environ.get("STUB_PROFILE"):
+    shared = pathlib.Path(os.environ["STUB_SHARED_RUNNER"])
+    shared.write_text(shared.read_text() + "\\n# modified during run\\n")
 with (state / "state.json").open("r+") as stream:
     fcntl.flock(stream, fcntl.LOCK_EX)
     current = json.load(stream)
@@ -83,16 +87,19 @@ with (state / "state.json").open("r+") as stream:
 '''
 
 STUB_CHECKER = r'''#!/usr/bin/env python3
+import hashlib
 import json
 import os
 import pathlib
 import sys
 
 run_root = pathlib.Path(sys.argv[1])
-options = dict(zip(sys.argv[2::2], sys.argv[3::2]))
+developer_proof = "--developer-proof" in sys.argv[2:]
+checker_args = [arg for arg in sys.argv[2:] if arg != "--developer-proof"]
+options = dict(zip(checker_args[::2], checker_args[1::2]))
 required = {"--source", "--testbench", "--bambu", "--settings", "--plugin",
-            "--simulator", "--runner", "--report"}
-if set(options) != required or len(sys.argv[2:]) != 2 * len(required):
+            "--simulator", "--simulator-invocation", "--runner", "--report"}
+if set(options) != required or len(checker_args) != 2 * len(required):
     raise SystemExit("unexpected checker arguments")
 expected = {"symmetric": ("1", "16/1/64", "16/1/32"),
             "asymmetric": ("2", "16/2/64", "8/1/16")}
@@ -100,17 +107,24 @@ for profile, (macro, read_profile, write_profile) in expected.items():
     path = run_root / profile
     fields = dict(line.split("=", 1) for line in (path / "provenance.txt").read_text().splitlines())
     if (fields.get("macro"), fields.get("feature"), fields.get("read_profile"),
-        fields.get("write_profile")) != (macro, "1", read_profile, write_profile):
+        fields.get("write_profile"), fields.get("proof_mode")) != \
+            (macro, "1", read_profile, write_profile, "developer" if developer_proof else "functional"):
         raise SystemExit("profile provenance mismatch")
     helper = pathlib.Path(fields["parallel_helper"])
     if not helper.is_file() or fields.get("parallel_helper_sha256") is None:
         raise SystemExit("parallel helper provenance missing")
+    shared = pathlib.Path(fields["shared_runner"])
+    if not shared.is_file() or hashlib.sha256(shared.read_bytes()).hexdigest() != fields.get("shared_runner_sha256"):
+        raise SystemExit("shared runner provenance mismatch")
+    if options.get("--simulator-invocation") != fields.get("simulator_invocation"):
+        raise SystemExit("simulator invocation argument does not match provenance")
     manifest = path / "artifact-sha256.txt"
     if not manifest.is_file():
         raise SystemExit("missing artifact manifest")
     raw = "panda-temp/before_Frontend::InterfaceInfer.raw"
-    if not any(line.endswith("  " + raw) for line in manifest.read_text().splitlines()):
-        raise SystemExit("raw IR witness missing from artifact manifest")
+    has_raw = any(line.endswith("  " + raw) for line in manifest.read_text().splitlines())
+    if has_raw != developer_proof:
+        raise SystemExit("raw IR manifest membership does not match proof mode")
 if os.environ.get("STUB_MODE") == "checker-failure":
     raise SystemExit("requested checker failure")
 pathlib.Path(options["--report"]).write_text(json.dumps({"profiles": list(expected)}) + "\n")
@@ -128,6 +142,7 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
         self.family.mkdir(parents=True)
         self.runner = self.family / "run_duplex_independent_tests.sh"
         shutil.copy2(FAMILY / self.runner.name, self.runner)
+        shutil.copy2(FAMILY / "run_duplex_generated_family.sh", self.family / "run_duplex_generated_family.sh")
         shutil.copy2(FAMILY / "parallel_helpers.sh", self.family / "parallel_helpers.sh")
         (self.family / "bambu_axi_burst_duplex_independent.cpp").write_text("// fixture\n")
         (self.family / "duplex_independent_tb.cpp").write_text("// testbench\n")
@@ -146,21 +161,28 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
         plugin = self.prefix / "lib/panda/clang-16/ASTAnalyzer.so"
         plugin.parent.mkdir(parents=True)
         plugin.write_text("plugin\n")
-        self.verilator = self.scratch / "bin/verilator"
-        self.verilator.parent.mkdir()
-        self.verilator.write_text("#!/usr/bin/env bash\necho 'Verilator 5.000 stub'\n")
-        self.verilator.chmod(0o755)
+        self.modelsim = self.scratch / "bin"
+        self.modelsim.mkdir()
+        for tool in ("vlib", "vmap", "vlog"):
+            path = self.modelsim / tool
+            path.write_text("#!/usr/bin/env bash\necho 'ModelSim 2026.10 stub'\n")
+            path.chmod(0o755)
+        vco = self.modelsim / "vco"
+        vco.write_text("#!/usr/bin/env bash\n[[ ${0##*/} == vsim ]] || exit 99\necho 'ModelSim 2026.10 stub'\n")
+        vco.chmod(0o755)
+        (self.modelsim / "vsim").symlink_to(vco.name)
         self.state = self.scratch / "state"
         self.state.mkdir()
         (self.state / "state.json").write_text(json.dumps({"active": 0, "max_active": 0}))
         self.output = self.repo / "out_duplex_independent"
         self.env = os.environ.copy()
         self.env.update({
-            "PATH": f"{self.verilator.parent}:{self.env['PATH']}",
+            "PATH": f"{self.modelsim}:{self.env['PATH']}",
             "TMPDIR": str(self.scratch),
             "TMP": str(self.scratch),
             "TEMP": str(self.scratch),
             "STUB_STATE": str(self.state),
+            "STUB_SHARED_RUNNER": str(self.family / "run_duplex_generated_family.sh"),
             "BURST_DUPLEX_INDEPENDENT_SIM_OUTSIDE_SANDBOX": "1",
             "DUPLEX_INDEPENDENT_JOBS": "2",
         })
@@ -173,7 +195,8 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def run_runner(self, *, outside="1", jobs="2", output=None, mode="", profile="symmetric"):
+    def run_runner(self, *, outside="1", jobs="2", output=None, mode="", profile="symmetric",
+                   developer_proof=False):
         env = self.env.copy()
         env["BURST_DUPLEX_INDEPENDENT_SIM_OUTSIDE_SANDBOX"] = outside
         env["DUPLEX_INDEPENDENT_JOBS"] = jobs
@@ -182,7 +205,10 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
         if mode:
             env["STUB_MODE"] = mode
             env["STUB_PROFILE"] = profile
-        args = [str(self.runner), str(self.bambu)]
+        args = [str(self.runner)]
+        if developer_proof:
+            args.append("--development-proof")
+        args.append(str(self.bambu))
         if output is not None:
             args.append(str(output))
         return subprocess.run(args, cwd=self.repo, env=env, text=True,
@@ -234,18 +260,23 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
             args = run["args"]
             self.assertIn("--top-fname=bambu_axi_burst_duplex_independent", args)
             self.assertIn("--simulate", args)
-            self.assertIn("--simulator=VERILATOR", args)
-            self.assertIn("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based", args)
-            self.assertIn("--bambu-parameter=experimental-m-axi-burst=1", args)
+            self.assertIn("--simulator=MODELSIM", args)
+            self.assertEqual("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based" in args,
+                             False)
+            self.assertIn("--bambu-parameter=m-axi-burst=1", args)
             self.assertIn("--tb-param-size=src:16384", args)
             self.assertIn("--tb-param-size=dst:16384", args)
             self.assertIn("--addr-bus-bitsize=64", args)
-            self.assertTrue(any(arg == "--generate-tb=" + str(self.family / "duplex_independent_tb.cpp")
+            self.assertTrue(any(arg == "--generate-tb=" + str((self.family / "duplex_independent_tb.cpp").resolve())
                                 for arg in args))
             macro, read_profile, write_profile = profiles[run["profile"]]
             self.assertIn(f"--extra-cc-options=-DDUPLEX_INDEPENDENT_PROFILE={macro}", args)
             provenance = dict(line.split("=", 1) for line in
                               (self.output / run["profile"] / "provenance.txt").read_text().splitlines())
+            self.assertEqual(provenance["proof_mode"], "functional")
+            self.assertEqual(provenance["simulator_invocation"], str(self.modelsim / "vsim"))
+            self.assertEqual(provenance["simulator"], str((self.modelsim / "vsim").resolve()))
+            self.assertEqual(provenance["simulator_version"], "ModelSim 2026.10 stub")
             self.assertEqual(provenance["read_profile"], read_profile)
             self.assertEqual(provenance["write_profile"], write_profile)
             self.assertEqual(provenance["parallel_helper"], str((self.family / "parallel_helpers.sh").resolve()))
@@ -254,6 +285,16 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
                          "DUPLEX_INDEPENDENT_PASS profiles=symmetric,asymmetric output="
                          + str(self.output.resolve()) + "\n")
         self.assertTrue((self.output / "checker-called").is_file())
+
+    def test_development_proof_is_explicit_and_preserves_raw_witnesses(self):
+        result = self.run_runner(developer_proof=True)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        runs = [json.loads(line) for line in (self.state / "runs.jsonl").read_text().splitlines()]
+        self.assertTrue(all("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based" in run["args"]
+                            for run in runs))
+        for profile in ("symmetric", "asymmetric"):
+            raw = self.output / profile / "panda-temp/before_Frontend::InterfaceInfer.raw"
+            self.assertTrue(raw.is_file())
 
     def test_compiler_failure_prevents_checker_and_pass_marker(self):
         result = self.run_runner(mode="compiler-failure", profile="asymmetric")
@@ -274,6 +315,12 @@ class DuplexIndependentRunnerTests(unittest.TestCase):
         result = self.run_runner(mode="checker-failure")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("requested checker failure", result.stdout)
+        self.assertNotIn("DUPLEX_INDEPENDENT_PASS", (self.output / "aggregate.log").read_text())
+
+    def test_shared_runner_mutation_fails_provenance(self):
+        result = self.run_runner(mode="shared-runner-modified")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("shared runner provenance mismatch", result.stdout)
         self.assertNotIn("DUPLEX_INDEPENDENT_PASS", (self.output / "aggregate.log").read_text())
 
 

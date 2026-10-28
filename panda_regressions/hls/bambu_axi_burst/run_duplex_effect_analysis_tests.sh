@@ -10,23 +10,7 @@ SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/compiler_cases/duplex_effect
 CHECKER="$ROOT/panda_regressions/hls/bambu_axi_burst/check_duplex_effect_analysis_artifacts.py"
 RUNNER="$TESTS/run_duplex_effect_analysis_tests.sh"
 CORE_SOURCE="$ROOT/src/frontend_analysis/IR_analysis/InterfaceInfer.cpp"
-POINTWISE_SOURCE="$TESTS/compiler_cases/duplex_effects/same_base_pointwise.cpp"
-POINTWISE_REVERSED_SOURCE="$TESTS/compiler_cases/duplex_effects/same_base_pointwise_reversed.cpp"
-ASYMMETRIC_64_SOURCE="$TESTS/compiler_cases/duplex_effects/same_base_asymmetric_64.cpp"
-DISTINCT_SOURCE_FIRST_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_source_first.cpp"
-DISTINCT_DESTINATION_FIRST_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_destination_first.cpp"
-DISTINCT_ONE_RESTRICT_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_one_restrict.cpp"
-DISTINCT_ASYMMETRIC_64_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_asymmetric_64.cpp"
-DISTINCT_MISMATCHED_BOUNDS_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_mismatched_bounds.cpp"
-DISTINCT_TWO_LOOPS_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_bases_two_loops.cpp"
-PREFIX_READ_LONGER_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_read_longer.cpp"
-PREFIX_WRITE_LONGER_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_write_longer.cpp"
-PREFIX_EQUAL_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_equal.cpp"
-PREFIX_SIGNED_BOUND_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_signed_bound.cpp"
-PREFIX_WIDTH_BOUND_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_width_bound.cpp"
-PREFIX_U64_BOUND_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_u64_bound.cpp"
-PREFIX_EXTRA_CFG_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_extra_cfg.cpp"
-PREFIX_GUARD_BYPASS_SOURCE="$TESTS/compiler_cases/duplex_effects/distinct_prefix_guard_bypass.cpp"
+EFFECT_FAMILY_SOURCE="$TESTS/compiler_cases/duplex_effect_family_cases.cpp"
 PARALLEL_HELPERS="$TESTS/parallel_helpers.sh"
 CASES=(same_base_pointwise same_base_pointwise_reversed shifted_index stride_index
   same_base_cached conditional_store residual_store volatile_effect separate_phase
@@ -61,15 +45,7 @@ PLUGIN="$(realpath "$BAMBU_HLS")/lib/panda/clang-16/ASTAnalyzer.so"
 if [[ ! -r "$PLUGIN" ]]; then echo "selected ASTAnalyzer plugin is missing: $PLUGIN" >&2; exit 2; fi
 command -v grep >/dev/null || { echo "required tool not found: grep" >&2; exit 2; }
 command -v sha256sum >/dev/null || { echo "required tool not found: sha256sum" >&2; exit 2; }
-[[ -f "$SOURCE" && -f "$POINTWISE_SOURCE" && -f "$POINTWISE_REVERSED_SOURCE" &&
-   -f "$ASYMMETRIC_64_SOURCE" && -f "$DISTINCT_SOURCE_FIRST_SOURCE" &&
-   -f "$DISTINCT_DESTINATION_FIRST_SOURCE" && -f "$DISTINCT_ONE_RESTRICT_SOURCE" &&
-   -f "$DISTINCT_ASYMMETRIC_64_SOURCE" && -f "$DISTINCT_MISMATCHED_BOUNDS_SOURCE" &&
-   -f "$DISTINCT_TWO_LOOPS_SOURCE" && -f "$PREFIX_READ_LONGER_SOURCE" &&
-   -f "$PREFIX_WRITE_LONGER_SOURCE" && -f "$PREFIX_EQUAL_SOURCE" &&
-   -f "$PREFIX_SIGNED_BOUND_SOURCE" && -f "$PREFIX_WIDTH_BOUND_SOURCE" &&
-   -f "$PREFIX_U64_BOUND_SOURCE" &&
-   -f "$PREFIX_EXTRA_CFG_SOURCE" && -f "$PREFIX_GUARD_BYPASS_SOURCE" &&
+[[ -f "$SOURCE" && -f "$EFFECT_FAMILY_SOURCE" &&
    -f "$CHECKER" && -f "$CORE_SOURCE" && -f "$PARALLEL_HELPERS" ]] || {
   echo "source/checker/parallel helper missing" >&2; exit 2;
 }
@@ -108,32 +84,39 @@ digest() { sha256sum "$1" | awk '{print $1}'; }
 
 COMMON=(--AXI-burst-type=INCREMENTAL --compiler=I386_CLANG16 --generate-interface=INFER
   --device-name=xcu250,-2L,figd2104 --clock-period=3.33
-  --bambu-parameter=experimental-m-axi-burst=1 --bambu-parameter=print-ir-manager=1
+  --bambu-parameter=m-axi-burst=1 --bambu-parameter=print-ir-manager=1
   --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based --print-dot --no-clean
   --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 
 run_case() {
-  local top=$1 out="$OUT/$1" rc=0 case_source=$SOURCE
-  if [[ "$top" == same_base_pointwise ]]; then case_source=$POINTWISE_SOURCE; fi
-  if [[ "$top" == same_base_pointwise_reversed ]]; then case_source=$POINTWISE_REVERSED_SOURCE; fi
-  if [[ "$top" == same_base_asymmetric_64 ]]; then case_source=$ASYMMETRIC_64_SOURCE; fi
-  if [[ "$top" == distinct_bases_source_first ]]; then case_source=$DISTINCT_SOURCE_FIRST_SOURCE; fi
-  if [[ "$top" == distinct_bases_destination_first ]]; then case_source=$DISTINCT_DESTINATION_FIRST_SOURCE; fi
-  if [[ "$top" == distinct_bases_one_restrict ]]; then case_source=$DISTINCT_ONE_RESTRICT_SOURCE; fi
-  if [[ "$top" == distinct_bases_asymmetric_64 ]]; then case_source=$DISTINCT_ASYMMETRIC_64_SOURCE; fi
-  if [[ "$top" == distinct_bases_mismatched_bounds ]]; then case_source=$DISTINCT_MISMATCHED_BOUNDS_SOURCE; fi
-  if [[ "$top" == distinct_bases_two_loops ]]; then case_source=$DISTINCT_TWO_LOOPS_SOURCE; fi
-  if [[ "$top" == distinct_prefix_read_longer ]]; then case_source=$PREFIX_READ_LONGER_SOURCE; fi
-  if [[ "$top" == distinct_prefix_write_longer ]]; then case_source=$PREFIX_WRITE_LONGER_SOURCE; fi
-  if [[ "$top" == distinct_prefix_equal ]]; then case_source=$PREFIX_EQUAL_SOURCE; fi
-  if [[ "$top" == distinct_prefix_signed_bound ]]; then case_source=$PREFIX_SIGNED_BOUND_SOURCE; fi
-  if [[ "$top" == distinct_prefix_width_bound ]]; then case_source=$PREFIX_WIDTH_BOUND_SOURCE; fi
-  if [[ "$top" == distinct_prefix_u64_bound ]]; then case_source=$PREFIX_U64_BOUND_SOURCE; fi
-  if [[ "$top" == distinct_prefix_extra_cfg ]]; then case_source=$PREFIX_EXTRA_CFG_SOURCE; fi
-  if [[ "$top" == distinct_prefix_guard_bypass ]]; then case_source=$PREFIX_GUARD_BYPASS_SOURCE; fi
+  local top=$1 out="$OUT/$1" rc=0 case_source=$SOURCE case_macro=
+  case "$top" in
+    same_base_pointwise) case_macro=16 ;;
+    same_base_pointwise_reversed) case_macro=17 ;;
+    same_base_asymmetric_64) case_macro=15 ;;
+    distinct_bases_source_first) case_macro=05 ;;
+    distinct_bases_destination_first) case_macro=02 ;;
+    distinct_bases_one_restrict) case_macro=04 ;;
+    distinct_bases_asymmetric_64) case_macro=01 ;;
+    distinct_bases_mismatched_bounds) case_macro=03 ;;
+    distinct_bases_two_loops) case_macro=06 ;;
+    distinct_prefix_read_longer) case_macro=10 ;;
+    distinct_prefix_write_longer) case_macro=14 ;;
+    distinct_prefix_equal) case_macro=07 ;;
+    distinct_prefix_signed_bound) case_macro=11 ;;
+    distinct_prefix_width_bound) case_macro=13 ;;
+    distinct_prefix_u64_bound) case_macro=12 ;;
+    distinct_prefix_extra_cfg) case_macro=08 ;;
+    distinct_prefix_guard_bypass) case_macro=09 ;;
+  esac
+  if [[ -n $case_macro ]]; then
+    case_source=$EFFECT_FAMILY_SOURCE
+    case_macro="AXI_DUPLEX_EFFECT_CASE_$case_macro"
+  fi
   if [[ -e "$out" || -L "$out" ]]; then echo "case output path must be fresh and not a symlink: $out" >&2; return 2; fi
   mkdir "$out"
   local args=("--top-fname=$top" "${COMMON[@]}")
+  if [[ -n $case_macro ]]; then args+=("--extra-cc-options=-D$case_macro"); fi
   if [[ "$top" == same_base_asymmetric_64 || "$top" == distinct_bases_asymmetric_64 ]]; then
     args+=(--addr-bus-bitsize=64)
   fi

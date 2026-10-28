@@ -29,9 +29,15 @@ if [[ ${BURST_WRITER_SYNTH_OUTSIDE_SANDBOX:-} != 1 ]]; then
     echo "refusing synthesis unless BURST_WRITER_SYNTH_OUTSIDE_SANDBOX=1 is set" >&2
     exit 2
 fi
-VIVADO=${VIVADO_BIN:-/opt/Xilinx/Vivado/2024.2/bin/vivado}
-if ! command -v "$VIVADO" >/dev/null 2>&1 && [[ ! -x $VIVADO ]]; then
-    echo "vivado not found: $VIVADO" >&2
+for tool in vivado timeout python3 sha256sum grep tail tee realpath git; do
+    command -v "$tool" >/dev/null 2>&1 || {
+        echo "required tool is missing from PATH: $tool" >&2
+        exit 2
+    }
+done
+VIVADO=$(realpath "$(command -v vivado)")
+if [[ ! -x $VIVADO ]]; then
+    echo "vivado is not executable: $VIVADO" >&2
     exit 2
 fi
 PART=${VIVADO_PART:-xcu250-figd2104-2L-e}
@@ -45,13 +51,21 @@ if [[ -e "$TASK_OUT" || -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then
 fi
 mkdir -p "$OUT_PARENT"
 mkdir "$TASK_OUT"
+mkdir -p "$TASK_OUT/tmp"
+export TMPDIR="$TASK_OUT/tmp" TMP="$TASK_OUT/tmp" TEMP="$TASK_OUT/tmp"
 RESULTS_LOG="$TASK_OUT/results.log"
+: > "$RESULTS_LOG"
 
 python3 -B "$EXTRACTOR" --xml "$XML" --out "$TASK_OUT/$TOP.sv" | tee "$TASK_OUT/extract.log"
+VIVADO_VERSION=$(timeout 30s "$VIVADO" -version 2>&1) || {
+    echo "vivado -version failed (status=$?)" >&2
+    exit 1
+}
 {
     printf 'xml='; sha256sum "$XML"
     printf 'extractor='; sha256sum "$EXTRACTOR"
-    printf 'vivado='; "$VIVADO" -version 2>/dev/null | sed -n '1p'
+    printf 'vivado=%s\n' "$VIVADO"
+    printf 'vivado_version=%s\n' "${VIVADO_VERSION%%$'\n'*}"
     printf 'part=%s\n' "$PART"
     printf 'git_head=%s\n' "$(git -C "$ROOT" rev-parse HEAD)"
 } > "$TASK_OUT/provenance.txt"
@@ -83,29 +97,72 @@ if {[catch {synth_design -top $TOP -mode out_of_context -no_iobuf \\
     puts "SYNTH_TOOL_OUTCOME ok"
 }
 TCL
-    local status=0
+    local status=0 outcome outcome_line error_line
     timeout 900s "$VIVADO" -mode batch -nojournal -log "$dir/vivado.log" -source "$tcl" \
         > "$log" 2>&1 || status=$?
-    local outcome=error
-    if grep -Eq "^SYNTH_TOOL_OUTCOME ok$" "$log"; then outcome=ok; fi
+    printf '%s\n' "$status" > "$log.status"
+    local -a outcomes=() messages=() errors=() guard_errors=() module_errors=()
+    mapfile -t outcomes < <(grep -E '^SYNTH_TOOL_OUTCOME ' "$log" || true)
+    mapfile -t messages < <(grep -E '^SYNTH_TOOL_MESSAGE ' "$log" || true)
+    mapfile -t errors < <(grep -E '^ERROR:' "$log" || true)
+    if ((${#outcomes[@]} != 1)); then
+        tail -n 40 "$log" >&2
+        echo "synthesis did not emit exactly one outcome marker: $label (status=$status)" >&2
+        return 1
+    fi
+    outcome_line=${outcomes[0]}
+    if [[ $outcome_line == 'SYNTH_TOOL_OUTCOME ok' ]]; then
+        outcome=ok
+    elif [[ $outcome_line == 'SYNTH_TOOL_OUTCOME error' ]]; then
+        outcome=error
+    else
+        tail -n 40 "$log" >&2
+        echo "synthesis emitted an invalid outcome marker: $label ($outcome_line)" >&2
+        return 1
+    fi
+    if grep -Eqi 'segmentation fault|stack smashing|addresssanitizer|core dumped|aborted|killed|timed out|timeout' "$log"; then
+        tail -n 40 "$log" >&2
+        echo "synthesis crashed or timed out: $label (status=$status)" >&2
+        return 1
+    fi
     if [[ $expect == reject ]]; then
-        if [[ $outcome == ok ]]; then
+        mapfile -t guard_errors < <(grep -F "ERROR: [Synth 8-6058] Synth Error: $message " "$log" || true)
+        mapfile -t module_errors < <(grep -F "ERROR: [Synth 8-6156] failed synthesizing module '$TOP' " "$log" || true)
+        if ((status != 0)) || [[ $outcome != error ]] || ((${#messages[@]} != 1)) ||
+           [[ ${messages[0]} != 'SYNTH_TOOL_MESSAGE ERROR:'* ]] ||
+           ((${#guard_errors[@]} != 1 || ${#module_errors[@]} != 1 || ${#errors[@]} != 2)); then
             tail -n 40 "$log" >&2
-            echo "synthesis accepted an illegal parameter set: $label" >&2
+            echo "synthesis rejection did not emit one exact guard and its single module-failure cascade: $label (status=$status outcome=$outcome messages=${#messages[@]} errors=${#errors[@]})" >&2
             return 1
         fi
-        if [[ -n $message ]] && ! grep -Fq "$message" "$log"; then
+        local generated_sv="$TASK_OUT/$TOP.sv" guard_line module_line
+        if [[ ${guard_errors[0]} != "ERROR: [Synth 8-6058] Synth Error: $message  [$generated_sv:"* ||
+              ${module_errors[0]} != "ERROR: [Synth 8-6156] failed synthesizing module '$TOP' [$generated_sv:"* ]]; then
             tail -n 40 "$log" >&2
-            echo "synthesis rejection lacks the guard message: $label (status=$status)" >&2
+            echo "synthesis rejection diagnostics do not identify the generated module: $label" >&2
             return 1
         fi
+        guard_line=${guard_errors[0]#*"$generated_sv:"}
+        module_line=${module_errors[0]#*"$generated_sv:"}
+        if ! [[ $guard_line =~ ^[0-9]+\]$ && $module_line =~ ^[0-9]+\]$ ]]; then
+            tail -n 40 "$log" >&2
+            echo "synthesis rejection diagnostics have an invalid source location: $label" >&2
+            return 1
+        fi
+        for error_line in "${errors[@]}"; do
+            if [[ $error_line != "${guard_errors[0]}" && $error_line != "${module_errors[0]}" ]]; then
+                tail -n 40 "$log" >&2
+                echo "synthesis rejection emitted an unrelated error: $label" >&2
+                return 1
+            fi
+        done
         echo "SYNTH_REJECT_PASS $label B_MAX=$burst MAX_OUTSTANDING=$outstanding FIFO_DEPTH=$depth status=$status" \
             >> "$RESULTS_LOG"
         return 0
     fi
-    if [[ $outcome != ok ]]; then
+    if ((status != 0)) || [[ $outcome != ok ]] || ((${#messages[@]} != 0 || ${#errors[@]} != 0)); then
         tail -n 40 "$log" >&2
-        echo "synthesis refused a legal parameter set: $label (status=$status)" >&2
+        echo "synthesis refused a legal parameter set or emitted an error: $label (status=$status outcome=$outcome messages=${#messages[@]})" >&2
         return 1
     fi
     echo "SYNTH_ACCEPT_PASS $label B_MAX=$burst MAX_OUTSTANDING=$outstanding FIFO_DEPTH=$depth" \

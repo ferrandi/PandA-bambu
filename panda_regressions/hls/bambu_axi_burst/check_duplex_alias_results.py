@@ -14,7 +14,9 @@ from check_burst_results import _parameterized_instances
 
 
 PROFILES = {"symmetric": "1", "asymmetric": "2"}
-SCENARIOS = {"disjoint": "1", "forward-overlap": "2", "reverse-overlap": "3", "zero-trip": "4"}
+SCENARIOS = {"disjoint": "1", "forward-overlap": "2", "reverse-overlap": "3", "zero-trip": "4",
+             "nested-changing-base": "5", "nested-changing-count": "6"}
+FALLBACK_SCENARIOS = {"nested-changing-base", "nested-changing-count"}
 ARTIFACT_SUFFIXES = {".v", ".sv", ".xml", ".log", ".vcd"}
 
 
@@ -50,7 +52,7 @@ def parse_fields(path: Path, label: str) -> dict[str, str]:
     return result
 
 
-def check_manifest(case_dir: Path) -> set[Path]:
+def check_manifest(case_dir: Path, allow_empty_vcd: bool = False) -> set[Path]:
     manifest = safe_file(case_dir / "artifact-sha256.txt", "artifact manifest")
     declared: dict[Path, str] = {}
     for number, line in enumerate(manifest.read_text(encoding="utf-8", errors="strict").splitlines(), 1):
@@ -60,7 +62,9 @@ def check_manifest(case_dir: Path) -> set[Path]:
         path = Path(raw)
         if not path.is_absolute():
             path = case_dir / path
-        resolved = safe_file(path, "manifest artifact", nonempty=path.suffix.lower() != ".log")
+        suffix = path.suffix.lower()
+        resolved = safe_file(path, "manifest artifact",
+                             nonempty=suffix != ".log" and not (allow_empty_vcd and suffix == ".vcd"))
         try:
             resolved.relative_to(case_dir.resolve())
         except ValueError as exc:
@@ -99,6 +103,15 @@ def check_runtime_proof(compiler_output: str, profile: str, scenario: str) -> No
          f"{profile}/{scenario}: expected exactly one well-formed duplex proof record for bundle shared; "
          f"got {len(bundle_records)}")
     record = bundle_records[0]
+    if scenario in FALLBACK_SCENARIOS:
+        need(record.get("semantic_proof") is False,
+             f"{profile}/{scenario}: unsupported nested loops must conservatively reject the duplex proof")
+        need(record.get("runtime_range_guard") is False,
+             f"{profile}/{scenario}: unsupported nested loops must not enable the runtime guard")
+        reason = record.get("semantic_reason")
+        need(isinstance(reason, str) and bool(reason.strip()),
+             f"{profile}/{scenario}: fallback reason is missing")
+        return
     need(record.get("semantic_proof") is True,
          f"{profile}/{scenario}: bundle shared proof does not assert semantic_proof=true")
     need(record.get("runtime_range_guard") is True,
@@ -147,24 +160,38 @@ def check_zero_trip_vcd(path: Path, profile: str) -> None:
 
 def parse_axi_vcd(path: Path, profile: str, scenario: str) -> tuple[dict[str, list[int]], int]:
     text = safe_file(path, "overlap AXI simulation VCD").read_text(encoding="ascii", errors="strict")
-    signal_ids: dict[str, set[str]] = {"clock": set()}
-    for signal in ("arvalid", "arready", "awvalid", "awready", "wvalid", "wready", "bvalid", "bready"):
-        signal_ids[signal] = set()
+    signal_ids: dict[str, set[str]] = {
+        signal: set() for signal in ("arvalid", "arready", "awvalid", "awready",
+                                     "wvalid", "wready", "bvalid", "bready")
+    }
+    system_axi_scopes: dict[tuple[str, ...], set[str]] = {}
+    system_clock_ids: dict[tuple[str, ...], set[str]] = {}
+    scope_stack: list[str] = []
     definitions_ended = False
     for raw_line in text.splitlines():
         line = raw_line.strip()
-        if line.startswith("$var "):
+        if line.startswith("$scope "):
+            fields = line.split()
+            need(len(fields) >= 4 and fields[-1] == "$end", "malformed VCD scope declaration")
+            scope_stack.append(fields[2])
+        elif line.startswith("$upscope"):
+            need(bool(scope_stack), "VCD scope hierarchy closes an unopened scope")
+            scope_stack.pop()
+        elif line.startswith("$var "):
             fields = line.split()
             need(len(fields) >= 6 and fields[-1] == "$end", "malformed VCD variable declaration")
             name = fields[-2]
-            if name in {"clock", "sig_clock"}:
-                signal_ids["clock"].add(fields[3])
+            if name in {"clock", "sig_clock"} and scope_stack and scope_stack[-1] == "system":
+                system_clock_ids.setdefault(tuple(scope_stack), set()).add(fields[3])
             elif name.startswith("sig_m_axi_shared_"):
                 suffix = name.rsplit("_", 1)[-1]
                 if suffix in signal_ids:
                     signal_ids[suffix].add(fields[3])
+                    if scope_stack and scope_stack[-1] == "system":
+                        system_axi_scopes.setdefault(tuple(scope_stack), set()).add(suffix)
         elif line.startswith("$enddefinitions"):
             definitions_ended = True
+            need(not scope_stack, "VCD scope hierarchy is not closed before $enddefinitions")
             break
     need(definitions_ended, f"{profile}/{scenario}: VCD lacks $enddefinitions")
     for signal, identifiers in signal_ids.items():
@@ -172,6 +199,15 @@ def parse_axi_vcd(path: Path, profile: str, scenario: str) -> tuple[dict[str, li
              f"{profile}/{scenario}: VCD must define exactly one shared-bundle {signal.upper()} signal")
 
     ids = {signal: next(iter(identifiers)) for signal, identifiers in signal_ids.items()}
+    required_axi_signals = set(signal_ids)
+    system_scopes = [scope for scope, signals in system_axi_scopes.items()
+                     if scope[-1] == "system" and required_axi_signals <= signals]
+    need(len(system_scopes) == 1,
+         f"{profile}/{scenario}: VCD must define exactly one system scope with the complete shared-bundle AXI signals")
+    clock_ids = system_clock_ids.get(system_scopes[0], set())
+    need(len(clock_ids) == 1,
+         f"{profile}/{scenario}: VCD must define exactly one effective system CLOCK signal")
+    ids["clock"] = next(iter(clock_ids))
     values = {identifier: "x" for identifier in ids.values()}
     events: dict[str, list[int]] = {name: [] for name in ("ar", "aw", "w", "b")}
     cycle = 0
@@ -250,32 +286,31 @@ def check_range_probe(out: Path, args: argparse.Namespace) -> None:
         "libtech": str(libtech),
         "testbench": str(args.range_probe_testbench.resolve()),
         "runner": str(args.range_probe_runner.resolve()),
-        "verilator": str(args.simulator.resolve()),
+        "simulator": str(args.simulator.resolve()),
         "addr_bits": str(args.addr_bits),
     }
     for key, value in expected.items():
         need(fields.get(key) == value, f"range probe provenance {key} mismatch")
     for key, path in (("kernel", kernel), ("libtech", libtech), ("testbench", args.range_probe_testbench),
-                      ("runner", args.range_probe_runner), ("verilator", args.simulator)):
+                      ("runner", args.range_probe_runner), ("simulator", args.simulator)):
         need(fields.get(f"{key}_sha256") == sha256(path), f"range probe {key} digest mismatch")
 
     argv_text = fields.get("argv", "")
     need(bool(argv_text), "range probe invocation argv missing")
     argv = shlex.split(argv_text)
-    need(argv and argv[0] == str(args.simulator.resolve()), "range probe executable does not match configured Verilator")
-    need("--binary" in argv and "--timing" in argv and "--trace" in argv,
-         "range probe does not build a timed Verilator simulation with diagnostic tracing")
-    need(argv.count(f"-DDUPLEX_ALIAS_ADDR_BITS={args.addr_bits}") == 1,
-         "range probe Verilator argv does not select the requested address width exactly once")
-    need(argv.count("--top-module") == 1 and
-         argv[argv.index("--top-module") + 1] == "tb_duplex_alias_range_guard",
-         "range probe top module mismatch")
+    vlog = Path(fields.get("vlog", ""))
+    safe_file(vlog, "range-probe ModelSim vlog")
+    need(fields.get("vlog_sha256") == sha256(vlog), "range probe vlog digest mismatch")
+    need(argv and argv[0] == str(vlog.resolve()), "range probe compile executable does not match configured ModelSim vlog")
+    need(argv.count("-sv") == 1 and
+         argv.count(f"+define+DUPLEX_ALIAS_ADDR_BITS={args.addr_bits}") == 1,
+         "range probe ModelSim vlog argv does not select SystemVerilog and the requested address width exactly once")
     need(str(kernel) in argv and str(libtech) in argv and str(args.range_probe_testbench.resolve()) in argv,
          "range probe does not compile the symmetric/disjoint kernel and library RTL with the assigned testbench")
     need(not any(arg.startswith("--device-name") or arg.startswith("--target-file") for arg in argv),
          "range probe invocation unexpectedly overrides target")
 
-    build_log = safe_file(probe_dir / "build.log", "range-probe Verilator build log")
+    build_log = safe_file(probe_dir / "build.log", "range-probe ModelSim build log")
     del build_log
     probe_log = safe_file(probe_dir / "probe.log", "range-probe simulation log")
     expected_markers = [
@@ -322,6 +357,8 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
         "scenario_id": scenario_id,
         "feature": "1",
         "addr_bits": str(args.addr_bits),
+        "payload_bits": str(args.payload_bits),
+        "proof_mode": args.proof_mode,
         "output": str(case_dir),
         "source": str(args.source.resolve()),
         "testbench": str(args.testbench.resolve()),
@@ -341,10 +378,14 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
                       ("plugin", args.plugin), ("simulator", args.simulator)):
         need(fields.get(f"{key}_sha256") == sha256(path), f"{profile}/{scenario}: {key} digest mismatch")
 
-    count = 0 if scenario == "zero-trip" else 64
+    count = 0 if scenario == "zero-trip" else 4 if scenario.startswith("nested-") else 64
     marker = f"DUPLEX_ALIAS_GOLDEN_PASS CASE={scenario} profile={profile_id} N={count}"
     if scenario == "zero-trip":
         marker += " NO_DATA_CHANGE=1"
+    if scenario.startswith("nested-"):
+        marker += " OUTER=4"
+    if args.payload_bits == 1:
+        marker += " PAYLOAD=FLOAT32_BITS"
     need(fields.get("marker") == marker, f"{profile}/{scenario}: provenance marker mismatch")
     testbench_log = safe_file(case_dir / "HLS_output/simulation/testbench.log", "simulation testbench log")
     marker_lines = [line for line in testbench_log.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -354,9 +395,11 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
     activation = "Activated guarded distinct-base duplex for bundle shared (overlap uses serialized scalar transfers)"
     compiler_output = "\n".join((case_dir / name).read_text(encoding="utf-8", errors="replace")
                                  for name in ("stdout.log", "stderr.log"))
-    need(compiler_output.count(activation) == 1,
-         f"{profile}/{scenario}: expected exactly one runtime-range guard activation witness")
-    check_runtime_proof(compiler_output, profile, scenario)
+    expected_activations = 0 if scenario in FALLBACK_SCENARIOS else 1
+    if args.proof_mode == "development":
+        need(compiler_output.count(activation) == expected_activations,
+             f"{profile}/{scenario}: expected {expected_activations} runtime-range guard activation witnesses")
+        check_runtime_proof(compiler_output, profile, scenario)
 
     vcd = case_dir / "HLS_output/simulation/test.vcd"
     if scenario == "zero-trip":
@@ -375,7 +418,8 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
         required_artifacts.add(safe_file(vcd, "zero-trip simulation VCD"))
     elif scenario in {"forward-overlap", "reverse-overlap"}:
         required_artifacts.add(safe_file(vcd, "overlap AXI simulation VCD"))
-    artifacts = check_manifest(case_dir)
+    artifacts = check_manifest(case_dir, allow_empty_vcd=scenario not in {
+        "zero-trip", "forward-overlap", "reverse-overlap"})
     need(required_artifacts <= artifacts, f"{profile}/{scenario}: required evidence omitted from manifest")
 
     argv_text = fields.get("argv", "")
@@ -383,14 +427,16 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
     argv = shlex.split(argv_text)
     need(len(argv) > 2 and argv[0] == str(args.bambu.resolve()) and argv[1] == str(args.source.resolve()),
          f"{profile}/{scenario}: invocation executable/source mismatch")
-    need("--simulate" in argv and "--simulator=VERILATOR" in argv,
-         f"{profile}/{scenario}: invocation does not run Verilator simulation")
+    need("--simulate" in argv and "--simulator=MODELSIM" in argv,
+         f"{profile}/{scenario}: invocation does not run ModelSim simulation")
     need(argv.count(f"--addr-bus-bitsize={args.addr_bits}") == 1,
          f"{profile}/{scenario}: invocation must select AXI address width {args.addr_bits} exactly once")
     need(argv.count("--memory-allocation-policy=NO_BRAM") == 1,
          f"{profile}/{scenario}: invocation must select NO_BRAM for delayed memory responses")
-    need(argv.count("--debug-classes=InterfaceInfer,BuildVirtualPhi") == 1,
-         f"{profile}/{scenario}: InterfaceInfer activation diagnostics were not enabled exactly once")
+    debug_count = argv.count("--debug-classes=InterfaceInfer,BuildVirtualPhi")
+    expected_debug_count = 1 if args.proof_mode == "development" else 0
+    need(debug_count == expected_debug_count,
+         f"{profile}/{scenario}: debug proof option count does not match proof mode")
     needs_vcd = scenario == "zero-trip" or scenario in {"forward-overlap", "reverse-overlap"}
     need(argv.count("--generate-vcd") == (1 if needs_vcd else 0),
          f"{profile}/{scenario}: VCD generation does not match scenario")
@@ -399,11 +445,13 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
          f"{profile}/{scenario}: overlap case must use exactly 64 cycles of memory write delay")
     need(not any(arg.startswith("--device-name") or arg.startswith("--target-file") for arg in argv),
          f"{profile}/{scenario}: expected default device but invocation overrides target")
-    need(argv.count("--bambu-parameter=experimental-m-axi-burst=1") == 1,
+    need(argv.count("--bambu-parameter=m-axi-burst=1") == 1,
          f"{profile}/{scenario}: burst feature is not enabled exactly once")
     need(argv.count(f"--extra-cc-options=-DDUPLEX_ALIAS_PROFILE={profile_id}") == 1 and
          argv.count(f"--extra-cc-options=-DDUPLEX_ALIAS_CASE={scenario_id}") == 1,
          f"{profile}/{scenario}: invocation profile/scenario selection mismatch")
+    need(argv.count("--extra-cc-options=-DDUPLEX_ALIAS_FLOAT_BITS") == args.payload_bits,
+         f"{profile}/{scenario}: float payload test selection mismatch")
 
     expected_profile = ({"B_MAX": "16", "MAX_OUTSTANDING": "1", "FIFO_DEPTH": "64"}
                         if profile == "symmetric" else
@@ -425,12 +473,16 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
     write_instances = [parameters for path in rtl_files
                        for parameters in _parameterized_instances(path.read_text(encoding="utf-8", errors="replace"),
                                                                    "MinimalAXI4MasterPipelinedWrite")]
-    need(len(read_instances) == 1 and all(read_instances[0].get(key) == value
-                                          for key, value in expected_read_profile.items()),
-         f"{profile}/{scenario}: expected exactly one read engine with complete {args.addr_bits}-bit profile")
-    need(len(write_instances) == 1 and all(write_instances[0].get(key) == value
-                                           for key, value in expected_write.items()),
-         f"{profile}/{scenario}: expected exactly one write engine with complete {args.addr_bits}-bit profile")
+    if scenario in FALLBACK_SCENARIOS:
+        need(not read_instances, f"{profile}/{scenario}: conservative fallback must not instantiate a burst read engine")
+        need(not write_instances, f"{profile}/{scenario}: conservative fallback must not instantiate a burst write engine")
+    else:
+        need(len(read_instances) == 1 and all(read_instances[0].get(key) == value
+                                              for key, value in expected_read_profile.items()),
+             f"{profile}/{scenario}: expected exactly one read engine with complete {args.addr_bits}-bit profile")
+        need(len(write_instances) == 1 and all(write_instances[0].get(key) == value
+                                               for key, value in expected_write.items()),
+             f"{profile}/{scenario}: expected exactly one write engine with complete {args.addr_bits}-bit profile")
 
 
 def main() -> int:
@@ -446,26 +498,39 @@ def main() -> int:
     parser.add_argument("--range-probe-runner", required=True, type=Path)
     parser.add_argument("--range-probe-testbench", required=True, type=Path)
     parser.add_argument("--addr-bits", required=True, type=int, choices=(32, 64))
+    parser.add_argument("--proof-mode", choices=("functional", "development"), default="functional")
     args = parser.parse_args()
     out = args.output.resolve(strict=True)
     need(out.is_dir() and not args.output.is_symlink(), "output root missing or symlink")
     root_provenance = safe_file(out / "provenance.txt", "run provenance").read_text(encoding="utf-8", errors="strict")
     root_address_widths = re.findall(r"(?m)^addr_bits=(\d+)$", root_provenance)
     need(root_address_widths == [str(args.addr_bits)], "run provenance address width mismatch")
+    root_proof_modes = re.findall(r"(?m)^proof_mode=(functional|development)$", root_provenance)
+    need(root_proof_modes == [args.proof_mode], "run provenance proof mode mismatch")
+    payload_modes = re.findall(r"(?m)^payload_bits=([01])$", root_provenance)
+    need(payload_modes == ["0"] or payload_modes == ["1"], "run provenance payload mode mismatch")
+    args.payload_bits = int(payload_modes[0])
     for path, label in ((args.source, "source"), (args.testbench, "testbench"), (args.bambu, "Bambu"),
                         (args.settings, "settings"), (args.plugin, "plugin"), (args.simulator, "simulator"),
                         (args.runner, "runner"), (args.range_probe_runner, "range-probe runner"),
                         (args.range_probe_testbench, "range-probe testbench")):
         safe_file(path, label)
-    for profile in PROFILES:
-        for scenario in SCENARIOS:
+    selected_profiles = {"symmetric": PROFILES["symmetric"]} if args.payload_bits == 1 else PROFILES
+    selected_scenarios = ("disjoint", "forward-overlap", "reverse-overlap") if args.payload_bits == 1 else SCENARIOS
+    for profile in selected_profiles:
+        for scenario in selected_scenarios:
             check_case(out, profile, scenario, args)
     check_range_probe(out, args)
-    expected_case_dirs = {str((out / profile / scenario).resolve()) for profile in PROFILES for scenario in SCENARIOS}
-    actual_case_dirs = {str(path.resolve()) for profile_dir in out.iterdir() if profile_dir.name in PROFILES
+    expected_case_dirs = {str((out / profile / scenario).resolve())
+                          for profile in selected_profiles for scenario in selected_scenarios}
+    actual_case_dirs = {str(path.resolve()) for profile_dir in out.iterdir() if profile_dir.name in selected_profiles
                         for path in profile_dir.iterdir() if path.is_dir()}
     need(actual_case_dirs == expected_case_dirs, "scenario matrix contains missing or unexpected case directories")
-    print("DUPLEX_ALIAS_CHECK PASS PROFILES=2 SCENARIOS=8 (zero-trip has no AR/AW; overlap VCD proves delayed B serialization)")
+    if args.payload_bits == 1:
+        print("DUPLEX_ALIAS_CHECK PASS PAYLOAD=FLOAT32_BITS PROFILES=1 SCENARIOS=3")
+    else:
+        print("DUPLEX_ALIAS_CHECK PASS PROFILES=2 SCENARIOS=12 (overlap VCD proves delayed B serialization; "
+              "nested-changing-base/count conservatively fall back)")
     return 0
 
 

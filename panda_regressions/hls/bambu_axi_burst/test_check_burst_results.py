@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+from check_burst_results import check_fixed_burst_fallback
+
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
@@ -135,6 +137,52 @@ class BurstResultGateTests(unittest.TestCase):
         self.assertIn("PASS: 10 read cases, 3 write cases, 4 duplex cases, and 1 legacy cases",
                       result.stdout)
 
+    def test_fixed_fallback_requires_device_provenance_reason_golden_and_scalar_rtl(self):
+        case_dir = self.results / "AXI-BURST" / "fixed-burst-fallback"
+        case_dir.mkdir(parents=True)
+        fixed_target = self.root / "xcu250-fixed.xml"
+        fixed_target.write_text(
+            '<target><device><axi_burst_type value="0"/></device></target>\n', encoding="utf-8")
+        (case_dir / "bambu_results.xml").write_text(
+            '<results><evaluation CYCLES="123"/></results>\n', encoding="utf-8")
+        (case_dir / "execution.log").write_text(
+            "AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=FIXED(device) "
+            "read_max=16(default)\n"
+            "Keeping legacy m_axi accesses for bundle src: AXI burst type is FIXED; "
+            "incremental prefetch is unsupported\n", encoding="utf-8")
+        simulator_log = case_dir / "HLS_output/simulation/modelsim_backend/launch.log"
+        simulator_log.parent.mkdir(parents=True)
+        simulator_log.write_text("AXI_BURST_GOLDEN_PASS N=1024 result=00000001\n", encoding="utf-8")
+        rtl = case_dir / "kernel.v"
+        rtl.write_text("module kernel(input clk); MinimalAXI4AdapterSingleBeat adapter(); endmodule\n",
+                       encoding="utf-8")
+        check_fixed_burst_fallback(case_dir, fixed_target)
+
+        (case_dir / "execution.log").write_text(
+            (case_dir / "execution.log").read_text(encoding="utf-8").replace(
+                "FIXED(device)", "INCREMENTAL(command-line)"), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "effective FIXED burst type"):
+            check_fixed_burst_fallback(case_dir, fixed_target)
+
+        (case_dir / "execution.log").write_text(
+            "AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=FIXED(device)\n"
+            "Keeping legacy m_axi accesses for bundle src: AXI burst type is FIXED; "
+            "incremental prefetch is unsupported\n", encoding="utf-8")
+        simulator_log.write_text("ModelSim simulation completed\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "golden testbench"):
+            check_fixed_burst_fallback(case_dir, fixed_target)
+
+        (case_dir / "execution.log").write_text(
+            "AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=FIXED(device)\n"
+            "Keeping legacy m_axi accesses for bundle src: AXI burst type is FIXED; "
+            "incremental prefetch is unsupported\n", encoding="utf-8")
+        simulator_log.write_text("AXI_BURST_GOLDEN_PASS N=1024\n", encoding="utf-8")
+        rtl.write_text(
+            "module kernel; MinimalAXI4MasterPipelined #(.B_MAX(16)) engine(); endmodule\n",
+            encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "contains burst engine"):
+            check_fixed_burst_fallback(case_dir, fixed_target)
+
     def test_each_required_write_case_cannot_be_removed_from_tsv(self):
         original = self.expectations.read_text(encoding="utf-8").splitlines()
         for case, _, _ in REQUIRED_WRITE_CASES:
@@ -244,8 +292,7 @@ class BurstResultGateTests(unittest.TestCase):
         self.assertIn("does not contain the expected read burst profile", self.run_gate().stderr)
 
     def add_latency_case(self, case: str, latency: str, read_delay: str, write_delay: str) -> None:
-        """Append a gate case whose bundle declares 'latency' and whose testbench memory
-        model is driven with the delays named by the caller."""
+        """Append a gate case with independent design metadata and memory-model delays."""
 
         source = f"latency_o1_{latency}.cpp"
         (self.fixture / source).write_text(
@@ -684,20 +731,10 @@ class BurstResultGateTests(unittest.TestCase):
         self.add_write_case(cycles="PENDING")
         self.assertIn("cycle signature is PENDING", self.run_gate().stderr)
 
-    def test_bundle_latency_reaches_the_memory_model(self):
-        self.add_latency_case("lat-o1-n1024", "128", "128", "128")
+    def test_bundle_latency_is_independent_of_global_memory_model_delays(self):
+        self.add_latency_case("lat-o1-n1024", "128", "64", "2")
         result = self.run_gate()
         self.assertEqual(result.returncode, 0, result.stderr)
-
-    def test_bundle_latency_ignored_by_the_memory_model_fails(self):
-        # The pragma says 128, but the generated model still answers at the global
-        # 64/1: the attribute never reached the testbench, which must be a failure.
-        self.add_latency_case("lat-o1-n1024", "128", "64", "1")
-        self.assertIn("carries no .READ_DELAY(128)", self.run_gate().stderr)
-
-    def test_bundle_latency_missing_from_write_side_fails(self):
-        self.add_latency_case("lat-o1-n1024", "128", "128", "1")
-        self.assertIn("carries no .WRITE_DELAY(128)", self.run_gate().stderr)
 
 
 if __name__ == "__main__":
