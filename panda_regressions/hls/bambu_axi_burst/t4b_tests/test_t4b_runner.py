@@ -414,7 +414,7 @@ class T4BRunnerTests(unittest.TestCase):
             "if [[ ${1:-} == --version ]]; then echo 'mock-bambu 1.0'; exit 0; fi\n"
             "mkdir -p HLS_output/simulation/modelsim_backend\n"
             "top=kernel; queue=32; burst=1\n"
-            "for arg in \"$@\"; do case $arg in --top-fname=*) top=${arg#*=};; --tb-queue-size=*) queue=${arg#*=};; --bambu-parameter=experimental-m-axi-burst=0) burst=0;; esac; done\n"
+            "for arg in \"$@\"; do case $arg in --top-fname=*) top=${arg#*=};; --tb-queue-size=*) queue=${arg#*=};; --bambu-parameter=m-axi-burst=0) burst=0;; esac; done\n"
             "echo '.READ_DELAY(READ_DELAY ? READ_DELAY - 1 : 63)' > HLS_output/simulation/bambu_testbench.v\n"
             "echo \".QUEUE_SIZE($((queue + 1))),\" >> HLS_output/simulation/bambu_testbench.v\n"
             "echo 'T4B_GOLDEN_PASS N=1024 result=1' > HLS_output/simulation/testbench.log\n"

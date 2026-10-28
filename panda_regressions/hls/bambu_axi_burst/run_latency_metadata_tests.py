@@ -58,6 +58,104 @@ def architecture(case: pathlib.Path) -> pathlib.Path:
     return files[0]
 
 
+def testbench_delays(path: pathlib.Path) -> tuple[int, int]:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    lines = text.splitlines()
+    instances = [index for index, line in enumerate(lines)
+                 if re.search(r"\bif_m_axi_[A-Za-z0-9_]+\s+#\(", line)]
+    if len(instances) != 1:
+        raise RuntimeError(f"expected one generated m_axi testbench instance in {path}, found {len(instances)}")
+    block = "\n".join(lines[instances[0]:instances[0] + 8])
+    read = re.search(r"\.READ_DELAY\((\d+)\)", block)
+    write = re.search(r"\.WRITE_DELAY\((\d+)\)", block)
+    if read is None or write is None:
+        raise RuntimeError(f"generated m_axi instance is missing explicit delay parameters: {path}")
+    return int(read.group(1)), int(write.group(1))
+
+
+def effective_model_write_delay(path: pathlib.Path, parameter: int) -> tuple[int, int]:
+    """Evaluate the generated model clamp for its selected WRITE_DELAY branch."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    match = re.search(
+        r"TestbenchMEMAXI\s+#\(\.index\(index\),\s*\.WRITE_DELAY\(\s*WRITE_DELAY\s*\?\s*"
+        r"\(WRITE_DELAY\s*>\s*1\s*\?\s*WRITE_DELAY\s*-\s*1\s*:\s*1\)\s*:\s*(\d+)\s*\)",
+        text,
+    )
+    if match is None:
+        raise RuntimeError(f"generated TestbenchMEMAXI is missing the write-delay clamp: {path}")
+    fallback = int(match.group(1))
+    effective = parameter - 1 if parameter > 1 else (1 if parameter else fallback)
+    return effective, fallback
+
+
+def check_stimulus_independence(bambu: pathlib.Path, out: pathlib.Path,
+                                burst_parameter: str) -> list[dict[str, object]]:
+    source = TESTS / "bambu_axi_burst_sum_o1.cpp"
+    source_128 = TESTS / "bambu_axi_burst_sum_o1_lat128.cpp"
+    tb = TESTS / "bambu_axi_burst_tb.cpp"
+    cases = (("metadata64-cli7", source, 7, 5),
+             ("metadata128-cli7", source_128, 7, 5),
+             ("metadata128-cli9", source_128, 9, 6))
+    results: list[dict[str, object]] = []
+    for name, kernel_source, read_delay, write_delay in cases:
+        case = out / "stimulus" / name
+        result = run(case, [str(bambu), str(kernel_source), *BASE_ARGS,
+                            f"--top-fname=kernel", f"--generate-tb={tb}", "--tb-arg=1024",
+                            "--memory-allocation-policy=NO_BRAM",
+                            "--tb-param-size=src:16384", f"--mem-delay-read={read_delay}",
+                            f"--mem-delay-write={write_delay}",
+                            f"--bambu-parameter={burst_parameter}=1"])
+        if result.returncode:
+            raise RuntimeError(f"stimulus testbench generation failed for {name}, exit={result.returncode}; see {case}")
+        generated = list(case.rglob("bambu_testbench.v"))
+        if len(generated) != 1:
+            raise RuntimeError(f"expected one generated testbench in {case}, found {len(generated)}")
+        actual = testbench_delays(generated[0])
+        expected = (read_delay, write_delay)
+        if actual != expected:
+            raise RuntimeError(f"memory stimulus mismatch for {name}: expected {expected}, got {actual}; see {generated[0]}")
+        results.append({"case": f"stimulus/{name}", "expected": list(expected), "actual": list(actual),
+                        "testbench": str(generated[0])})
+    if results[0]["actual"] != results[1]["actual"]:
+        raise RuntimeError("changing only latency metadata changed generated READ_DELAY/WRITE_DELAY")
+    if results[1]["actual"] == results[2]["actual"]:
+        raise RuntimeError("changing --mem-delay-read/--mem-delay-write did not change generated stimulus")
+    return results
+
+
+def check_write_delay_clamp(bambu: pathlib.Path, out: pathlib.Path,
+                            burst_parameter: str) -> list[dict[str, object]]:
+    """Check both generated clamp branches at the minimum valid CLI delay."""
+    source = TESTS / "bambu_axi_burst_sum_o1.cpp"
+    tb = TESTS / "bambu_axi_burst_tb.cpp"
+    case = out / "write-delay-clamp" / "global-fallback-cli-one"
+    result = run(case, [str(bambu), str(source), *BASE_ARGS, "--top-fname=kernel",
+                        f"--generate-tb={tb}", "--tb-arg=1024", "--tb-param-size=src:16384",
+                        "--memory-allocation-policy=NO_BRAM",
+                        "--mem-delay-read=2", "--mem-delay-write=2",
+                        f"--bambu-parameter={burst_parameter}=1"])
+    if result.returncode:
+        raise RuntimeError(f"write-delay clamp testbench generation failed, "
+                           f"exit={result.returncode}; see {case}")
+    generated = list(case.rglob("bambu_testbench.v"))
+    if len(generated) != 1:
+        raise RuntimeError(f"expected one generated testbench in {case}, found {len(generated)}")
+    _, actual_parameter = testbench_delays(generated[0])
+    if actual_parameter != 2:
+        raise RuntimeError(f"minimum CLI write delay was not passed to the generated interface: "
+                           f"got {actual_parameter}; see {generated[0]}")
+    results: list[dict[str, object]] = []
+    for name, parameter in (("global-fallback-zero", 0), ("explicit-one", 1)):
+        effective, fallback = effective_model_write_delay(generated[0], parameter)
+        if fallback != 1 or effective < 1:
+            raise RuntimeError(f"write-delay clamp failed for {name}: parameter={parameter}, "
+                               f"fallback={fallback}, effective model delay={effective}; see {generated[0]}")
+        results.append({"case": f"write-delay-clamp/{name}", "parameter": parameter,
+                        "fallback": fallback, "effective_model_delay": effective,
+                        "testbench": str(generated[0])})
+    return results
+
+
 def bundle(path: pathlib.Path, symbol: str, name: str = "data") -> ET.Element:
     root = ET.parse(path).getroot()
     functions = [node for node in root.findall("function") if node.get("symbol") == symbol]
@@ -69,12 +167,15 @@ def bundle(path: pathlib.Path, symbol: str, name: str = "data") -> ET.Element:
     return matches[0]
 
 
-def expected_latency(path: pathlib.Path, symbol: str, value: str) -> None:
+def expected_latency(path: pathlib.Path, symbol: str, value: str | None) -> None:
     attrs = bundle(path, symbol).attrib
-    if attrs.get("latency") != value:
-        raise RuntimeError(f"noncanonical pragma serialization for {symbol}: expected latency={value}, got {attrs}")
     if attrs.get("mode") != "m_axi":
         raise RuntimeError(f"latency metadata fixture did not retain m_axi mode: {attrs}")
+    if value is None:
+        if "latency" in attrs:
+            raise RuntimeError(f"omitted pragma latency was serialized for {symbol}: {attrs}")
+    elif attrs.get("latency") != value:
+        raise RuntimeError(f"noncanonical pragma serialization for {symbol}: expected latency={value}, got {attrs}")
 
 
 def write_xml(seed: pathlib.Path, target: pathlib.Path, symbol: str,
@@ -166,9 +267,9 @@ def assert_accept(result: subprocess.CompletedProcess[str], case: pathlib.Path) 
     checker_argv = [sys.executable, str(CHECKER), "rtl", "--output", str(case),
                     "--require=MinimalAXI4MasterPipelined", "--configured-contract",
                     "--configure-log", str(case / "stderr.log"),
-                    # The case pragma omits read_fifo_depth, so the effective
-                    # depth is the derived next_pow2(max(2,1)*16) = 32.
-                    "--expected-burst-max=16", "--expected-outstanding=1", "--expected-fifo-depth=32"]
+                    # The case pragma specifies B=16 but omits O/D. The
+                    # effective defaults are O=16 and derived D=256.
+                    "--expected-burst-max=16", "--expected-outstanding=16", "--expected-fifo-depth=256"]
     checker = subprocess.run(checker_argv, text=True, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, check=False)
     (case / "contract_checker_argv.json").write_text(json.dumps(checker_argv, indent=2) + "\n", encoding="utf-8")
@@ -207,7 +308,7 @@ def main() -> int:
     # Frontend pragma cases establish real .bambuir/XML artifacts and check
     # canonical decimal serialization before any direct architecture replay.
     pragma_cases = {
-        "latency_omitted": "0", "latency_zero": "0", "latency_64": "64",
+        "latency_omitted": None, "latency_zero": "0", "latency_64": "64",
         "latency_leading_zeroes": "64", "latency_uint32_max": "4294967295",
         "latency_duplicate_same": "64",
     }
@@ -383,7 +484,8 @@ def main() -> int:
     # The malformed XML must be parsed and rejected even for a seed whose loop
     # is not eligible for burst conversion (before legacy fallback can win).
     stride_case = out / "stride-seed"
-    stride_argv = [str(bambu), str(TESTS / "compiler_cases" / "unsupported_stride.cpp"), *BASE_ARGS,
+    stride_argv = [str(bambu), str(TESTS / "compiler_cases" / "axi_analysis_cases.cpp"), *BASE_ARGS,
+                   "--extra-cc-options=-DAXI_ANALYSIS_CASE_08",
                    "--top-fname=stride_two", f"--bambu-parameter={args.burst_parameter}=1"]
     stride_result = run(stride_case, stride_argv)
     if stride_result.returncode:
@@ -401,34 +503,52 @@ def main() -> int:
 
     # The pragma parser owns interface applicability and duplicate agreement.
     # Execute each top through the normal frontend and record concise evidence.
-    for top, accepted in (("latency_shared_default_first", True),
-                          ("latency_shared_zero_first", True),
-                          ("latency_shared_default_conflict", False),
-                          ("latency_shared_explicit_conflict", False),
-                          ("latency_non_axi", True)):
+    pragma_bundle_values: dict[str, str | None] = {
+        "latency_shared_default_first": None,
+        "latency_shared_zero_first": "0",
+        "latency_shared_default_conflict": "64",
+        "latency_shared_64_first": "64",
+        "latency_non_axi": None,
+    }
+    for top, expected_value in pragma_bundle_values.items():
         case = out / "pragma" / top
         argv = [str(bambu), str(FIXTURE), *BASE_ARGS, *select_case_defines(top), f"--top-fname={top}",
                 f"--bambu-parameter={args.burst_parameter}=1"]
         result = run(case, argv)
-        combined = result.stdout + "\n" + result.stderr
-        if accepted and result.returncode != 0:
+        if result.returncode != 0:
             raise RuntimeError(f"compatible/default latency pragma rejected for {top}; see {case}")
-        if top == "latency_non_axi" and accepted:
+        if top == "latency_non_axi":
             attrs = bundle(architecture(case), top, "a").attrib
             if attrs.get("mode") != "array" or "latency" in attrs:
                 raise RuntimeError(f"non-AXI pragma latency was not ignored: {attrs}")
-        if not accepted:
-            if result.returncode == 0 or result.returncode < 0 or result.returncode >= 128:
-                raise RuntimeError(f"invalid/conflicting latency pragma accepted or crashed for {top}; see {case}")
-            if not re.search(r"latency.*(only valid|Conflicting)", combined, re.IGNORECASE):
-                raise RuntimeError(f"{top} rejected without an explicit latency diagnostic; see {case}")
-        results.append({"case": f"pragma/{top}", "expected": "accept" if accepted else "reject",
+        else:
+            expected_latency(architecture(case), top, expected_value)
+        results.append({"case": f"pragma/{top}", "expected": "accept",
                         "exit_code": result.returncode})
+
+    conflict_top = "latency_shared_explicit_conflict"
+    conflict_case = out / "pragma" / conflict_top
+    conflict_result = run(conflict_case, [str(bambu), str(FIXTURE), *BASE_ARGS,
+                                          *select_case_defines(conflict_top), f"--top-fname={conflict_top}",
+                                          f"--bambu-parameter={args.burst_parameter}=1"])
+    conflict_text = conflict_result.stdout + "\n" + conflict_result.stderr
+    if conflict_result.returncode == 0 or conflict_result.returncode < 0 or conflict_result.returncode >= 128:
+        raise RuntimeError(f"conflicting explicit latency values were accepted or crashed; see {conflict_case}")
+    if not re.search(r"latency.*Conflicting", conflict_text, re.IGNORECASE):
+        raise RuntimeError(f"conflicting explicit latency values lacked a conflict diagnostic; see {conflict_case}")
+    results.append({"case": f"pragma/{conflict_top}", "expected": "reject",
+                    "exit_code": conflict_result.returncode})
+
+    stimulus_results = check_stimulus_independence(bambu, out, args.burst_parameter)
+    results.extend(stimulus_results)
+    clamp_results = check_write_delay_clamp(bambu, out, args.burst_parameter)
+    results.extend(clamp_results)
 
     (out / "results.json").write_text(json.dumps({"status": "PASS", "results": results}, indent=2) + "\n",
                                        encoding="utf-8")
     print(f"LATENCY-METADATA PASS: {len(pragma_cases)} canonical pragma cases, "
-          f"{len(positives)} direct XML accepts, 11 XML rejects, shared-root order, applicability/duplicates")
+          f"{len(positives)} direct XML accepts, 11 XML rejects, shared-root order, applicability/duplicates, "
+          f"stimulus checks={len(stimulus_results)}, write-delay clamp checks={len(clamp_results)}")
     return 0
 
 

@@ -98,15 +98,15 @@ class FunctionArchitecture
 
 struct AXIReadBurstProfile
 {
-   unsigned int max_outstanding = 1;
+   unsigned int max_outstanding = 16;
    unsigned int fifo_depth = 256;
 };
 
 struct AXIWriteBurstProfile
 {
-   unsigned int max_burst_length = 0;
-   unsigned int max_outstanding = 1;
-   unsigned int fifo_depth = 0;
+   unsigned int max_burst_length = 16;
+   unsigned int max_outstanding = 16;
+   unsigned int fifo_depth = 32;
 };
 
 AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_attrs& iface_attrs,

@@ -103,7 +103,7 @@ if [[ $mode == handoff ]]; then
     printf 'argv='; printf '%q ' "$bambu" "$script_dir/write_compiler_cases/write_cases.cpp" \
       --top-fname=copy_distinct_buffers --compiler=I386_CLANG16 --generate-interface=INFER \
       --device-name=xcu250,-2L,figd2104 --clock-period=3.33 --AXI-burst-type=INCREMENTAL \
-      --bambu-parameter=experimental-m-axi-burst=1 --bambu-parameter=print-ir-manager=1 \
+      --bambu-parameter=m-axi-burst=1 --bambu-parameter=print-ir-manager=1 \
       --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based --print-dot --no-clean \
       --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU; printf '\n'
     printf 'TMPDIR=%s\nTMP=%s\nTEMP=%s\n' "$TMPDIR" "$TMP" "$TEMP"

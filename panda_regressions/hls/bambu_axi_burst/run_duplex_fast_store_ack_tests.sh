@@ -65,7 +65,7 @@ git_head=$(git -C "$root" rev-parse HEAD)
 
 common=(--compiler=I386_CLANG16 --generate-interface=INFER
   --device-name=xcu250,-2L,figd2104 --clock-period=3.33
-  --AXI-burst-type=INCREMENTAL --bambu-parameter=experimental-m-axi-burst=1
+  --AXI-burst-type=INCREMENTAL --bambu-parameter=m-axi-burst=1
   --no-clean --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 
 run_case() {

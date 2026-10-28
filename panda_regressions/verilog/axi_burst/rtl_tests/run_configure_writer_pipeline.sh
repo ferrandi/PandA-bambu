@@ -62,8 +62,16 @@ modelsim_compile "$BUILD" tb_configure_writer_pipeline "$RTL" "$TB" || exit $?
 for scenario in RESET_E1 PEER_FAULT_E1; do
     log="$BUILD/$scenario.log"
     status=0
-    modelsim_run "$BUILD" tb_configure_writer_pipeline "$log" 30 -- "+CASE=$scenario" || status=$?
+    runtime_args=("+CASE=$scenario")
+    if [[ $scenario == PEER_FAULT_E1 ]]; then
+        runtime_args+=(+AXI_BURST_EXPECT_FAULT)
+    fi
+    modelsim_run "$BUILD" tb_configure_writer_pipeline "$log" 30 -- "${runtime_args[@]}" || status=$?
     modelsim_normalize_log "$log" "$log.normalized" || exit $?
+    if [[ $scenario == PEER_FAULT_E1 ]]; then
+        expected_fault='AXI_BURST_PEER_FAULT engine=write reason=peer instance=tb_configure_writer_pipeline.dut.report_axi_write_diagnostic opcode=-1 size=0 address=00000000 count=0 payload=00000000 resp=00 id=0 descriptors=0 remaining=0'
+        modelsim_expect_fault_log "$log" continue writer-configure-peer-fault "$expected_fault" || exit 1
+    fi
     if (( status != 0 )); then
         cat "$log" >&2
         echo "RTL scenario failed: $scenario" >&2

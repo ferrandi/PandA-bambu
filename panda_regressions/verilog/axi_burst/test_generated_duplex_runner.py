@@ -16,8 +16,10 @@ SCENARIOS = (
     "LOAD_WAIT_STORE", "STORE_WAIT_LOAD", "WRITE_STALL_READ_PROGRESS", "READ_STALL_WRITE_PROGRESS",
     "SIMULTANEOUS", "CONFIG_ISOLATION", "ZERO_READ", "ZERO_WRITE", "UNPAIRED_DESCRIPTORS",
     "INPLACE_POINTWISE", "BRESP_PEER_DRAIN", "RRESP_PEER_DRAIN", "FAULT_RESET_RESTART",
+    "RESET_STALLED_CHANNELS",
 )
 PROFILES = ("same_base_pointwise", "same_base_asymmetric_64")
+RESET_VARIANTS = ("sync-high", "sync-low", "async-high", "async-low")
 
 
 class GeneratedDuplexRunnerTests(unittest.TestCase):
@@ -34,10 +36,14 @@ class GeneratedDuplexRunnerTests(unittest.TestCase):
         shutil.copy2(RUNNER, self.rtl_tests / RUNNER.name)
         shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/parallel_helpers.sh",
                      self.family / "parallel_helpers.sh")
+        shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/rtl_tests/modelsim_helpers.sh",
+                     self.rtl_tests / "modelsim_helpers.sh")
+        lookup = self.repo / "etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+        lookup.parent.mkdir(parents=True)
+        shutil.copy2(ROOT / "etc/libtech/backend/simulation/modelsim/tool_lookup.sh", lookup)
         for path in (
             self.rtl_tests / "tb_generated_duplex.sv",
-            self.family / "compiler_cases/duplex_effects/same_base_pointwise.cpp",
-            self.family / "compiler_cases/duplex_effects/same_base_asymmetric_64.cpp",
+            self.family / "compiler_cases/duplex_effect_family_cases.cpp",
         ):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("# stub\n")
@@ -50,24 +56,24 @@ p.add_argument('top'); p.add_argument('--output', required=True)
 p.add_argument('--source', required=True); p.add_argument('--bambu', required=True)
 p.add_argument('--plugin', required=True); p.add_argument('--checker', required=True)
 p.add_argument('--runner', required=True)
+p.add_argument('--functional-only', action='store_true')
 a = p.parse_args(); out = Path(a.output); fields = {}
 for line in (out / 'provenance.txt').read_text().splitlines():
     key, value = line.split('=', 1); fields[key] = value
 required = {'top','source','source_sha256','bambu','bambu_sha256','plugin','plugin_sha256',
-            'checker','checker_sha256','runner','runner_sha256','raw_ir','raw_ir_sha256',
-            'post_interface_raw','post_interface_raw_sha256'}
+            'checker','checker_sha256','runner','runner_sha256','rtl','rtl_sha256',
+            'architecture','architecture_sha256','stdout','stdout_sha256','stderr','stderr_sha256'}
 assert fields.keys() == required, fields.keys()
+assert a.functional_only
 assert fields['top'] == a.top
 for key, path in [('source', a.source), ('bambu', a.bambu), ('plugin', a.plugin),
                   ('checker', a.checker), ('runner', a.runner)]:
     assert Path(fields[key]).resolve() == Path(path).resolve()
     assert fields[key + '_sha256'] == hashlib.sha256(Path(path).read_bytes()).hexdigest()
-raw = Path(fields['raw_ir'])
-assert raw.is_file() and raw.resolve().is_relative_to(out.resolve())
-assert fields['raw_ir_sha256'] == hashlib.sha256(raw.read_bytes()).hexdigest()
-post_raw = Path(fields['post_interface_raw'])
-assert post_raw.is_file() and post_raw.resolve().is_relative_to(out.resolve())
-assert fields['post_interface_raw_sha256'] == hashlib.sha256(post_raw.read_bytes()).hexdigest()
+for stem in ('rtl', 'architecture', 'stdout', 'stderr'):
+    artifact = Path(fields[stem])
+    assert artifact.is_file() and artifact.resolve().is_relative_to(out.resolve())
+    assert fields[f'{stem}_sha256'] == hashlib.sha256(artifact.read_bytes()).hexdigest()
 """)
         self.bin = self.scratch / "bin"
         self.bin.mkdir()
@@ -82,15 +88,17 @@ assert fields['post_interface_raw_sha256'] == hashlib.sha256(post_raw.read_bytes
         plugin = self.prefix / "lib/panda/clang-16/ASTAnalyzer.so"
         plugin.parent.mkdir(parents=True)
         plugin.write_text("plugin stub\n")
-        self._stub("verilator", self._verilator_stub())
+        for tool in ("vsim", "vlib", "vmap", "vlog"):
+            self._stub(tool, self._modelsim_stub(tool))
         self.env = os.environ.copy()
         self.env.update({
             "PATH": f"{self.bin}:{self.env['PATH']}",
             "BURST_DUPLEX_SIM_OUTSIDE_SANDBOX": "1",
             "TMPDIR": str(self.scratch), "TMP": str(self.scratch), "TEMP": str(self.scratch),
-            "SIM_JOBS": "2", "DUPLEX_G1_JOBS": "3",
+            "SIM_JOBS": "2",
             "SIM_MODE": "pass", "SIM_ACTIVE_FILE": str(self.scratch / "active"),
             "SIM_MAX_FILE": str(self.scratch / "max_active"),
+            "SIM_VLOG_CALLS": str(self.scratch / "vlog_calls"),
         })
 
     @staticmethod
@@ -99,29 +107,49 @@ assert fields['post_interface_raw_sha256'] == hashlib.sha256(post_raw.read_bytes
 set -euo pipefail
 if [[ ${1:-} == --version ]]; then echo 'Bambu stub 1.0'; exit 0; fi
 profile=
-for arg in "$@"; do [[ $arg == --top-fname=* ]] && profile=${arg#*=}; done
+for arg in "$@"; do
+  if [[ $arg == --debug-classes* || $arg == --bambu-parameter=print-ir-manager=* || $arg == --print-dot ]]; then
+    echo "Release stub rejects debug option: $arg" >&2
+    exit 64
+  fi
+  [[ $arg == --top-fname=* ]] && profile=${arg#*=}
+done
 [[ -n $profile ]]
 printf 'module %s(); endmodule\\n' "$profile" >"$profile.v"
 printf 'module generated_library(); endmodule\\n' >panda_libtech.v
+if [[ $profile == same_base_pointwise ]]; then
+  read_burst=16; read_outstanding=1
+else
+  read_burst=8; read_outstanding=2
+fi
 mkdir -p panda-temp
-printf 'raw-ir %s\\n' "$profile" >panda-temp/before_Frontend::InterfaceInfer.raw
-printf 'post-raw-ir %s\\n' "$profile" >panda-temp/after_Frontend::InterfaceInfer.raw
+printf '<root><function name="%s"><bundles><bundle name="shared" mode="m_axi" max_read_burst_length="%s" num_read_outstanding="%s" max_write_burst_length="16" write_burst_outstanding="1" read_fifo_depth="32" write_fifo_depth="16"/></bundles></function></root>\\n' \\
+  "$profile" "$read_burst" "$read_outstanding" >panda-temp/architecture.xml
 """
 
     @staticmethod
-    def _verilator_stub():
+    def _modelsim_stub(tool):
+        if tool != "vsim":
+            if tool == "vlog":
+                return "#!/bin/bash\nprintf '%s\\n' \"$PWD\" >>\"$SIM_VLOG_CALLS\"\nexit 0\n"
+            return "#!/bin/bash\nexit 0\n"
         return """#!/bin/bash
 set -euo pipefail
-if [[ ${1:-} == --version ]]; then echo 'Verilator 5.stub'; exit 0; fi
-mdir=
-while (($#)); do if [[ $1 == --Mdir ]]; then mdir=$2; shift 2; else shift; fi; done
-mkdir -p "$mdir"
-cat >"$mdir/Vtb_generated_duplex" <<'PROGRAM'
-#!/bin/bash
-set -euo pipefail
-scenario=${1#*=}
-profile=${0%/obj/Vtb_generated_duplex}; profile=${profile##*/}
+if [[ ${1:-} == -version ]]; then echo 'ModelSim stub 1.0'; exit 0; fi
+scenario= profile=
+reset_active=0 reset_async=0
+for arg in "$@"; do
+  [[ $arg == +CASE=* ]] && scenario=${arg#*=}
+  [[ $arg == +PROFILE=* ]] && profile=${arg#*=}
+  [[ $arg == -gRESET_ACTIVE_LEVEL=* ]] && reset_active=${arg#*=}
+  [[ $arg == -gRESET_ASYNC=* ]] && reset_async=${arg#*=}
+done
 mode=${SIM_MODE:-pass}
+fault_expected=0
+case $scenario in BRESP_PEER_DRAIN|RRESP_PEER_DRAIN|FAULT_RESET_RESTART) fault_expected=1 ;; esac
+fault_arg=0
+for arg in "$@"; do [[ $arg == +AXI_BURST_EXPECT_FAULT ]] && fault_arg=1; done
+[[ $fault_expected == $fault_arg ]] || { echo "unexpected expected-fault plusarg selection" >&2; exit 41; }
 if [[ $mode == nonzero && $scenario == ZERO_READ ]]; then exit 19; fi
 if [[ $mode == wrong && $scenario == LOAD_WAIT_STORE ]]; then
   echo "GENERATED_DUPLEX PASS CASE=WRONG PROFILE=$profile"; exit 0
@@ -141,9 +169,33 @@ sleep 0.02
 flock 9
 active=$(cat "$active_file"); echo "$((active - 1))" >"$active_file"
 flock -u 9
-echo "GENERATED_DUPLEX PASS CASE=$scenario PROFILE=$profile"
-PROGRAM
-chmod +x "$mdir/Vtb_generated_duplex"
+echo "# GENERATED_DUPLEX PASS CASE=$scenario PROFILE=$profile"
+if [[ $scenario == RESET_STALLED_CHANNELS ]]; then
+  for channel in AR R_RESPONSE_WAIT AW W B_RESPONSE_WAIT; do
+    echo "# GENERATED_RESET_CHANNEL_PASS channel=$channel async=$reset_async active_level=$reset_active"
+  done
+  echo "# GENERATED_RESET_R_RESPONSE_WAIT descriptor_count=1 credits=31 RVALID=0 RREADY=1"
+  echo "# GENERATED_RESET_B_RESPONSE_WAIT BVALID=0 BREADY=1"
+  echo "# GENERATED_CACHE_RESET_PASS async=$reset_async active_level=$reset_active"
+fi
+case $scenario in
+  BRESP_PEER_DRAIN)
+    echo '# AXI_BURST_FAULT engine=write reason=BRESP instance=tb_generated_duplex.aggregator.write_engine.report_axi_write_diagnostic opcode=1 size=32 address=00000400 count=1 payload=00000000 resp=10 id=0 descriptors=1 remaining=1'
+    [[ ${SIM_MODE:-pass} == missing-fault ]] || echo '# AXI_BURST_PEER_FAULT engine=read reason=peer instance=tb_generated_duplex.aggregator.read_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00000000 count=0 resp=00 id=0 last=0 descriptors=0 remaining=0'
+    [[ ${SIM_MODE:-pass} == missing-return-fault ]] || echo '# AXI_BURST_PEER_FAULT engine=write reason=peer instance=tb_generated_duplex.aggregator.write_engine.report_axi_write_diagnostic opcode=-1 size=0 address=00000000 count=0 payload=00000000 resp=00 id=0 descriptors=0 remaining=0' ;;
+  RRESP_PEER_DRAIN)
+    echo '# AXI_BURST_FAULT engine=read reason=RRESP instance=tb_generated_duplex.aggregator.read_engine.report_axi_read_diagnostic opcode=0 size=32 address=00000100 count=8 resp=10 id=0 last=0 descriptors=1 remaining=8'
+    echo '# AXI_BURST_PEER_FAULT engine=write reason=peer instance=tb_generated_duplex.aggregator.write_engine.report_axi_write_diagnostic opcode=-1 size=0 address=00000000 count=0 payload=00000000 resp=00 id=0 descriptors=0 remaining=0'
+    [[ ${SIM_MODE:-pass} == missing-return-fault ]] || echo '# AXI_BURST_PEER_FAULT engine=read reason=peer instance=tb_generated_duplex.aggregator.read_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00000000 count=0 resp=00 id=0 last=0 descriptors=0 remaining=0' ;;
+  FAULT_RESET_RESTART)
+    echo '# AXI_BURST_FAULT engine=read reason=RRESP instance=tb_generated_duplex.aggregator.read_engine.report_axi_read_diagnostic opcode=0 size=32 address=00000100 count=8 resp=10 id=0 last=0 descriptors=1 remaining=8'
+    if [[ ${SIM_MODE:-pass} == reset-peer ]]; then
+      echo '# AXI_BURST_PEER_FAULT engine=write reason=peer instance=tb_generated_duplex.aggregator.write_engine.report_axi_write_diagnostic opcode=-1 size=0 address=00000000 count=0 payload=00000000 resp=00 id=0 descriptors=0 remaining=0'
+    fi ;;
+esac
+if [[ ${SIM_MODE:-pass} == unexpected && $scenario == LOAD_WAIT_STORE ]]; then
+  echo '# AXI_BURST_FAULT engine=read reason=RRESP instance=unexpected opcode=0 size=32 address=00000100 count=1 resp=10 id=0 last=0 descriptors=1 remaining=1'
+fi
 """
 
     def _stub(self, name, content):
@@ -188,32 +240,79 @@ chmod +x "$mdir/Vtb_generated_duplex"
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("failed rc=19", result.stderr)
 
+    def test_unexpected_normal_diagnostic_is_rejected(self):
+        result, _ = self._run("unexpected", "unexpected-diagnostic")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("wrong AXI diagnostic count", result.stderr)
+
+    def test_missing_expected_peer_record_is_rejected(self):
+        for mode in ("missing-fault", "missing-return-fault"):
+            with self.subTest(mode=mode):
+                result, _ = self._run(mode, f"missing-peer-diagnostic-{mode}")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("wrong AXI diagnostic count", result.stderr)
+
+    def test_immediate_reset_rejects_a_peer_record(self):
+        result, _ = self._run("reset-peer", "reset-peer-diagnostic")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("wrong AXI diagnostic count", result.stderr)
+
     def test_scenario_omission_prevents_aggregate_success(self):
         result, output = self._run("omit", "omit-output")
         self.assertNotEqual(result.returncode, 0)
-        self.assertNotIn("GENERATED_DUPLEX PASS: 13 scenarios x 2 profiles", result.stdout)
+        self.assertNotIn("GENERATED_DUPLEX PASS: 14 scenarios x 2 profiles plus 4 reset variants", result.stdout)
         self.assertFalse((output / "aggregate.log").exists())
 
     def test_all_scenario_profile_markers_and_bounded_pool_are_required(self):
         result, output = self._run()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("GENERATED_DUPLEX PASS: 13 scenarios x 2 profiles", result.stdout)
+        self.assertIn("GENERATED_DUPLEX PASS: 14 scenarios x 2 profiles plus 4 reset variants", result.stdout)
         for profile in PROFILES:
             manifest = output / profile / "generated" / "provenance.txt"
             self.assertTrue(manifest.is_file())
             fields = dict(line.split("=", 1) for line in manifest.read_text().splitlines())
-            for stem in ("raw_ir", "post_interface_raw"):
+            for stem in ("rtl", "architecture", "stdout", "stderr"):
                 artifact = Path(fields[stem])
                 self.assertTrue(artifact.is_file())
                 self.assertTrue(artifact.resolve().is_relative_to(manifest.parent.resolve()))
                 self.assertEqual(fields[f"{stem}_sha256"],
                                  hashlib.sha256(artifact.read_bytes()).hexdigest())
+            argv = (output / profile / "compiler_argv.txt").read_text()
+            self.assertNotIn("--debug-classes", argv)
+            self.assertNotIn("print-ir-manager", argv)
+            self.assertNotIn("--print-dot", argv)
+            if profile == "same_base_pointwise":
+                self.assertIn("--extra-cc-options=-DAXI_DUPLEX_EFFECT_CASE_16", argv)
+            else:
+                self.assertIn("--extra-cc-options=-DAXI_DUPLEX_EFFECT_CASE_15", argv)
             for scenario in SCENARIOS:
                 log = output / profile / "scenarios" / f"{scenario}.log"
                 self.assertIn(f"GENERATED_DUPLEX PASS CASE={scenario} PROFILE={profile}", log.read_text())
+        for variant in RESET_VARIANTS:
+            reset_mode, reset_level = variant.split("-")
+            profile_out = output / f"same_base_pointwise_reset_{variant}"
+            argv = (profile_out / "compiler_argv.txt").read_text()
+            self.assertIn(f"--reset-type={reset_mode}", argv)
+            self.assertIn(f"--reset-level={reset_level}", argv)
+            reset_log = (profile_out / "scenarios/RESET_STALLED_CHANNELS.log").read_text()
+            active = int(reset_level == "high")
+            asynchronous = int(reset_mode == "async")
+            for channel in ("AR", "R_RESPONSE_WAIT", "AW", "W", "B_RESPONSE_WAIT"):
+                self.assertIn(
+                    f"GENERATED_RESET_CHANNEL_PASS channel={channel} async={asynchronous} active_level={active}",
+                    reset_log,
+                )
+            self.assertIn("GENERATED_RESET_B_RESPONSE_WAIT BVALID=0 BREADY=1", reset_log)
+            self.assertIn(
+                "GENERATED_RESET_R_RESPONSE_WAIT descriptor_count=1 credits=31 RVALID=0 RREADY=1",
+                reset_log,
+            )
+            self.assertIn(
+                f"GENERATED_CACHE_RESET_PASS async={asynchronous} active_level={active}", reset_log
+            )
         manifest = output / "scenario-sha256.txt"
         entries = manifest.read_text().splitlines()
-        self.assertEqual(len(entries), len(PROFILES) * len(SCENARIOS))
+        self.assertEqual(len(entries), len(PROFILES) * len(SCENARIOS) + len(RESET_VARIANTS))
         seen = set()
         for entry in entries:
             expected_digest, relative_path = entry.split("  ", 1)
@@ -227,12 +326,46 @@ chmod +x "$mdir/Vtb_generated_duplex"
             f"{profile}/scenarios/{scenario}.log"
             for profile in PROFILES for scenario in SCENARIOS
         }
+        expected_paths.update(
+            f"same_base_pointwise_reset_{variant}/scenarios/RESET_STALLED_CHANNELS.log"
+            for variant in RESET_VARIANTS
+        )
         self.assertEqual(seen, expected_paths)
         maximum = int((self.scratch / "max_active").read_text())
         self.assertGreater(maximum, 1)
-        self.assertLessEqual(maximum, 3)
+        self.assertLessEqual(maximum, 2)
         provenance = (output / "provenance.txt").read_text()
-        self.assertIn("scenario_jobs=3", provenance)
+        self.assertIn("scenario_jobs=1", provenance)
+        compile_dirs = Path(self.env["SIM_VLOG_CALLS"]).read_text().splitlines()
+        self.assertEqual(len(compile_dirs), len(PROFILES) + len(RESET_VARIANTS))
+        for profile in PROFILES:
+            sim_provenance = (output / profile / "provenance.txt").read_text()
+            self.assertIn("modelsim_elaboration_args=-gADDRESS_BITS", sim_provenance)
+            self.assertNotIn("verilator", sim_provenance.lower())
+            sim_dir = output / profile / "sim"
+            self.assertEqual(sum(Path(path).resolve() == sim_dir.resolve() for path in compile_dirs), 1,
+                             compile_dirs)
+            command = (output / profile / "scenarios" / f"{SCENARIOS[0]}.raw.log.command").read_text()
+            address_bits = 32 if profile == "same_base_pointwise" else 64
+            read_max = 16 if address_bits == 32 else 8
+            read_outstanding = 1 if address_bits == 32 else 2
+            for parameter, value in (
+                ("ADDRESS_BITS", address_bits), ("READ_B_MAX", read_max),
+                ("READ_OUTSTANDING", read_outstanding), ("READ_FIFO_DEPTH", 32),
+                ("WRITE_B_MAX", 16), ("WRITE_OUTSTANDING", 1), ("WRITE_FIFO_DEPTH", 16),
+            ):
+                self.assertIn(f"-g{parameter}={value}", command)
+        for variant in RESET_VARIANTS:
+            reset_mode, reset_level = variant.split("-")
+            active = int(reset_level == "high")
+            asynchronous = int(reset_mode == "async")
+            reset_path = f"same_base_pointwise_reset_{variant}"
+            command = (output / reset_path / "scenarios/RESET_STALLED_CHANNELS.raw.log.command").read_text()
+            self.assertIn(f"-gRESET_ACTIVE_LEVEL={active}", command)
+            self.assertIn(f"-gRESET_ASYNC={asynchronous}", command)
+            sim_dir = output / reset_path / "sim"
+            self.assertEqual(sum(Path(path).resolve() == sim_dir.resolve() for path in compile_dirs), 1,
+                             compile_dirs)
         self.assertTrue(manifest.is_file())
 
 

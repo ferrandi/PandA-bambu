@@ -12,6 +12,7 @@ set -euo pipefail
 
 TESTS=$(cd "$(dirname "$0")" && pwd -P)
 ROOT=$(realpath "$TESTS/../../../../")
+MODELSIM_HELPERS="$TESTS/modelsim_helpers.sh"
 if (($# < 1 || $# > 3)); then
     echo "usage: BURST_G2_SIM_OUTSIDE_SANDBOX=1 $0 BAMBU [FRESH_OUTPUT_DIR] [TOP]" >&2
     echo "the full command must run outside the sandbox; default output: ./out_generated_write_kernel" >&2
@@ -21,17 +22,10 @@ if [[ ${BURST_G2_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
     echo "refusing compiler/build/simulation unless BURST_G2_SIM_OUTSIDE_SANDBOX=1 is set" >&2
     exit 2
 fi
-# Parallelism is a launcher decision, not a script policy: any positive value is
-# accepted. The default follows the machine, capped at 16.
-DEFAULT_SIM_JOBS=$(nproc 2>/dev/null || echo 4)
-if ((DEFAULT_SIM_JOBS > 16)); then DEFAULT_SIM_JOBS=16; fi
-SIM_JOBS=${SIM_JOBS:-$DEFAULT_SIM_JOBS}
-[[ "$SIM_JOBS" =~ ^[1-9][0-9]*$ ]] || { echo "SIM_JOBS must be a positive integer" >&2; exit 2; }
-
 BAMBU_ARG=$1
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else BAMBU=$(command -v "$BAMBU_ARG" || true); [[ -n "$BAMBU" ]] && BAMBU=$(realpath "$BAMBU"); fi
 [[ -n ${BAMBU:-} && -x "$BAMBU" ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
-command -v verilator >/dev/null || { echo "verilator is required" >&2; exit 2; }
+for tool in sha256sum python3 timeout; do command -v "$tool" >/dev/null || { echo "$tool is required" >&2; exit 2; }; done
 
 PREFIX=$(dirname "$(dirname "$BAMBU")")
 SETTINGS="$PREFIX/settings.sh"
@@ -43,6 +37,10 @@ source "$SETTINGS"
 }
 PLUGIN="$PREFIX/lib/panda/clang-16/ASTAnalyzer.so"
 [[ -r "$PLUGIN" ]] || { echo "selected ASTAnalyzer plugin is missing: $PLUGIN" >&2; exit 2; }
+[[ -s "$MODELSIM_HELPERS" ]] || { echo "ModelSim helper is missing: $MODELSIM_HELPERS" >&2; exit 2; }
+# shellcheck disable=SC1090
+source "$MODELSIM_HELPERS"
+modelsim_resolve
 
 OUT_ARG=${2:-out_generated_write_kernel}
 TASK_OUT=$(realpath -m -- "$OUT_ARG")
@@ -81,17 +79,17 @@ esac
     exit 2
 }
 ARGS=("--top-fname=$TOP_ARG" --compiler=I386_CLANG16 --generate-interface=INFER
-      --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
-      --bambu-parameter=experimental-m-axi-burst=1
+      --device-name=xcu250,-2L,figd2104 --no-clean
       --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 {
     printf 'root=%s\noutput=%s\nbambu=%s\nprefix=%s\nsettings=%s\nplugin=%s\n' \
         "$ROOT" "$TASK_OUT" "$BAMBU" "$PREFIX" "$(realpath "$SETTINGS")" "$PLUGIN"
     printf 'TMPDIR=%s\nTMP=%s\nTEMP=%s\n' "$TMPDIR" "$TMP" "$TEMP"
-    printf 'source=%s\ntestbench=%s\nwrite_outstanding=%s\nargv=' "$SOURCE" "$TB" "$WRITE_OUTSTANDING"
+    printf 'source=%s\ntestbench=%s\nwrite_outstanding=%s\nmodelsim_source=%s\nmodelsim_vsim=%s\nmodelsim_vlog=%s\nargv=' \
+        "$SOURCE" "$TB" "$WRITE_OUTSTANDING" "$MODELSIM_SOURCE" "$MODELSIM_VSIM" "$MODELSIM_VLOG"
     printf '%q ' "$BAMBU" "$SOURCE" "${ARGS[@]}"; printf '\n'
     "$BAMBU" --version 2>&1 | sed -n '1,2p'
-    verilator --version
+    modelsim_version
     sha256sum "$BAMBU" "$PLUGIN" "$SETTINGS" "$SOURCE" "$TB"
 } >"$TASK_OUT/provenance.txt"
 
@@ -172,14 +170,18 @@ if [[ "$TOP_ARG" != write_count_seed* ]]; then
         TB_DEFINES+=(+define+GENERATED_UNUSED_PORT)
     fi
 fi
-if ! verilator --binary -j "$SIM_JOBS" --timing --assert --public-flat-rw -Wno-fatal \
-    --top-module "$TB_TOP" -GWRITE_OUTSTANDING="$WRITE_OUTSTANDING" --Mdir "$TASK_OUT/verilator_obj" \
-    "$RTL" "$LIB" "$TB" "${TB_DEFINES[@]}" >"$TASK_OUT/verilator-build.log" 2>&1; then
-    tail -n 120 "$TASK_OUT/verilator-build.log" >&2
-    echo "Verilator build failed; see $TASK_OUT/verilator-build.log" >&2
+if ! modelsim_compile "$TASK_OUT/sim" "$TB_TOP" "$RTL" "$LIB" "$TB" -- "${TB_DEFINES[@]}"; then
+    echo "ModelSim build failed; see $TASK_OUT/sim/compile.log" >&2
     exit 1
 fi
-timeout 180s "$TASK_OUT/verilator_obj/V$TB_TOP" | tee "$TASK_OUT/simulation.log"
+sha256sum "$RTL" "$LIB" "$TB" "$TASK_OUT/sim/compile.log" >>"$TASK_OUT/provenance.txt"
+if ! modelsim_run "$TASK_OUT/sim" "$TB_TOP" "$TASK_OUT/simulation.raw.log" 180 \
+    "-gWRITE_OUTSTANDING=$WRITE_OUTSTANDING"; then
+    tail -n 120 "$TASK_OUT/simulation.raw.log" >&2 || true
+    echo "ModelSim simulation failed; see $TASK_OUT/simulation.raw.log" >&2
+    exit 1
+fi
+modelsim_normalize_log "$TASK_OUT/simulation.raw.log" "$TASK_OUT/simulation.log"
 grep -Eq "^GENERATED_WRITE_KERNEL_G2_PASS .*outstanding_profile=$WRITE_OUTSTANDING " "$TASK_OUT/simulation.log" || {
     echo "missing G2 pass marker for WRITE_OUTSTANDING=$WRITE_OUTSTANDING" >&2; exit 1;
 }

@@ -44,7 +44,7 @@ mkdir -p "$OUT/tmp"
 TMPDIR="$OUT/tmp"; TMP=$TMPDIR; TEMP=$TMPDIR
 export TMPDIR TMP TEMP
 CHECKER="$TESTS/check_compiler_artifacts.py"
-BURST_PARAMETER=${BURST_PARAMETER:-experimental-m-axi-burst}
+BURST_PARAMETER=${BURST_PARAMETER:-m-axi-burst}
 mkdir -p "$OUT/compiler"
 if [[ -z ${BAMBU_HLS:-} ]]; then
   echo "BAMBU_HLS is unset and no sibling settings.sh selected a prefix; refusing to guess the ASTAnalyzer plugin" >&2
@@ -86,13 +86,14 @@ HAS_BURST_PARAMETER=0
 awk -v name="$BURST_PARAMETER" '$1 == name { found=1 } END { exit !found }' \
     "$OUT/compiler/bambu_parameters.txt" && HAS_BURST_PARAMETER=1 || true
 run_pragma_case() {
-  local top=$1 tag=$2 source=$3 expect=$4
+  local top=$1 tag=$2 source=$3 expect=$4 case_macro=$5
   source=$(realpath "$source")
   local case_dir="$OUT/compiler/pragma/$tag"
   local args=("--top-fname=$top" --compiler=I386_CLANG16 --generate-interface=INFER
               --AXI-burst-type=INCREMENTAL --no-clean --device-name=xcu250,-2L,figd2104
               --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
-  if [[ $HAS_BURST_PARAMETER == 1 ]]; then args+=("--bambu-parameter=${BURST_PARAMETER}=0"); fi
+  args+=("--extra-cc-options=-D$case_macro")
+  args+=("--bambu-parameter=${BURST_PARAMETER}=0")
   mkdir -p "$case_dir"
   printf '%q ' "$BAMBU" "$source" "${args[@]}" >"$case_dir/argv.txt"; printf '\n' >>"$case_dir/argv.txt"
   if (cd "$case_dir" && "$BAMBU" "$source" "${args[@]}" >stdout.log 2>stderr.log); then
@@ -108,49 +109,46 @@ run_pragma_case() {
     local plugin_outputs=("$case_dir/stdout.log" "$case_dir/stderr.log")
     while IFS= read -r output; do plugin_outputs+=("$output"); done \
       < <(find "$case_dir/panda-temp" -maxdepth 1 -type f -name '__cc_output*' -print 2>/dev/null || true)
-    if ! grep -Eqi 'Maximum AXI burst length|Conflicting maximum AXI burst length values' "${plugin_outputs[@]}"; then
+    if ! grep -Eqi 'Maximum AXI burst length|Conflicting maximum AXI burst length values|AXI read profile attributes num_read_outstanding(/| and )read_fifo_depth are only valid for mode=m_axi' \
+        "${plugin_outputs[@]}"; then
       echo "'$top' exited $rc but has no ASTAnalyzer burst-pragma diagnostic in compiler output; see $case_dir" >&2
       return 1
     fi
   fi
-  echo "PRAGMA $expect PASS: $top (opt-in disabled/default-off)"
+  echo "PRAGMA $expect PASS: $top (explicit m-axi-burst=0)"
 }
 run_pragma_suite() {
-  if [[ $HAS_BURST_PARAMETER == 0 ]]; then
-    echo "NOTICE: '$BURST_PARAMETER' is not registered; pragma parser is checked with the compiler's default-off behavior, not an explicit opt-in=0 setting." >&2
-  fi
-  run_pragma_case duplicate_attributes duplicate-off "$TESTS/compiler_cases/duplicate_attributes.cpp" accept
-  for item in "invalid_zero invalid_zero.cpp" "invalid_negative invalid_negative.cpp" \
-              "invalid_malformed invalid_malformed.cpp" \
-              "invalid_conflict invalid_conflict.cpp" "invalid_non_axi invalid_non_axi.cpp"; do
-    read -r top source <<<"$item"
-    run_pragma_case "$top" "$top-off" "$TESTS/compiler_cases/$source" reject
+  run_pragma_case duplicate_attributes duplicate-off \
+    "$TESTS/compiler_cases/axi_invalid_attribute_cases.cpp" accept AXI_CASE_DUPLICATE_ATTRIBUTES
+  for item in "invalid_zero AXI_CASE_INVALID_ZERO" "invalid_negative AXI_CASE_INVALID_NEGATIVE" \
+              "invalid_malformed AXI_CASE_INVALID_MALFORMED" \
+              "invalid_conflict AXI_CASE_INVALID_CONFLICT" "invalid_non_axi AXI_CASE_INVALID_NON_AXI"; do
+    read -r top case_macro <<<"$item"
+    run_pragma_case "$top" "$top-off" "$TESTS/compiler_cases/axi_invalid_attribute_cases.cpp" reject "$case_macro"
   done
   if [[ $HAS_BURST_PARAMETER == 1 ]]; then
     local case_dir="$OUT/compiler/pragma/duplicate-on"
     local args=(--top-fname=duplicate_attributes --compiler=I386_CLANG16 --generate-interface=INFER
                 --AXI-burst-type=INCREMENTAL --no-clean --device-name=xcu250,-2L,figd2104
-                "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
+                "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
+                --extra-cc-options=-DAXI_CASE_DUPLICATE_ATTRIBUTES)
     mkdir -p "$case_dir"
-    printf '%q ' "$BAMBU" "$TESTS/compiler_cases/duplicate_attributes.cpp" "${args[@]}" >"$case_dir/argv.txt"
+    printf '%q ' "$BAMBU" "$TESTS/compiler_cases/axi_invalid_attribute_cases.cpp" "${args[@]}" >"$case_dir/argv.txt"
     printf '\n' >>"$case_dir/argv.txt"
-    (cd "$case_dir" && "$BAMBU" "$TESTS/compiler_cases/duplicate_attributes.cpp" "${args[@]}" >stdout.log 2>stderr.log)
+    (cd "$case_dir" && "$BAMBU" "$TESTS/compiler_cases/axi_invalid_attribute_cases.cpp" "${args[@]}" >stdout.log 2>stderr.log)
     echo "PRAGMA accept PASS: duplicate attributes (opt-in enabled)"
   fi
 }
 if [[ "$MODE" == pragma || "$MODE" == all ]]; then run_pragma_suite; fi
 if [[ "$MODE" == pragma ]]; then exit 0; fi
 run_burst_profile_suite() {
-  local source="$TESTS/compiler_cases/read_profile_valid.cpp"
+  local source="$TESTS/compiler_cases/axi_read_profile_cases.cpp"
   local case_dir="$OUT/compiler/burst-profile/positive"
-  # Legacy tolerance path: num_read_outstanding/read_fifo_depth without
-  # max_read_burst_length are accepted only when the burst feature is
-  # explicitly off. With the default on, the same diagnostic is checked by
-  # the no-burst-optin case below.
+  # Explicit opt-out keeps the scalar legacy path for compatibility.
   local args=(--top-fname=read_profile_valid --compiler=I386_CLANG16 --generate-interface=INFER
               --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
               --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
-              "--bambu-parameter=${BURST_PARAMETER}=0")
+              --extra-cc-options=-DAXI_CASE_READ_PROFILE_VALID)
   mkdir -p "$case_dir"
   (cd "$case_dir" && "$BAMBU" "$source" "${args[@]}" >stdout.log 2>stderr.log)
   local architecture
@@ -162,38 +160,44 @@ run_burst_profile_suite() {
   python3 "$TESTS/check_read_profile_architecture.py" "$architecture" positive
   echo "BURST-PROFILE PASS: pragma -> canonical architecture.xml serialization"
 
-  local no_b_dir="$OUT/compiler/burst-profile/no-burst-optin"
+  local no_b_dir="$OUT/compiler/burst-profile/default-burst-length"
   mkdir -p "$no_b_dir"
-  if (cd "$no_b_dir" && "$BAMBU" "$TESTS/compiler_cases/read_profile_without_burst.cpp" \
+  if (cd "$no_b_dir" && "$BAMBU" "$source" \
       --top-fname=read_profile_without_burst --compiler=I386_CLANG16 --generate-interface=INFER \
       --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean \
-      "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU \
+      --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU \
+      --extra-cc-options=-DAXI_CASE_READ_PROFILE_WITHOUT_BURST \
       >stdout.log 2>stderr.log); then
-    echo "O/D profile without max_read_burst_length unexpectedly accepted with opt-in" >&2; return 1
+    :
+  else
+    echo "O/D profile without max_read_burst_length failed under default burst analysis; see $no_b_dir" >&2; return 1
   fi
-  if ! grep -Eqi "AXI read profile attributes num_read_outstanding/read_fifo_depth.*require max_read_burst_length.*cannot be applied to the legacy scalar interface" \
-      "$no_b_dir/stdout.log" "$no_b_dir/stderr.log"; then
-    echo "O/D without B failed without the explicit unsupported-profile diagnostic; see $no_b_dir" >&2; return 1
-  fi
+  python3 "$CHECKER" rtl --output "$no_b_dir" --require='MinimalAXI4MasterPipelined' \
+    --configure-log="$no_b_dir/stderr.log" --configured-contract --expected-burst-max=16 \
+    --expected-outstanding=3 --expected-fifo-depth=8
   local legacy_dir="$OUT/compiler/burst-profile/no-burst-optout"
   mkdir -p "$legacy_dir"
-  (cd "$legacy_dir" && "$BAMBU" "$TESTS/compiler_cases/read_profile_without_burst.cpp" \
+  (cd "$legacy_dir" && "$BAMBU" "$source" \
       --top-fname=read_profile_without_burst --compiler=I386_CLANG16 --generate-interface=INFER \
       --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean \
       "--bambu-parameter=${BURST_PARAMETER}=0" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU \
+      --extra-cc-options=-DAXI_CASE_READ_PROFILE_WITHOUT_BURST \
       >stdout.log 2>stderr.log)
   python3 "$CHECKER" fallback --output "$legacy_dir"
-  echo "BURST-PROFILE PASS: O/D without B errors with opt-in and remains legacy with opt-in disabled"
+  echo "BURST-PROFILE PASS: O/D without B uses default B=16; explicit m-axi-burst=0 remains legacy"
 
   local profile_case profile_top profile_o profile_d profile_dir
-  for profile_case in 'o1_d256|1|256' 'o3_d32|3|32' 'o16_d4096|16|4096'; do
-    IFS='|' read -r profile_top profile_o profile_d <<<"$profile_case"
+  for profile_case in 'o1_d256|1|256|AXI_CASE_READ_PROFILE_O1_D256' \
+                      'o3_d32|3|32|AXI_CASE_READ_PROFILE_O3_D32' \
+                      'o16_d4096|16|4096|AXI_CASE_READ_PROFILE_O16_D4096'; do
+    IFS='|' read -r profile_top profile_o profile_d profile_macro <<<"$profile_case"
     profile_dir="$OUT/compiler/burst-profile/$profile_top"
     mkdir -p "$profile_dir"
-    (cd "$profile_dir" && "$BAMBU" "$TESTS/compiler_cases/read_profile_${profile_top}.cpp" \
+    (cd "$profile_dir" && "$BAMBU" "$source" \
         --top-fname="read_profile_${profile_top}" --compiler=I386_CLANG16 --generate-interface=INFER \
         --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean \
         "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU \
+        "--extra-cc-options=-D$profile_macro" \
         >stdout.log 2>stderr.log)
     python3 "$CHECKER" rtl --output "$profile_dir" --require='MinimalAXI4MasterPipelined' \
       --configure-log="$profile_dir/stderr.log" --configured-contract --expected-burst-max=16 \
@@ -205,32 +209,32 @@ run_burst_profile_suite() {
   # in pragma mode) are covered by the Mantis list. Keep this matrix focused
   # on malformed, overflow, duplicate/conflict, and applicability behavior.
   local cases=(
-    "read_profile_invalid_outstanding_zero.cpp|num_read_outstanding must be an integer in \\[1,16\\]"
-    "read_profile_invalid_depth_zero.cpp|read_fifo_depth must be a power-of-two integer in \\[1,4096\\] beats"
-    "read_profile_invalid_negative.cpp|num_read_outstanding must be a decimal integer in its supported range"
-    "read_profile_invalid_malformed.cpp|read_fifo_depth must be a decimal integer in its supported range"
-    "read_profile_invalid_huge.cpp|num_read_outstanding must be an integer in \\[1,16\\]"
-    "read_profile_invalid_non_axi.cpp|AXI read profile attributes.*only valid for mode=m_axi"
-    "read_profile_invalid_conflict.cpp|Conflicting num_read_outstanding values in interface bundle 'data'"
-    "read_profile_invalid_duplicate_outstanding_conflict.cpp|Conflicting num_read_outstanding values in interface bundle 'data'"
-    "read_profile_invalid_duplicate_depth_conflict.cpp|Conflicting read_fifo_depth values in interface bundle 'data'"
-    "read_profile_invalid_duplicate_outstanding_range.cpp|num_read_outstanding must be an integer in \\[1,16\\]"
-    "read_profile_invalid_duplicate_depth_range.cpp|read_fifo_depth must be a power-of-two integer in \\[1,4096\\] beats"
-    "read_profile_invalid_duplicate_outstanding_missing.cpp|num_read_outstanding must be a decimal integer in its supported range"
-    "read_profile_invalid_duplicate_outstanding_comma.cpp|num_read_outstanding must be a decimal integer in its supported range"
-    "read_profile_invalid_duplicate_depth_missing.cpp|read_fifo_depth must be a decimal integer in its supported range"
-    "read_profile_invalid_duplicate_depth_comma.cpp|read_fifo_depth must be a decimal integer in its supported range"
+    "read_profile_invalid_outstanding_zero|AXI_CASE_READ_PROFILE_INVALID_OUTSTANDING_ZERO|num_read_outstanding must be an integer in \\[1,16\\]"
+    "read_profile_invalid_depth_zero|AXI_CASE_READ_PROFILE_INVALID_DEPTH_ZERO|read_fifo_depth must be a power-of-two integer in \\[1,4096\\] beats"
+    "read_profile_invalid_negative|AXI_CASE_READ_PROFILE_INVALID_NEGATIVE|num_read_outstanding must be a decimal integer in its supported range"
+    "read_profile_invalid_malformed|AXI_CASE_READ_PROFILE_INVALID_MALFORMED|read_fifo_depth must be a decimal integer in its supported range"
+    "read_profile_invalid_huge|AXI_CASE_READ_PROFILE_INVALID_HUGE|num_read_outstanding must be an integer in \\[1,16\\]"
+    "read_profile_invalid_non_axi|AXI_CASE_READ_PROFILE_INVALID_NON_AXI|AXI read profile attributes.*only valid for mode=m_axi"
+    "read_profile_invalid_conflict|AXI_CASE_READ_PROFILE_INVALID_CONFLICT|Conflicting num_read_outstanding values in interface bundle 'data'"
+    "read_profile_invalid_duplicate_outstanding_conflict|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_CONFLICT|Conflicting num_read_outstanding values in interface bundle 'data'"
+    "read_profile_invalid_duplicate_depth_conflict|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_CONFLICT|Conflicting read_fifo_depth values in interface bundle 'data'"
+    "read_profile_invalid_duplicate_outstanding_range|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_RANGE|num_read_outstanding must be an integer in \\[1,16\\]"
+    "read_profile_invalid_duplicate_depth_range|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_RANGE|read_fifo_depth must be a power-of-two integer in \\[1,4096\\] beats"
+    "read_profile_invalid_duplicate_outstanding_missing|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_MISSING|num_read_outstanding must be a decimal integer in its supported range"
+    "read_profile_invalid_duplicate_outstanding_comma|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_COMMA|num_read_outstanding must be a decimal integer in its supported range"
+    "read_profile_invalid_duplicate_depth_missing|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_MISSING|read_fifo_depth must be a decimal integer in its supported range"
+    "read_profile_invalid_duplicate_depth_comma|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_COMMA|read_fifo_depth must be a decimal integer in its supported range"
   )
-  local item filename diagnostic top invalid_dir
+  local item top case_macro diagnostic invalid_dir
   for item in "${cases[@]}"; do
-    IFS='|' read -r filename diagnostic <<<"$item"
-    top=${filename%.cpp}
+    IFS='|' read -r top case_macro diagnostic <<<"$item"
     invalid_dir="$OUT/compiler/burst-profile/$top"
     mkdir -p "$invalid_dir"
-    if (cd "$invalid_dir" && "$BAMBU" "$TESTS/compiler_cases/$filename" \
+    if (cd "$invalid_dir" && "$BAMBU" "$source" \
         --top-fname="$top" --compiler=I386_CLANG16 --generate-interface=INFER \
         --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean \
-        --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU >stdout.log 2>stderr.log); then
+        --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU "--extra-cc-options=-D$case_macro" \
+        >stdout.log 2>stderr.log); then
       echo "expected read-profile fixture '$top' to fail; see $invalid_dir" >&2; return 1
     fi
     if ! grep -Eq "$diagnostic" "$invalid_dir/stdout.log" "$invalid_dir/stderr.log" \
@@ -251,13 +255,15 @@ fi
 BURST_VALUE=1
 [[ "$MODE" == fallback ]] && BURST_VALUE=0
 run_compile() {
-  local top=$1 tag=$2 source=${3:-${BURST_CASE_SOURCE:-$TESTS/compiler_cases/recognized_loops.cpp}}
+  local top=$1 tag=$2 source=${3:-${BURST_CASE_SOURCE:-$TESTS/compiler_cases/axi_analysis_cases.cpp}} case_macro=${4:-}
+  if [[ -z ${3:-} && -z ${BURST_CASE_SOURCE:-} ]]; then case_macro=AXI_ANALYSIS_CASE_04; fi
   source=$(realpath "$source")
   local case_dir="$OUT/compiler/$tag"
   local args=("--top-fname=$top" --compiler=I386_CLANG16 --generate-interface=INFER
               --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
               "--bambu-parameter=${BURST_PARAMETER}=${BURST_VALUE}"
               --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
+  if [[ -n $case_macro ]]; then args+=("--extra-cc-options=-D$case_macro"); fi
   if [[ "$top" == root_reinvocation && ${BURST_SIMULATE:-0} == 1 ]]; then
     args+=(--simulate --simulator=MODELSIM "--generate-tb=$TESTS/compiler_cases/tb_root_reinvocation.cpp")
   fi
@@ -275,8 +281,8 @@ if [[ "$MODE" == xml-profile ]]; then
   # Generate both raw-IR seeds through the normal frontend path. The XML
   # mutation tests below deliberately consume these .bambuir files, not the
   # compiler's debug-only .raw dumps.
-  run_compile renamed_sum xml-profile-seed "$TESTS/compiler_cases/recognized_loops.cpp"
-  run_compile stride_two xml-profile-stride-seed "$TESTS/compiler_cases/unsupported_stride.cpp"
+  run_compile renamed_sum xml-profile-seed "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_04
+  run_compile stride_two xml-profile-stride-seed "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_08
   find_artifact() {
     local root=$1 pattern=$2 found
     found=$(find "$root" -type f -name "$pattern" -print -quit)
@@ -403,16 +409,16 @@ run_shared_default_match_case() {
   printf '%s\n' "$rc" >"$case_dir/exit-code.txt"
   assert_shared_root_order "$tag" "$first" "$second" "$case_dir/stderr.log"
   if grep -Eq "Incompatible m_axi burst profile" "$case_dir/stdout.log" "$case_dir/stderr.log"; then
-    echo "omitted and explicit O1/D32 roots were rejected for profile incompatibility; see $case_dir" >&2
+    echo "omitted and explicit O16/D256 roots were rejected for profile incompatibility; see $case_dir" >&2
     return 1
   fi
   python3 "$CHECKER" shared-profile --output "$case_dir" \
     --compiler-status "$rc" --stdout-log "$case_dir/stdout.log" --stderr-log "$case_dir/stderr.log" \
     --shared-root renamed_sum --shared-root configured32 \
-    --expected-burst-max 16 --expected-outstanding 1 --expected-fifo-depth 32
-  # The omitted depth derives to next_pow2(max(2,1)*16) = 32, so the explicit
-  # side has to name 32 for the two roots to be compatible.
-  echo "SHARED-PROFILE PASS: $tag omitted defaults equal explicit O1/D32 (shared RTL profile witnessed)"
+    --expected-burst-max 16 --expected-outstanding 16 --expected-fifo-depth 256
+  # The omitted O/D defaults are O=16 and D=256 for B=16; the explicit side
+  # names the same values so both roots must share one compatible profile.
+  echo "SHARED-PROFILE PASS: $tag omitted defaults equal explicit O16/D256 (shared RTL profile witnessed)"
 }
 run_burst_type_case() {
   local tag=$1 expected=$2 burst_type=$3 burst_value=$4 device_file=${5:-}
@@ -433,9 +439,10 @@ run_burst_type_case() {
   elif [[ -n "$device_file" ]]; then
     args+=(-b "$device_file")
   fi
-  printf '%q ' "$BAMBU" "$TESTS/compiler_cases/recognized_loops.cpp" "${args[@]}" >"$case_dir/argv.txt"
+  args+=(--extra-cc-options=-DAXI_ANALYSIS_CASE_04)
+  printf '%q ' "$BAMBU" "$TESTS/compiler_cases/axi_analysis_cases.cpp" "${args[@]}" >"$case_dir/argv.txt"
   printf '\n' >>"$case_dir/argv.txt"
-  if (cd "$case_dir" && "$BAMBU" "$TESTS/compiler_cases/recognized_loops.cpp" "${args[@]}" >stdout.log 2>stderr.log); then
+  if (cd "$case_dir" && "$BAMBU" "$TESTS/compiler_cases/axi_analysis_cases.cpp" "${args[@]}" >stdout.log 2>stderr.log); then
     rc=0
   else
     rc=$?
@@ -444,9 +451,12 @@ run_burst_type_case() {
     echo "expected accepted AXI burst case '$tag'; see $case_dir/stderr.log" >&2; return 1
   elif [[ "$expected" == reject && $rc -eq 0 ]]; then
     echo "expected FIXED burst case '$tag' to fail; see $case_dir" >&2; return 1
-  elif [[ "$expected" == reject ]] && ! grep -Eqi 'Configured read bursts.*require AXI INCREMENTAL.*effective AXI burst type is FIXED' \
+  elif [[ "$expected" == fallback ]] && ! grep -Eqi 'Keeping legacy m_axi reads for bundle data: AXI burst type is FIXED; incremental prefetch is unsupported' \
       "$case_dir/stdout.log" "$case_dir/stderr.log"; then
-    echo "FIXED burst case '$tag' failed without the expected diagnostic; see $case_dir" >&2; return 1
+    echo "FIXED burst case '$tag' did not report its read fallback reason; see $case_dir" >&2; return 1
+  elif [[ "$expected" == fallback ]] && grep -Eq 'MinimalAXI4MasterPipelined|Configured read burst regions' \
+      "$case_dir/stdout.log" "$case_dir/stderr.log"; then
+    echo "FIXED burst case '$tag' emitted burst configuration/RTL instead of falling back; see $case_dir" >&2; return 1
   fi
   echo "BURST-TYPE $expected PASS: $tag"
 }
@@ -454,8 +464,8 @@ if [[ "$MODE" == burst-type ]]; then
   run_burst_type_case incr-accepted accept INCREMENTAL 1
   run_burst_type_case fixed-cli-device-incr-accepted accept FIXED 1
   run_burst_type_case fixed-opt-out-legacy accept FIXED 0
-  run_burst_type_case fixed-cli-device-fixed-rejected reject FIXED 1 device-fixed
-  run_burst_type_case fixed-device-override-rejected reject INCREMENTAL 1 device-fixed
+  run_burst_type_case fixed-cli-device-fixed-fallback fallback FIXED 1 device-fixed
+  run_burst_type_case fixed-device-override-fallback fallback INCREMENTAL 1 device-fixed
   exit 0
 fi
 if [[ "$MODE" == shared-resource ]]; then
@@ -463,12 +473,11 @@ if [[ "$MODE" == shared-resource ]]; then
   run_shared_resource_case legacy-first conditional_load,renamed_sum SHARED_RESOURCE_LEGACY_FIRST conditional_load renamed_sum
   run_shared_profile_case B16-first renamed_sum,configured32 '' renamed_sum configured32
   run_shared_profile_case B32-first configured32,renamed_sum SHARED_PROFILE_B32_FIRST configured32 renamed_sum
-  run_shared_od_conflict_case O3-first renamed_sum,configured32 SHARED_PROFILE_O_CONFLICT_FIRST configured32 renamed_sum num_read_outstanding 3 1
-  run_shared_od_conflict_case O3-second renamed_sum,configured32 SHARED_PROFILE_O_CONFLICT renamed_sum configured32 num_read_outstanding 1 3
-  # The root that omits read_fifo_depth gets the derived default: with B=16 and
-  # one outstanding burst that is next_pow2(max(2,1)*16) = 32, not 256.
-  run_shared_od_conflict_case D8-first renamed_sum,configured32 SHARED_PROFILE_D_CONFLICT_FIRST configured32 renamed_sum read_fifo_depth 8 32
-  run_shared_od_conflict_case D8-second renamed_sum,configured32 SHARED_PROFILE_D_CONFLICT renamed_sum configured32 read_fifo_depth 32 8
+  run_shared_od_conflict_case O3-first renamed_sum,configured32 SHARED_PROFILE_O_CONFLICT_FIRST configured32 renamed_sum num_read_outstanding 3 16
+  run_shared_od_conflict_case O3-second renamed_sum,configured32 SHARED_PROFILE_O_CONFLICT renamed_sum configured32 num_read_outstanding 16 3
+  # The root that omits read_fifo_depth uses O=16/B=16 and derives D=256.
+  run_shared_od_conflict_case D8-first renamed_sum,configured32 SHARED_PROFILE_D_CONFLICT_FIRST configured32 renamed_sum read_fifo_depth 8 256
+  run_shared_od_conflict_case D8-second renamed_sum,configured32 SHARED_PROFILE_D_CONFLICT renamed_sum configured32 read_fifo_depth 256 8
   run_shared_default_match_case defaults-first renamed_sum,configured32 SHARED_PROFILE_DEFAULT_MATCH_FIRST configured32 renamed_sum
   run_shared_default_match_case defaults-second renamed_sum,configured32 SHARED_PROFILE_DEFAULT_MATCH renamed_sum configured32
   exit 0
@@ -477,7 +486,7 @@ if [[ "$MODE" == root-reinvocation ]]; then
   run_compile root_reinvocation root_reinvocation "$TESTS/compiler_cases/root_reinvocation.cpp"
   python3 "$CHECKER" rtl --output "$OUT/compiler/root_reinvocation" \
     --require='MinimalAXI4MasterPipelined' --configure-log="$OUT/compiler/root_reinvocation/stderr.log" \
-    --configured-contract --expected-burst-max=16
+    --configured-contract --expected-burst-max=16 --expected-outstanding=16 --expected-fifo-depth=256
   if [[ ${BURST_SIMULATE:-0} == 1 ]]; then
     echo "Root re-invocation simulation ran through Bambu/ModelSim."
   fi
@@ -488,20 +497,20 @@ if [[ "$MODE" == fallback-matrix ]]; then
   run_compile renamed_sum legacy-default
   python3 "$CHECKER" fallback --output "$OUT/compiler/legacy-default"
   BURST_VALUE=1
-  run_compile two_regions legacy-two-regions "$TESTS/compiler_cases/recognized_loops.cpp"
+  run_compile two_regions legacy-two-regions "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_04
   python3 "$CHECKER" fallback --output "$OUT/compiler/legacy-two-regions" \
     --fallback-log="$OUT/compiler/legacy-two-regions/stderr.log"
-  run_compile stride_two legacy-stride "$TESTS/compiler_cases/unsupported_stride.cpp"
+  run_compile stride_two legacy-stride "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_08
   python3 "$CHECKER" fallback --output "$OUT/compiler/legacy-stride"
-  run_compile cached_region legacy-cache "$TESTS/compiler_cases/unsupported_cache.cpp"
+  run_compile cached_region legacy-cache "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_05
   python3 "$CHECKER" fallback --output "$OUT/compiler/legacy-cache"
   for top in conditional_load early_exit; do
-    run_compile "$top" "unsupported-$top" "$TESTS/compiler_cases/unsupported_loops.cpp"
+    run_compile "$top" "unsupported-$top" "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_07
     python3 "$CHECKER" fallback --output "$OUT/compiler/unsupported-$top"
   done
   for top in store_before_src_first store_before_dst_first volatile_access_before_region \
              store_after_region store_in_intermediate_loop; do
-    run_compile "$top" "effect-$top" "$TESTS/compiler_cases/effect_fallback.cpp"
+    run_compile "$top" "effect-$top" "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_02
     python3 "$CHECKER" fallback --output "$OUT/compiler/effect-$top" \
       --fallback-log="$OUT/compiler/effect-$top/stderr.log"
   done
@@ -515,11 +524,14 @@ if [[ -n ${BURST_CASE_SOURCE:-} ]]; then
     effect-fallback) python3 "$CHECKER" fallback --output "$OUT/compiler/$TOP" \
                        --fallback-log="$OUT/compiler/$TOP/stderr.log" ;;
     ir) python3 "$CHECKER" rtl --output "$OUT/compiler/$TOP" --require='MinimalAXI4MasterPipelined' \
-           --configure-log="$OUT/compiler/$TOP/stderr.log" --configured-contract --expected-burst-max=16 ;;
+           --configure-log="$OUT/compiler/$TOP/stderr.log" --configured-contract --expected-burst-max=16 \
+           --expected-outstanding=16 --expected-fifo-depth=256 ;;
     rtl) python3 "$CHECKER" rtl --output "$OUT/compiler/$TOP" --require='MinimalAXI4MasterPipelined' \
-           --configure-log="$OUT/compiler/$TOP/stderr.log" --configured-contract --expected-burst-max=16 ;;
+           --configure-log="$OUT/compiler/$TOP/stderr.log" --configured-contract --expected-burst-max=16 \
+           --expected-outstanding=16 --expected-fifo-depth=256 ;;
     all) python3 "$CHECKER" rtl --output "$OUT/compiler/$TOP" --require='MinimalAXI4MasterPipelined' \
-           --configure-log="$OUT/compiler/$TOP/stderr.log" --configured-contract --expected-burst-max=16 ;;
+           --configure-log="$OUT/compiler/$TOP/stderr.log" --configured-contract --expected-burst-max=16 \
+           --expected-outstanding=16 --expected-fifo-depth=256 ;;
   esac
 else
   case "$MODE" in
@@ -528,43 +540,49 @@ else
       python3 "$CHECKER" fallback --output "$OUT/compiler/fallback" ;;
     effect-fallback)
       TOP=${BURST_TOP:-volatile_access_before_region}
-      SOURCE=${BURST_CASE_SOURCE:-$TESTS/compiler_cases/effect_fallback.cpp}
-      run_compile "$TOP" "effect-$TOP" "$SOURCE"
+      SOURCE=${BURST_CASE_SOURCE:-$TESTS/compiler_cases/axi_analysis_cases.cpp}
+      CASE_MACRO=
+      [[ -n ${BURST_CASE_SOURCE:-} ]] || CASE_MACRO=AXI_ANALYSIS_CASE_02
+      run_compile "$TOP" "effect-$TOP" "$SOURCE" "$CASE_MACRO"
       python3 "$CHECKER" fallback --output "$OUT/compiler/effect-$TOP" \
         --fallback-log="$OUT/compiler/effect-$TOP/stderr.log" ;;
     ir)
       run_compile renamed_sum ir
       python3 "$CHECKER" rtl --output "$OUT/compiler/ir" --require='MinimalAXI4MasterPipelined' \
-        --configure-log="$OUT/compiler/ir/stderr.log" --configured-contract --expected-burst-max=16 ;;
+        --configure-log="$OUT/compiler/ir/stderr.log" --configured-contract --expected-burst-max=16 \
+        --expected-outstanding=16 --expected-fifo-depth=256 ;;
     rtl)
       run_compile renamed_sum rtl
       python3 "$CHECKER" rtl --output "$OUT/compiler/rtl" --require='MinimalAXI4MasterPipelined' \
-        --configure-log="$OUT/compiler/rtl/stderr.log" --configured-contract --expected-burst-max=16 ;;
+        --configure-log="$OUT/compiler/rtl/stderr.log" --configured-contract --expected-burst-max=16 \
+        --expected-outstanding=16 --expected-fifo-depth=256 ;;
     all)
       for top in renamed_sum zero_count one_count nonmultiple_count; do
         run_compile "$top" "$top"
         python3 "$CHECKER" rtl --output "$OUT/compiler/$top" --require='MinimalAXI4MasterPipelined' \
-          --configure-log="$OUT/compiler/$top/stderr.log" --configured-contract --expected-burst-max=16
+          --configure-log="$OUT/compiler/$top/stderr.log" --configured-contract --expected-burst-max=16 \
+          --expected-outstanding=16 --expected-fifo-depth=256
       done
       run_compile root_reinvocation root_reinvocation "$TESTS/compiler_cases/root_reinvocation.cpp"
       python3 "$CHECKER" rtl --output "$OUT/compiler/root_reinvocation" --require='MinimalAXI4MasterPipelined' \
-        --configure-log="$OUT/compiler/root_reinvocation/stderr.log" --configured-contract --expected-burst-max=16
-      run_compile two_regions legacy-two-regions "$TESTS/compiler_cases/recognized_loops.cpp"
+        --configure-log="$OUT/compiler/root_reinvocation/stderr.log" --configured-contract --expected-burst-max=16 \
+        --expected-outstanding=16 --expected-fifo-depth=256
+  run_compile two_regions legacy-two-regions "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_04
       python3 "$CHECKER" fallback --output "$OUT/compiler/legacy-two-regions" \
         --fallback-log="$OUT/compiler/legacy-two-regions/stderr.log"
-      run_compile stride_two legacy-stride "$TESTS/compiler_cases/unsupported_stride.cpp"
+  run_compile stride_two legacy-stride "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_08
       python3 "$CHECKER" fallback --output "$OUT/compiler/legacy-stride"
-      run_compile cached_region legacy-cache "$TESTS/compiler_cases/unsupported_cache.cpp"
+  run_compile cached_region legacy-cache "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_05
       python3 "$CHECKER" fallback --output "$OUT/compiler/legacy-cache"
       # Opt-in is on for these shapes: they must remain on the legacy path
       # rather than instantiate the configured burst engine.
       for top in conditional_load early_exit; do
-        run_compile "$top" "unsupported-$top" "$TESTS/compiler_cases/unsupported_loops.cpp"
+        run_compile "$top" "unsupported-$top" "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_07
         python3 "$CHECKER" fallback --output "$OUT/compiler/unsupported-$top"
       done
       for top in store_before_src_first store_before_dst_first volatile_access_before_region \
                  store_after_region store_in_intermediate_loop; do
-        run_compile "$top" "effect-$top" "$TESTS/compiler_cases/effect_fallback.cpp"
+        run_compile "$top" "effect-$top" "$TESTS/compiler_cases/axi_analysis_cases.cpp" AXI_ANALYSIS_CASE_02
         python3 "$CHECKER" fallback --output "$OUT/compiler/effect-$top" \
           --fallback-log="$OUT/compiler/effect-$top/stderr.log"
       done

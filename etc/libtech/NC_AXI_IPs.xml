@@ -939,8 +939,94 @@ wire        configure_descriptor_valid;
 wire        configure_capture;
 wire       activate_pending;
 wire       peer_fault_active;
+// synthesis translate_off
+reg axi_local_diagnostic_reported;
+reg axi_ignored_diagnostic_reported;
+reg axi_peer_diagnostic_reported;
+wire axi_config_fault_event = cfg_pipe_valid_reg &amp;&amp;
+    (!cfg_pipe_legal_reg || cfg_pipe_size_reg != DATA_BITS || cfg_pipe_conflict_reg);
+wire axi_load_fault_event = !peer_fault_active &amp;&amp; start &amp;&amp; in1 == OP_LOAD &amp;&amp;
+    !load_pending_reg &amp;&amp; !load_request_valid;
+wire axi_response_fault_event = r_push &amp;&amp; (!r_structural || m_axi_rresp != 2'b00);
+wire axi_store_fault_event = start &amp;&amp; in1 == OP_STORE;
+wire axi_ignored_command_event = start &amp;&amp; in1 != OP_LOAD &amp;&amp; in1 != OP_STORE &amp;&amp;
+    in1 != OP_CONFIGURE;
+wire axi_local_diagnostic_event = axi_config_fault_event || axi_load_fault_event ||
+    axi_response_fault_event || axi_store_fault_event;
+
+task automatic report_axi_read_diagnostic(
+    input string diagnostic_class, input string reason, input integer opcode,
+    input integer size, input [ADDR_BITS-1:0] address,
+    input [COUNT_BITS-1:0] count, input [1:0] response,
+    input integer response_id, input integer response_last,
+    input integer descriptor_count_value, input [LEN_W-1:0] descriptor_remaining_value);
+begin
+    if ($test$plusargs(&quot;AXI_BURST_EXPECT_FAULT&quot;))
+        $display(&quot;AXI_BURST_%0s engine=read reason=%0s instance=%m opcode=%0d size=%0d address=%h count=%0d resp=%b id=%0d last=%0d descriptors=%0d remaining=%0d&quot;,
+                 diagnostic_class, reason, opcode, size, address, count, response,
+                 response_id, response_last, descriptor_count_value, descriptor_remaining_value);
+    else
+        $fatal(1, &quot;AXI_BURST_%0s engine=read reason=%0s instance=%m opcode=%0d size=%0d address=%h count=%0d resp=%b id=%0d last=%0d descriptors=%0d remaining=%0d&quot;,
+               diagnostic_class, reason, opcode, size, address, count, response,
+               response_id, response_last, descriptor_count_value, descriptor_remaining_value);
+end
+endtask
+
+always @(posedge clock 1RESET_EDGE) begin
+    if (1RESET_VALUE) begin
+        axi_local_diagnostic_reported &lt;= 1'b0;
+        axi_ignored_diagnostic_reported &lt;= 1'b0;
+        axi_peer_diagnostic_reported &lt;= 1'b0;
+    end else begin
+        if (axi_local_diagnostic_event &amp;&amp; !axi_local_diagnostic_reported) begin
+            axi_local_diagnostic_reported &lt;= 1'b1;
+            if (axi_config_fault_event)
+                report_axi_read_diagnostic(&quot;FAULT&quot;, &quot;CONFIGURE_INVALID&quot;, OP_CONFIGURE,
+                    cfg_pipe_size_reg, cfg_pipe_base_reg, cfg_pipe_count_reg, 2'b00, 0, 0,
+                    descriptor_count_reg, 0);
+            else if (axi_load_fault_event)
+                report_axi_read_diagnostic(&quot;FAULT&quot;, &quot;LOAD_INVALID&quot;, OP_LOAD, in2, in4,
+                    in5, 2'b00, 0, 0, descriptor_count_reg, 0);
+            else if (axi_response_fault_event) begin
+                if (m_axi_rresp != 2'b00)
+                    report_axi_read_diagnostic(&quot;FAULT&quot;, &quot;RRESP&quot;, -1, 0,
+                        descriptor_count_reg != 0 ? region_base_reg : {ADDR_BITS{1'b0}},
+                        region_count_reg, m_axi_rresp, m_axi_rid, m_axi_rlast,
+                        descriptor_count_reg, descriptor_remaining_reg[descriptor_rd_ptr_reg]);
+                else if (descriptor_count_reg == 0)
+                    report_axi_read_diagnostic(&quot;FAULT&quot;, &quot;R_WITHOUT_DESCRIPTOR&quot;, -1, 0,
+                        {ADDR_BITS{1'b0}}, 0, m_axi_rresp, m_axi_rid, m_axi_rlast,
+                        descriptor_count_reg, descriptor_remaining_reg[descriptor_rd_ptr_reg]);
+                else if (|m_axi_rid)
+                    report_axi_read_diagnostic(&quot;FAULT&quot;, &quot;RID&quot;, -1, 0, region_base_reg,
+                        region_count_reg, m_axi_rresp, m_axi_rid, m_axi_rlast,
+                        descriptor_count_reg, descriptor_remaining_reg[descriptor_rd_ptr_reg]);
+                else
+                    report_axi_read_diagnostic(&quot;FAULT&quot;, &quot;RLAST_MISMATCH&quot;, -1, 0,
+                        region_base_reg, region_count_reg, m_axi_rresp, m_axi_rid, m_axi_rlast,
+                        descriptor_count_reg, descriptor_remaining_reg[descriptor_rd_ptr_reg]);
+            end else if (axi_store_fault_event)
+                report_axi_read_diagnostic(&quot;FAULT&quot;, &quot;UNSUPPORTED_STORE&quot;, OP_STORE, in2,
+                    in4, in5, 2'b00, 0, 0, descriptor_count_reg, 0);
+        end
+        if (axi_ignored_command_event &amp;&amp; !axi_ignored_diagnostic_reported &amp;&amp;
+            !axi_local_diagnostic_event) begin
+            axi_ignored_diagnostic_reported &lt;= 1'b1;
+            report_axi_read_diagnostic(&quot;COMMAND_IGNORED&quot;, &quot;UNSUPPORTED_OPCODE&quot;, in1,
+                in2, in4, in5, 2'b00, 0, 0, descriptor_count_reg, 0);
+        end
+        if (peer_fault_active &amp;&amp; !axi_peer_diagnostic_reported &amp;&amp;
+            (!axi_local_diagnostic_event || axi_local_diagnostic_reported)) begin
+            axi_peer_diagnostic_reported &lt;= 1'b1;
+            report_axi_read_diagnostic(&quot;PEER_FAULT&quot;, &quot;peer&quot;, -1, 0,
+                region_base_reg, region_count_reg, 2'b00, 0, 0, descriptor_count_reg, 0);
+        end
+    end
+end
+// synthesis translate_on
 
 wire configure_range_valid;
+wire configure_alignment_valid;
 wire [ADDR_BITS-1:0] next_address;
 reg [BOUNDARY_W-1:0] boundary_beats_reg;
 wire [LEN_W-1:0] next_burst_length;
@@ -983,6 +1069,14 @@ generate
     wire [END_BEAT_W-1:0] end_beat_ext = (in4 &gt;&gt; BEAT_SHIFT) + in5;
     assign configure_range_valid = end_beat_ext &lt;= end_beat_limit;
   end
+  if (BEAT_SHIFT == 0)
+  begin : byte_beat_alignment
+    assign configure_alignment_valid = 1'b1;
+  end
+  else
+  begin : wider_beat_alignment
+    assign configure_alignment_valid = !(|in4[BEAT_SHIFT-1:0]);
+  end
 endgenerate
 
 // synthesis translate_off
@@ -995,9 +1089,9 @@ begin
   if (!(FIFO_DEPTH &gt;= 1 &amp;&amp; FIFO_DEPTH &lt;= 4096 &amp;&amp;
   (FIFO_DEPTH &amp; (FIFO_DEPTH - 1)) == 0))
   $fatal(1, &quot;FIFO_DEPTH must be a power of two in [1,4096]&quot;);
-  if (!(DATA_BITS &gt;= 8 &amp;&amp; DATA_BITS &lt;= 4096 &amp;&amp;
+  if (!(DATA_BITS &gt;= 8 &amp;&amp; DATA_BITS &lt;= 1024 &amp;&amp;
   (DATA_BITS &amp; (DATA_BITS - 1)) == 0))
-  $fatal(1, &quot;BITSIZE_m_axi_rdata must be a power-of-two width in [8,4096]&quot;);
+  $fatal(1, &quot;BITSIZE_m_axi_rdata must be a power-of-two width in [8,1024]&quot;);
   if (ADDR_BITS &lt; 12)
   $fatal(1, &quot;BITSIZE_m_axi_araddr must be at least 12 bits for the 4 KiB rule&quot;);
 end
@@ -1013,8 +1107,8 @@ assign m_axi_arid    = 1'b0;
 assign load_request_valid = region_active_reg &amp;&amp; !loads_exhausted_reg &amp;&amp;
     in2 == DATA_BITS &amp;&amp; in4 == next_expected_address_reg;
 // The high count bit must be rejected before narrowing the region counters.
-assign configure_descriptor_valid = in2 == DATA_BITS &amp;&amp;
-    in4[BEAT_SHIFT-1:0] == {BEAT_SHIFT{1'b0}} &amp;&amp; !in5[COUNT_BITS-1] &amp;&amp;
+assign configure_descriptor_valid = in2 == DATA_BITS &amp;&amp; configure_alignment_valid &amp;&amp;
+    !in5[COUNT_BITS-1] &amp;&amp;
     (in5 == 0 || configure_range_valid);
 assign configure_capture = start &amp;&amp; in1 == OP_CONFIGURE &amp;&amp;
     !cfg_seen_reg &amp;&amp; !cfg_pipe_valid_reg;
@@ -2054,7 +2148,11 @@ end
 
 always @(posedge clock 1RESET_EDGE)
 begin
-  if (1RESET_VALUE || activate_configure ||
+  if (1RESET_VALUE)
+  begin
+    fifo_credit_committed_reg &lt;= FIFO_DEPTH;
+  end
+  else if (activate_configure ||
   (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg))
   begin
     fifo_credit_committed_reg &lt;= FIFO_DEPTH;
@@ -2068,7 +2166,11 @@ end
 
 always @(posedge clock 1RESET_EDGE)
 begin
-  if (1RESET_VALUE || activate_configure ||
+  if (1RESET_VALUE)
+  begin
+    fifo_credit_minus_one_reg &lt;= FIFO_DEPTH - 1'b1;
+  end
+  else if (activate_configure ||
   (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg))
   begin
     fifo_credit_minus_one_reg &lt;= FIFO_DEPTH - 1'b1;
@@ -2082,7 +2184,11 @@ end
 
 always @(posedge clock 1RESET_EDGE)
 begin
-  if (1RESET_VALUE || activate_configure ||
+  if (1RESET_VALUE)
+  begin
+    fifo_credit_token_reg &lt;= 1'b0;
+  end
+  else if (activate_configure ||
   (activate_pending &amp;&amp; !peer_fault_active &amp;&amp; !fault_reg))
   begin
     fifo_credit_token_reg &lt;= 1'b0;
@@ -2721,6 +2827,92 @@ wire aw_valid;
 wire aw_push;
 wire b_fault_now;
 wire peer_fault_active;
+// synthesis translate_off
+reg axi_local_diagnostic_reported;
+reg axi_ignored_diagnostic_reported;
+reg axi_peer_diagnostic_reported;
+wire axi_config_fault_event = cfg_pipe_valid_reg &amp;&amp;
+    (!cfg_pipe_legal_reg || cfg_pipe_size_reg != DATA_BITS || !cfg_pipe_idle_reg);
+wire axi_store_fault_event = !fault_reg &amp;&amp; !peer_fault_active &amp;&amp; direct_store &amp;&amp;
+    !store_pending_reg &amp;&amp; !store_request_valid;
+wire axi_pending_store_fault_event = store_pending_reg &amp;&amp; pending_store_changed;
+wire axi_drain_fault_event = !peer_fault_active &amp;&amp; !store_pending_reg &amp;&amp; !store_ack_pending_reg &amp;&amp;
+    start &amp;&amp; in1 == OP_DRAIN &amp;&amp; !drain_seen_reg &amp;&amp; region_active_reg &amp;&amp;
+    accepted_reg != region_count_reg;
+wire axi_response_fault_event = b_push &amp;&amp; ((|m_axi_bid) || m_axi_bresp != 2'b00);
+wire axi_ignored_command_event = start &amp;&amp; in1 != OP_STORE &amp;&amp; in1 != OP_CONFIGURE &amp;&amp;
+    in1 != OP_DRAIN;
+wire axi_local_diagnostic_event = axi_config_fault_event || axi_store_fault_event ||
+    axi_pending_store_fault_event || axi_drain_fault_event || axi_response_fault_event;
+
+task automatic report_axi_write_diagnostic(
+    input string diagnostic_class, input string reason, input integer opcode,
+    input integer size, input [ADDR_BITS-1:0] address,
+    input [COUNT_BITS-1:0] count, input [BITSIZE_in3-1:0] payload,
+    input [1:0] response, input integer response_id,
+    input integer descriptor_count_value, input [LEN_W-1:0] descriptor_remaining_value);
+begin
+    if ($test$plusargs(&quot;AXI_BURST_EXPECT_FAULT&quot;))
+        $display(&quot;AXI_BURST_%0s engine=write reason=%0s instance=%m opcode=%0d size=%0d address=%h count=%0d payload=%h resp=%b id=%0d descriptors=%0d remaining=%0d&quot;,
+                 diagnostic_class, reason, opcode, size, address, count, payload,
+                 response, response_id, descriptor_count_value, descriptor_remaining_value);
+    else
+        $fatal(1, &quot;AXI_BURST_%0s engine=write reason=%0s instance=%m opcode=%0d size=%0d address=%h count=%0d payload=%h resp=%b id=%0d descriptors=%0d remaining=%0d&quot;,
+               diagnostic_class, reason, opcode, size, address, count, payload,
+               response, response_id, descriptor_count_value, descriptor_remaining_value);
+end
+endtask
+
+always @(posedge clock 1RESET_EDGE) begin
+    if (1RESET_VALUE) begin
+        axi_local_diagnostic_reported &lt;= 1'b0;
+        axi_ignored_diagnostic_reported &lt;= 1'b0;
+        axi_peer_diagnostic_reported &lt;= 1'b0;
+    end else begin
+        if (axi_local_diagnostic_event &amp;&amp; !axi_local_diagnostic_reported) begin
+            axi_local_diagnostic_reported &lt;= 1'b1;
+            if (axi_config_fault_event)
+                report_axi_write_diagnostic(&quot;FAULT&quot;, &quot;CONFIGURE_INVALID&quot;, OP_CONFIGURE,
+                    cfg_pipe_size_reg, cfg_pipe_base_reg, cfg_pipe_count_reg, 0, 2'b00, 0,
+                    descriptor_count_reg, 0);
+            else if (axi_store_fault_event)
+                report_axi_write_diagnostic(&quot;FAULT&quot;, &quot;STORE_INVALID&quot;, OP_STORE, in2,
+                    in4, in5, in3, 2'b00, 0, descriptor_count_reg, 0);
+            else if (axi_pending_store_fault_event)
+                report_axi_write_diagnostic(&quot;FAULT&quot;, &quot;PENDING_STORE_CHANGED&quot;, OP_STORE,
+                    in2, pending_address_reg, region_count_reg, in3, 2'b00, 0,
+                    descriptor_count_reg, 0);
+            else if (axi_drain_fault_event)
+                report_axi_write_diagnostic(&quot;FAULT&quot;, &quot;DRAIN_EARLY&quot;, OP_DRAIN, in2,
+                    region_base_reg, region_count_reg, 0, 2'b00, 0, descriptor_count_reg, 0);
+            else if (axi_response_fault_event) begin
+                if (|m_axi_bid)
+                    report_axi_write_diagnostic(&quot;FAULT&quot;, &quot;BID&quot;, -1, 0,
+                        descriptor_address_reg[descriptor_b_ptr_reg], region_count_reg, 0,
+                        m_axi_bresp, m_axi_bid, descriptor_count_reg,
+                        descriptor_w_remaining_reg[descriptor_b_ptr_reg]);
+                else
+                    report_axi_write_diagnostic(&quot;FAULT&quot;, &quot;BRESP&quot;, -1, 0,
+                        descriptor_address_reg[descriptor_b_ptr_reg], region_count_reg, 0,
+                        m_axi_bresp, m_axi_bid, descriptor_count_reg,
+                        descriptor_w_remaining_reg[descriptor_b_ptr_reg]);
+            end
+        end
+        if (axi_ignored_command_event &amp;&amp; !axi_ignored_diagnostic_reported &amp;&amp;
+            !axi_local_diagnostic_event) begin
+            axi_ignored_diagnostic_reported &lt;= 1'b1;
+            report_axi_write_diagnostic(&quot;COMMAND_IGNORED&quot;, &quot;UNSUPPORTED_OPCODE&quot;, in1,
+                in2, in4, in5, in3, 2'b00, 0, descriptor_count_reg, 0);
+        end
+        if (peer_fault_active &amp;&amp; !axi_peer_diagnostic_reported &amp;&amp;
+            (!axi_local_diagnostic_event || axi_local_diagnostic_reported)) begin
+            axi_peer_diagnostic_reported &lt;= 1'b1;
+            report_axi_write_diagnostic(&quot;PEER_FAULT&quot;, &quot;peer&quot;, -1, 0,
+                region_base_reg, region_count_reg, 0, 2'b00, 0, descriptor_count_reg, 0);
+        end
+    end
+end
+// synthesis translate_on
 wire plan_push;
 wire plan_pop;
 wire direct_store_write = (FAST_STORE_ACK == 0) &amp;&amp; !fault_reg &amp;&amp; !peer_fault_active &amp;&amp;

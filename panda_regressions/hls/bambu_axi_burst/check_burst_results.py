@@ -37,9 +37,6 @@ REQUIRED_CASE_MODES.update({
     "duplex-copy-asymmetric-n1024": "duplex",
 })
 COPY_DUPLEX_CASES = {"duplex-copy-symmetric-n1024", "duplex-copy-asymmetric-n1024"}
-# A bundle 'latency' attribute is a property of the memory reached through that
-# bundle, and it must reach the testbench memory model for both directions.
-ATTR_LATENCY = re.compile(r"latency=(\d+)")
 LEGACY_FIELDS = ("case", "cycles", "source")
 CONFIGURED_BURST_CORE = re.compile(
     r"\bMinimalAXI4MasterPipelined\b|\bMinimalAXI4MasterPipelinedWrite\b|"
@@ -148,7 +145,6 @@ def check_case(results: Path, row: dict[str, str], suite_dir: Path) -> None:
         if row["mode"] == "write":
             profile = (row["write_burst_max"], row["write_outstanding"], row["write_fifo_depth"])
         check_profile_rtl(case_dir, row["case"], row["mode"], *profile, row["addr_bits"])
-    check_bundle_latency(case_dir, row["case"], suite_dir / row["source"])
 
 
 def read_legacy_expectations(path: Path) -> list[dict[str, str]]:
@@ -209,29 +205,59 @@ def check_legacy_case(results: Path, row: dict[str, str]) -> None:
                  f"{match.group(0)} in {rtl}")
 
 
-def check_bundle_latency(case_dir: Path, case: str, source: Path) -> None:
-    """Witness that a bundle 'latency' attribute drives that bundle's memory model.
+def check_fixed_burst_fallback(case_dir: Path, target_file: Path) -> None:
+    """Prove FIXED came from the target, fell back, and passed the golden simulation."""
+    if not case_dir.is_dir():
+        fail(f"fixed-burst-fallback: Mantis case directory is missing: {case_dir}")
+    if not target_file.is_file():
+        fail(f"fixed-burst-fallback: FIXED target file is missing: {target_file}")
+    try:
+        target = ET.parse(target_file).getroot()
+    except (OSError, ET.ParseError) as exc:
+        fail(f"fixed-burst-fallback: malformed FIXED target file: {exc}")
+    target_values = [node.get("value") for node in target.iter("axi_burst_type")]
+    if target_values != ["0"]:
+        fail(f"fixed-burst-fallback: target must declare exactly axi_burst_type=0, got {target_values}")
 
-    Cases without the attribute are skipped: their delay comes from the global
-    --mem-delay-read/--mem-delay-write, which this gate does not know.
-    """
+    results_xml = case_dir / "bambu_results.xml"
+    if not results_xml.is_file():
+        fail(f"fixed-burst-fallback: missing Bambu results XML: {results_xml}")
+    try:
+        root = ET.parse(results_xml).getroot()
+    except (OSError, ET.ParseError) as exc:
+        fail(f"fixed-burst-fallback: malformed/unreadable Bambu results XML: {exc}")
+    evaluations = [element for element in root.iter("evaluation") if "CYCLES" in element.attrib]
+    if len(evaluations) != 1 or not INTEGER.fullmatch(evaluations[0].get("CYCLES", "")) or \
+            int(evaluations[0].get("CYCLES", "0")) <= 0:
+        fail("fixed-burst-fallback: expected one successful positive-cycle Bambu evaluation")
 
-    if not source.is_file():
-        fail(f"{case}: expected case source is missing: {source}")
-    latencies = set(ATTR_LATENCY.findall(source.read_text(encoding="utf-8")))
-    if not latencies:
-        return
-    if len(latencies) > 1:
-        fail(f"{case}: source declares several latency values: {sorted(latencies)}")
-    latency = latencies.pop()
-    testbenches = [path for path in case_dir.rglob("bambu_testbench.v") if path.is_file()]
-    if not testbenches:
-        fail(f"{case}: generated testbench is missing, cannot check the bundle latency")
-    bodies = [path.read_text(encoding="utf-8") for path in testbenches]
-    for name in ("READ_DELAY", "WRITE_DELAY"):
-        if not any(re.search(rf"\.{name}\(\s*{latency}\s*\)", body) for body in bodies):
-            fail(f"{case}: bundle declares latency={latency}, but the generated testbench "
-                 f"carries no .{name}({latency})")
+    execution_log = case_dir / "execution.log"
+    if not execution_log.is_file():
+        fail(f"fixed-burst-fallback: Mantis execution log is missing: {execution_log}")
+    log = execution_log.read_text(encoding="utf-8", errors="replace")
+    simulator_logs = [case_dir / "HLS_output/simulation/testbench.log",
+                      case_dir / "HLS_output/simulation/modelsim_backend/launch.log"]
+    simulator_text = "\n".join(path.read_text(encoding="utf-8", errors="replace")
+                                 for path in simulator_logs if path.is_file())
+    if "AXI_BURST_GOLDEN_PASS N=1024" not in simulator_text:
+        fail("fixed-burst-fallback: golden testbench did not report AXI_BURST_GOLDEN_PASS N=1024")
+    if not re.search(r"AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=FIXED\(device\)", log):
+        fail("fixed-burst-fallback: log does not prove effective FIXED burst type came from the target device")
+    if not re.search(
+            r"Keeping legacy m_axi (?:reads|accesses) for bundle src: AXI burst type is FIXED; "
+            r"incremental prefetch is unsupported", log):
+        fail("fixed-burst-fallback: log lacks the exact FIXED read fallback reason")
+
+    rtl_files = [path for path in case_dir.rglob("*")
+                 if path.is_file() and path.suffix.lower() in (".v", ".sv")
+                 and path.name != "panda_libtech.v"]
+    if not rtl_files:
+        fail("fixed-burst-fallback: generated RTL is missing")
+    for rtl in rtl_files:
+        text = rtl.read_text(encoding="utf-8", errors="replace")
+        match = CONFIGURED_BURST_CORE.search(text)
+        if match:
+            fail(f"fixed-burst-fallback: FIXED fallback RTL contains burst engine {match.group(0)} in {rtl}")
 
 
 def _parameterized_instances(text: str, module_name: str):
@@ -482,6 +508,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--results", required=True, type=Path)
     parser.add_argument("--expectations", required=True, type=Path)
     parser.add_argument("--legacy-expectations", type=Path)
+    parser.add_argument("--fixed-fallback-target", type=Path,
+                        help="require the simulated FIXED-device fallback Mantis case")
     args = parser.parse_args(argv)
     try:
         if not args.results.is_dir():
@@ -494,6 +522,10 @@ def main(argv: list[str] | None = None) -> int:
             legacy_rows = read_legacy_expectations(args.legacy_expectations)
             for row in legacy_rows:
                 check_legacy_case(args.results, row)
+        if args.fixed_fallback_target:
+            check_fixed_burst_fallback(
+                args.results / "AXI-BURST" / "fixed-burst-fallback",
+                args.fixed_fallback_target)
         boundary_source = args.expectations.parent / "bambu_axi_burst_boundary.cpp"
         if not boundary_source.is_file():
             fail(f"valid-boundary-maxima: expected profile source is missing: {boundary_source}")

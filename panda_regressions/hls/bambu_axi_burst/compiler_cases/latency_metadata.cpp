@@ -100,6 +100,16 @@ extern "C" int latency_shared_default_conflict(const int *a, const int *b, int n
 }
 #endif
 
+#if defined(LATENCY_CASE_LATENCY_SHARED_64_FIRST)
+extern "C" int latency_shared_64_first(const int *a, const int *b, int n) {
+#pragma HLS interface mode=m_axi port=a offset=direct bundle=data max_read_burst_length=16 latency=64
+#pragma HLS interface mode=m_axi port=b offset=direct bundle=data max_read_burst_length=16
+  int sum = 0;
+  for(int i = 0; i < n; ++i) sum += a[i] + b[i];
+  return sum;
+}
+#endif
+
 #if defined(LATENCY_CASE_LATENCY_SHARED_EXPLICIT_CONFLICT)
 extern "C" int latency_shared_explicit_conflict(const int *a, const int *b, int n) {
 #pragma HLS interface mode=m_axi port=a offset=direct bundle=data max_read_burst_length=16 latency=64

@@ -6,7 +6,7 @@ extern "C" void write_count(int *dst, int n) {
 }
 
 extern "C" void write_count_seed(int *dst, int n, int seed) {
-#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
+#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16 write_burst_outstanding=1
   for (int i = 0; i < n; ++i) dst[i] = seed + i;
 }
 
@@ -27,6 +27,12 @@ extern "C" void copy_distinct_buffers(int *__restrict dst, const int *__restrict
 extern "C" void copy_distinct_buffers_reversed(const int *__restrict src, int *__restrict dst, int *unused, int n) {
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=input max_read_burst_length=16
 #pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
+  for (int i = 0; i < n; ++i) dst[i] = src[i];
+}
+
+extern "C" void copy_float_payload(float *__restrict dst, const float *__restrict src, int n) {
+#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
+#pragma HLS interface mode=m_axi port=src offset=direct bundle=input max_read_burst_length=16
   for (int i = 0; i < n; ++i) dst[i] = src[i];
 }
 

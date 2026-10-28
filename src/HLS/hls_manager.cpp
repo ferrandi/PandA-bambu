@@ -46,6 +46,7 @@
 #include "utility.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
+#include "utility/bounded_decimal.hpp"
 
 #define MAX_BITWIDTH_SIZE 4096
 
@@ -394,36 +395,20 @@ AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_a
          THROW_ERROR_USAGE("Invalid AXI interface attribute '" + std::string(attr_name) + "' for bundle '" +
                            bundle_name + "': expected an ASCII decimal integer in [1," + STR(maximum) + "].");
       };
-      if(text.empty())
+      std::uint32_t value = 0;
+      if(panda::utility::parse_bounded_ascii_decimal(text, 1U, maximum, value) !=
+         panda::utility::bounded_decimal_result::valid)
       {
          fail();
       }
-      unsigned int value = 0;
-      for(const char ch : text)
-      {
-         if(ch < '0' || ch > '9')
-         {
-            fail();
-         }
-         const auto digit = static_cast<unsigned int>(ch - '0');
-         if(value > (maximum - digit) / 10U)
-         {
-            fail();
-         }
-         value = value * 10U + digit;
-      }
-      if(value == 0U)
-      {
-         fail();
-      }
-      return value;
+      return static_cast<unsigned int>(value);
    };
 
    AXIReadBurstProfile profile;
    profile.max_outstanding = parse_bounded_decimal(FunctionArchitecture::iface_num_read_outstanding,
-                                                   "num_read_outstanding", 1U, 16U);
+                                                   "num_read_outstanding", 16U, 16U);
    const auto burst_max = parse_bounded_decimal(FunctionArchitecture::iface_max_read_burst_length,
-                                                "max_read_burst_length", 1U, 256U);
+                                                "max_read_burst_length", 16U, 256U);
    if(iface_attrs.find(FunctionArchitecture::iface_read_fifo_depth) == iface_attrs.end())
    {
       // No explicit depth: size the FIFO so the credit never shortens a burst.
@@ -469,41 +454,25 @@ AXIWriteBurstProfile ParseAXIWriteBurstProfile(const FunctionArchitecture::iface
          fail(attr_name, "attribute is required");
       }
       const auto& text = it->second;
-      if(text.empty())
-      {
-         fail(attr_name, "expected an ASCII decimal integer in [" + STR(minimum) + "," + STR(maximum) + "]");
-      }
-      unsigned int value = 0U;
-      for(const char ch : text)
-      {
-         if(ch < '0' || ch > '9')
-         {
-            fail(attr_name,
-                 "expected an ASCII decimal integer in [" + STR(minimum) + "," + STR(maximum) + "]");
-         }
-         const auto digit = static_cast<unsigned int>(ch - '0');
-         if(value > (maximum - digit) / 10U)
-         {
-            fail(attr_name,
-                 "expected an ASCII decimal integer in [" + STR(minimum) + "," + STR(maximum) + "]");
-         }
-         value = value * 10U + digit;
-      }
-      if(value < minimum || value > maximum)
+      std::uint32_t value = 0;
+      if(panda::utility::parse_bounded_ascii_decimal(text, minimum, maximum, value) !=
+         panda::utility::bounded_decimal_result::valid)
       {
          fail(attr_name,
               "expected an ASCII decimal integer in [" + STR(minimum) + "," + STR(maximum) + "]");
       }
-      return value;
+      return static_cast<unsigned int>(value);
    };
 
    AXIWriteBurstProfile profile;
-   profile.max_burst_length = parse_bounded_decimal(FunctionArchitecture::iface_max_write_burst_length,
-                                                   "max_write_burst_length", 1U, 256U);
+   const auto max_burst_length = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
+   profile.max_burst_length = max_burst_length == iface_attrs.end() ?
+                                  16U : parse_bounded_decimal(FunctionArchitecture::iface_max_write_burst_length,
+                                                              "max_write_burst_length", 1U, 256U);
 
    const auto outstanding = iface_attrs.find(FunctionArchitecture::iface_write_burst_outstanding);
    profile.max_outstanding = outstanding == iface_attrs.end() ?
-                                 1U : parse_bounded_decimal(FunctionArchitecture::iface_write_burst_outstanding,
+                                 16U : parse_bounded_decimal(FunctionArchitecture::iface_write_burst_outstanding,
                                                             "write_burst_outstanding", 1U, 16U);
 
    const auto fifo_depth = iface_attrs.find(FunctionArchitecture::iface_write_fifo_depth);
@@ -545,24 +514,12 @@ std::uint32_t ParseAXIInterfaceLatency(const FunctionArchitecture::iface_attrs& 
       THROW_ERROR_USAGE("Invalid AXI interface attribute 'latency' for bundle '" + bundle_name +
                         "': expected an ASCII decimal integer in [0,4294967295].");
    };
-   if(text.empty())
-   {
-      fail();
-   }
    std::uint32_t value = 0U;
    constexpr auto maximum = std::numeric_limits<std::uint32_t>::max();
-   for(const char ch : text)
+   if(panda::utility::parse_bounded_ascii_decimal(text, 0U, maximum, value) !=
+      panda::utility::bounded_decimal_result::valid)
    {
-      if(ch < '0' || ch > '9')
-      {
-         fail();
-      }
-      const auto digit = static_cast<std::uint32_t>(ch - '0');
-      if(value > (maximum - digit) / 10U)
-      {
-         fail();
-      }
-      value = value * 10U + digit;
+      fail();
    }
    return value;
 }
@@ -607,6 +564,26 @@ ModuleArchitecture::ModuleArchitecture(const std::string& filename)
             auto& iface_attr = fa->ifaces[bundle_name];
             for(auto& a : i.attributes())
             {
+               const auto attribute_name = std::string(a.name());
+               if(attribute_name == "num_write_outstanding" || attribute_name == "write_burst_outstanding")
+               {
+                  std::uint32_t value = 0;
+                  if(panda::utility::parse_bounded_ascii_decimal(std::string(a.value()), 1U, 16U, value) !=
+                     panda::utility::bounded_decimal_result::valid)
+                  {
+                     THROW_ERROR_USAGE("Invalid AXI interface attribute '" + attribute_name + "' for bundle '" +
+                                       bundle_name + "': expected an ASCII decimal integer in [1,16].");
+                  }
+                  const auto normalized = std::to_string(value);
+                  const auto existing = iface_attr.find(FunctionArchitecture::iface_write_burst_outstanding);
+                  if(existing != iface_attr.end() && existing->second != normalized)
+                  {
+                     THROW_ERROR_USAGE("Conflicting num_write_outstanding and write_burst_outstanding values for "
+                                       "bundle '" + bundle_name + "'.");
+                  }
+                  iface_attr.emplace(FunctionArchitecture::iface_write_burst_outstanding, normalized);
+                  continue;
+               }
                iface_attr.emplace(FunctionArchitecture::to_iface_attr("iface_" + std::string(a.name())), a.value());
             }
             const auto latency = iface_attr.find(FunctionArchitecture::iface_latency);

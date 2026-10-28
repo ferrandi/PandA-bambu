@@ -44,7 +44,7 @@ source "$bambu_prefix/settings.sh"
 common=(--top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER
   --device-name=xcu250,-2L,figd2104 --clock-period=3.33 --AXI-burst-type=INCREMENTAL
   --memory-allocation-policy=NO_BRAM --distram-threshold=0
-  --bambu-parameter=experimental-m-axi-burst=1 --extra-cc-options=-DNDEBUG
+  --bambu-parameter=m-axi-burst=1 --extra-cc-options=-DNDEBUG
   --extra-cc-options=-DBAMBU)
 
 run_variant() {

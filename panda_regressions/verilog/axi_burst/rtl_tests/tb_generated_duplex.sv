@@ -6,7 +6,9 @@ module tb_generated_duplex #(
     parameter integer READ_FIFO_DEPTH = 32,
     parameter integer WRITE_B_MAX = 16,
     parameter integer WRITE_OUTSTANDING = 1,
-    parameter integer WRITE_FIFO_DEPTH = 16
+    parameter integer WRITE_FIFO_DEPTH = 16,
+    parameter integer RESET_ACTIVE_LEVEL = 0,
+    parameter integer RESET_ASYNC = 0
 );
     localparam logic [1:0] OP_LOAD = 2'd0;
     localparam logic [1:0] OP_STORE = 2'd1;
@@ -18,7 +20,7 @@ module tb_generated_duplex #(
 
     logic clock = 1'b0;
     always #5 clock = ~clock;
-    logic reset = 1'b0;
+    logic reset = RESET_ACTIVE_LEVEL ? 1'b1 : 1'b0;
     logic cache_reset = 1'b0;
     logic read_start = 1'b0;
     logic write_start = 1'b0;
@@ -34,6 +36,8 @@ module tb_generated_duplex #(
     logic [31:0] write_count = 0;
     wire read_done, write_done;
     wire [31:0] read_result, write_result;
+    logic store_request_open = 1'b0;
+    logic store_ack_latch = 1'b0;
     wire core_read_start, core_write_start;
     wire [1:0] core_read_opcode, core_write_opcode;
     wire [31:0] core_read_size, core_read_data, core_read_count;
@@ -55,7 +59,7 @@ module tb_generated_duplex #(
     logic awready, wready, bvalid;
     logic arready, rvalid;
     wire rlast;
-    logic [5:0] bid = 0, rid = 0;
+    wire [5:0] bid, rid;
     logic [1:0] bresp = 0, rresp = 0;
 
     shared_bambu_artificial_ParmMgr_duplex_read_endpoint read_endpoint (
@@ -143,6 +147,10 @@ module tb_generated_duplex #(
     integer i;
     logic [31:0] rdata_model;
 
+    // STORE may be acknowledged combinationally in the request cycle.
+    always @(write_done)
+        if (write_done && store_request_open) store_ack_latch = 1'b1;
+
     function automatic integer memory_index(input logic [ADDRESS_BITS-1:0] address);
         memory_index = integer'(address[13:2]);
     endfunction
@@ -165,8 +173,7 @@ module tb_generated_duplex #(
     begin
         integer k;
         integer beat_count;
-        if (!reset)
-        begin
+        if (reset == RESET_ACTIVE_LEVEL) begin
             ar_wr = 0; ar_rd = 0; aw_wr = 0; aw_rd = 0; w_wr = 0; w_rd = 0;
             read_beats = 0; accepted_ar = 0; accepted_aw = 0; accepted_w = 0;
             committed_w = 0; accepted_b = 0; b_pending = 0; simultaneous_rw = 0; simultaneous_done = 0;
@@ -184,18 +191,22 @@ module tb_generated_duplex #(
                 b_fault_read_success = 1;
             if (bvalid && bready && bresp !== 2'b00 && read_done)
                 b_fault_read_success = 1;
-            if (prev_ar_stalled && (!arvalid || {arid,araddr,arlen,arsize,arburst} !== prev_ar_payload))
-                $fatal(1, "GENERATED_AR_CHANGED_WHILE_STALLED");
-            if (prev_aw_stalled && (!awvalid || {awid,awaddr,awlen,awsize,awburst} !== prev_aw_payload))
-                $fatal(1, "GENERATED_AW_CHANGED_WHILE_STALLED");
-            if (prev_w_stalled && (!wvalid || {wdata,wstrb,wlast} !== prev_w_payload))
-                $fatal(1, "GENERATED_W_CHANGED_WHILE_STALLED");
-            prev_ar_stalled = arvalid && !arready;
-            prev_aw_stalled = awvalid && !awready;
-            prev_w_stalled = wvalid && !wready;
-            if (prev_ar_stalled) prev_ar_payload = {arid,araddr,arlen,arsize,arburst};
-            if (prev_aw_stalled) prev_aw_payload = {awid,awaddr,awlen,awsize,awburst};
-            if (prev_w_stalled) prev_w_payload = {wdata,wstrb,wlast};
+            if (cache_reset) begin
+                prev_ar_stalled = 0; prev_aw_stalled = 0; prev_w_stalled = 0;
+            end else begin
+                if (prev_ar_stalled && (!arvalid || {arid,araddr,arlen,arsize,arburst} !== prev_ar_payload))
+                    $fatal(1, "GENERATED_AR_CHANGED_WHILE_STALLED");
+                if (prev_aw_stalled && (!awvalid || {awid,awaddr,awlen,awsize,awburst} !== prev_aw_payload))
+                    $fatal(1, "GENERATED_AW_CHANGED_WHILE_STALLED");
+                if (prev_w_stalled && (!wvalid || {wdata,wstrb,wlast} !== prev_w_payload))
+                    $fatal(1, "GENERATED_W_CHANGED_WHILE_STALLED");
+                prev_ar_stalled = arvalid && !arready;
+                prev_aw_stalled = awvalid && !awready;
+                prev_w_stalled = wvalid && !wready;
+                if (prev_ar_stalled) prev_ar_payload = {arid,araddr,arlen,arsize,arburst};
+                if (prev_aw_stalled) prev_aw_payload = {awid,awaddr,awlen,awsize,awburst};
+                if (prev_w_stalled) prev_w_payload = {wdata,wstrb,wlast};
+            end
             if (rvalid && rready && wvalid && wready)
                 simultaneous_rw = simultaneous_rw + 1;
             if (read_done && write_done)
@@ -309,17 +320,24 @@ module tb_generated_duplex #(
     endtask
 
     task automatic configure(input bit is_read, input logic [ADDRESS_BITS-1:0] base, input logic [31:0] count);
+        integer limit;
         begin
             @(negedge clock);
             if (is_read)
             begin
                 read_opcode = OP_CONFIGURE; read_size = 32; read_address = base; read_count = count; read_start = 1;
                 @(posedge clock); @(negedge clock); read_start = 0;
-            end
-            else
-            begin
+                limit = 0;
+                while (!read_done && limit < 32) begin @(posedge clock); #1; limit = limit + 1; end
+                if (!read_done) $fatal(1, "GENERATED_READ_CONFIGURE_TIMEOUT");
+                @(posedge clock); #1;
+            end else begin
                 write_opcode = OP_CONFIGURE; write_size = 32; write_address = base; write_count = count; write_start = 1;
                 @(posedge clock); @(negedge clock); write_start = 0;
+                limit = 0;
+                while (!write_done && limit < 32) begin @(posedge clock); #1; limit = limit + 1; end
+                if (!write_done) $fatal(1, "GENERATED_WRITE_CONFIGURE_TIMEOUT");
+                @(posedge clock); #1;
             end
         end
     endtask
@@ -373,16 +391,29 @@ module tb_generated_duplex #(
         begin
             expected[memory_index(address)] = value; expected_valid[memory_index(address)] = 1;
             @(negedge clock); write_opcode = OP_STORE; write_size = 32; write_address = address; write_data = value; write_start = 1;
-            // STORE can acknowledge combinationally. Sample after the driven
-            // operands settle, then keep the command through its accepting edge.
-            #1;
+            store_ack_latch = 1'b0; store_request_open = 1'b1;
             limit = 0;
-            while (!write_done && limit < 10000)
-            begin
-              @(negedge clock); #1; limit = limit + 1;
-            end
-            if (!write_done) $fatal(1, "GENERATED_STORE_ACK_TIMEOUT");
-            @(posedge clock); @(negedge clock); write_start = 0;
+            while (!store_ack_latch && limit < 10000) begin @(negedge clock); limit = limit + 1; end
+            store_request_open = 1'b0;
+            if (!store_ack_latch) $fatal(1, "GENERATED_STORE_ACK_TIMEOUT");
+            @(negedge clock); write_start = 0;
+        end
+    endtask
+
+    task automatic request_load(input logic [ADDRESS_BITS-1:0] address);
+        begin
+            @(negedge clock);
+            read_opcode = OP_LOAD; read_size = 32; read_address = address; read_start = 1;
+            @(posedge clock); #1;
+            @(negedge clock); read_start = 0;
+        end
+    endtask
+
+    task automatic request_drain;
+        begin
+            @(negedge clock); write_opcode = OP_DRAIN; write_start = 1;
+            @(posedge clock); #1;
+            @(negedge clock); write_start = 0;
         end
     endtask
 
@@ -413,9 +444,68 @@ module tb_generated_duplex #(
         end
     endtask
 
+    task automatic reset_with_channel_pending(input integer channel, input string channel_name);
+        begin
+            @(negedge clock);
+            reset = RESET_ACTIVE_LEVEL ? 1'b1 : 1'b0;
+            #1;
+            if (RESET_ASYNC != 0) begin
+                case (channel)
+                    0: if (arvalid) $fatal(1, "GENERATED_ASYNC_RESET_DID_NOT_CLEAR_AR");
+                    1: if (aggregator.read_engine.descriptor_count_reg != 0)
+                           $fatal(1, "GENERATED_ASYNC_RESET_DID_NOT_CLEAR_R_DESCRIPTOR");
+                    2: if (awvalid) $fatal(1, "GENERATED_ASYNC_RESET_DID_NOT_CLEAR_AW");
+                    3: if (wvalid) $fatal(1, "GENERATED_ASYNC_RESET_DID_NOT_CLEAR_W");
+                    4: if (bready) $fatal(1, "GENERATED_ASYNC_RESET_DID_NOT_CLEAR_BREADY");
+                    default: $fatal(1, "GENERATED_RESET_CHANNEL_INVALID=%0d", channel);
+                endcase
+            end
+            else begin
+                case (channel)
+                    0: if (!arvalid) $fatal(1, "GENERATED_SYNC_RESET_CLEARED_AR_BEFORE_CLOCK");
+                    1: if (aggregator.read_engine.descriptor_count_reg == 0)
+                           $fatal(1, "GENERATED_SYNC_RESET_CLEARED_R_DESCRIPTOR_BEFORE_CLOCK");
+                    2: if (!awvalid) $fatal(1, "GENERATED_SYNC_RESET_CLEARED_AW_BEFORE_CLOCK");
+                    3: if (!wvalid) $fatal(1, "GENERATED_SYNC_RESET_CLEARED_W_BEFORE_CLOCK");
+                    4: if (!bready) $fatal(1, "GENERATED_SYNC_RESET_CLEARED_BREADY_BEFORE_CLOCK");
+                    default: $fatal(1, "GENERATED_RESET_CHANNEL_INVALID=%0d", channel);
+                endcase
+            end
+            $display("GENERATED_RESET_CHANNEL_PASS channel=%s async=%0d active_level=%0d",
+                     channel_name, RESET_ASYNC, RESET_ACTIVE_LEVEL);
+            @(posedge clock); #1;
+            if (arvalid || rready || awvalid || wvalid || bready ||
+                aggregator.read_engine.descriptor_count_reg != 0)
+                $fatal(1, "GENERATED_RESET_DID_NOT_CLEAR_CHANNEL_STATE channel=%s", channel_name);
+            repeat (2) @(posedge clock);
+            @(negedge clock);
+            reset = RESET_ACTIVE_LEVEL ? 1'b0 : 1'b1;
+            stall_ar = 0; stall_r = 0; stall_aw = 0; stall_w = 0; stall_b = 0;
+            repeat (2) @(negedge clock);
+        end
+    endtask
+
+    task automatic reinvoke_after_reset(input integer offset);
+        logic [ADDRESS_BITS-1:0] next_read_base;
+        logic [ADDRESS_BITS-1:0] next_write_base;
+        begin
+            next_read_base = READ_BASE + ADDRESS_BITS'(offset * 4);
+            next_write_base = WRITE_BASE + ADDRESS_BITS'(offset * 4);
+            configure(1, next_read_base, 1);
+            configure(0, next_write_base, 1);
+            load_word(next_read_base);
+            store_word(next_write_base, 32'h2a000000 + offset);
+            drain();
+            verify_word(memory_index(next_write_base));
+        end
+    endtask
+
     task automatic run_case(input string name);
-        integer before_ar, before_aw, before_r, before_rw, before_done, t, expected_write_beats, expected_b_responses;
+        integer before_ar, before_aw, before_w, before_r, before_rw, before_done, t;
+        integer expected_write_beats, expected_b_responses, saved_expected_index;
         logic [31:0] saved_payload;
+        logic [31:0] saved_expected_word;
+        logic saved_expected_valid;
         logic [ADDRESS_BITS-1:0] saved_address;
         logic [31:0] initial_words [0:7];
         begin
@@ -481,12 +571,31 @@ module tb_generated_duplex #(
                 "READ_STALL_WRITE_PROGRESS":
                 begin
                     expected_write_beats=4; expected_b_responses=1;
-                    configure(1,READ_BASE,4); configure(0,WRITE_BASE,4); stall_ar=1; stall_r=1;
+                    before_ar=accepted_ar; before_r=read_beats; before_done=accepted_load_ops;
+                    stall_ar=1; stall_r=1;
+                    configure(1,READ_BASE,4); configure(0,WRITE_BASE,4);
                     @(negedge clock); read_opcode=OP_LOAD; read_address=READ_BASE; read_start=1;
+                    @(posedge clock); #1;
+                    if (accepted_load_ops!=before_done+1 || read_done || accepted_ar!=before_ar ||
+                        read_beats!=before_r || !arvalid)
+                        $fatal(1, "GENERATED_READ_STALL_REQUEST_INVALID accepted_loads=%0d ar=%0d r=%0d arvalid=%0d done=%0d",
+                               accepted_load_ops-before_done, accepted_ar-before_ar, read_beats-before_r, arvalid, read_done);
+                    @(negedge clock); read_start=0;
                     for (t=0;t<4;t=t+1) store_word(WRITE_BASE+t*4,32'h14000000+t);
                     drain();
-                    if (read_done || accepted_b == 0) $fatal(1, "GENERATED_WRITE_PROGRESS_WHILE_READ_STALL_FAILED");
-                    read_start=0; stall_ar=0; stall_r=0; wait_read_done(); drain();
+                    if (read_done || accepted_b == 0 || accepted_ar!=before_ar || read_beats!=before_r || !arvalid)
+                        $fatal(1, "GENERATED_WRITE_PROGRESS_WHILE_READ_STALL_FAILED done=%0d b=%0d ar=%0d r=%0d arvalid=%0d",
+                               read_done, accepted_b, accepted_ar-before_ar, read_beats-before_r, arvalid);
+                    stall_ar=0;
+                    t=0; while (accepted_ar==before_ar && t<2000) begin @(negedge clock); t=t+1; end
+                    if (accepted_ar==before_ar || ar_rd==ar_wr)
+                        $fatal(1, "GENERATED_STALLED_AR_NOT_QUEUED ar=%0d queued=%0d", accepted_ar-before_ar, ar_wr-ar_rd);
+                    stall_r=0;
+                    t=0; while (read_beats==before_r && t<2000) begin @(negedge clock); t=t+1; end
+                    if (read_beats==before_r)
+                        $fatal(1, "GENERATED_STALLED_R_NOT_RETIRED ar=%0d r=%0d queued=%0d",
+                               accepted_ar-before_ar, read_beats-before_r, ar_wr-ar_rd);
+                    wait_read_done(); drain();
                 end
                 "SIMULTANEOUS":
                 begin
@@ -502,20 +611,8 @@ module tb_generated_duplex #(
                     end
                     if (accepted_ar==before_ar || ar_queue_addr[ar_wr-1] !== READ_BASE || ar_rd==ar_wr)
                         $fatal(1, "GENERATED_SIMULTANEOUS_AR_ADDRESS_INVALID");
-                    expected[memory_index(WRITE_BASE)]=32'h15000000; expected_valid[memory_index(WRITE_BASE)]=1;
-                    @(negedge clock); write_opcode=OP_STORE; write_size=32; write_address=WRITE_BASE;
-                    write_data=32'h15000000; write_start=1;
-                    #1;
-                    t=0; while (!write_done && t<2000)
-                    begin
-                      @(negedge clock); #1; t=t+1;
-                    end
-                    if (!write_done) $fatal(1, "GENERATED_SIMULTANEOUS_FIRST_STORE_ACK_MISSING");
-                    @(posedge clock); @(negedge clock); write_start=0;
-                    t=0; while ((!awvalid || !wvalid) && t<2000)
-                    begin
-                      @(negedge clock); t=t+1;
-                    end
+                    store_word(WRITE_BASE,32'h15000000);
+                    t=0; while ((!awvalid || !wvalid) && t<2000) begin @(negedge clock); t=t+1; end
                     if (!awvalid || !wvalid || awaddr !== WRITE_BASE)
                         $fatal(1, "GENERATED_SIMULTANEOUS_WRITE_NOT_PENDING");
                     stall_r=0; stall_aw=0; stall_w=0;
@@ -703,17 +800,115 @@ module tb_generated_duplex #(
                     end
                     if (accepted_b==0 || write_done) $fatal(1, "GENERATED_RRESP_WRITE_FALSE_SUCCESS");
                 end
-                "FAULT_RESET_RESTART":
-                begin
-                    configure(1,READ_BASE,4); configure(0,WRITE_BASE,4); rresp=2'b10;
+                "FAULT_RESET_RESTART": begin
+                    before_done=accepted_load_ops;
+                    stall_r=1; rresp=2'b10;
+                    configure(1,READ_BASE,4); configure(0,WRITE_BASE,4);
                     @(negedge clock); read_opcode=OP_LOAD; read_address=READ_BASE; read_start=1;
-                    t=0; while (read_beats==0 && t<2000)
-                    begin
-                      @(negedge clock); t=t+1;
-                    end
+                    @(posedge clock); #1;
+                    if (accepted_load_ops!=before_done+1 || read_done || read_beats!=0)
+                        $fatal(1, "GENERATED_FAULT_LOAD_NOT_PENDING");
+                    @(negedge clock); read_start=0; stall_r=0;
+                    t=0; while (read_beats==0 && t<2000) begin @(negedge clock); t=t+1; end
                     if (read_beats==0 || fault_r_seen==0 || read_done) $fatal(1, "GENERATED_FAULT_NOT_OBSERVED");
-                    read_start=0; reset=0; cache_reset=1; tick(3); reset=1; cache_reset=0; rresp=0;
+                    reset=RESET_ACTIVE_LEVEL ? 1'b1 : 1'b0;
+                    cache_reset=1; tick(3);
+                    reset=RESET_ACTIVE_LEVEL ? 1'b0 : 1'b1;
+                    cache_reset=0; rresp=0;
                     configure(1,READ_BASE,2); load_word(READ_BASE); load_word(READ_BASE+4);
+                end
+                "RESET_STALLED_CHANNELS": begin
+                    expected_write_beats=1; expected_b_responses=1;
+
+                    stall_ar=1; stall_r=1;
+                    configure(1,READ_BASE,1); configure(0,WRITE_BASE,0);
+                    request_load(READ_BASE);
+                    t=0; while (!arvalid && t<2000) begin @(negedge clock); t=t+1; end
+                    if (!arvalid || arready) $fatal(1, "GENERATED_RESET_AR_WAIT_NOT_ESTABLISHED");
+                    reset_with_channel_pending(0,"AR");
+                    reinvoke_after_reset(1);
+
+                    stall_r=1;
+                    configure(1,READ_BASE+ADDRESS_BITS'(4),1); configure(0,WRITE_BASE,0);
+                    request_load(READ_BASE+ADDRESS_BITS'(4));
+                    t=0; while ((aggregator.read_engine.descriptor_count_reg == 0 || !rready || rvalid) && t<2000)
+                        begin @(negedge clock); t=t+1; end
+                    if (aggregator.read_engine.descriptor_count_reg == 0 ||
+                        aggregator.read_engine.fifo_credit_committed_reg == READ_FIFO_DEPTH ||
+                        !rready || rvalid || read_done)
+                        $fatal(1, "GENERATED_RESET_R_RESPONSE_WAIT_NOT_ESTABLISHED");
+                    $display("GENERATED_RESET_R_RESPONSE_WAIT descriptor_count=%0d credits=%0d RVALID=%0d RREADY=%0d",
+                             aggregator.read_engine.descriptor_count_reg,
+                             aggregator.read_engine.fifo_credit_committed_reg, rvalid, rready);
+                    reset_with_channel_pending(1,"R_RESPONSE_WAIT");
+                    reinvoke_after_reset(2);
+
+                    stall_aw=1; stall_w=1;
+                    configure(1,READ_BASE,0); configure(0,WRITE_BASE+ADDRESS_BITS'(8),1);
+                    saved_expected_index=memory_index(WRITE_BASE+ADDRESS_BITS'(8));
+                    saved_expected_word=expected[saved_expected_index];
+                    saved_expected_valid=expected_valid[saved_expected_index];
+                    before_aw=accepted_aw; before_w=accepted_w;
+                    store_word(WRITE_BASE+ADDRESS_BITS'(8),32'h2b000003);
+                    request_drain();
+                    t=0; while (!awvalid && t<2000) begin @(negedge clock); t=t+1; end
+                    if (!awvalid || awready || accepted_aw!=before_aw || accepted_w!=before_w)
+                        $fatal(1, "GENERATED_RESET_AW_WAIT_NOT_ESTABLISHED");
+                    reset_with_channel_pending(2,"AW");
+                    expected[saved_expected_index]=saved_expected_word;
+                    expected_valid[saved_expected_index]=saved_expected_valid;
+                    reinvoke_after_reset(3);
+
+                    stall_w=1;
+                    configure(1,READ_BASE,0); configure(0,WRITE_BASE+ADDRESS_BITS'(12),1);
+                    saved_expected_index=memory_index(WRITE_BASE+ADDRESS_BITS'(12));
+                    saved_expected_word=expected[saved_expected_index];
+                    saved_expected_valid=expected_valid[saved_expected_index];
+                    before_aw=accepted_aw; before_w=accepted_w;
+                    store_word(WRITE_BASE+ADDRESS_BITS'(12),32'h2b000004);
+                    request_drain();
+                    t=0; while ((!wvalid || awvalid) && t<2000) begin @(negedge clock); t=t+1; end
+                    if (!wvalid || wready || awvalid || accepted_aw!=before_aw+1 || accepted_w!=before_w)
+                        $fatal(1, "GENERATED_RESET_W_WAIT_NOT_ESTABLISHED");
+                    reset_with_channel_pending(3,"W");
+                    expected[saved_expected_index]=saved_expected_word;
+                    expected_valid[saved_expected_index]=saved_expected_valid;
+                    reinvoke_after_reset(4);
+
+                    stall_b=1;
+                    configure(1,READ_BASE,0); configure(0,WRITE_BASE+ADDRESS_BITS'(16),1);
+                    store_word(WRITE_BASE+ADDRESS_BITS'(16),32'h2b000005);
+                    request_drain();
+                    t=0; while ((b_pending==0 || !bready) && t<2000) begin @(negedge clock); t=t+1; end
+                    if (b_pending==0 || !bready || bvalid || write_done)
+                        $fatal(1, "GENERATED_RESET_B_WAIT_NOT_ESTABLISHED");
+                    $display("GENERATED_RESET_B_RESPONSE_WAIT BVALID=%0d BREADY=%0d", bvalid, bready);
+                    reset_with_channel_pending(4,"B_RESPONSE_WAIT");
+                    reinvoke_after_reset(5);
+
+                    stall_ar=1; stall_r=1;
+                    configure(1,READ_BASE+ADDRESS_BITS'(24),1); configure(0,WRITE_BASE,0);
+                    request_load(READ_BASE+ADDRESS_BITS'(24));
+                    t=0; while (!arvalid && t<2000) begin @(negedge clock); t=t+1; end
+                    if (!arvalid || reset == RESET_ACTIVE_LEVEL)
+                        $fatal(1, "GENERATED_RESET_CACHE_SETUP_NOT_ESTABLISHED");
+                    @(negedge clock); cache_reset=1; #1;
+                    if (RESET_ASYNC != 0) begin
+                        if (arvalid) $fatal(1, "GENERATED_ASYNC_CACHE_RESET_DID_NOT_CLEAR_AR");
+                    end else if (!arvalid) begin
+                        $fatal(1, "GENERATED_SYNC_CACHE_RESET_CLEARED_AR_BEFORE_CLOCK");
+                    end
+                    @(posedge clock); #1;
+                    if (arvalid || rready) $fatal(1, "GENERATED_CACHE_RESET_DID_NOT_CLEAR_READ_STATE");
+                    $display("GENERATED_CACHE_RESET_PASS async=%0d active_level=%0d",
+                             RESET_ASYNC, RESET_ACTIVE_LEVEL);
+                    @(negedge clock); cache_reset=0;
+                    reset = RESET_ACTIVE_LEVEL ? 1'b1 : 1'b0;
+                    repeat (2) @(posedge clock);
+                    @(negedge clock); reset = RESET_ACTIVE_LEVEL ? 1'b0 : 1'b1;
+                    stall_ar=0; stall_r=0;
+                    repeat (2) @(negedge clock);
+                    reinvoke_after_reset(6);
                 end
                 default: $fatal(1, "GENERATED_DUPLEX_UNKNOWN_CASE=%s", name);
             endcase
@@ -731,6 +926,9 @@ module tb_generated_duplex #(
         if (!$value$plusargs("CASE=%s", selected_case)) $fatal(1, "GENERATED_DUPLEX_CASE_REQUIRED");
         if (!$value$plusargs("PROFILE=%s", selected_profile)) $fatal(1, "GENERATED_DUPLEX_PROFILE_REQUIRED");
         if (ADDRESS_BITS != 32 && ADDRESS_BITS != 64) $fatal(1, "GENERATED_DUPLEX_ADDRESS_BITS_INVALID");
+        if ((RESET_ACTIVE_LEVEL != 0 && RESET_ACTIVE_LEVEL != 1) ||
+            (RESET_ASYNC != 0 && RESET_ASYNC != 1))
+            $fatal(1, "GENERATED_DUPLEX_RESET_PARAMETERS_INVALID");
         if ((ADDRESS_BITS == 32 && selected_profile != "same_base_pointwise") ||
             (ADDRESS_BITS == 64 && selected_profile != "same_base_asymmetric_64"))
             $fatal(1, "GENERATED_DUPLEX_PROFILE_NAME_MISMATCH");
@@ -751,7 +949,7 @@ module tb_generated_duplex #(
           memory[i]=32'h5a5a0000 ^ i; expected[i]=memory[i]; expected_valid[i]=0;
         end
         repeat (3) @(negedge clock);
-        reset=1; cache_reset=0;
+        reset=RESET_ACTIVE_LEVEL ? 1'b0 : 1'b1; cache_reset=0;
         run_case(selected_case);
         verify_memory();
         $display("GENERATED_DUPLEX PASS CASE=%s PROFILE=%s", selected_case, selected_profile);

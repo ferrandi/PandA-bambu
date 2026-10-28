@@ -18,6 +18,11 @@ TASK_ROOT.mkdir(parents=True, exist_ok=True)
 
 KERNEL_RUNNER = RTL_TESTS / "run_generated_kernel_tests.sh"
 WRAPPER_RUNNER = RTL_TESTS / "run_generated_wrapper_rid_tests.sh"
+WRAPPER_RID_FAULT = (
+    "AXI_BURST_FAULT engine=read reason=RID "
+    "instance=tb_generated_wrapper_rid.dut.burst_engine.report_axi_read_diagnostic "
+    "opcode=-1 size=0 address=00001000 count=1 resp=00 id=1 last=1 descriptors=1 remaining=1"
+)
 
 
 class GeneratedReadModelSimRunnerTests(unittest.TestCase):
@@ -110,6 +115,14 @@ if name == "vsim":
                 print(f"RID_CASE PASS rid={rid} completion={completion}")
             if mode != "missing-marker":
                 print("GENERATED_WRAPPER_RID PASS")
+            if "+AXI_BURST_EXPECT_FAULT" in args:
+                fault = "AXI_BURST_FAULT engine=read reason=RID instance=tb_generated_wrapper_rid.dut.burst_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00001000 count=1 resp=00 id=1 last=1 descriptors=1 remaining=1"
+                count = 3 if mode == "rid-fault-missing" else 5 if mode == "rid-fault-extra" else 4
+                if mode == "rid-fault-wrong":
+                    fault = fault.replace("reason=RID", "reason=RRESP")
+                if mode == "rid-fault-wrong-id":
+                    fault = fault.replace(" id=1 ", " id=0 ")
+                for _ in range(count): print(fault)
         raise SystemExit(0)
     print("unknown fake top", file=sys.stderr)
     raise SystemExit(2)
@@ -185,6 +198,7 @@ os.execv("{real_timeout}", ["{real_timeout}", *args])
         result = self._run_wrapper("wrapper-pass")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         positive = (self.base / "wrapper-pass/positive/run.log.normalized").read_text()
+        self.assertEqual(positive.count(WRAPPER_RID_FAULT), 4)
         for rid, completion in ((0, 1), (1, 0), (2, 0), (32, 0), (63, 0)):
             self.assertEqual(positive.count(f"RID_CASE PASS rid={rid} completion={completion}"), 1)
         self.assertEqual(positive.count("GENERATED_WRAPPER_RID PASS"), 1)
@@ -192,6 +206,14 @@ os.execv("{real_timeout}", ["{real_timeout}", *args])
         self.assertEqual(negative.count("RID_CASE PASS rid=2 completion=1"), 1)
         self.assertEqual(negative.count("RID_CASE PASS rid=32 completion=1"), 1)
         self.assertEqual(negative.count("RID_NEGATIVE_SENSITIVITY PASS (bit-0-only reduction accepted 2 and 32)"), 1)
+        self._assert_no_verilator()
+
+    def test_wrapper_rid_requires_exact_containment_diagnostic_set(self) -> None:
+        for mode in ("rid-fault-missing", "rid-fault-extra", "rid-fault-wrong", "rid-fault-wrong-id"):
+            with self.subTest(mode=mode):
+                result = self._run_wrapper(f"wrapper-{mode}", mode)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("diagnostic", result.stdout + result.stderr)
         self._assert_no_verilator()
 
     def test_wrapper_rejects_missing_marker_compile_fatal_timeout_and_crash(self) -> None:

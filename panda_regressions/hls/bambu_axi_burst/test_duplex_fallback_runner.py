@@ -40,7 +40,7 @@ if macro not in profiles:
     print("wrong profile macro", file=sys.stderr)
     raise SystemExit(3)
 profile = profiles[macro]
-if "--bambu-parameter=experimental-m-axi-burst=1" not in args:
+if "--bambu-parameter=m-axi-burst=1" not in args:
     print("feature was not enabled", file=sys.stderr)
     raise SystemExit(4)
 state = pathlib.Path(os.environ["STUB_STATE"])
@@ -66,19 +66,25 @@ log = "no golden marker\n"
 if os.environ.get("STUB_MODE") != "missing-marker" or profile != os.environ.get("STUB_PROFILE"):
     log = f"DUPLEX_FALLBACK_GOLDEN_PASS PROFILE={marker_profile} N=38\n"
 (log_dir / "testbench.log").write_text(log)
+if os.environ.get("STUB_MODE") == "shared-runner-modified" and profile == os.environ.get("STUB_PROFILE"):
+    shared = pathlib.Path(os.environ["STUB_SHARED_RUNNER"])
+    shared.write_text(shared.read_text() + "\\n# modified during run\\n")
 '''
 
 STUB_CHECKER = r'''#!/usr/bin/env python3
+import hashlib
 import json
 import os
 import pathlib
 import sys
 
 run_root = pathlib.Path(sys.argv[1])
-options = dict(zip(sys.argv[2::2], sys.argv[3::2]))
+developer_proof = "--developer-proof" in sys.argv[2:]
+checker_args = [arg for arg in sys.argv[2:] if arg != "--developer-proof"]
+options = dict(zip(checker_args[::2], checker_args[1::2]))
 required = {"--source", "--testbench", "--bambu", "--settings", "--plugin",
             "--simulator", "--runner", "--report"}
-if set(options) != required or len(sys.argv[2:]) != 2 * len(required):
+if set(options) != required or len(checker_args) != 2 * len(required):
     raise SystemExit("unexpected checker arguments")
 expected = {
     "phased_erew_reverse_same_bundle": "1",
@@ -89,15 +95,19 @@ expected = {
 for profile, macro in expected.items():
     path = run_root / profile
     fields = dict(line.split("=", 1) for line in (path / "provenance.txt").read_text().splitlines())
-    if fields.get("macro") != macro or fields.get("feature") != "1":
+    if (fields.get("macro"), fields.get("feature"), fields.get("proof_mode")) != \
+            (macro, "1", "developer" if developer_proof else "functional"):
         raise SystemExit("profile provenance mismatch")
+    shared = pathlib.Path(fields["shared_runner"])
+    if not shared.is_file() or hashlib.sha256(shared.read_bytes()).hexdigest() != fields.get("shared_runner_sha256"):
+        raise SystemExit("shared runner provenance mismatch")
     if not (path / "artifact-sha256.txt").is_file():
         raise SystemExit("missing artifact manifest")
 if os.environ.get("STUB_MODE") == "checker-failure":
     raise SystemExit("requested checker failure")
 pathlib.Path(options["--report"]).write_text(json.dumps({"profiles": list(expected)}) + "\n")
 (run_root / "checker-called").write_text("yes\n")
-print("stub checker pass")
+print("stub checker pass developer proof" if developer_proof else "stub checker pass functional")
 '''
 
 
@@ -111,6 +121,7 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
         self.runner = self.family / "run_duplex_fallback_tests.sh"
         self.checker = self.family / "check_duplex_fallback_results.py"
         shutil.copy2(FAMILY / self.runner.name, self.runner)
+        shutil.copy2(FAMILY / "run_duplex_generated_family.sh", self.family / "run_duplex_generated_family.sh")
         shutil.copy2(FAMILY / "parallel_helpers.sh", self.family / "parallel_helpers.sh")
         (self.family / "bambu_axi_burst_duplex_fallback.cpp").write_text("// fixture\n")
         (self.family / "duplex_fallback_tb.cpp").write_text("// testbench\n")
@@ -128,20 +139,27 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
         plugin = self.prefix / "lib/panda/clang-16/ASTAnalyzer.so"
         plugin.parent.mkdir(parents=True)
         plugin.write_text("plugin\n")
-        self.verilator = self.scratch / "bin/verilator"
-        self.verilator.parent.mkdir()
-        self.verilator.write_text("#!/usr/bin/env bash\necho 'Verilator 5.000 stub'\n")
-        self.verilator.chmod(0o755)
+        self.modelsim = self.scratch / "bin"
+        self.modelsim.mkdir()
+        for tool in ("vlib", "vmap", "vlog"):
+            path = self.modelsim / tool
+            path.write_text("#!/usr/bin/env bash\necho 'ModelSim 2026.10 stub'\n")
+            path.chmod(0o755)
+        vco = self.modelsim / "vco"
+        vco.write_text("#!/usr/bin/env bash\n[[ ${0##*/} == vsim ]] || exit 99\necho 'ModelSim 2026.10 stub'\n")
+        vco.chmod(0o755)
+        (self.modelsim / "vsim").symlink_to(vco.name)
         self.state = self.scratch / "state"
         self.state.mkdir()
         self.output = self.repo / "out_duplex_fallback"
         self.env = os.environ.copy()
         self.env.update({
-            "PATH": f"{self.verilator.parent}:{self.env['PATH']}",
+            "PATH": f"{self.modelsim}:{self.env['PATH']}",
             "TMPDIR": str(self.scratch),
             "TMP": str(self.scratch),
             "TEMP": str(self.scratch),
             "STUB_STATE": str(self.state),
+            "STUB_SHARED_RUNNER": str(self.family / "run_duplex_generated_family.sh"),
             "BURST_DUPLEX_FALLBACK_SIM_OUTSIDE_SANDBOX": "1",
             "DUPLEX_FALLBACK_JOBS": "2",
         })
@@ -154,7 +172,7 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def run_runner(self, *, outside="1", jobs="2", output=None, mode="", profile=""):
+    def run_runner(self, *, outside="1", jobs="2", output=None, mode="", profile="", developer_proof=False):
         env = self.env.copy()
         env["BURST_DUPLEX_FALLBACK_SIM_OUTSIDE_SANDBOX"] = outside
         env["DUPLEX_FALLBACK_JOBS"] = jobs
@@ -163,7 +181,10 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
         if mode:
             env["STUB_MODE"] = mode
             env["STUB_PROFILE"] = profile or "phased_erew_reverse_same_bundle"
-        args = [str(self.runner), str(self.bambu)]
+        args = [str(self.runner)]
+        if developer_proof:
+            args.append("--development-proof")
+        args.append(str(self.bambu))
         if output is not None:
             args.append(str(output))
         return subprocess.run(args, cwd=self.repo, env=env, text=True,
@@ -200,12 +221,12 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
             args = run["args"]
             self.assertIn("--top-fname=bambu_axi_burst_duplex_fallback", args)
             self.assertIn("--simulate", args)
-            self.assertIn("--simulator=VERILATOR", args)
-            self.assertIn("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based", args)
-            self.assertIn("--bambu-parameter=experimental-m-axi-burst=1", args)
+            self.assertIn("--simulator=MODELSIM", args)
+            self.assertEqual("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based" in args,
+                             False)
+            self.assertIn("--bambu-parameter=m-axi-burst=1", args)
             self.assertIn("--tb-param-size=data:16384", args)
-            self.assertTrue(any(arg == "--generate-tb=" + str(self.family / "duplex_fallback_tb.cpp")
-                                for arg in args))
+            self.assertIn("--generate-tb=" + str((self.family / "duplex_fallback_tb.cpp").resolve()), args)
             macro = {
                 "phased_erew_reverse_same_bundle": "1",
                 "overlap_rw_same_bundle": "2",
@@ -213,11 +234,26 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
                 "residual_store_same_bundle": "4",
             }[run["profile"]]
             self.assertIn(f"--extra-cc-options=-DDUPLEX_FALLBACK_PROFILE={macro}", args)
+            provenance = dict(line.split("=", 1) for line in
+                              (self.output / run["profile"] / "provenance.txt").read_text().splitlines())
+            self.assertEqual(provenance["proof_mode"], "functional")
+            self.assertEqual(provenance["simulator_invocation"], str(self.modelsim / "vsim"))
+            self.assertEqual(provenance["simulator"], str((self.modelsim / "vsim").resolve()))
+            self.assertEqual(provenance["simulator_version"], "ModelSim 2026.10 stub")
         self.assertEqual((self.output / "aggregate.log").read_text(),
                          "DUPLEX_FALLBACK_PASS profiles=phased_erew_reverse_same_bundle,overlap_rw_same_bundle,"
                          "conditional_read_or_write_same_bundle,residual_store_same_bundle output="
                          + str(self.output.resolve()) + "\n")
         self.assertTrue((self.output / "checker-called").is_file())
+
+    def test_development_proof_is_explicit_and_forwarded_to_checker(self):
+        result = self.run_runner(developer_proof=True)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        runs = [json.loads(line) for line in (self.state / "runs.jsonl").read_text().splitlines()]
+        self.assertTrue(all("--debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based" in run["args"]
+                            for run in runs))
+        checker_log = (self.output / "checker.log").read_text()
+        self.assertIn("developer proof", checker_log)
 
     def test_compiler_failure_prevents_checker_and_pass_marker(self):
         result = self.run_runner(mode="compiler-failure", profile="overlap_rw_same_bundle")
@@ -254,6 +290,12 @@ class DuplexFallbackRunnerTests(unittest.TestCase):
     def test_checker_failure_does_not_emit_aggregate_pass(self):
         result = self.run_runner(mode="checker-failure")
         self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn("DUPLEX_FALLBACK_PASS", (self.output / "aggregate.log").read_text())
+
+    def test_shared_runner_mutation_fails_provenance(self):
+        result = self.run_runner(mode="shared-runner-modified")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("shared runner provenance mismatch", result.stdout)
         self.assertNotIn("DUPLEX_FALLBACK_PASS", (self.output / "aggregate.log").read_text())
 
 

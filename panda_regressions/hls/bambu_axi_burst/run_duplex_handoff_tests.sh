@@ -89,7 +89,7 @@ run_profile() {
   export TMPDIR="$directory/tmp" TMP="$directory/tmp" TEMP="$directory/tmp"
   local -a args=("--top-fname=$top" --compiler=I386_CLANG16 --generate-interface=INFER
     --device-name=xcu250,-2L,figd2104 "--addr-bus-bitsize=$bits" --clock-period=3.33
-    --AXI-burst-type=INCREMENTAL --bambu-parameter=experimental-m-axi-burst=1
+    --AXI-burst-type=INCREMENTAL --bambu-parameter=m-axi-burst=1
     --bambu-parameter=print-ir-manager=1 --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based
     --print-dot --no-clean --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
     "--extra-cc-options=-D$([[ $kind == copy ]] && echo DUPLEX_PROFILE || echo DUPLEX_INDEPENDENT_PROFILE)=$macro")

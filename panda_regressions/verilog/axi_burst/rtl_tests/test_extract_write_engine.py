@@ -157,13 +157,22 @@ class WriteEngineExtractorTests(unittest.TestCase):
                 self.assertNotIn("1RESET_EDGE", generated)
                 self.assertNotIn("1RESET_VALUE", generated)
 
-    def test_reader_async_reset_conditions_use_reset_placeholder_directly(self):
+    def test_reader_reset_conditions_separate_reset_and_activation(self):
         for active_low, value in ((True, "0"), (False, "1")):
             with self.subTest(active_low=active_low):
                 generated = EXTRACTOR.extract(XML, target="MinimalAXI4MasterPipelined",
                                               async_reset=True, active_low=active_low)
-                self.assertRegex(generated, rf"if \(reset == 1'b{value}\)\s+begin")
-                self.assertIn(f"if (reset == 1'b{value} || activate_configure ||", generated)
+                reset_branch = re.search(
+                    rf"if \(reset == 1'b{value}\) begin(?P<body>.*?)\n\s*end\s*\n\s*else if \(activate_configure",
+                    generated, re.DOTALL)
+                if reset_branch is None:
+                    self.fail("reader reset branch does not precede the activation branch")
+                for assignment in (
+                        "fifo_credit_committed_reg <= FIFO_DEPTH;",
+                        "fifo_credit_minus_one_reg <= FIFO_DEPTH - 1'b1;",
+                        "fifo_credit_token_reg <= 1'b0;"):
+                    self.assertIn(assignment, reset_branch.group("body"))
+                self.assertRegex(generated, r"else if \(activate_configure\s*\|\|")
                 self.assertEqual(generated.count("wire reset_n ="), 1)
                 self.assertNotIn("if (!reset_n", generated)
                 self.assertIn(f"wire reset_n = !(reset == 1'b{value});", generated)

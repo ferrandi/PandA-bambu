@@ -54,7 +54,7 @@ export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp" PYTHONDONTWRITEBYTECODE=
 }
 
 COMMON=(--compiler=I386_CLANG16 --generate-interface=INFER --device-name=xcu250,-2L,figd2104
-  --clock-period=3.33 --bambu-parameter=experimental-m-axi-burst=1
+  --clock-period=3.33 --bambu-parameter=m-axi-burst=1
   --bambu-parameter=print-ir-manager=1 --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based
   --print-dot --no-clean --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 

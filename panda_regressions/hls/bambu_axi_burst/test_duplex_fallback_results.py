@@ -80,9 +80,10 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
         self.run_dir.mkdir()
         self.inputs = {}
         for key, filename in (("source", checker.SOURCE_NAME), ("testbench", checker.TESTBENCH_NAME),
-                              ("runner", "run_duplex_fallback_tests.sh"), ("bambu", "bambu"),
+                              ("runner", "run_duplex_fallback_tests.sh"),
+                              ("shared_runner", "run_duplex_generated_family.sh"), ("bambu", "bambu"),
                               ("settings", "settings.sh"), ("plugin", "ASTAnalyzer.so"),
-                              ("simulator", "verilator")):
+                              ("simulator", "vsim")):
             path = self.base / filename
             path.write_text(f"fixture {key}\n", encoding="utf-8")
             self.inputs[key] = path
@@ -125,13 +126,18 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
     def write_provenance(self, profile):
         directory = self.profiles[profile]
         macro = PROFILE_REASONS[profile][0]
+        developer_proof = getattr(self, "developer_proof", False)
         fields = {
             "git_head": "a" * 40,
             "profile": profile,
             "macro": macro,
             "feature": "1",
+            "proof_mode": "developer" if developer_proof else "functional",
             "output": str(directory.resolve()),
-            "argv": f"bambu --bambu-parameter=experimental-m-axi-burst=1 -DDUPLEX_FALLBACK_PROFILE={macro}",
+            "argv": ("bambu --bambu-parameter=m-axi-burst=1 "
+                     f"-DDUPLEX_FALLBACK_PROFILE={macro}" +
+                     (" --debug-classes=InterfaceInfer,BuildVirtualPhi,parametric_list_based"
+                      if developer_proof else "")),
         }
         for key, path in self.inputs.items():
             fields[key] = str(path.resolve())
@@ -147,25 +153,49 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
             "".join(f"{digest(path)}  {path.relative_to(directory)}\n" for path in artifacts),
             encoding="utf-8")
 
-    def run_checker(self):
+    def run_checker(self, developer_proof=False):
         report = getattr(self, "report_override", "report.json")
-        return checker.main([
+        args = [
             str(self.run_dir), "--source", str(self.inputs["source"]),
             "--testbench", str(self.inputs["testbench"]), "--bambu", str(self.inputs["bambu"]),
             "--settings", str(self.inputs["settings"]), "--plugin", str(self.inputs["plugin"]),
             "--simulator", str(self.inputs["simulator"]), "--runner", str(self.inputs["runner"]),
             "--report", str(report),
-        ])
+        ]
+        if developer_proof:
+            self.developer_proof = True
+            for profile in self.profiles:
+                self.write_provenance(profile)
+            args.append("--developer-proof")
+        return checker.main(args)
 
-    def rewrite_and_run(self, profile, relative_path, text, update_manifest=True):
+    def rewrite_and_run(self, profile, relative_path, text, update_manifest=True, developer_proof=False):
         (self.profiles[profile] / relative_path).write_text(text, encoding="utf-8")
         if update_manifest:
             self.write_artifact_manifest(profile)
-        return self.run_checker()
+        return self.run_checker(developer_proof=developer_proof)
 
     def test_valid_four_profile_inventory_passes(self):
         self.assertEqual(self.run_checker(), 0)
         self.assertTrue((self.run_dir / "report.json").is_file())
+
+    def test_functional_mode_does_not_require_debug_preanalysis(self):
+        profile = self.profiles["overlap_rw_same_bundle"]
+        stdout = profile / "stdout.log"
+        stdout.write_text("---Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n"
+                          "---Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
+                          "same-bundle read/write requires duplex support\n", encoding="utf-8")
+        self.write_artifact_manifest("overlap_rw_same_bundle")
+        self.assertEqual(self.run_checker(), 0)
+
+    def test_developer_proof_mode_still_requires_preanalysis(self):
+        profile = self.profiles["overlap_rw_same_bundle"]
+        stdout = profile / "stdout.log"
+        stdout.write_text("---Keeping legacy m_axi accesses for bundle shared: bundle contains stores\n"
+                          "---Keeping legacy m_axi writes for bundle shared: bundle contains reads; "
+                          "same-bundle read/write requires duplex support\n", encoding="utf-8")
+        self.write_artifact_manifest("overlap_rw_same_bundle")
+        self.assertEqual(self.run_checker(developer_proof=True), 1)
 
     def test_runner_job_logs_directory_is_allowed(self):
         (self.run_dir / "job_logs").mkdir()
@@ -200,20 +230,24 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
         profile = "residual_store_same_bundle"
         self.assertEqual(self.run_checker(), 0)
         self.assertEqual(self.rewrite_and_run(
-            profile, "stdout.log", valid_profile_evidence(profile, write_requested=0)), 1)
+            profile, "stdout.log", valid_profile_evidence(profile, write_requested=0),
+            developer_proof=True), 1)
 
     def test_new_profile_access_inventory_must_match_trace(self):
         profile = "conditional_read_or_write_same_bundle"
         self.assertEqual(self.rewrite_and_run(
-            profile, "stdout.log", valid_profile_evidence(profile, read_accesses=1)), 1)
+            profile, "stdout.log", valid_profile_evidence(profile, read_accesses=1),
+            developer_proof=True), 1)
 
     def test_new_profile_candidate_or_activation_fails_closed(self):
         profile = "conditional_read_or_write_same_bundle"
         self.assertEqual(self.run_checker(), 0)
         self.assertEqual(self.rewrite_and_run(
-            profile, "stdout.log", valid_profile_evidence(profile, candidate=1)), 1)
+            profile, "stdout.log", valid_profile_evidence(profile, candidate=1),
+            developer_proof=True), 1)
         self.assertEqual(self.rewrite_and_run(
-            profile, "stdout.log", valid_profile_evidence(profile, activated=1)), 1)
+            profile, "stdout.log", valid_profile_evidence(profile, activated=1),
+            developer_proof=True), 1)
 
     def test_new_profile_golden_marker_must_be_exact(self):
         profile = "residual_store_same_bundle"
@@ -322,6 +356,17 @@ class DuplexFallbackCheckerTests(unittest.TestCase):
     def test_provenance_digest_mismatch_fails(self):
         path = self.inputs["source"]
         path.write_text("changed source\n", encoding="utf-8")
+        self.assertEqual(self.run_checker(), 1)
+
+    def test_shared_runner_digest_and_symlink_mismatch_fail(self):
+        path = self.inputs["shared_runner"]
+        original = path.read_text(encoding="utf-8")
+        path.write_text(original + "# changed\n", encoding="utf-8")
+        self.assertEqual(self.run_checker(), 1)
+        path.unlink()
+        outside = self.base / "outside-runner.sh"
+        outside.write_text(original, encoding="utf-8")
+        path.symlink_to(outside)
         self.assertEqual(self.run_checker(), 1)
 
     def test_provenance_identity_mismatch_fails(self):

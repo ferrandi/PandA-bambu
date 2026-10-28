@@ -45,8 +45,8 @@ export TMPDIR="$TASK_OUT/tmp" TMP="$TASK_OUT/tmp" TEMP="$TASK_OUT/tmp"
 
 SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o1.cpp"
 GENERATION_ARGS=("$SOURCE" --top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER
-  --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
-  --bambu-parameter=experimental-m-axi-burst=1 --mem-delay-read=64 --mem-delay-write=64
+  --device-name=xcu250,-2L,figd2104 --no-clean
+  --mem-delay-read=64 --mem-delay-write=64
   --memory-allocation-policy=NO_BRAM --distram-threshold=0
   --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU --extra-cc-options=-DNOCACHE)
 GEN=${2:-}
@@ -141,7 +141,10 @@ compile_and_run() {
   cat "$log.normalized" | tee -a "$TASK_OUT/aggregate.log"
 }
 
-compile_and_run positive "$RTL" "$LIB"
+compile_and_run positive "$RTL" "$LIB" +AXI_BURST_EXPECT_FAULT
+rid_fault='AXI_BURST_FAULT engine=read reason=RID instance=tb_generated_wrapper_rid.dut.burst_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00001000 count=1 resp=00 id=1 last=1 descriptors=1 remaining=1'
+modelsim_expect_fault_log "$TASK_OUT/positive/run.log" continue generated-wrapper-rid \
+  "$rid_fault" "$rid_fault" "$rid_fault" "$rid_fault"
 for rid in 0 1 2 32 63; do
   completion=0
   [[ "$rid" == 0 ]] && completion=1
@@ -174,6 +177,11 @@ if text.count(correct) != 1:
 path.write_text(text.replace(correct, broken))
 PY
 compile_and_run negative "$TASK_OUT/negative/renamed_sum.v" "$LIB" +NEGATIVE_SENSITIVITY
+if grep -Eq '^AXI_BURST_' "$TASK_OUT/negative/run.log.normalized"; then
+  cat "$TASK_OUT/negative/run.log" >&2
+  echo "mutated wrapper RID run unexpectedly emitted an AXI diagnostic" >&2
+  exit 1
+fi
 for rid in 2 32; do
   if [[ $(grep -Fxc "RID_CASE PASS rid=$rid completion=1" "$TASK_OUT/negative/run.log.normalized" || true) != 1 ]]; then
     cat "$TASK_OUT/negative/run.log" >&2

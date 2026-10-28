@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generate and simulate in-place and distinct-owner duplex kernels with Verilator.
+# Generate and simulate in-place and distinct-owner duplex kernels with ModelSim.
 # Usage: BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1 $0 BAMBU [FRESH_OUTPUT_DIR]
 set -euo pipefail
 ulimit -c 0
@@ -8,6 +8,7 @@ TESTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 ROOT=$(realpath "$TESTS/../../../../")
 FAMILY="$ROOT/panda_regressions/hls/bambu_axi_burst"
 HELPERS="$FAMILY/parallel_helpers.sh"
+MODELSIM_HELPERS="$TESTS/modelsim_helpers.sh"
 SOURCE="$FAMILY/bambu_axi_burst_duplex.cpp"
 COPY_SOURCE="$FAMILY/bambu_axi_burst_duplex_copy.cpp"
 COPY_TB="$FAMILY/bambu_axi_burst_duplex_copy_tb.cpp"
@@ -37,10 +38,10 @@ if [[ $BAMBU_ARG == */* ]]; then BAMBU=$(realpath -- "$BAMBU_ARG"); else
   [[ -n $BAMBU ]] && BAMBU=$(realpath -- "$BAMBU")
 fi
 [[ -n ${BAMBU:-} && -x $BAMBU ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
-for tool in verilator python3 sha256sum timeout; do
+for tool in python3 sha256sum timeout; do
   command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }
 done
-[[ -s $SOURCE && -s $COPY_SOURCE && -s $COPY_TB && -s $PREFIX_SOURCE && -s $TB && -s $OBSERVER && -s $OBSERVER_UNIT_TB && -s $PARALLELISM_CHECKER && -s $HELPERS ]] || { echo "G2/G3 kernel source, observer, unit testbench, checker, or helper is missing" >&2; exit 2; }
+[[ -s $SOURCE && -s $COPY_SOURCE && -s $COPY_TB && -s $PREFIX_SOURCE && -s $TB && -s $OBSERVER && -s $OBSERVER_UNIT_TB && -s $PARALLELISM_CHECKER && -s $HELPERS && -s $MODELSIM_HELPERS ]] || { echo "G2/G3 kernel source, observer, unit testbench, checker, or helper is missing" >&2; exit 2; }
 
 PREFIX=$(dirname "$(dirname "$BAMBU")")
 SETTINGS="$PREFIX/settings.sh"
@@ -52,6 +53,8 @@ source "$SETTINGS"
 }
 PLUGIN="$PREFIX/lib/panda/clang-16/ASTAnalyzer.so"
 [[ -s $PLUGIN ]] || { echo "selected ASTAnalyzer plugin is missing: $PLUGIN" >&2; exit 2; }
+source "$MODELSIM_HELPERS"
+modelsim_resolve
 
 OUT_ARG=${2:-"$PWD/out_generated_duplex_kernel"}
 [[ ! -e $OUT_ARG && ! -L $OUT_ARG ]] || { echo "output directory must be fresh and not a symlink: $OUT_ARG" >&2; exit 2; }
@@ -84,12 +87,13 @@ digest() { sha256sum -- "$1" | awk '{print $1}'; }
     "$PARALLELISM_CHECKER" "$(digest "$PARALLELISM_CHECKER")" "$RUNNER" "$(digest "$RUNNER")"
   printf 'sim_jobs=%s\nscenario_jobs=%s\n' "$SIM_JOBS" "$DUPLEX_G2_JOBS"
   "$BAMBU" --version 2>&1 | sed -n '1,2p'
-  verilator --version
+  printf 'simulator=MODELSIM\nsimulator_source=%s\nsimulator_invocation=%s\n' "$MODELSIM_SOURCE" "$MODELSIM_VSIM"
+  modelsim_version
 } >"$OUT/provenance.txt"
 
 COMMON=(--top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER
-  --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
-  --bambu-parameter=experimental-m-axi-burst=1 --extra-cc-options=-DNDEBUG
+  --device-name=xcu250,-2L,figd2104 --no-clean
+  --extra-cc-options=-DNDEBUG
   --extra-cc-options=-DBAMBU)
 profile_dir() {
   case $2 in
@@ -185,50 +189,47 @@ for pair in "${profile_jobs[@]}"; do
 done
 
 build_one() {
-  local profile=$1 kind=$2 profile_id=1 out
+  local profile=$1 kind=$2 out
   out=$(profile_dir "$profile" "$kind")
-  [[ $profile == symmetric ]] || profile_id=2
   local rtl="$out/generated/kernel.v" lib="$out/generated/panda_libtech.v"
-  local -a overrides=(-GREAD_B_MAX=16 -GREAD_OUTSTANDING=1 -GREAD_FIFO_DEPTH=64
-    -GWRITE_B_MAX=16 -GWRITE_OUTSTANDING=1 -GWRITE_FIFO_DEPTH=32)
+  local -a overrides=(-gREAD_B_MAX=16 -gREAD_OUTSTANDING=1 -gREAD_FIFO_DEPTH=64
+    -gWRITE_B_MAX=16 -gWRITE_OUTSTANDING=1 -gWRITE_FIFO_DEPTH=32)
   if [[ $profile == asymmetric ]]; then
-    overrides=(-GREAD_B_MAX=16 -GREAD_OUTSTANDING=2 -GREAD_FIFO_DEPTH=64
-      -GWRITE_B_MAX=8 -GWRITE_OUTSTANDING=1 -GWRITE_FIFO_DEPTH=16)
+    overrides=(-gREAD_B_MAX=16 -gREAD_OUTSTANDING=2 -gREAD_FIFO_DEPTH=64
+      -gWRITE_B_MAX=8 -gWRITE_OUTSTANDING=1 -gWRITE_FIFO_DEPTH=16)
   fi
   local -a kind_def=()
-  [[ $kind == copy ]] && kind_def=(-DCOPY_MODE)
-  [[ $kind == prefix ]] && kind_def=(-DPREFIX_MODE)
-  if ! verilator --binary --timing --assert -Wno-fatal -Werror-IMPLICIT -Werror-UNDRIVEN -j 1 \
-      --top-module tb_generated_duplex_kernel --Mdir "$out/obj" "${overrides[@]}" \
-      -DGENERATED_TOP=kernel "-DDUPLEX_PROFILE_ID=$profile_id" "${kind_def[@]}" "$rtl" "$lib" "$TB" "$OBSERVER" \
-      >"$out/verilator-build.log" 2>&1; then
-    tail -n 120 "$out/verilator-build.log" >&2
-    echo "Verilator build failed for $profile" >&2; return 1
+  [[ $kind == copy ]] && kind_def=(+define+COPY_MODE)
+  [[ $kind == prefix ]] && kind_def=(+define+PREFIX_MODE)
+  if ! modelsim_compile "$out/sim" tb_generated_duplex_kernel "$rtl" "$lib" "$TB" "$OBSERVER" -- \
+      -mfcu -cuname duplex_load_observer_unit_cu "${kind_def[@]}"; then
+    echo "ModelSim compile failed for $profile/$kind" >&2; return 1
   fi
-  sha256sum "$rtl" "$lib" "$out/verilator-build.log" >>"$OUT/provenance.txt"
+  printf 'modelsim_elaboration_args=' >>"$out/compiler_argv.txt"
+  printf '%q ' "${overrides[@]}" >>"$out/compiler_argv.txt"
+  printf '\n' >>"$out/compiler_argv.txt"
+  sha256sum "$rtl" "$lib" "$out/sim/compile.log" >>"$OUT/provenance.txt"
 }
 build_profile() {
   local pair=$1 profile=${1%%__*} kind=${1#*__}
   build_one "$profile" "$kind"
 }
 
-# Generate each carrier/profile once; two independent Verilator builds maximum.
-BURST_JOB_LOG_DIR="$OUT/job_logs/verilator"; mkdir "$BURST_JOB_LOG_DIR"
+# Each profile/kind gets an isolated ModelSim work library.
+BURST_JOB_LOG_DIR="$OUT/job_logs/modelsim-build"; mkdir "$BURST_JOB_LOG_DIR"
 run_bounded_jobs "$SIM_JOBS" build_profile "${profile_jobs[@]}"
 
 OBSERVER_UNIT_OUT="$OUT/observer-unit"
 mkdir "$OBSERVER_UNIT_OUT" "$OBSERVER_UNIT_OUT/tmp"
-if ! verilator --binary --timing --assert -Wno-fatal -Werror-IMPLICIT -Werror-UNDRIVEN -j 1 \
-    --top-module tb_duplex_load_observer --Mdir "$OBSERVER_UNIT_OUT/obj" \
-    "$OBSERVER" "$OBSERVER_UNIT_TB" >"$OBSERVER_UNIT_OUT/verilator-build.log" 2>&1; then
-  tail -n 120 "$OBSERVER_UNIT_OUT/verilator-build.log" >&2
-  echo "Verilator build failed for duplex load observer unit test" >&2; exit 1
+modelsim_compile "$OBSERVER_UNIT_OUT/sim" tb_duplex_load_observer "$OBSERVER_UNIT_TB" "$OBSERVER" -- \
+  -mfcu -cuname duplex_load_observer_unit_cu || {
+  echo "ModelSim compile failed for duplex load observer unit test" >&2; exit 1;
+}
+if ! modelsim_run "$OBSERVER_UNIT_OUT/sim" tb_duplex_load_observer "$OBSERVER_UNIT_OUT/observer-unit.raw.log" 60 -voptargs=+acc -- +G3_METRICS +CASE=COPY_PARALLELISM_256; then
+  cat "$OBSERVER_UNIT_OUT/observer-unit.raw.log" >&2
+  echo "duplex load observer unit test failed; see $OBSERVER_UNIT_OUT/observer-unit.raw.log" >&2; exit 1
 fi
-if ! (cd "$OBSERVER_UNIT_OUT" && TMPDIR="$OBSERVER_UNIT_OUT/tmp" TMP="$OBSERVER_UNIT_OUT/tmp" TEMP="$OBSERVER_UNIT_OUT/tmp" \
-    ./obj/Vtb_duplex_load_observer +G3_METRICS +CASE=COPY_PARALLELISM_256 >observer-unit.log 2>&1); then
-  cat "$OBSERVER_UNIT_OUT/observer-unit.log" >&2
-  echo "duplex load observer unit test failed; see $OBSERVER_UNIT_OUT/observer-unit.log" >&2; exit 1
-fi
+modelsim_normalize_log "$OBSERVER_UNIT_OUT/observer-unit.raw.log" "$OBSERVER_UNIT_OUT/observer-unit.log"
 grep -Fqx 'DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2' \
   "$OBSERVER_UNIT_OUT/observer-unit.log" || {
   cat "$OBSERVER_UNIT_OUT/observer-unit.log" >&2
@@ -236,12 +237,7 @@ grep -Fqx 'DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PEND
 }
 
 run_scenario() {
-  local pair=$1 profile tail kind scenario log rc=0 marker
-  profile=${pair%%__*}
-  tail=${pair#*__}
-  kind=${tail%%__*}
-  scenario=${tail#*__}
-  local out scenario_tmp
+  local profile=$1 kind=$2 scenario=$3 out scenario_tmp raw log rc=0 marker
   out=$(profile_dir "$profile" "$kind")
   marker=DUPLEX_KERNEL_G2
   [[ $kind == copy ]] && marker=DUPLEX_KERNEL_COPY_G2
@@ -249,16 +245,48 @@ run_scenario() {
   local scenario_tmp="$out/scenarios/tmp-$scenario"
   mkdir "$scenario_tmp"
   log="$out/scenarios/$scenario.log"
-  local -a plusargs=("+CASE=$scenario")
+  raw="$out/scenarios/$scenario.raw.log"
+  local -a plusargs=("+CASE=$scenario") expected_faults=() observed_faults=()
+  local -a overrides=(-gREAD_B_MAX=16 -gREAD_OUTSTANDING=1 -gREAD_FIFO_DEPTH=64
+    -gWRITE_B_MAX=16 -gWRITE_OUTSTANDING=1 -gWRITE_FIFO_DEPTH=32)
+  if [[ $profile == asymmetric ]]; then
+    overrides=(-gREAD_B_MAX=16 -gREAD_OUTSTANDING=2 -gREAD_FIFO_DEPTH=64
+      -gWRITE_B_MAX=8 -gWRITE_OUTSTANDING=1 -gWRITE_FIFO_DEPTH=16)
+  fi
   [[ $scenario == COPY_PARALLELISM_256 ]] && plusargs+=(+G3_METRICS)
+  case $scenario in
+    RRESP_FAULT_RESET|BRESP_FAULT_RESET) plusargs+=(+AXI_BURST_EXPECT_FAULT) ;;
+  esac
   if (cd "$scenario_tmp" && TMPDIR="$scenario_tmp" TMP="$scenario_tmp" TEMP="$scenario_tmp" \
-      timeout 180s "$out/obj/Vtb_generated_duplex_kernel" "${plusargs[@]}" >"$log" 2>&1); then
+      modelsim_run "$out/sim" tb_generated_duplex_kernel "$raw" 180 "${overrides[@]}" -- "${plusargs[@]}"); then
     rc=0
   else rc=$?; fi
-  [[ $rc -eq 0 ]] || { echo "$profile/$scenario failed rc=$rc; see $log" >&2; return "$rc"; }
+  [[ $rc -eq 0 ]] || { echo "$profile/$kind/$scenario failed rc=$rc; see $raw" >&2; return "$rc"; }
+  modelsim_normalize_log "$raw" "$log"
   grep -Fqx "$marker PASS CASE=$scenario PROFILE=$profile" "$log" || {
     echo "missing exact success marker for $profile/$kind/$scenario; see $log" >&2; return 1;
   }
+  case $scenario in
+    RRESP_FAULT_RESET)
+      expected_faults=("AXI_BURST_FAULT engine=read reason=RRESP " "AXI_BURST_PEER_FAULT engine=write reason=peer " "AXI_BURST_PEER_FAULT engine=read reason=peer ") ;;
+    BRESP_FAULT_RESET)
+      expected_faults=("AXI_BURST_FAULT engine=write reason=BRESP " "AXI_BURST_PEER_FAULT engine=read reason=peer " "AXI_BURST_PEER_FAULT engine=write reason=peer ") ;;
+  esac
+  mapfile -t observed_faults < <(sed -E 's/^\*\* Fatal: //' "$log" | grep -E '^AXI_BURST_' || true)
+  if ((${#observed_faults[@]} != ${#expected_faults[@]})); then
+    echo "wrong AXI diagnostic count for $profile/$kind/$scenario: expected=${#expected_faults[@]} observed=${#observed_faults[@]}" >&2
+    cat "$log" >&2; return 1
+  fi
+  local i record
+  for i in "${!expected_faults[@]}"; do
+    record=${observed_faults[i]}
+    [[ $record == "${expected_faults[i]}"* ]] || { echo "wrong AXI diagnostic order/content for $profile/$kind/$scenario at $i: $record" >&2; return 1; }
+    if [[ ${expected_faults[i]} == *engine=read* ]]; then
+      [[ $record =~ instance=[^[:space:]]+\.report_axi_read_diagnostic\ opcode=-?[0-9]+\ size=-?[0-9]+\ address=[[:xdigit:]]+\ count=[0-9]+\ resp=[01]{2}\ id=-?[0-9]+\ last=-?[0-9]+\ descriptors=[0-9]+\ remaining=[0-9]+$ ]] || { echo "malformed or unqualified read diagnostic instance for $profile/$kind/$scenario" >&2; return 1; }
+    else
+      [[ $record =~ instance=[^[:space:]]+\.report_axi_write_diagnostic\ opcode=-?[0-9]+\ size=-?[0-9]+\ address=[[:xdigit:]]+\ count=[0-9]+\ payload=[[:xdigit:]]+\ resp=[01]{2}\ id=-?[0-9]+\ descriptors=[0-9]+\ remaining=[0-9]+$ ]] || { echo "malformed or unqualified write diagnostic instance for $profile/$kind/$scenario" >&2; return 1; }
+    fi
+  done
   if [[ $kind == prefix ]]; then
     local expected_read expected_write expected_ar expected_aw
     case $scenario in
@@ -283,17 +311,22 @@ run_scenario() {
   fi
   printf 'GENERATED_DUPLEX_KERNEL_SCENARIO PASS PROFILE=%s KIND=%s CASE=%s\n' "$profile" "$kind" "$scenario"
 }
-declare -a scenario_jobs=()
+run_scenario_group() {
+  local pair=$1 profile=${1%%__*} kind=${1#*__} scenario
+  if [[ $kind == prefix ]]; then
+    for scenario in "${PREFIX_CASES[@]}"; do run_scenario "$profile" "$kind" "$scenario" || return $?; done
+  else
+    for scenario in "${CASES[@]}"; do run_scenario "$profile" "$kind" "$scenario" || return $?; done
+    if [[ $kind == copy ]]; then run_scenario "$profile" "$kind" COPY_PARALLELISM_256 || return $?; fi
+  fi
+}
+declare -a scenario_groups=()
 for profile in "${PROFILES[@]}"; do
-  for kind in "${KINDS[@]}"; do
-    for scenario in "${CASES[@]}"; do scenario_jobs+=("${profile}__${kind}__${scenario}"); done
-  done
-  for scenario in "${PREFIX_CASES[@]}"; do scenario_jobs+=("${profile}__prefix__${scenario}"); done
-  scenario_jobs+=("${profile}__copy__COPY_PARALLELISM_256")
+  for kind in "${KINDS[@]}"; do scenario_groups+=("${profile}__${kind}"); done
+  scenario_groups+=("${profile}__prefix")
 done
-run_scenario_job() { run_scenario "$1"; }
 BURST_JOB_LOG_DIR="$OUT/job_logs/scenario"; mkdir "$BURST_JOB_LOG_DIR"
-run_bounded_jobs "$DUPLEX_G2_JOBS" run_scenario_job "${scenario_jobs[@]}"
+run_bounded_jobs "$DUPLEX_G2_JOBS" run_scenario_group "${scenario_groups[@]}"
 
 (cd "$OUT" && python3 -B "$PARALLELISM_CHECKER" "$OUT") >"$OUT/parallelism-check.log" 2>&1 || {
   cat "$OUT/parallelism-check.log" >&2
@@ -341,18 +374,18 @@ for profile in "${PROFILES[@]}"; do
     artifact_paths+=(
       "$out/generated/kernel.v" "$out/generated/panda_libtech.v"
       "$out/generated/bambu.stdout.log" "$out/generated/bambu.stderr.log"
-      "$out/verilator-build.log"
+      "$out/sim/compile.log"
     )
-    for scenario in "${CASES[@]}"; do artifact_paths+=("$out/scenarios/$scenario.log"); done
-    [[ $kind == copy ]] && artifact_paths+=("$out/scenarios/COPY_PARALLELISM_256.log")
+    for scenario in "${CASES[@]}"; do artifact_paths+=("$out/scenarios/$scenario.log" "$out/scenarios/$scenario.raw.log"); done
+    [[ $kind == copy ]] && artifact_paths+=("$out/scenarios/COPY_PARALLELISM_256.log" "$out/scenarios/COPY_PARALLELISM_256.raw.log")
   done
   out=$(profile_dir "$profile" prefix); out=${out#"$OUT/"}
   artifact_paths+=(
     "$out/generated/kernel.v" "$out/generated/panda_libtech.v"
     "$out/generated/bambu.stdout.log" "$out/generated/bambu.stderr.log"
-    "$out/verilator-build.log"
+    "$out/sim/compile.log"
   )
-  for scenario in "${PREFIX_CASES[@]}"; do artifact_paths+=("$out/scenarios/$scenario.log"); done
+  for scenario in "${PREFIX_CASES[@]}"; do artifact_paths+=("$out/scenarios/$scenario.log" "$out/scenarios/$scenario.raw.log"); done
 done
 {
   printf 'parallelism_check_log=%s\nparallelism_check_log_sha256=%s\n' \
@@ -364,7 +397,7 @@ done
   done
   sha256sum -- "$OBSERVER" "$OBSERVER_UNIT_TB" "$PARALLELISM_CHECKER"
 } >>"$OUT/provenance.txt"
-artifact_paths+=(parallelism-check.log observer-unit/observer-unit.log observer-unit/verilator-build.log)
+artifact_paths+=(parallelism-check.log observer-unit/observer-unit.log observer-unit/observer-unit.raw.log observer-unit/sim/compile.log)
 (cd "$OUT" && sha256sum "${artifact_paths[@]}") >"$OUT/artifact-sha256.txt"
 (cd "$OUT" && sha256sum -- "$OBSERVER" "$OBSERVER_UNIT_TB" "$PARALLELISM_CHECKER") >>"$OUT/artifact-sha256.txt"
 (cd "$OUT" && sha256sum --check artifact-sha256.txt)

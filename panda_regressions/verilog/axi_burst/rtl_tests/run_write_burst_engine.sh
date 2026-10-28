@@ -35,9 +35,50 @@ modelsim_writer_expect_fatal() {
     fi
 }
 
-if (($# > 1)); then
-    echo "usage: $0 [fresh-output-directory]" >&2
-    echo "  default: ./out_write_burst_engine, created in the directory the script is launched from" >&2
+writer_expected_fault_reason() {
+    case $1 in
+        BAD_CONFIG_SIZE|BAD_CONFIG_ALIGN|COUNT_MSB|OVERFLOW32|OVERFLOW64|CONFIG_PIPELINE_INVALID|\
+        CONFIGURE64_BAD_ALIGN_ZERO|CFG_*|PREMATURE_CONFIGURE*) echo CONFIGURE_INVALID ;;
+        BAD_STORE_SIZE|BAD_STORE_SIZE8|BAD_STORE_ADDRESS|FAST_STORE_ACK_INVALID|FAST_STORE_ACK_ZERO_REGION|\
+        FAST_STORE_ACK_WRAP)
+            echo STORE_INVALID ;;
+        PENDING_OPERAND_CHANGE*) echo PENDING_STORE_CHANGED ;;
+        EARLY_DRAIN|DRAIN_PENDING_SHORT_COUNT) echo DRAIN_EARLY ;;
+        BID) echo BID ;;
+        BRESP|BRESP_*|FAST_STORE_ACK_BFAULT) echo BRESP ;;
+        PEER_FAULT_SPECULATIVE) echo PEER_FAULT ;;
+        *) return 1 ;;
+    esac
+}
+
+modelsim_writer_expect_diagnostic() {
+    local log=$1 case_name=$2 expected_class=$3 expected_reason=$4 normalized="$1.writer-fault-normalized"
+    local -a diagnostics=()
+    local record_re='^AXI_BURST_(FAULT|PEER_FAULT) engine=write reason=[[:alnum:]_]+ instance=tb_write_burst_engine\.dut\.report_axi_write_diagnostic opcode=-?[0-9]+ size=-?[0-9]+ address=([[:xdigit:]]{8}|[[:xdigit:]]{16}) count=[0-9]+ payload=[[:xdigit:]]{8} resp=[01]{2} id=-?[0-9]+ descriptors=[0-9]+ remaining=[0-9]+$'
+    modelsim_normalize_log "$log" "$normalized" || return $?
+    mapfile -t diagnostics < <(grep -E '^AXI_BURST_[A-Z_]+ ' "$normalized" || true)
+    if [[ $expected_class == PEER_FAULT ]]; then
+        prefix='AXI_BURST_PEER_FAULT engine=write reason=peer instance=tb_write_burst_engine.dut.report_axi_write_diagnostic '
+    else
+        prefix="AXI_BURST_FAULT engine=write reason=$expected_reason instance=tb_write_burst_engine.dut.report_axi_write_diagnostic "
+    fi
+    if ((${#diagnostics[@]} != 1)) || [[ ! ${diagnostics[0]:-} =~ $record_re ]] ||
+       [[ ${diagnostics[0]:-} != "$prefix"* ]]; then
+        cat "$log" >&2
+        echo "expected exactly one schema-valid $expected_class/$expected_reason diagnostic for $case_name" >&2
+        return 1
+    fi
+    if [[ $case_name == FAST_STORE_ACK_WRAP &&
+          ${diagnostics[0]} != *'opcode=1 size=32 address=0000000000000000 count=0 payload=ca770000 '* ]]; then
+        cat "$log" >&2
+        echo "unexpected stable STORE_INVALID fields for $case_name" >&2
+        return 1
+    fi
+    modelsim_expect_fault_log "$log" continue "$case_name" "${diagnostics[@]}"
+}
+
+if (($# != 1)); then
+    echo "usage: $0 fresh-output-directory" >&2
     exit 2
 fi
 if [[ ${BURST_WRITER_SIM_OUTSIDE_SANDBOX:-} != 1 ]]; then
@@ -57,7 +98,7 @@ if [[ ! $WRITER_GROUP_JOBS =~ ^[1-9][0-9]*$ ]]; then
     echo "BURST_WRITER_GROUP_JOBS must be a positive integer" >&2
     exit 2
 fi
-OUT_ARG=${1:-out_write_burst_engine}
+OUT_ARG=$1
 OUT_PARENT=$(realpath -m -- "$(dirname "$OUT_ARG")")
 TASK_OUT=$(realpath -m -- "$OUT_ARG")
 if [[ -e "$TASK_OUT" || -e "$OUT_ARG" || -L "$OUT_ARG" ]]; then
@@ -97,14 +138,24 @@ build_run() {
     local build="$TASK_OUT/build-$label"
     modelsim_writer_compile "$build" tb_write_burst_engine \
         "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" 1 || return $?
-    local case_name log normalized status
+    local case_name log normalized status expected_reason expected_class
     for case_name in "$test_case" "$@"; do
         log="$build/$case_name.log"
         status=0
+        expected_reason=$(writer_expected_fault_reason "$case_name" || true)
+        local -a runtime_args=("+CASE=$case_name")
+        if [[ -n $expected_reason ]]; then
+            runtime_args+=(+AXI_BURST_EXPECT_FAULT)
+        fi
         modelsim_run "$build" tb_write_burst_engine "$log" 60 \
             -gB_MAX="$burst" -gMAX_OUTSTANDING=1 -gFIFO_DEPTH="$depth" \
-            -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$case_name" || status=$?
+            -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "${runtime_args[@]}" || status=$?
         modelsim_normalize_log "$log" "$log.normalized" || return $?
+        if [[ -n $expected_reason ]]; then
+            expected_class=FAULT
+            [[ $expected_reason == PEER_FAULT ]] && expected_class=PEER_FAULT
+            modelsim_writer_expect_diagnostic "$log" "$case_name" "$expected_class" "$expected_reason" || return $?
+        fi
         if (( status != 0 )); then
             cat "$log" >&2
             echo "RTL scenario failed: $label/$case_name" >&2
@@ -143,14 +194,24 @@ build_run_o() {
     local build="$TASK_OUT/build-$label"
     modelsim_writer_compile "$build" tb_write_burst_engine \
         "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$TB" 1 || return $?
-    local case_name log normalized status
+    local case_name log normalized status expected_reason expected_class
     for case_name in "$test_case" "$@"; do
         log="$build/$case_name.log"
         status=0
+        expected_reason=$(writer_expected_fault_reason "$case_name" || true)
+        local -a runtime_args=("+CASE=$case_name")
+        if [[ -n $expected_reason ]]; then
+            runtime_args+=(+AXI_BURST_EXPECT_FAULT)
+        fi
         modelsim_run "$build" tb_write_burst_engine "$log" 60 \
             -gB_MAX="$burst" -gMAX_OUTSTANDING="$outstanding" -gFIFO_DEPTH="$depth" \
-            -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "+CASE=$case_name" || status=$?
+            -gADDR_BITS="$addr" -gFAST_STORE_ACK="$fast_store_ack" -- "${runtime_args[@]}" || status=$?
         modelsim_normalize_log "$log" "$log.normalized" || return $?
+        if [[ -n $expected_reason ]]; then
+            expected_class=FAULT
+            [[ $expected_reason == PEER_FAULT ]] && expected_class=PEER_FAULT
+            modelsim_writer_expect_diagnostic "$log" "$case_name" "$expected_class" "$expected_reason" || return $?
+        fi
         if (( status != 0 )); then
             cat "$log" >&2
             echo "RTL scenario failed: $label/$case_name" >&2
@@ -211,8 +272,9 @@ build_async_reset_run() {
     modelsim_run "$build" tb_write_burst_engine "$log" 60 \
         -gB_MAX=16 -gMAX_OUTSTANDING=2 -gFIFO_DEPTH=32 -gADDR_BITS=32 \
         -gFAST_STORE_ACK="$fast_store_ack" -gASYNC_RESET=1 \
-        -gRESET_ACTIVE_LOW="$active_low" -- +CASE=ASYNC_RESET || status=$?
+        -gRESET_ACTIVE_LOW="$active_low" -- +CASE=ASYNC_RESET +AXI_BURST_EXPECT_FAULT || status=$?
     modelsim_normalize_log "$log" "$normalized" || return $?
+    modelsim_writer_expect_diagnostic "$log" ASYNC_RESET FAULT CONFIGURE_INVALID || return $?
     if (( status != 0 )); then
         cat "$log" >&2
         echo "RTL scenario failed: $label/ASYNC_RESET" >&2
@@ -317,6 +379,18 @@ run_writer_group() {
             ;;
         multi-O16-D16)
             build_run_o O16-D16 16 16 16 32 MULTI_OUTSTANDING
+            ;;
+        multi-O16-D32)
+            build_run_o O16-D32 16 16 32 32 MULTI_OUTSTANDING
+            ;;
+        multi-O16-D32-A64)
+            build_run_o O16-D32-A64 16 16 32 64 MULTI_OUTSTANDING
+            ;;
+        boundary-O16-D32)
+            build_run_o boundary-O16-D32 16 16 32 32 BOUNDARY
+            ;;
+        wrap-O16-D32-A64)
+            build_run_o wrap-O16-D32-A64 16 16 32 64 FAST_STORE_ACK_WRAP --fast-store-ack=1
             ;;
         multi-O2-D32-F3)
             build_run_o O2-D32-F3 16 2 32 32 BRESP_AW_W_HELD BRESP_W_BEFORE_AW
@@ -448,7 +522,8 @@ run_writer_group() {
 
 WRITER_GROUPS=(core-B16-D16 core-B16-D32 core-B1-D1 core-B1-O16 core-B3-D4 \
     core-B16-D4096 core-B16-A32-F3 multi-O2-D16 multi-O2-D32 multi-O3-D16 \
-    multi-O16-D16 multi-O2-D32-F3 address-B16-A64 \
+    multi-O16-D16 multi-O16-D32 multi-O16-D32-A64 boundary-O16-D32 wrap-O16-D32-A64 \
+    multi-O2-D32-F3 address-B16-A64 \
     limit-B255-D256 limit-B256-O16 limit-B256-D256 maxlen-B256-O2 async-reset-active-low \
     async-reset-active-high invalid-B0 invalid-B257 invalid-O0 invalid-O17 \
     invalid-FIFO-BELOW-B invalid-FIFO-NONPOWER mutation-data-order \
@@ -467,6 +542,7 @@ if [[ -n ${BURST_WRITER_GROUP_FILTER:-} ]]; then
         case "$group" in
             core-B16-D16|core-B16-D32|core-B1-D1|core-B1-O16|core-B3-D4|core-B16-D4096|\
             core-B16-A32-F3|multi-O2-D16|multi-O2-D32|multi-O3-D16|multi-O16-D16|\
+            multi-O16-D32|multi-O16-D32-A64|boundary-O16-D32|wrap-O16-D32-A64|\
             multi-O2-D32-F3|address-B16-A64|limit-B255-D256|\
             limit-B256-O16|limit-B256-D256|maxlen-B256-O2|async-reset-active-low|async-reset-active-high|\
             invalid-B0|invalid-B257|invalid-O0|invalid-O17|invalid-FIFO-BELOW-B|\

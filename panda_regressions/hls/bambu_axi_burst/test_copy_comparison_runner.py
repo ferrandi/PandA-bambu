@@ -254,9 +254,9 @@ class CopyComparisonRunnerTests(unittest.TestCase):
             profile = PROFILES[profile_arg.rsplit("=", 1)[1]]
             self.assertIn("--simulator=VERILATOR", run["args"])
             feature_args = [arg for arg in run["args"]
-                            if arg.startswith("--bambu-parameter=experimental-m-axi-burst=")]
+                            if arg.startswith("--bambu-parameter=m-axi-burst=")]
             self.assertEqual(feature_args,
-                             [f"--bambu-parameter=experimental-m-axi-burst={FEATURES[profile]}"])
+                             [f"--bambu-parameter=m-axi-burst={FEATURES[profile]}"])
             normalized = [arg for arg in run["args"] if arg not in feature_args and arg != profile_arg]
             if common_argv is None:
                 common_argv = normalized

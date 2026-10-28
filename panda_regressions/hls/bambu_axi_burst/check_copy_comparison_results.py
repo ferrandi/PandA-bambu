@@ -199,9 +199,9 @@ def check_provenance(run_dir, profile, run, inputs):
     argv = shlex.split(argv_match.group(1))
     need(len(argv) >= 2 and argv[0] == str(inputs["bambu"]) and argv[1] == str(inputs["source"]),
          f"{run_dir}: invocation executable/source mismatch")
-    feature_args = [arg for arg in argv if arg.startswith("--bambu-parameter=experimental-m-axi-burst=")]
-    need(feature_args == [f"--bambu-parameter=experimental-m-axi-burst={config['feature']}"],
-         f"{run_dir}: expected exactly one experimental-m-axi-burst={config['feature']} option")
+    feature_args = [arg for arg in argv if arg.startswith("--bambu-parameter=m-axi-burst=")]
+    need(feature_args == [f"--bambu-parameter=m-axi-burst={config['feature']}"],
+         f"{run_dir}: expected exactly one m-axi-burst={config['feature']} option")
     macro_args = [arg for arg in argv if arg.startswith("--extra-cc-options=-DCOPY_COMPARISON_PROFILE=")]
     need(macro_args == [f"--extra-cc-options=-DCOPY_COMPARISON_PROFILE={macro}"],
          f"{run_dir}: invocation does not select exactly profile {profile}")
@@ -369,7 +369,7 @@ def check_run(run_dir, profile, run, inputs):
         for direction, bundle in (("read", PROFILES[profile]["read_bundle"]),
                                   ("write", PROFILES[profile]["write_bundle"])):
             diagnostic = (f"Keeping legacy m_axi {direction}s for bundle {bundle}: explicit "
-                          f"{direction}-burst request ignored because experimental-m-axi-burst=0")
+                          f"{direction}-burst request ignored because m-axi-burst=0")
             matches = re.findall(rf"(?m)^\s*{re.escape(diagnostic)}\s*$", log)
             need(len(matches) == 1,
                  f"{run_dir}: expected exactly one feature-off {direction} diagnostic for bundle {bundle}")

@@ -41,6 +41,10 @@ endif()
 
 set(LIBBAMBU_COMPILER_ID "I386_CLANG${_libbambu_choice}")
 set(LIBBAMBU_COMPILER_DIR "${PANDA_CLANG${_libbambu_choice}_PLUGIN_DIR}")
+set(_libbambu_plugin_outputs)
+if(TARGET panda_clang_plugins_${_libbambu_choice})
+   get_target_property(_libbambu_plugin_outputs panda_clang_plugins_${_libbambu_choice} PLUGIN_OUTPUTS)
+endif()
 # Bin dir of the detected clang, so the bare tool names (clang-XX, opt-XX, ...)
 # resolve even when the compiler was found via CMAKE_PREFIX_PATH and is not on PATH.
 get_filename_component(LIBBAMBU_CLANG_BIN_DIR "${PANDA_CLANG${_libbambu_choice}_EXE}" DIRECTORY)
@@ -178,7 +182,7 @@ function(_bambu_cc_object out_list arch_label arch_flag extra_flags src suffix)
       # Pass build root; bambu-cc appends the clang-XX directory itself.
       # Parameter.cpp appends a unique subdirectory to this TMPDIR root.
       COMMAND bash -lc "set -euo pipefail; tmp_root=\"\${TMPDIR:-${CMAKE_CURRENT_BINARY_DIR}/tmp}\"; mkdir -p \"\$tmp_root\"; export PATH=\"${LIBBAMBU_CLANG_BIN_DIR}\":\$PATH; \"${BAMBUCC}\" --output-temporary-directory=\"\$tmp_root\" -iplugindir=\"${CMAKE_BINARY_DIR}\" --compiler=${LIBBAMBU_COMPILER_ID} ${arch_flag} ${_eflags} -c \"${LIBBAMBU_ROOT}/${src}\" -o \"${obj}\""
-      DEPENDS "${LIBBAMBU_ROOT}/${src}" bambu-cc panda_clang_plugins
+      DEPENDS "${LIBBAMBU_ROOT}/${src}" bambu-cc panda_clang_plugins ${_libbambu_plugin_outputs}
       VERBATIM
    )
    set(${out_list} ${${out_list}} "${obj}" PARENT_SCOPE)

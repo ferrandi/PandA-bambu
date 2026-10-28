@@ -59,6 +59,7 @@ VMAP="$MODELSIM_BIN/vmap"
 for tool in "$MODELSIM_VSIM" "$VLOG" "$VLIB" "$VMAP"; do
     [[ -x $tool ]] || { echo "ModelSim tool unavailable in selected bin $MODELSIM_BIN: $tool" >&2; exit 2; }
 done
+TIMEOUT=$(command -v timeout) || { echo "timeout is required" >&2; exit 2; }
 export PATH="$MODELSIM_BIN:$PATH"
 
 mkdir "$OUT"
@@ -72,11 +73,91 @@ cp "$SCRIPT_DIR/tb_testbench_memaxi_backend.sv" "$OUT/hdl/tb_testbench_memaxi_ba
 cp "$SCRIPT_DIR/tb_testbench_memaxi_model.sv" "$OUT/hdl/tb_testbench_memaxi_model.sv"
 
 VSIM=$MODELSIM_VSIM
+VSIM_TIMEOUT=120s
+version_status=0
+if "$TIMEOUT" 30s "$VSIM" -version >"$OUT/logs/vsim-version.log" 2>&1; then
+    version_status=0
+else
+    version_status=$?
+fi
+printf '%s\n' "$version_status" >"$OUT/logs/vsim-version.log.raw-status"
+printf '%s\n' "$version_status" >"$OUT/logs/vsim-version.log.effective-status"
+if (( version_status != 0 )); then
+    echo "ModelSim version query failed or timed out" >&2
+    tail -n 40 "$OUT/logs/vsim-version.log" >&2
+    exit 1
+fi
+
+run_vsim() {
+    local log=$1 raw_status=0 effective_status
+    shift
+    if "$TIMEOUT" "$VSIM_TIMEOUT" "$VSIM" "$@" >"$log" 2>&1; then
+        raw_status=0
+    else
+        raw_status=$?
+    fi
+    effective_status=$raw_status
+    if (( raw_status == 0 )) && grep -Eq '^#? *\*\* (Fatal|Error):' "$log"; then
+        effective_status=1
+    fi
+    printf '%s\n' "$raw_status" >"$log.raw-status"
+    printf '%s\n' "$raw_status" >"$log.status"
+    printf '%s\n' "$effective_status" >"$log.effective-status"
+    return "$effective_status"
+}
+
+check_positive_run() {
+    local log=$1 label=$2 mode=$3 raw_status effective_status
+    raw_status=$(<"$log.raw-status")
+    effective_status=$(<"$log.effective-status")
+    if [[ $raw_status != 0 || $effective_status != 0 ]] ||
+       grep -Eqi '^#? *\*\* (Fatal|Error):|(^#? *)Aborted([[:space:]]|$)|segmentation fault|stack smashing|core dumped|watchdog|timed out' "$log" ||
+       { [[ $mode != characterize ]] && grep -Fq 'F0_EXPECTED_VIOLATION' "$log"; }; then
+        echo "$label failed despite any transcript markers (raw=$raw_status effective=$effective_status): $log" >&2
+        tail -n 80 "$log" >&2
+        return 1
+    fi
+}
+
+check_negative_run() {
+    local log=$1 test_case=$2 delay=$3 diagnostic=$4 raw_status effective_status normalized aborted_count
+    raw_status=$(<"$log.raw-status")
+    effective_status=$(<"$log.effective-status")
+    normalized="$log.normalized"
+    sed -E 's/^# //' "$log" >"$normalized"
+    if [[ $raw_status != 0 && $raw_status != 1 && $raw_status != 134 ]] ||
+       { [[ $raw_status == 134 ]] && [[ $effective_status != 134 ]]; } ||
+       { [[ $raw_status != 134 ]] && [[ $effective_status != 1 ]]; } ||
+       ! grep -Fqx "F0_NEGATIVE_START case=$test_case delay=$delay" "$normalized" ||
+       [[ $(grep -Ec '^\*\* Fatal:' "$normalized" || true) != 1 ]] ||
+       [[ $(grep -Fxc "** Fatal: $diagnostic" "$normalized" || true) != 1 ]] ||
+       grep -Eq '^\*\* Error:' "$normalized" ||
+       grep -Eqi 'segmentation fault|stack smashing|watchdog|timed out|F0_NEGATIVE_DID_NOT_ABORT|F0_QUALIFY_PASS' "$normalized" ||
+       { [[ $raw_status != 134 ]] && grep -Eqi 'core dumped' "$normalized"; }; then
+        echo "negative case failed its exact-fatal contract: case=$test_case delay=$delay raw=$raw_status effective=$effective_status" >&2
+        tail -n 80 "$log" >&2
+        return 1
+    fi
+    aborted_count=$(grep -Ec '^Aborted([[:space:]]|$)' "$normalized" || true)
+    if { [[ $raw_status == 134 ]] && [[ $aborted_count != 1 ]]; } ||
+       { [[ $raw_status != 134 ]] && [[ $aborted_count != 0 ]]; }; then
+        echo "negative case has an unexpected Aborted transcript: case=$test_case delay=$delay raw=$raw_status" >&2
+        tail -n 80 "$log" >&2
+        return 1
+    fi
+    grep -Eq 'memory(/|\.)independent_axi_model' "$normalized" &&
+        grep -Eq 'File: .*/TestbenchMEMAXI\.sv' "$normalized" || {
+            echo "negative case Fatal did not identify the generated model process/file: case=$test_case delay=$delay" >&2
+            tail -n 80 "$log" >&2
+            return 1
+        }
+}
 
 {
     printf 'mode=%s\nsimulator_source=%s\nsimulator_root=%s\nsimulator_bin=%s\nvsim=%s\nvsim_resolved=%s\nvlog=%s\nvlog_resolved=%s\n' \
         "$MODE" "$MODELSIM_SOURCE" "$MODELSIM_MENTOR_ROOT" "$MODELSIM_BIN" "$VSIM" "$(realpath "$VSIM")" "$VLOG" "$(realpath "$VLOG")"
-    "$VSIM" -version 2>&1 | head -n 4
+    printf 'vsim_timeout=%s\n' "$VSIM_TIMEOUT"
+    sed -n '1,4p' "$OUT/logs/vsim-version.log"
     sha256sum "$VSIM" "$VLOG" "$VLIB" "$VMAP" \
         "$ROOT/etc/libtech/NC_TESTBENCH_IPs.xml" \
         "$T4B_TESTS/extract_t4b_cells.py" \
@@ -96,32 +177,22 @@ cd "$OUT"
         exit 1
     }
 if [[ $MODE == characterize ]]; then
-    "$VSIM" -c work.tb_testbench_memaxi_model "+MODE=$MODE" -do 'run -all; quit -f' \
-        >"$OUT/logs/$MODE.log" 2>&1 || {
-            tail -n 120 "$OUT/logs/$MODE.log" >&2
-            exit 1
-        }
+    LOG="$OUT/logs/$MODE.log"
+    run_vsim "$LOG" -c work.tb_testbench_memaxi_model "+MODE=$MODE" -do 'run -all; quit -f' || true
+    check_positive_run "$LOG" "$MODE" characterize
 else
     for delay in 1 63; do
-        "$VSIM" -c work.tb_testbench_memaxi_model -gWRITE_DELAY="$delay" "+MODE=$MODE" \
-            -do 'run -all; quit -f' >"$OUT/logs/$MODE-delay-$delay.log" 2>&1 || {
-                tail -n 120 "$OUT/logs/$MODE-delay-$delay.log" >&2
-                exit 1
-            }
+        LOG="$OUT/logs/$MODE-delay-$delay.log"
+        run_vsim "$LOG" -c work.tb_testbench_memaxi_model -gWRITE_DELAY="$delay" "+MODE=$MODE" \
+            -do 'run -all; quit -f' || true
+        check_positive_run "$LOG" "$MODE WRITE_DELAY=$delay" qualify
     done
     if [[ $MODE == qualify ]]; then
         for delay in 1 63; do
             for test_case in early_wlast missing_final_wlast read_wrap read_reserved write_wrap write_reserved; do
                 LOG="$OUT/logs/negative-$test_case-delay-$delay.log"
-                status=0
-                "$VSIM" -c work.tb_testbench_memaxi_model -gWRITE_DELAY="$delay" "+MODE=$MODE" "+NEGATIVE=$test_case" \
-                    -do 'run -all; quit -f' >"$LOG" 2>&1 || status=$?
-                printf '%s\n' "$status" >"$LOG.status"
-                grep -Fq "F0_NEGATIVE_START case=$test_case delay=$delay" "$LOG" || {
-                    echo "negative case did not start: case=$test_case delay=$delay (vsim exit=$status)" >&2
-                    tail -n 80 "$LOG" >&2
-                    exit 1
-                }
+                run_vsim "$LOG" -c work.tb_testbench_memaxi_model -gWRITE_DELAY="$delay" "+MODE=$MODE" "+NEGATIVE=$test_case" \
+                    -do 'run -all; quit -f' || true
                 case $test_case in
                     early_wlast) diagnostic='AXI WLAST mismatch at beat 0 of 2' ;;
                     missing_final_wlast) diagnostic='AXI WLAST mismatch at beat 1 of 2' ;;
@@ -130,31 +201,9 @@ else
                     write_wrap) diagnostic='Unsupported AXI write burst type: 2' ;;
                     write_reserved) diagnostic='Unsupported AXI write burst type: 3' ;;
                 esac
-                grep -Eq "^#? *\\*\\* Fatal: $diagnostic$" "$LOG" || {
-                    echo "negative case missed exact Fatal diagnostic: case=$test_case delay=$delay expected='$diagnostic' (vsim exit=$status)" >&2
-                    tail -n 80 "$LOG" >&2
-                    exit 1
-                }
-                fatal_count=$(grep -Ec '^#? *\*\* Fatal:' "$LOG" || true)
-                if [[ $fatal_count != 1 ]] || grep -Eq '^#? *\*\* Error:' "$LOG"; then
-                    echo "negative case emitted additional simulator errors: case=$test_case delay=$delay fatals=$fatal_count (vsim exit=$status)" >&2
-                    tail -n 80 "$LOG" >&2
-                    exit 1
-                fi
-                grep -Eq 'memory(/|\.)independent_axi_model' "$LOG" &&
-                    grep -Eq 'File: .*/TestbenchMEMAXI\.sv' "$LOG" || {
-                    echo "negative case Fatal did not identify the generated model process/file: case=$test_case delay=$delay (vsim exit=$status)" >&2
-                    tail -n 80 "$LOG" >&2
-                    exit 1
-                }
-                if grep -Fq 'F0 fixture watchdog expired' "$LOG" ||
-                    grep -Fq 'F0_NEGATIVE_DID_NOT_ABORT' "$LOG" ||
-                    grep -Fq 'F0_QUALIFY_PASS' "$LOG"; then
-                    echo "negative case ended through an invalid path: case=$test_case delay=$delay (vsim exit=$status)" >&2
-                    tail -n 80 "$LOG" >&2
-                    exit 1
-                fi
-                echo "PASS negative case=$test_case delay=$delay diagnostic='$diagnostic' vsim_exit=$status"
+                check_negative_run "$LOG" "$test_case" "$delay" "$diagnostic"
+                status=$(<"$LOG.raw-status")
+                echo "PASS negative case=$test_case delay=$delay diagnostic='$diagnostic' vsim_raw_exit=$status"
             done
         done
     fi

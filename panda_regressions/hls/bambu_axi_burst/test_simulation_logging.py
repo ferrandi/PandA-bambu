@@ -20,6 +20,29 @@ class SimulationLoggingTest(unittest.TestCase):
         self.temporary = TemporaryDirectory(dir=scratch)
         self.addCleanup(self.temporary.cleanup)
         self.work = Path(self.temporary.name)
+        helper = self.work / "HLS_output/utils/record_output.sh"
+        helper.parent.mkdir(parents=True)
+        helper.write_bytes((ROOT / "etc/libtech/backend/utils/record_output.sh").read_bytes())
+        self.install = self.work / "install"
+        record_output = self.install / "bin/record_output"
+        record_output.parent.mkdir(parents=True)
+        record_output.write_text(
+            "#!/usr/bin/env python3\n"
+            "import sys\n"
+            "if '--help' in sys.argv[1:]:\n"
+            "    raise SystemExit(0)\n"
+            "try:\n"
+            "    with open(sys.argv[1], 'wb') as output:\n"
+            "        while chunk := sys.stdin.buffer.read(65536):\n"
+            "            output.write(chunk)\n"
+            "            sys.stdout.buffer.write(chunk)\n"
+            "            sys.stdout.buffer.flush()\n"
+            "except OSError as error:\n"
+            "    print(f'record_output: {error}', file=sys.stderr)\n"
+            "    raise SystemExit(1)\n",
+            encoding="utf-8",
+        )
+        record_output.chmod(0o755)
         self.simulation = self.work / "HLS_output/simulation"
         self.simulation.mkdir(parents=True)
         (self.work / "bambu_time_simulation.txt").write_text("0|2\n", encoding="utf-8")
@@ -71,7 +94,8 @@ class SimulationLoggingTest(unittest.TestCase):
             self.producer.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
         environment = dict(os.environ)
         environment.update(
-            BAMBU_HLS=str(ROOT),
+            BAMBU_HLS=str(self.install),
+            BAMBU_HLS_OUTDIR=str(self.work),
             OUT_LVL="1",
             TARGET="testbench",
             SYS_ELF=str(executable),

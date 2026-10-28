@@ -1847,7 +1847,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
                           GetPointerS<const port_o>(consumer)->find_bounded_object(circuit) == signal,
                       "Duplex ports do not resolve to the same circuit signal for bundle " + bundle);
       };
-      const auto HDLGen(new HDLGeneratorManager(HLSMgr, parameters));
+      const HDLGeneratorManagerRef HDLGen(new HDLGeneratorManager(HLSMgr, parameters));
       const auto specialized_name = aggregator_name + "_modgen";
       if(GetPointerS<const module_o>(aggregator_technology->CM->get_circ())->has_to_be_generated())
       {

@@ -198,6 +198,10 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
       }
       axi_burst_type = device_burst_type;
    }
+   else if(configured_burst_resource && !has_requested_burst_type)
+   {
+      axi_burst_type = 1U;
+   }
 
    /* Get cache info */
    unsigned long long line_count = 0;

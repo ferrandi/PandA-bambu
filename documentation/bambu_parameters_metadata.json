@@ -482,13 +482,6 @@
       "category": "wrapper"
     },
     {
-      "name": "experimental-m-axi-burst",
-      "type": "Bool",
-      "default_value": "1",
-      "description": "Enable experimental burst coalescing for supported m_axi accesses. Enabled by default; it applies only to interfaces whose pragma requests it through max_read_burst_length.",
-      "category": "hls"
-    },
-    {
       "name": "family",
       "type": "String",
       "default_value": "device",
@@ -521,6 +514,13 @@
       "type": "Bool",
       "default_value": "0",
       "description": "Disable chaining when load/store operations are involved.",
+      "category": "hls"
+    },
+    {
+      "name": "m-axi-burst",
+      "type": "String",
+      "default_value": "1",
+      "description": "Enable automatic burst coalescing analysis for interfaces declared with mode=m_axi, even when no burst-length attributes are specified. Defaults to 16 burst beats and 16 outstanding transactions per direction when unspecified; unsupported accesses retain the legacy implementation and report fallback or missed optimizations in the log. Set to 0 to disable burst analysis.",
       "category": "hls"
     },
     {

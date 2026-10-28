@@ -145,3 +145,72 @@ modelsim_normalize_log() {
     sed -E 's/^# //' "$source" >"$destination"
 }
 
+modelsim_expect_fault_log() {
+    local log=$1 mode=$2 label=$3 normalized="$1.fault-normalized" raw_status effective_status
+    shift 3
+    if [[ $mode != fatal && $mode != continue && $mode != fatal-control ]] || (($# == 0)) ||
+       [[ $mode == fatal-control && $label != AXI_BURST_EXPECT_FATAL_CONTROL ]]; then
+        echo "invalid expected-fault check arguments for $label" >&2
+        return 2
+    fi
+    if [[ ! -r $log || ! -r $log.raw-status || ! -r $log.status ]]; then
+        echo "missing ModelSim transcript or raw/effective status for $label: $log" >&2
+        return 1
+    fi
+    raw_status=$(<"$log.raw-status")
+    effective_status=$(<"$log.status")
+    if ! [[ $raw_status =~ ^[0-9]+$ && $effective_status =~ ^[0-9]+$ ]]; then
+        echo "invalid ModelSim raw/effective status for $label" >&2
+        return 1
+    fi
+    modelsim_normalize_log "$log" "$normalized" || return $?
+    local crash_pattern='segmentation fault|stack smashing|addresssanitizer|core dumped|watchdog|timed out'
+    [[ $mode == fatal-control ]] || crash_pattern+='|aborted'
+    if grep -Eqi "$crash_pattern" "$normalized" ||
+       grep -Eq '^\*\* Error:' "$normalized"; then
+        echo "ModelSim error, crash, watchdog, or timeout in expected-fault case $label" >&2
+        return 1
+    fi
+    case $mode in
+        fatal)
+            if [[ $effective_status != 1 || ( $raw_status != 0 && $raw_status != 1 ) ]] ||
+               [[ $(grep -Ec '^\*\* Fatal:' "$normalized" || true) != 1 ]] ||
+               grep -Eq '(^|[[:space:]_])PASS([[:space:]]|$)' "$normalized"; then
+                echo "expected a single fail-fast diagnostic with no success marker for $label (raw=$raw_status effective=$effective_status)" >&2
+                return 1
+            fi
+            ;;
+        fatal-control)
+            if [[ $raw_status != 134 || $effective_status != 134 ]] ||
+               [[ $(grep -Ec '^([# ]*)Aborted([[:space:]]|$)' "$log" || true) != 1 ]] ||
+               [[ $(grep -Ec '^\*\* Fatal:' "$normalized" || true) != 1 ]] ||
+               grep -Eq '(^|[[:space:]_])PASS([[:space:]]|$)' "$normalized"; then
+                echo "expected the named SIGABRT control with one exact diagnostic and no success marker for $label (raw=$raw_status effective=$effective_status)" >&2
+                return 1
+            fi
+            ;;
+        continue)
+            if [[ $raw_status != 0 || $effective_status != 0 ]] ||
+               grep -Eq '^\*\* (Fatal|Error):' "$normalized"; then
+                echo "expected normal ModelSim completion for containment case $label (raw=$raw_status effective=$effective_status)" >&2
+                return 1
+            fi
+            ;;
+    esac
+    local -a observed=()
+    mapfile -t observed < <(sed -E 's/^\*\* Fatal: //' "$normalized" |
+        grep -E '^AXI_BURST_[A-Z_]+([[:space:]]|$)' || true)
+    if ((${#observed[@]} != $#)); then
+        echo "wrong AXI burst diagnostic count for $label: expected=$# observed=${#observed[@]}" >&2
+        return 1
+    fi
+    local index=0 expected
+    for expected in "$@"; do
+        if [[ ${observed[index]} != "$expected" ]]; then
+            echo "wrong AXI burst diagnostic for $label at index $index: expected='$expected' observed='${observed[index]}'" >&2
+            return 1
+        fi
+        index=$((index + 1))
+    done
+}
+

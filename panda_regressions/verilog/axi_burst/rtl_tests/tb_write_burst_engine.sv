@@ -924,6 +924,8 @@ module tb_write_burst_engine #(
                 memory[final_index] !== expected[final_index])
                 $fatal(1, "FAST_STORE_ACK_WRAP_COMMIT committed=%0d b=%0d",
                        committed_beats, response_count);
+            $display("WRITE_ADDRESS_WRAP addr_bits=%0d addr=fffffffffffffffc beats=%0d AW=%0d W=%0d B=%0d",
+                     ADDR_BITS, committed_beats, accepted_aw, accepted_w, response_count);
         end
     endtask
 
@@ -1076,6 +1078,16 @@ module tb_write_burst_engine #(
                 $fatal(1, "REGION_EVENT_DELTA_MISMATCH count=%0d expected_aw=%0d aw=%0d w=%0d committed=%0d responses=%0d",
                        count, expected_aw_delta, accepted_aw-aw_start, accepted_w-w_start,
                        committed_beats-commit_start, response_count-response_start);
+            if (base == 32'h0000_0ff0 && count == 38) begin
+                if (expected_aw_delta != 4 ||
+                    aw_queue_addr[aw_start] != base || aw_queue_len[aw_start] != 4 ||
+                    aw_queue_addr[aw_start+1] != base+16 || aw_queue_len[aw_start+1] != 16 ||
+                    aw_queue_addr[aw_start+2] != base+80 || aw_queue_len[aw_start+2] != 16 ||
+                    aw_queue_addr[aw_start+3] != base+144 || aw_queue_len[aw_start+3] != 2)
+                    $fatal(1, "REGION_4K_TAIL_DESCRIPTOR_MISMATCH base=%h count=%0d", base, count);
+                $display("WRITE_BOUNDARY_4K_TAIL addr_bits=%0d base=%h beats=%0d AW=%0d lengths=4,16,16,2",
+                         ADDR_BITS, base, count, expected_aw_delta);
+            end
             check_38_split = 1'b0;
             if ((base >> 2) > 0 && memory[(base >> 2)-1] !== 32'h5a5a_a5a5)
                 $fatal(1, "CANARY_BEFORE_REGION_CORRUPTED base=%h", base);
@@ -1137,6 +1149,10 @@ module tb_write_burst_engine #(
                        MAX_OUTSTANDING, dut.descriptor_count_reg, dut.scheduled_reg, dut.fifo_count_reg,
                        dut.reserved_data_count_reg, accepted_aw-start_aw, accepted_w-start_w,
                        committed_beats-start_commit, response_count-start_b);
+            $display("WRITE_OCCUPANCY_BEFORE_B addr_bits=%0d B=%0d O=%0d FIFO=%0d descriptors=%0d AW=%0d W=%0d beats=%0d B=%0d",
+                     ADDR_BITS, B_MAX, MAX_OUTSTANDING, FIFO_DEPTH, dut.descriptor_count_reg,
+                     accepted_aw-start_aw, accepted_w-start_w, committed_beats-start_commit,
+                     response_count-start_b);
             @(negedge clock); in1 = OP_DRAIN; in2 = 0; in3 = 0; in4 = 0; in5 = 0; start = 1'b1;
             tick(3);
             if (done || fault || !dut.drain_pending_reg || response_count != start_b)
@@ -1168,6 +1184,10 @@ module tb_write_burst_engine #(
                        simultaneous_reserve_b-start_sim_reserve_b,
                        simultaneous_enqueue_w-start_sim_enqueue_w,
                        dut.descriptor_count_reg, dut.fifo_count_reg, dut.reserved_data_count_reg);
+            $display("WRITE_MULTI_COMPLETE addr_bits=%0d B=%0d O=%0d FIFO=%0d bursts=%0d beats=%0d B=%0d done=%b",
+                     ADDR_BITS, B_MAX, MAX_OUTSTANDING, FIFO_DEPTH,
+                     accepted_aw-start_aw, committed_beats-start_commit,
+                     response_count-start_b, done_seen);
             start = 1'b0;
             for (integer burst = 0; burst <= MAX_OUTSTANDING; burst = burst + 1)
                 if (aw_queue_addr[start_aw+burst] !== 32'h3000+burst*B_MAX*4 ||

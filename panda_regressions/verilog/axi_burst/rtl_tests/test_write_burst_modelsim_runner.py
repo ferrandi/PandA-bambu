@@ -49,9 +49,11 @@ case $tool in
   vsim)
     selected_case=
     top=
+    expect_fault=0
     for arg in "$@"; do
       case $arg in
         +CASE=*) selected_case=${arg#'+CASE='} ;;
+        +AXI_BURST_EXPECT_FAULT) expect_fault=1 ;;
         work.*) top=${arg#work.} ;;
       esac
     done
@@ -60,11 +62,64 @@ case $tool in
       mode=$WRITER_VSIM_PARAM_MODE
     fi
     case $mode in
-      pass)
+      pass|fault-missing|fault-wrong|fault-extra|fault-instance|fault-malformed-payload|fault-wrong-payload)
+        expected_reason=
+        diagnostic_class=FAULT
+        case $selected_case in
+          BAD_CONFIG_SIZE|BAD_CONFIG_ALIGN|COUNT_MSB|OVERFLOW32|OVERFLOW64|CONFIG_PIPELINE_INVALID|\
+          CONFIGURE64_BAD_ALIGN_ZERO|CFG_*|PREMATURE_CONFIGURE*|ASYNC_RESET)
+            expected_reason=CONFIGURE_INVALID ;;
+          BAD_STORE_SIZE|BAD_STORE_SIZE8|BAD_STORE_ADDRESS|FAST_STORE_ACK_INVALID|FAST_STORE_ACK_ZERO_REGION|\
+          FAST_STORE_ACK_WRAP)
+            expected_reason=STORE_INVALID ;;
+          PENDING_OPERAND_CHANGE*) expected_reason=PENDING_STORE_CHANGED ;;
+          EARLY_DRAIN|DRAIN_PENDING_SHORT_COUNT) expected_reason=DRAIN_EARLY ;;
+          BID) expected_reason=BID ;;
+          BRESP|BRESP_*|FAST_STORE_ACK_BFAULT) expected_reason=BRESP ;;
+          PEER_FAULT_SPECULATIVE) diagnostic_class=PEER_FAULT; expected_reason=peer ;;
+        esac
+        if [[ $top == tb_configure_writer_pipeline && $selected_case == PEER_FAULT_E1 ]]; then
+          diagnostic_class=PEER_FAULT
+          expected_reason=peer
+        fi
+        if [[ $expect_fault == 1 && -n $expected_reason && $mode != fault-missing ]]; then
+          if [[ $mode == fault-wrong ]]; then expected_reason=WRONG_REASON; fi
+          record_instance=$top.dut.report_axi_write_diagnostic
+          record_payload=00000000
+          record_opcode=2
+          record_size=32
+          record_count=1
+          if [[ $selected_case == FAST_STORE_ACK_WRAP ]]; then
+            record_opcode=1
+            record_count=0
+            record_payload=ca770000
+          fi
+          if [[ $mode == fault-instance ]]; then record_instance=$top.other; fi
+          if [[ $mode == fault-malformed-payload ]]; then record_payload=xyz; fi
+          if [[ $mode == fault-wrong-payload ]]; then record_payload=deadbeef; fi
+          record_address=00001000
+          if [[ $top == tb_configure_writer_pipeline ]]; then
+            record_opcode=-1
+            record_size=0
+            record_count=0
+            record_address=00000000
+          fi
+          if [[ $selected_case == FAST_STORE_ACK_WRAP ]]; then record_address=0000000000000000; fi
+          echo "# AXI_BURST_${diagnostic_class} engine=write reason=$expected_reason instance=$record_instance opcode=$record_opcode size=$record_size address=$record_address count=$record_count payload=$record_payload resp=00 id=0 descriptors=0 remaining=0"
+          if [[ $mode == fault-extra ]]; then
+            echo '# AXI_BURST_FAULT engine=write reason=EXTRA instance=tb_write_burst_engine.dut opcode=2 size=32 address=00001000 count=1 payload=00000000 resp=00 id=0 descriptors=0 remaining=0'
+          fi
+        fi
         if [[ $top == tb_configure_writer_pipeline ]]; then
           echo "# CONFIGURE_WRITER_PIPELINE PASS CASE=$selected_case"
         else
           echo "# WRITE_BURST_ENGINE PASS CASE=$selected_case B=16 FIFO=16 AW=1 W=1 BRESP=1"
+        fi
+        if [[ $selected_case == FAST_STORE_ACK_STREAM ]]; then
+          echo '# WRITE_FAST_STORE_ACK_STREAM beats=64 interval=1'
+        fi
+        if [[ $selected_case == FAST_STORE_ACK_BACKPRESSURE ]]; then
+          echo '# WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS held=1'
         fi
         exit 0
         ;;
@@ -203,6 +258,20 @@ class WriterModelSimRunnerTests(unittest.TestCase):
     def _new_output(self, name: str) -> Path:
         return self.case_root / name
 
+    def test_fresh_output_directory_is_required(self) -> None:
+        result = subprocess.run(
+            [str(self.utilities / "bash"), str(RUNNER)],
+            cwd=self.launch,
+            env=self.env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("usage:", result.stdout)
+        self.assertFalse((self.launch / "out_write_burst_engine").exists())
+
     def _backend(self, *, include_vmap: bool = True) -> Path:
         backend = self.case_root / "backend with spaces" / "questa" / "bin"
         backend.mkdir(parents=True)
@@ -295,6 +364,75 @@ class WriterModelSimRunnerTests(unittest.TestCase):
                 self.assertIn(message, result.stdout)
                 self.assertNotIn("WRITE_BURST_ENGINE_SUBSET_PASS", result.stdout)
 
+    def test_intentional_faults_select_and_validate_exact_diagnostics(self) -> None:
+        output = self._new_output("intentional-fault-diagnostics")
+        result = self._run(output, "core-B16-D16")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        calls = [line for line in self.trace.read_text(encoding="utf-8").splitlines()
+                 if line.startswith("vsim\t")]
+        config_call = next(line for line in calls if "+CASE=BAD_CONFIG_SIZE" in line)
+        normal_call = next(line for line in calls if "+CASE=CORE" in line)
+        self.assertIn("+AXI_BURST_EXPECT_FAULT", config_call)
+        self.assertNotIn("+AXI_BURST_EXPECT_FAULT", normal_call)
+        results = (output / "results.log").read_text(encoding="utf-8")
+        self.assertIn("AXI_BURST_FAULT engine=write reason=CONFIGURE_INVALID", results)
+        self.assertIn("AXI_BURST_FAULT engine=write reason=STORE_INVALID", results)
+        self.assertIn("AXI_BURST_FAULT engine=write reason=PENDING_STORE_CHANGED", results)
+        self.assertIn("AXI_BURST_FAULT engine=write reason=DRAIN_EARLY", results)
+        self.assertIn("AXI_BURST_FAULT engine=write reason=BID", results)
+        self.assertIn("AXI_BURST_FAULT engine=write reason=BRESP", results)
+
+        address_output = self._new_output("intentional-wrap-fault")
+        address_result = self._run(address_output, "fast-store-ack-address64")
+        self.assertEqual(address_result.returncode, 0, address_result.stdout)
+        address_calls = [line for line in self.trace.read_text(encoding="utf-8").splitlines()
+                         if line.startswith("vsim\t")]
+        wrap_call = next(line for line in address_calls if "+CASE=FAST_STORE_ACK_WRAP" in line)
+        carry_call = next(line for line in address_calls if "+CASE=FAST_STORE_ACK_CARRY" in line)
+        self.assertIn("+AXI_BURST_EXPECT_FAULT", wrap_call)
+        self.assertNotIn("+AXI_BURST_EXPECT_FAULT", carry_call)
+        address_results = (address_output / "results.log").read_text(encoding="utf-8")
+        self.assertIn("FAST_STORE_ACK_WRAP", address_results)
+        self.assertIn(
+            "AXI_BURST_FAULT engine=write reason=STORE_INVALID "
+            "instance=tb_write_burst_engine.dut.report_axi_write_diagnostic "
+            "opcode=1 size=32 address=0000000000000000 count=0 payload=ca770000 "
+            "resp=00 id=0 descriptors=0 remaining=0",
+            address_results,
+        )
+
+        for mode in ("fault-instance", "fault-malformed-payload"):
+            with self.subTest(mode=mode):
+                invalid_output = self._new_output(f"intentional-fault-{mode}")
+                invalid_result = self._run(
+                    invalid_output,
+                    "core-B16-D16",
+                    env=self.env | {"WRITER_VSIM_MODE": mode},
+                )
+                self.assertNotEqual(invalid_result.returncode, 0, invalid_result.stdout)
+                self.assertIn("schema-valid FAULT", invalid_result.stdout)
+
+        wrong_value_output = self._new_output("intentional-wrap-wrong-value")
+        wrong_value_result = self._run(
+            wrong_value_output,
+            "fast-store-ack-address64",
+            env=self.env | {"WRITER_VSIM_MODE": "fault-wrong-payload"},
+        )
+        self.assertNotEqual(wrong_value_result.returncode, 0, wrong_value_result.stdout)
+        self.assertIn("unexpected stable STORE_INVALID fields", wrong_value_result.stdout)
+
+    def test_intentional_faults_reject_missing_wrong_or_extra_diagnostics(self) -> None:
+        for mode in ("fault-missing", "fault-wrong", "fault-extra"):
+            with self.subTest(mode=mode):
+                output = self._new_output(f"intentional-fault-{mode}")
+                result = self._run(
+                    output,
+                    "core-B16-D16",
+                    env=self.env | {"WRITER_VSIM_MODE": mode},
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertNotIn("WRITE_BURST_ENGINE_SUBSET_PASS", result.stdout)
+
     def test_parameter_vopt_fatal_requires_exact_diagnostic(self) -> None:
         output = self._new_output("invalid-vopt-pass")
         result = self._run(
@@ -360,6 +498,15 @@ class WriterModelSimRunnerTests(unittest.TestCase):
         self.assertTrue((output / "build-ASYNC_RESET_active-low_FAST0" / "modelsim.ini").is_file())
         self.assertTrue((output / "build-ASYNC_RESET_active-low_FAST1" / "modelsim.ini").is_file())
         self.assertIn("CONFIGURE_WRITER_PIPELINE_SUITE_PASS cases=2", (output / "configure-writer-pipeline" / "aggregate.log").read_text())
+        calls = self.trace.read_text(encoding="utf-8")
+        self.assertIn("+CASE=PEER_FAULT_E1 +AXI_BURST_EXPECT_FAULT", calls)
+        self.assertIn(
+            "AXI_BURST_PEER_FAULT engine=write reason=peer "
+            "instance=tb_configure_writer_pipeline.dut.report_axi_write_diagnostic "
+            "opcode=-1 size=0 address=00000000 count=0 payload=00000000 "
+            "resp=00 id=0 descriptors=0 remaining=0",
+            (output / "configure-writer-pipeline" / "aggregate.log").read_text(),
+        )
         vlog_dirs = {
             line.split("\t", 2)[1]
             for line in self.trace.read_text(encoding="utf-8").splitlines()
@@ -368,6 +515,17 @@ class WriterModelSimRunnerTests(unittest.TestCase):
         self.assertTrue(any("ASYNC_RESET_active-low_FAST0" in directory for directory in vlog_dirs))
         self.assertTrue(any("ASYNC_RESET_active-low_FAST1" in directory for directory in vlog_dirs))
         self.assertTrue(any("configure-writer-pipeline" in directory for directory in vlog_dirs))
+
+    def test_configure_writer_peer_fault_rejects_missing_or_wrong_diagnostic(self) -> None:
+        for mode in ("fault-missing", "fault-instance"):
+            with self.subTest(mode=mode):
+                output = self._new_output("configure-peer-" + mode)
+                result = self._run(
+                    output,
+                    "configure-pipeline",
+                    env=self.env | {"WRITER_VSIM_MODE": mode},
+                )
+                self.assertNotEqual(result.returncode, 0, result.stdout)
 
     def test_parallel_group_failure_is_propagated(self) -> None:
         output = self._new_output("parallel-failure")

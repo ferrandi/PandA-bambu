@@ -50,8 +50,7 @@ SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o1.cpp"
 TB="$TESTS/tb_generated_kernel.sv"
 GEN="$OUT/generated"
 ARGS=("$SOURCE" --top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER
-      --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
-      --bambu-parameter=experimental-m-axi-burst=1
+      --device-name=xcu250,-2L,figd2104 --no-clean
       --mem-delay-read=64 --mem-delay-write=64
       --memory-allocation-policy=NO_BRAM --distram-threshold=0
       --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU --extra-cc-options=-DNOCACHE)

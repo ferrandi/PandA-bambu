@@ -66,7 +66,7 @@ mkdir -p "$out_dir/tmp"
 export TMPDIR="$out_dir/tmp"
 export TMP="$TMPDIR"
 export TEMP="$TMPDIR"
-fixture="$script_dir/compiler_cases/recognized_loops.cpp"
+fixture="$script_dir/compiler_cases/axi_analysis_cases.cpp"
 
 set +e
 (
@@ -78,11 +78,12 @@ set +e
     --device-name=xcu250,-2L,figd2104 \
     --clock-period=3.33 \
     --AXI-burst-type=INCREMENTAL \
-    --bambu-parameter=experimental-m-axi-burst=1 \
+    --bambu-parameter=m-axi-burst=1 \
     --bambu-parameter=print-ir-manager=1 \
     --bambu-parameter=print-dot-FF=0 \
     --extra-cc-options=-DNDEBUG \
     --extra-cc-options=-DBAMBU \
+    --extra-cc-options=-DAXI_ANALYSIS_CASE_04 \
     --debug-classes=InterfaceInfer,BuildVirtualPhi \
     --no-clean
 ) >"$out_dir/bambu.stdout.log" 2>"$out_dir/bambu.stderr.log"

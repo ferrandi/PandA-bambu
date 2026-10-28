@@ -43,6 +43,7 @@
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
 
+#include <algorithm>
 #include <regex>
 #include <string>
 #include <vector>
@@ -774,7 +775,8 @@ void MdpiWrapperCWriter::WriteSimulatorInitMemory(const unsigned int function_id
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    const auto parameters = BH->get_parameters();
    const auto funcSymbol = BH->GetFunctionName();
-   const auto& ifaces = HLSMgr->module_arch->GetArchitecture(funcSymbol)->ifaces;
+   const auto architecture = HLSMgr->module_arch->GetArchitecture(funcSymbol);
+   const auto& ifaces = architecture->ifaces;
 
    const auto align_bus = [&]() {
       unsigned long long alignment = std::max(8ULL, HLSMgr->Rmem->get_bus_data_bitsize() / 8ULL);
@@ -796,6 +798,16 @@ void MdpiWrapperCWriter::WriteSimulatorInitMemory(const unsigned int function_id
       {
          if(name != "bus")
          {
+            const auto mode = attrs.find(FunctionArchitecture::iface_mode);
+            const auto is_bound = std::any_of(
+                architecture->parms.begin(), architecture->parms.end(), [&](const auto& parameter) {
+                   const auto bundle = parameter.second.find(FunctionArchitecture::parm_bundle);
+                   return bundle != parameter.second.end() && bundle->second == name;
+                });
+            if(mode != attrs.end() && mode->second == "m_axi" && !is_bound)
+            {
+               continue;
+            }
             THROW_ASSERT(attrs.find(FunctionArchitecture::iface_alignment) != attrs.end(),
                          "iface alignment not present for interface " + name);
             max = std::max(max, std::stoull(attrs.at(FunctionArchitecture::iface_alignment)));
