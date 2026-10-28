@@ -179,6 +179,7 @@ BOOST_AUTO_TEST_CASE(vector_mask_shuffle_pretty_print_keeps_result_lanes)
    };
    const auto parameters = std::make_shared<VectorMaskParameters>();
    parameters->setOption(OPT_input_file, "");
+   parameters->setOption(OPT_addr_bus_bitsize, static_cast<unsigned int>(sizeof(void*) * 8U));
    const auto application = std::make_shared<application_manager>(false, parameters);
    const BehavioralHelper helper(application, 0, parameters);
    const std::unique_ptr<var_pp_functor> names = std::make_unique<Names>();
