@@ -110,6 +110,10 @@
 
 namespace llvm
 {
+   cl::opt<bool> OpenMPTaskGraphInput("panda-openmp-task-graph",
+                                      cl::desc("Input contains an extracted OpenMP task graph"), cl::init(false),
+                                      cl::Hidden);
+
    struct openmpBambu;
    static bool remove_openmp_lifetime(llvm::Function& function)
    {
@@ -1729,23 +1733,10 @@ namespace llvm
          return declname;
       }
 
-      bool hasOpenMpTaskCalls(Module const& M)
-      {
-         for(auto const& F : M.getFunctionList())
-         {
-            auto const& fnName = F.getName();
-            if(fnName.find(openMpTaskEntryPointName) != std::string::npos)
-            {
-               return true;
-            }
-         }
-         return false;
-      }
-
       bool exec(Module& M)
       {
          bool changed = false;
-         const auto isTaskGraph = hasOpenMpTaskCalls(M);
+         const auto isTaskGraph = OpenMPTaskGraphInput.getValue();
          if(isTaskGraph)
          {
 #if PANDA_LLVM_CLANG_MAJOR == 19

@@ -37,7 +37,6 @@ namespace Bambu
    {
       namespace Task
       {
-
          /**
           * @enum InputType
           * @brief Enum representing the type of input.
@@ -69,7 +68,7 @@ namespace Bambu
          using Nodes = std::vector<std::string>;
 
       } // namespace Task
-   } // namespace OpenMP
+   }    // namespace OpenMP
 } // namespace Bambu
 
 #endif

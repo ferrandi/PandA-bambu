@@ -95,7 +95,7 @@ __attribute__((noinline)) void fn(Type* data1, Type* data2, Type* data3, Type* d
                   }
                }
             } // end task
-         } // end for
-      } // end single
-   } // end parallel
+         }    // end for
+      }       // end single
+   }          // end parallel
 }

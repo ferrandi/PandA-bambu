@@ -97,8 +97,7 @@ struct Generator
    void generate_dot(llvm::raw_fd_ostream& out, std::string const& file_name, std::vector<std::string> const& nodes,
                      std::vector<std::pair<std::string, std::string>> const& edges) const
    {
-      const auto originalId = [](std::string const& id)
-      {
+      const auto originalId = [](std::string const& id) {
          std::string res = "";
          unsigned i = 0;
          while(i < id.size() && !(id[i] >= '0' && id[i] <= '9'))
@@ -113,8 +112,7 @@ struct Generator
          return res;
       };
 
-      const auto fixNodeLabel = [](std::string label)
-      {
+      const auto fixNodeLabel = [](std::string label) {
          for(auto& c : label)
          {
             if(c == ',')
@@ -148,8 +146,7 @@ struct Generator
          {
             if(col == colours.end())
             {
-               out << "Not enough colours. Aborting\n";
-               return;
+               col = colours.begin();
             }
             used_id[id] = *col;
             node_colors[node] = *col;

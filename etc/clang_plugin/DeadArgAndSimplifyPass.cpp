@@ -153,7 +153,10 @@ namespace
                   for(auto& a : args)
                   {
                      Utils::log(errs(), 2, 0, "");
-                     a->print(errs());
+                     if(Bambu::OpenMP::Task::Utils::Verbose)
+                     {
+                        a->print(errs());
+                     }
                      Utils::log(errs(), 2, 1, "");
                   }
                   auto nextIt = it;
@@ -216,7 +219,10 @@ namespace
                   for(auto& a : args)
                   {
                      Utils::log(errs(), 2, 0, "");
-                     a->print(errs());
+                     if(Bambu::OpenMP::Task::Utils::Verbose)
+                     {
+                        a->print(errs());
+                     }
                      Utils::log(errs(), 2, 1, "");
                   }
                   auto nextIt = it;
@@ -400,11 +406,9 @@ namespace
 //-----------------------------------------------------------------------------
 PassPluginLibraryInfo getDeadArgPluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, "DeadArgAndSimplifyPass", LLVM_VERSION_STRING, [](PassBuilder& PB)
-           {
+   return {LLVM_PLUGIN_API_VERSION, "DeadArgAndSimplifyPass", LLVM_VERSION_STRING, [](PassBuilder& PB) {
               PB.registerPipelineParsingCallback(
-                  [](StringRef Name, ModulePassManager& MPM, ArrayRef<PassBuilder::PipelineElement>)
-                  {
+                  [](StringRef Name, ModulePassManager& MPM, ArrayRef<PassBuilder::PipelineElement>) {
                      if(Name == "openmpTaskdeadArgAndOutlinedSimplify")
                      {
                         MPM.addPass(DeadArgAndSimplifyPass());

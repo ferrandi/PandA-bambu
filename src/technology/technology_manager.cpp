@@ -246,6 +246,10 @@ void technology_manager::xload(const xml_element* node)
                   continue;
                }
                const auto mod = GetPointer<module_o>(fu->CM->get_circ());
+               if(!mod)
+               {
+                  continue;
+               }
                const auto np = mod->get_NP_functionality();
                if(!np)
                {
