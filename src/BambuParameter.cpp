@@ -143,7 +143,8 @@
 #define OPT_NUM_ACCELERATORS (1 + OPT_NO_MIXED_DESIGN)
 #define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_ACCELERATORS)
 #define OPT_PERIOD_CLOCK (1 + OPT_PARALLEL_CONTROLLER)
-#define OPT_CLOCK_NAME (1 + OPT_PERIOD_CLOCK)
+#define OPT_PRIORITY_ENCODER (1 + OPT_PERIOD_CLOCK)
+#define OPT_CLOCK_NAME (1 + OPT_PRIORITY_ENCODER)
 #define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
 #define OPT_START_NAME (1 + OPT_RESET_NAME)
 #define OPT_DONE_NAME (1 + OPT_START_NAME)
@@ -504,6 +505,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Specify the done signal name of the top interface (default = done_port).\n\n"
       << "    --idle-name=id\n"
       << "        Specify the idle signal name of the top interface (default = idle_port).\n\n"
+      << "    --priority-encoder=hierarchical|tree|gates\n"
+      << "        Select combinatorial priority encoders (default = hierarchical).\n\n"
       << "    --clock-period=value\n"
       << "        Specify the period of the clock signal (default = 10ns).\n\n"
       << "    --backend-script-extensions=file\n"
@@ -912,6 +915,7 @@ int BambuParameter::Exec()
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
+      {"priority-encoder", required_argument, nullptr, OPT_PRIORITY_ENCODER},
       {"clock-name", required_argument, nullptr, OPT_CLOCK_NAME},
       {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
       {"start-name", required_argument, nullptr, OPT_START_NAME},
@@ -1279,6 +1283,16 @@ int BambuParameter::Exec()
                                  "fields (<name>,<speed>,<package>). "
                                  "Examples: --device-name=xc7z020-1clg484 or --device-name=xc7z020,1,clg484.");
             }
+            break;
+         }
+         case OPT_PRIORITY_ENCODER:
+         {
+            const std::string encoder = optarg;
+            if(encoder != "hierarchical" && encoder != "tree" && encoder != "gates")
+            {
+               THROW_ERROR("--priority-encoder must be hierarchical, tree or gates");
+            }
+            SetPandaParameterFromCli("priority-encoder", encoder);
             break;
          }
          case OPT_PERIOD_CLOCK:
@@ -2296,6 +2310,30 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
+   if(IsParameter("enable-task"))
+   {
+      const auto value = GetParameter<std::string>("enable-task");
+      if(value != "0" && value != "1" && value != "false" && value != "true")
+      {
+         THROW_ERROR_USAGE("enable-task must be 0, 1, false, or true");
+      }
+      if(value == "1" || value == "true")
+      {
+         if(!isOption(OPT_openmp) || !getOption<bool>(OPT_openmp))
+         {
+            THROW_ERROR_USAGE("enable-task requires OpenMP (-fopenmp)");
+         }
+         if(isOption(OPT_input_format) &&
+            getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW)
+         {
+            THROW_ERROR_USAGE("enable-task requires source or LLVM IR input, not raw Bambu IR");
+         }
+      }
+   }
+   if(IsParameter("task-resource-duplication") && GetParameter<unsigned>("task-resource-duplication") == 0)
+   {
+      THROW_ERROR_USAGE("task-resource-duplication must be greater than zero");
+   }
 
    setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/bambu_time_simulation.txt");
    setOption(OPT_profiling_output, getOption<std::string>(OPT_output_directory) + "/bambu_profiling_simulation.txt");

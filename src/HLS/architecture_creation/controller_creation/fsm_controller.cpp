@@ -27,6 +27,7 @@
  *
  */
 #include "fsm_controller.hpp"
+#include "openmp_task_constants.hpp"
 
 #include "BambuParameter.hpp"
 #include "FSMInfo.hpp"
@@ -84,6 +85,15 @@ DesignFlowStep_Status fsm_controller::InternalExec()
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
 
    const std::string function_name = FB->CGetBehavioralHelper()->GetFunctionName();
+
+   const bool is_openmp = parameters->isOption(OPT_openmp) && parameters->getOption<bool>(OPT_openmp);
+   const auto omp_task_graph = openmp_task::IsEnabled(*parameters);
+   if(is_openmp && openmp_task::IsGraphEntry(function_name) && omp_task_graph)
+   {
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit skipped as task graph");
+      return DesignFlowStep_Status::SUCCESS;
+   }
+
    /// main circuit type
    structural_type_descriptorRef module_type =
        structural_type_descriptorRef(new structural_type_descriptor("controller_" + function_name));

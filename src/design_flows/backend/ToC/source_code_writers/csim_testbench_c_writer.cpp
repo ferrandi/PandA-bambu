@@ -122,8 +122,10 @@ void CSimTestbenchCWriter::InternalWriteFile()
          const auto& arg_bitsize = iface_attrs.at(FunctionArchitecture::iface_bitwidth);
 
          arg_decls += raw_typename + " " + arg_name + ";\n";
-         arg_setup +=
-             "if_setup_" + arg_interface + "(" + std::to_string(if_idx) + ", " + arg_name + ", " + arg_bitsize + ");\n";
+         const auto setup_interface =
+             arg_interface == "default" && ir_helper::IsPointerType(arg) ? "ptr" : arg_interface;
+         arg_setup += "if_setup_" + setup_interface + "(" + std::to_string(if_idx) + ", " + arg_name + ", " +
+                      arg_bitsize + ");\n";
          if(if_idx > 0)
          {
             dut_call += ", ";
@@ -149,7 +151,7 @@ void CSimTestbenchCWriter::InternalWriteFile()
 
       indented_output_stream->Append("\n\nstatic int dut_" + fsymbol + "()\n");
       indented_output_stream->Append("{\n");
-      indented_output_stream->Append("unsigned int __present_state;\n");
+      indented_output_stream->Append("unsigned int __present_state = STATE_READY;\n");
       indented_output_stream->Append("struct __bambu_csim_function_stats* __top_stats;\n\n");
       indented_output_stream->Append(arg_decls);
       indented_output_stream->Append("\n__top_stats = __bambu_csim_get_stats(&__bambu_csim_current_run, " +

@@ -189,7 +189,8 @@ library_manager::library_manager(std::string library_name, ParameterConstRef _Pa
    set_default_attributes();
 }
 
-void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param)
+void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
+                            const std::string& priority_encoder_prefix)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");
@@ -232,6 +233,26 @@ void library_manager::xload(const xml_element* node, const library_managerRef& L
       }
       else if(EnodeC->get_name() == "cell")
       {
+         // Inspect the XML name before constructing the functional unit: inactive
+         // encoder families stay in the source library but are never materialized.
+         bool skip_cell = false;
+         for(const auto& child : EnodeC->get_children())
+         {
+            const auto* name_node = GetPointer<const xml_element>(child);
+            if(name_node && name_node->get_name() == "name" && name_node->get_child_text())
+            {
+               const auto& cell_name = name_node->get_child_text()->get_content();
+               skip_cell = (cell_name.find("multiple_priority_encoder_hierarchical_") == 0U ||
+                            cell_name.find("multiple_priority_encoder_tree_") == 0U ||
+                            cell_name.find("multiple_priority_encoder_gates_") == 0U) &&
+                           cell_name.find(priority_encoder_prefix) != 0U;
+               break;
+            }
+         }
+         if(skip_cell)
+         {
+            continue;
+         }
          technology_nodeRef fu_curr = technology_nodeRef(new functional_unit(iter_int));
          fu_curr->xload(EnodeC, fu_curr, Param);
 

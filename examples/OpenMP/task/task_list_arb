@@ -1,0 +1,47 @@
+# Some test skips bambu verification due floating point differences
+
+# 2 channels
+src/task1Param/kernel.cpp              			    --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task1Param/tb.cpp --benchmark-name=channel2_task1Param
+src/task2Params/kernel.cpp             			    --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task2Params/tb.cpp --benchmark-name=channel2_task2Params
+src/taskNParams/kernel.cpp             			    --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParams/tb.cpp --benchmark-name=channel2_taskNParams
+src/taskNParamsPartial/kernel.cpp               --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsPartial/tb.cpp --benchmark-name=channel2_taskNParamsPartial
+src/taskNParamsSmallGraph/kernel.cpp            --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsSmallGraph/tb.cpp --benchmark-name=channel2_taskNParamsSmallGraph
+src/task2ParamsSparse/kernel.cpp                --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task2ParamsSparse/tb.cpp --benchmark-name=channel2_task2ParamsSparse
+src/taskNParamsSparse/kernel.cpp                --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsSparse/tb.cpp --benchmark-name=channel2_taskNParamsSparse
+src/sparseLUFact/kernel.cpp                  		--channels-type=MEM_ACC_NN --channels-number=2 -DBAMBU_SKIP_VERIFICATION -DMAT_SIZE=6 -DBLOCK_SIZE=4 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --benchmark-name=channel2_sparseLUFactStack
+
+src/task1Param/kernel.cpp              			    --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task1Param/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_task1Param_2FU
+src/task2Params/kernel.cpp             			    --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task2Params/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_task2Params_2FU
+src/taskNParams/kernel.cpp             			    --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParams/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_taskNParams_2FU
+src/taskNParamsPartial/kernel.cpp               --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsPartial/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_taskNParamsPartial_2FU
+src/taskNParamsSmallGraph/kernel.cpp            --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsSmallGraph/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_taskNParamsSmallGraph_2FU
+src/task2ParamsSparse/kernel.cpp                --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task2ParamsSparse/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_task2ParamsSparse_2FU
+src/taskNParamsSparse/kernel.cpp                --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsSparse/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_taskNParamsSparse_2FU
+src/sparseLUFact/kernel.cpp                  		--channels-type=MEM_ACC_NN --channels-number=2 -DBAMBU_SKIP_VERIFICATION -DMAT_SIZE=6 -DBLOCK_SIZE=4 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_sparseLUFactStack_2FU
+
+src/task1Param/kernel.cpp              			     --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task1Param/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_task1Param_4FU
+src/task2Params/kernel.cpp             			     --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task2Params/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_task2Params_4FU
+src/taskNParams/kernel.cpp             			     --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParams/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_taskNParams_4FU
+src/taskNParamsPartial/kernel.cpp                --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsPartial/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_taskNParamsPartial_4FU
+src/taskNParamsSmallGraph/kernel.cpp             --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsSmallGraph/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_taskNParamsSmallGraph_4FU
+src/task2ParamsSparse/kernel.cpp                 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/task2ParamsSparse/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_task2ParamsSparse_4FU
+src/taskNParamsSparse/kernel.cpp                 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNParamsSparse/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_taskNParamsSparse_4FU
+src/sparseLUFact/kernel.cpp                  		 --channels-type=MEM_ACC_NN --channels-number=2 -DBAMBU_SKIP_VERIFICATION -DMAT_SIZE=6 -DBLOCK_SIZE=4 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_sparseLUFactStack_4FU
+
+# Nested callees must be private to each outlined task, including local memories.
+src/taskNestedCalls/kernel.cpp --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNestedCalls/tb.cpp --bambu-parameter=task-resource-duplication=1 --benchmark-name=nested_calls_1FU
+src/taskNestedCalls/kernel.cpp --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskNestedCalls/tb.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=nested_calls_2FU
+
+# MNIST uses its built-in synthetic data unless USE_REAL_DATASET is defined.
+src/mnist/mnistKernel.cpp     									-DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=channel2_mnistTrainStatic
+src/mnist/mnistKernel.cpp     									-DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --benchmark-name=channel2_mnistInferenceStatic
+src/mnist/mnistKernel.cpp     									-DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_mnistTrainStatic_2FU
+src/mnist/mnistKernel.cpp     									-DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=2 --benchmark-name=channel2_mnistInferenceStatic_2FU
+src/mnist/mnistKernel.cpp     									 -DBAMBU_SKIP_VERIFICATION --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_mnistTrainStatic_4FU
+src/mnist/mnistKernel.cpp     									 -DBAMBU_SKIP_VERIFICATION -DTRAIN=0 --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/mnist/mnist.cpp --bambu-parameter=task-resource-duplication=4 --benchmark-name=channel2_mnistInferenceStatic_4FU
+
+# Library functions must inherit task-private call graphs without name exceptions.
+src/taskMathCalls/kernel.cpp --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --max-ulp=16 --generate-tb=BENCHMARKS_ROOT/src/taskMathCalls/tb.cpp --benchmark-name=task_math_calls
+
+# One resource must still have a nonzero-width bus tag.
+src/taskSingleEntry/kernel.cpp --channels-type=MEM_ACC_NN --channels-number=2 --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/taskSingleEntry/tb.cpp --benchmark-name=single_task_entry

@@ -105,6 +105,15 @@ jobs:
         id: error
         shell: bash
         run: |
+          python3 - "${{env.cppcheck-dir}}/cppcheck.xml" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          for error in ET.parse(sys.argv[1]).findall('.//error'):
+              if error.get('severity') == 'error':
+                  location = error.find('location')
+                  where = f"{location.get('file')}:{location.get('line')}" if location is not None else 'cppcheck'
+                  print(f"{where}: {error.get('id')}: {error.get('msg')}")
+          PY
           echo "count=$(grep -o -i severity=\"error\" ${{env.cppcheck-dir}}/cppcheck.xml | wc -l)" >> $GITHUB_OUTPUT
       - name: CPPCheck found some errors
         uses: actions/github-script@v8
@@ -1089,12 +1098,25 @@ jobs:
           - { test: banked_profiling, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--noc-profiling -c=--compiler=I386_CLANG13" }
           - { test: banked_cache, script: ./examples/OpenMP/banked-memory/openmp_banked_cache.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
           - { test: banked_allocation, script: ./examples/OpenMP/banked-memory/openmp_banked_allocation.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: task_arbiter, script: ./examples/OpenMP/task/openmp_task_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
+          - { test: task_banked, script: ./examples/OpenMP/task/openmp_task_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
+          - { test: task_arbiter_eval, script: ./examples/OpenMP/task/openmp_task_eval_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
+          - { test: task_banked_eval, script: ./examples/OpenMP/task/openmp_task_eval_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
     env:
       outname: OpenMP_${{matrix.test}}
       args: -c=--simulator=MODELSIM ${{matrix.args}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+      - name: Check priority encoder implementations
+        if: matrix.test == 'task_arbiter'
+        shell: bash
+        run: |
+          if command -v verilator >/dev/null 2>&1; then
+            python3 panda_regressions/verilog/priority_encoder/test_priority_encoders.py
+          else
+            echo "::warning::Priority encoder regression skipped: Verilator is unavailable"
+          fi
       - name: Setup repository + distribution
         uses: ./.github/actions/panda-setup
         with:

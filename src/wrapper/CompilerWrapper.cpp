@@ -31,9 +31,10 @@
  *
  */
 #include "CompilerWrapper.hpp"
+#include "openmp_task_constants.hpp"
 
-#include "Parameter.hpp"
 #include "BambuParameterRegistry.hpp"
+#include "Parameter.hpp"
 #include "compiler_constants.hpp"
 #include "cpu_stats.hpp"
 #include "cpu_time.hpp"
@@ -53,12 +54,17 @@
 
 #include "config_ANALYZER_COMPILER_PLUGINS_DIR.hpp"
 #include "config_BUILD_APPIMAGE.hpp"
+#include "config_COMPILER_ADD_FULL_UNROLL_META_PLUGIN.hpp"
 #include "config_COMPILER_ASTANALYZER_PLUGIN.hpp"
 #include "config_COMPILER_CHANNELCTOR_PLUGIN.hpp"
 #include "config_COMPILER_CUSTOMSROA_PLUGIN.hpp"
+#include "config_COMPILER_DCE_PLUGIN.hpp"
+#include "config_COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN.hpp"
 #include "config_COMPILER_EMPTY_PLUGIN.hpp"
 #include "config_COMPILER_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN.hpp"
 #include "config_COMPILER_OPENMP_PLUGIN.hpp"
+#include "config_COMPILER_OPENMP_TASK_PLUGIN.hpp"
 #include "config_COMPILER_SSA_PLUGIN.hpp"
 #include "config_COMPILER_SSA_PLUGINCPP.hpp"
 #include "config_COMPILER_TOPFNAME_PLUGIN.hpp"
@@ -163,6 +169,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cstdint>
 #include <fstream>
 #include <list>
 #include <random>
@@ -172,26 +179,31 @@
 
 #define SCRIPT_NEWLINE " \\\n  "
 PANDA_REGISTER_PARAMETER("emit-llvm", PandaParamType::Bool, "0",
-                         "Emit the compiled source file in symbolic llvm instead of an object file",
-                         "debugging");
+                         "Emit the compiled source file in symbolic llvm instead of an object file", "debugging");
 
-enum CompilerMode : int
+enum CompilerMode : int64_t
 {
-   CM_EMPTY = 1 << 0,              // Empty file compilation
-   CM_ANALYZER_INTERFACE = 1 << 1, // Enable frontend code analyzer plugins
-   CM_ANALYZER_OPTIMIZE = 1 << 2,  // Enable frontend code optimizer plugins
-   CM_ANALYZER_ALL = 3 << 1,       // Enable all frontend plugins
-   CM_OPT_CUSTOMSROA = 1 << 7,     // Enable custom scalar replacement of aggregates plugin
-   CM_OPT_INTERNALIZE = 1 << 8,    // Enable symbol internalize plugin
-   CM_OPT_EXPANDMEMOPS = 1 << 9,   // Enable memory operation optimizer plugin
-   CM_OPT_DUMPBAMBUIR = 1 << 10,   // Enable IR dump plugin
-   CM_OPT_CHANNELCTOR = 1 << 11,   // Enable ac_channel/hls::stream construction cleanup plugin
-   CM_OPT_OPENMP = 1 << 12,        // Enable OpenMP plugin
-   CM_OPT_ALL = 31 << 7,         // Enable backend HLS optimization plugins
-   CM_LTO_FLAG = 1 << 16,          // Enable LTO optimization flags
-   CM_COMPILER_STD = 1 << 24,      // Use default compiler
-   CM_COMPILER_OPT = 1 << 25,      // Use compiler optimizer
-   CM_COMPILER_LTO = 1 << 26,      // Use compiler linker
+   CM_EMPTY = 1LL << 0,                   // Empty file compilation
+   CM_ANALYZER_INTERFACE = 1LL << 1,      // Enable frontend code analyzer plugins
+   CM_ANALYZER_OPTIMIZE = 1LL << 2,       // Enable frontend code optimizer plugins
+   CM_ANALYZER_ALL = 3LL << 1,            // Enable all frontend plugins
+   CM_OPT_CUSTOMSROA = 1LL << 7,          // Enable custom scalar replacement of aggregates plugin
+   CM_OPT_INTERNALIZE = 1LL << 8,         // Enable symbol internalize plugin
+   CM_OPT_EXPANDMEMOPS = 1LL << 9,        // Enable memory operation optimizer plugin
+   CM_OPT_DUMPBAMBUIR = 1LL << 10,        // Enable IR dump plugin
+   CM_OPT_CHANNELCTOR = 1LL << 11,        // Enable ac_channel/hls::stream construction cleanup plugin
+   CM_OPT_OPENMP = 1LL << 12,             // Enable OpenMP plugin
+   CM_OPT_ALL = 31LL << 7,                // Enable backend HLS optimization plugins
+   CM_LTO_FLAG = 1LL << 16,               // Enable LTO optimization flags
+   CM_COMPILER_STD = 1LL << 24,           // Use default compiler
+   CM_COMPILER_OPT = 1LL << 25,           // Use compiler optimizer
+   CM_COMPILER_LTO = 1LL << 26,           // Use compiler linker
+   CM_COMPILER_DIS = 1LL << 27,           // Use compiler disassembler
+   CM_ADD_FULL_UNROLL_META = 1LL << 28,   // Use full unroll metadata plugin
+   CM_DEDUPLICATE_LOAD_INST = 1LL << 29,  // Use deduplicate load instructions plugin
+   CM_OPENMP_TASK_EXTRACTION = 1LL << 30, // Use the OpenMP task graph extractor plugin
+   CM_DCE = 1LL << 31,                    // Use the dce plugin
+   CM_OPENMP_SIMPLIFY_ARGS = 1LL << 32,   // Use the OpenMP argument simplify plugin
 };
 
 static std::string __escape_define(const std::string& str)
@@ -449,7 +461,7 @@ CompilerWrapper::CompilerWrapper(const ParameterConstRef _Param, const CompilerW
 }
 
 void CompilerWrapper::CompileFile(std::string& input_filename, const std::string& output_filename,
-                                  const std::string& parameters_line, passesType passes, int cm,
+                                  const std::string& parameters_line, passesType passes, int64_t cm,
                                   const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + input_filename);
@@ -478,6 +490,22 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    std::string real_filename = input_filename;
    std::string load_prefix = "";
    std::string command;
+   const auto load_and_run_plugin = [&](const std::string& plugin_name, bool generateIr = false) {
+      if(cm & CM_COMPILER_STD)
+      {
+         load_prefix += SCRIPT_NEWLINE + load_plugin(plugin_name);
+      }
+      else
+      {
+         load_prefix += SCRIPT_NEWLINE + load_plugin_opt(plugin_name);
+         if(generateIr)
+         {
+            load_prefix += SCRIPT_NEWLINE + std::string("-S");
+         }
+         passes.add_pass(plugin_name);
+      }
+   };
+
    if(cm & CM_COMPILER_OPT)
    {
       if(cm & CM_ANALYZER_ALL)
@@ -492,6 +520,43 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       THROW_ASSERT(cm == CM_COMPILER_LTO, "Plugins must not be enabled when linker is required");
       load_prefix += compiler.llvm_link;
+   }
+   else if(cm & CM_COMPILER_DIS)
+   {
+      THROW_ASSERT(cm == CM_COMPILER_DIS, "Plugins must not be enabled when disassembler is required");
+      load_prefix += compiler.llvm_opt + " -S";
+   }
+   else if(cm & CM_ADD_FULL_UNROLL_META)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_ADD_FULL_UNROLL_META_PLUGIN);
+   }
+   else if(cm & CM_DEDUPLICATE_LOAD_INST)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN);
+   }
+   else if(cm & CM_OPENMP_TASK_EXTRACTION)
+   {
+      unsigned resourceDuplicationCount = 1U;
+      if(Param->IsParameter("task-resource-duplication"))
+      {
+         resourceDuplicationCount = Param->GetParameter<unsigned>("task-resource-duplication");
+      }
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_OPENMP_TASK_PLUGIN);
+      load_prefix += STR(SCRIPT_NEWLINE) + "-resource-duplication=" + STR(resourceDuplicationCount);
+      load_prefix += SCRIPT_NEWLINE + std::string("-outputdir=\"") + output_temporary_directory + "\"";
+   }
+   else if(cm & CM_DCE)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_DCE_PLUGIN);
+   }
+   else if(cm & CM_OPENMP_SIMPLIFY_ARGS)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN);
    }
    else
    {
@@ -566,17 +631,6 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
    }
 
-   const auto load_and_run_plugin = [&](const std::string& plugin_name) {
-      if(cm & CM_COMPILER_STD)
-      {
-         load_prefix += SCRIPT_NEWLINE + load_plugin(plugin_name);
-      }
-      else
-      {
-         load_prefix += SCRIPT_NEWLINE + load_plugin_opt(plugin_name);
-         passes.add_pass(plugin_name);
-      }
-   };
    const auto append_arg = [&](const std::string& arg) {
       if(cm & CM_COMPILER_STD)
       {
@@ -610,6 +664,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       {
          append_arg("-panda-Internalize");
       }
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-task-graph-topfname");
+      }
       load_and_run_plugin(COMPILER_TOPFNAME_PLUGIN);
    }
    // customSROA inlines: it must run after topfname has marked top/dataflow functions NoInline
@@ -634,6 +692,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       load_and_run_plugin(COMPILER_OPENMP_PLUGIN);
       command += " -dflt_nthreads=" + Param->getOption<std::string>(OPT_num_accelerators);
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-openmp-task-graph");
+      }
    }
 
    command += SCRIPT_NEWLINE + parameters_line;
@@ -642,6 +704,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       append_arg("-panda-outputdir=" + output_temporary_directory);
       append_arg("-panda-infile=" + input_filename);
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-task-graph");
+      }
       append_arg("-panda-cost-table=\"" + costTable + "\"");
       if(top_fnames.size())
       {
@@ -773,8 +839,8 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   const auto compiler_mode = [&]() -> int {
-      int flags = 0;
+   const auto compiler_mode = [&]() -> int64_t {
+      int64_t flags = 0;
       if(preprocess_only || compile_only)
       {
          return flags;
@@ -841,6 +907,39 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       std::string lto_source = container_to_string(obj_files, STR_CST_string_separator);
       std::string lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.bc";
       CompileFile(lto_source, lto_obj, "", passes, CM_COMPILER_LTO, "");
+
+      const bool isOpenmp = Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp);
+      const bool useTask = openmp_task::IsEnabled(*Param);
+      if(isOpenmp && useTask)
+      {
+         if(compiler_target != CompilerWrapper_CompilerTarget::CT_I386_CLANG19)
+         {
+            THROW_ERROR_USAGE("OpenMP tasks require --compiler=I386_CLANG19");
+         }
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_COMPILER_DIS, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/add_unroll_meta_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_ADD_FULL_UNROLL_META, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/deduplicate_loads_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_DEDUPLICATE_LOAD_INST, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/task_graph_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_OPENMP_TASK_EXTRACTION, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/dce_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_DCE, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/" + OMP_TASK_EXTRACTOR_output_filename;
+         CompileFile(lto_source, lto_obj, "", passes, CM_OPENMP_SIMPLIFY_ARGS, costTable);
+      }
 
       lto_source = lto_obj;
       lto_obj = output_temporary_directory + "/" + leaf_name + ".lto-opt.bc";
@@ -1776,7 +1875,6 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
       {
          recipe += " -enable-loop-flatten";
       }
-
       recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)
