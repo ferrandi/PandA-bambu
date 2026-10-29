@@ -46,7 +46,7 @@ mkdir -p "$OUT/tmp" "$OUT/generated"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 : >"$OUT/aggregate.log"
 
-SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o1.cpp"
+SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_profile.cpp"
 TB="$TESTS/tb_generated_kernel.sv"
 GEN="$OUT/generated"
 ARGS=("$SOURCE" --top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER

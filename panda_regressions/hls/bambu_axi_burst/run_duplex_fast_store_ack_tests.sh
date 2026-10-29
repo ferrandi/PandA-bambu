@@ -12,7 +12,7 @@ root=$(realpath "$tests/../../..")
 checker="$tests/check_duplex_fast_store_ack_artifacts.py"
 duplex_source="$tests/bambu_axi_burst_duplex_copy.cpp"
 write_source="$tests/write_compiler_cases/write_cases.cpp"
-read_source="$tests/bambu_axi_burst_sum_o1_lat128.cpp"
+read_source="$tests/bambu_axi_burst_sum_profile.cpp"
 legacy_option="experimental-m-axi-duplex-fast-store-ack"
 
 usage() { echo "Usage: $0 BAMBU [OUTPUT_DIR] (default: ./out_duplex_fast_store_ack)"; }
@@ -72,12 +72,13 @@ run_case() {
   local name=$1 source=$2 top=$3 kind=$4
   local write_burst=$5 write_outstanding=$6 write_fifo=$7
   local read_burst=$8 read_outstanding=$9 read_fifo=${10}
-  local profile=${11:-} legacy=${12:-}
+  local profile=${11:-} legacy=${12:-} source_profile=${13:-}
   local case_dir="$out/$name"
   [[ ! -e $case_dir && ! -L $case_dir ]] || { echo "case output must be fresh: $case_dir" >&2; return 2; }
   mkdir -p "$case_dir/tmp"
   local -a args=("--top-fname=$top" "${common[@]}")
   [[ -z $profile ]] || args+=("--extra-cc-options=-DDUPLEX_PROFILE=$profile")
+  [[ -z $source_profile ]] || args+=("--extra-cc-options=-D$source_profile")
   [[ -z $legacy ]] || args+=("--bambu-parameter=${legacy_option}=${legacy}")
   {
     printf 'case=%s\nsource=%s\nsource_sha256=%s\nkind=%s\n' "$name" "$source" \
@@ -114,8 +115,8 @@ run_case duplex-symmetric-repeat "$duplex_source" kernel duplex 16 1 32 16 1 64 
 
 # The standalone (write only) writer carries the same fast acknowledgement, and the generated
 # libtech module must declare the parameter with default 1.
-run_case write-only "$write_source" write_count write-only 16 1 32 16 1 64
-run_case read-only "$read_source" kernel read-only 16 1 32 16 1 256
+run_case write-only "$write_source" write_count_seed write-only 16 1 32 16 1 64
+run_case read-only "$read_source" kernel read-only 16 1 32 16 1 256 "" "" BAMBU_AXI_SUM_LAT128
 
 # Same write-engine profile, including FAST_STORE_ACK(1), in the duplex and in the standalone flow.
 python3 -B "$checker" compare-writers --left "$out/duplex-symmetric" --right "$out/write-only"

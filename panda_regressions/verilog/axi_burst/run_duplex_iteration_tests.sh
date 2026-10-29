@@ -12,6 +12,7 @@ TB="$RTL_TESTS/tb_generated_duplex_kernel.sv"
 LOAD_OBSERVER="$RTL_TESTS/duplex_load_observer.sv"
 ITERATION_OBSERVER="$RTL_TESTS/duplex_iteration_observer.sv"
 ITERATION_UNIT_TB="$RTL_TESTS/tb_duplex_iteration_observer.sv"
+MODELSIM_HELPERS="$RTL_TESTS/modelsim_helpers.sh"
 HELPERS="$FAMILY/parallel_helpers.sh"
 PROFILES=(symmetric asymmetric)
 
@@ -29,18 +30,26 @@ if [[ $BAMBU_ARG == */* ]]; then BAMBU=$(realpath -- "$BAMBU_ARG"); else
   [[ -n $BAMBU ]] && BAMBU=$(realpath -- "$BAMBU")
 fi
 [[ -n ${BAMBU:-} && -x $BAMBU ]] || { echo "Bambu executable not found: $BAMBU_ARG" >&2; exit 2; }
-for tool in verilator python3 grep sha256sum timeout; do
+for tool in python3 grep sha256sum timeout; do
   command -v "$tool" >/dev/null || { echo "required tool missing: $tool" >&2; exit 2; }
 done
-[[ -s $G2_RUNNER && -s $MAPPING_CHECKER && -s $TB && -s $LOAD_OBSERVER && -s $ITERATION_OBSERVER && -s $ITERATION_UNIT_TB && -s $HELPERS ]] || {
+[[ -s $G2_RUNNER && -s $MAPPING_CHECKER && -s $TB && -s $LOAD_OBSERVER && -s $ITERATION_OBSERVER && -s $ITERATION_UNIT_TB && -s $MODELSIM_HELPERS && -s $HELPERS ]] || {
   echo "G3.3 runner input is missing" >&2; exit 2;
 }
 SIM_JOBS=${SIM_JOBS:-2}
 [[ $SIM_JOBS =~ ^[1-9][0-9]*$ ]] || { echo "SIM_JOBS must be a positive integer" >&2; exit 2; }
 SIM_JOBS=$((10#$SIM_JOBS))
+DUPLEX_G2_JOBS=${DUPLEX_G2_JOBS:-$SIM_JOBS}
+[[ $DUPLEX_G2_JOBS =~ ^[1-9][0-9]*$ ]] || { echo "DUPLEX_G2_JOBS must be a positive integer" >&2; exit 2; }
+DUPLEX_G2_JOBS=$((10#$DUPLEX_G2_JOBS))
+(( SIM_JOBS <= 2 && DUPLEX_G2_JOBS <= 2 )) || {
+  echo "SIM_JOBS and DUPLEX_G2_JOBS are limited to 2 concurrent ModelSim jobs" >&2; exit 2;
+}
 OUT_ARG=${2:-"$PWD/out_duplex_iteration"}
 [[ ! -e $OUT_ARG && ! -L $OUT_ARG ]] || { echo "output directory must be fresh: $OUT_ARG" >&2; exit 2; }
 OUT=$(realpath -m -- "$OUT_ARG")
+source "$MODELSIM_HELPERS"
+modelsim_resolve
 mkdir "$OUT" "$OUT/tmp" "$OUT/job_logs"
 export TMPDIR="$OUT/tmp" TMP="$OUT/tmp" TEMP="$OUT/tmp"
 
@@ -61,13 +70,15 @@ digest() { sha256sum -- "$1" | awk '{print $1}'; }
   printf 'runner=%s\nrunner_sha256=%s\nmapping_checker=%s\nmapping_checker_sha256=%s\ntestbench=%s\ntestbench_sha256=%s\n' \
     "$TESTS/run_duplex_iteration_tests.sh" "$(digest "$TESTS/run_duplex_iteration_tests.sh")" \
     "$MAPPING_CHECKER" "$(digest "$MAPPING_CHECKER")" "$TB" "$(digest "$TB")"
-  printf 'sim_jobs=%s\n' "$SIM_JOBS"
+  printf 'sim_jobs=%s\nduplex_g2_jobs=%s\n' "$SIM_JOBS" "$DUPLEX_G2_JOBS"
   "$BAMBU" --version 2>&1 | sed -n '1,2p'
-  verilator --version
+  printf 'simulator=MODELSIM\nsimulator_source=%s\nsimulator_invocation=%s\n' "$MODELSIM_SOURCE" "$MODELSIM_VSIM"
+  modelsim_version
 } >"$OUT/provenance.txt"
 
 G2_OUT="$OUT/g2-prerequisite"
 BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1 DUPLEX_G3_ITERATION_DUMPS=1 SIM_JOBS="$SIM_JOBS" \
+  DUPLEX_G2_JOBS="$DUPLEX_G2_JOBS" \
   bash "$G2_RUNNER" "$BAMBU" "$G2_OUT" >"$OUT/g2-prerequisite.log" 2>&1 || {
     tail -n 120 "$OUT/g2-prerequisite.log" >&2
     echo "G2/G3.1 prerequisite runner failed; see $OUT/g2-prerequisite.log" >&2
@@ -119,29 +130,33 @@ PY
 build_one() {
   local profile=$1 id=1 out="$OUT/$1" generated="$G2_OUT/$1_copy/generated"
   [[ $profile == asymmetric ]] && id=2
-  local -a overrides=(-GREAD_B_MAX=16 -GREAD_OUTSTANDING=1 -GREAD_FIFO_DEPTH=64
-    -GWRITE_B_MAX=16 -GWRITE_OUTSTANDING=1 -GWRITE_FIFO_DEPTH=32)
-  if [[ $profile == asymmetric ]]; then
-    overrides=(-GREAD_B_MAX=16 -GREAD_OUTSTANDING=2 -GREAD_FIFO_DEPTH=64
-      -GWRITE_B_MAX=8 -GWRITE_OUTSTANDING=1 -GWRITE_FIFO_DEPTH=16)
-  fi
-  mkdir "$out/g3-obj"
-  if ! verilator --binary --timing --assert -Wno-fatal -Werror-IMPLICIT -Werror-UNDRIVEN -j 1 \
-      --top-module tb_generated_duplex_kernel --Mdir "$out/g3-obj" -I"$out" \
-      "${overrides[@]}" -DGENERATED_TOP=kernel -DDUPLEX_PROFILE_ID="$id" -DCOPY_MODE \
-      -DG3_ITERATION_OBSERVER "$generated/kernel.v" "$generated/panda_libtech.v" \
-      "$TB" "$LOAD_OBSERVER" "$ITERATION_OBSERVER" >"$out/verilator-build.log" 2>&1; then
-    tail -n 120 "$out/verilator-build.log" >&2
-    echo "G3 Verilator build failed for $profile" >&2; return 1
-  fi
+  modelsim_compile "$out/g3-sim" tb_generated_duplex_kernel \
+    "$generated/kernel.v" "$generated/panda_libtech.v" "$TB" "$LOAD_OBSERVER" "$ITERATION_OBSERVER" -- \
+    -mfcu "+incdir+$out" "+define+GENERATED_TOP=kernel+DUPLEX_PROFILE_ID=$id+COPY_MODE+G3_ITERATION_OBSERVER" || {
+      echo "G3 ModelSim compile failed for $profile" >&2; return 1;
+    }
+  sha256sum "$generated/kernel.v" "$generated/panda_libtech.v" "$out/g3-sim/compile.log" >>"$OUT/provenance.txt"
 }
 
 run_one() {
   local profile=$1 out="$OUT/$1" generated="$G2_OUT/$1_copy/generated"
-  local log="$out/events/scenario.log"
-  if ! (cd "$out/events" && TMPDIR="$out/tmp" TMP="$out/tmp" TEMP="$out/tmp" \
-      timeout 180s "$out/g3-obj/Vtb_generated_duplex_kernel" \
-      +CASE=COPY_PARALLELISM_256 +G3_METRICS >"$log" 2>&1); then
+  local log="$out/events/scenario.log" raw="$out/events/scenario.raw.log" rc=0
+  local -a overrides=(-gREAD_B_MAX=16 -gREAD_OUTSTANDING=1 -gREAD_FIFO_DEPTH=64
+    -gWRITE_B_MAX=16 -gWRITE_OUTSTANDING=1 -gWRITE_FIFO_DEPTH=32)
+  if [[ $profile == asymmetric ]]; then
+    overrides=(-gREAD_B_MAX=16 -gREAD_OUTSTANDING=2 -gREAD_FIFO_DEPTH=64
+      -gWRITE_B_MAX=8 -gWRITE_OUTSTANDING=1 -gWRITE_FIFO_DEPTH=16)
+  fi
+  if (cd "$out/events" && TMPDIR="$out/tmp" TMP="$out/tmp" TEMP="$out/tmp" \
+      modelsim_run "$out/g3-sim" tb_generated_duplex_kernel "$raw" 180 -voptargs=+acc \
+        "${overrides[@]}" -- +CASE=COPY_PARALLELISM_256 +G3_METRICS); then
+    rc=0
+  else
+    rc=$?
+  fi
+  [[ $rc == 0 ]] && mv "$out/g3-sim/iteration-events.json" "$out/events/iteration-events.json"
+  modelsim_normalize_log "$raw" "$log" || return $?
+  if (( rc != 0 )); then
     tail -n 120 "$log" >&2
     echo "G3 iteration simulation failed for $profile" >&2; return 1
   fi
@@ -165,24 +180,22 @@ run_one() {
 source "$HELPERS"
 BURST_QUIET_JOB_STATUS=1
 UNIT_OUT="$OUT/observer-unit"
-mkdir "$UNIT_OUT" "$UNIT_OUT/tmp" "$UNIT_OUT/obj"
-if ! verilator --binary --timing --assert -Wno-fatal -Werror-IMPLICIT -Werror-UNDRIVEN -j 1 \
-    --top-module tb_duplex_iteration_observer --Mdir "$UNIT_OUT/obj" \
-    "$ITERATION_OBSERVER" "$ITERATION_UNIT_TB" >"$UNIT_OUT/verilator-build.log" 2>&1; then
-  tail -n 100 "$UNIT_OUT/verilator-build.log" >&2
-  echo "iteration observer unit build failed" >&2; exit 1
+mkdir "$UNIT_OUT" "$UNIT_OUT/tmp"
+modelsim_compile "$UNIT_OUT/sim" tb_duplex_iteration_observer \
+  "$ITERATION_OBSERVER" "$ITERATION_UNIT_TB" -- -mfcu || {
+    echo "iteration observer ModelSim compile failed" >&2; exit 1;
+  }
+if ! modelsim_run "$UNIT_OUT/sim" tb_duplex_iteration_observer "$UNIT_OUT/unit.raw.log" 60 -voptargs=+acc; then
+  cat "$UNIT_OUT/unit.raw.log" >&2; echo "iteration observer unit simulation failed" >&2; exit 1
 fi
-if ! (cd "$UNIT_OUT" && TMPDIR="$UNIT_OUT/tmp" TMP="$UNIT_OUT/tmp" TEMP="$UNIT_OUT/tmp" \
-    ./obj/Vtb_duplex_iteration_observer >unit.log 2>&1); then
-  cat "$UNIT_OUT/unit.log" >&2; echo "iteration observer unit simulation failed" >&2; exit 1
-fi
+modelsim_normalize_log "$UNIT_OUT/unit.raw.log" "$UNIT_OUT/unit.log"
 grep -Fqx 'DUPLEX_ITERATION_OBSERVER_UNIT PASS COUNT=3 STATE=S_7' "$UNIT_OUT/unit.log" || {
   cat "$UNIT_OUT/unit.log" >&2; echo "iteration observer unit marker missing" >&2; exit 1;
 }
 BURST_JOB_LOG_DIR="$OUT/job_logs/mapping"; mkdir "$BURST_JOB_LOG_DIR"
 map_profile() { generate_binding "$1"; }
 run_bounded_jobs "$SIM_JOBS" map_profile "${PROFILES[@]}"
-BURST_JOB_LOG_DIR="$OUT/job_logs/verilator"; mkdir "$BURST_JOB_LOG_DIR"
+BURST_JOB_LOG_DIR="$OUT/job_logs/modelsim-build"; mkdir "$BURST_JOB_LOG_DIR"
 run_bounded_jobs "$SIM_JOBS" build_one "${PROFILES[@]}"
 BURST_JOB_LOG_DIR="$OUT/job_logs/scenario"; mkdir "$BURST_JOB_LOG_DIR"
 run_bounded_jobs "$SIM_JOBS" run_one "${PROFILES[@]}"

@@ -27,7 +27,7 @@ COMMON_SETTINGS = (
     "--device-name=xcu250,-2L,figd2104", "--AXI-burst-type=INCREMENTAL",
     "--mem-delay-read=64", "--mem-delay-write=2", "--tb-queue-size=32",
     "--memory-allocation-policy=NO_BRAM", "--distram-threshold=0", "--clock-period=3.33",
-    "--no-clean", "--simulate", "--simulator=VERILATOR",
+    "--no-clean", "--simulate", "--simulator=MODELSIM",
 )
 
 
@@ -145,6 +145,13 @@ for name in names:
             if f"{key}={value}\n" not in text:
                 print("run provenance identity mismatch", file=sys.stderr)
                 raise SystemExit(12)
+        simulator = pathlib.Path(next(line.split("=", 1)[1] for line in text.splitlines()
+                                      if line.startswith("simulator=")))
+        simulator_root = next(line.split("=", 1)[1] for line in text.splitlines()
+                              if line.startswith("simulator_root="))
+        if not simulator.is_file() or not simulator_root:
+            print("ModelSim provenance missing", file=sys.stderr)
+            raise SystemExit(14)
         for key in ("--source", "--testbench", "--bambu", "--settings", "--plugin", "--runner"):
             path = pathlib.Path(options[key]).resolve()
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -165,6 +172,14 @@ class CopyComparisonRunnerTests(unittest.TestCase):
         self.script = self.runner_dir / "run_copy_comparison_tests.sh"
         for name in ("run_copy_comparison_tests.sh", "parallel_helpers.sh"):
             shutil.copy2(SOURCE_ROOT / name, self.runner_dir / name)
+        rtl_helpers = self.root / "panda_regressions" / "verilog" / "axi_burst" / "rtl_tests"
+        rtl_helpers.mkdir(parents=True)
+        shutil.copy2(REPO_ROOT / "panda_regressions" / "verilog" / "axi_burst" / "rtl_tests" /
+                     "modelsim_helpers.sh", rtl_helpers / "modelsim_helpers.sh")
+        tool_lookup = self.root / "etc" / "libtech" / "backend" / "simulation" / "modelsim"
+        tool_lookup.mkdir(parents=True)
+        shutil.copy2(REPO_ROOT / "etc" / "libtech" / "backend" / "simulation" / "modelsim" /
+                     "tool_lookup.sh", tool_lookup / "tool_lookup.sh")
         for name in ("bambu_axi_burst_copy_comparison.cpp", "copy_comparison_tb.cpp"):
             (self.runner_dir / name).write_text("// stub fixture\n")
         checker = self.runner_dir / "check_copy_comparison_results.py"
@@ -184,11 +199,17 @@ class CopyComparisonRunnerTests(unittest.TestCase):
         (self.prefix / "lib" / "panda" / "clang-16" / "ASTAnalyzer.so").write_text("plugin\n")
         bin_dir = self.root / "stub-bin"
         bin_dir.mkdir()
-        verilator = bin_dir / "verilator"
-        verilator.write_text("#!/usr/bin/env bash\necho 'Verilator 5.000 stub'\n")
-        verilator.chmod(0o755)
+        modelsim = bin_dir / "vsim"
+        modelsim.write_text("#!/usr/bin/env bash\necho 'Questa Intel FPGA Starter Edition-64 2026.10'\n")
+        modelsim.chmod(0o755)
+        for name in ("vlog", "vlib", "vmap"):
+            tool = bin_dir / name
+            tool.write_text("#!/usr/bin/env bash\nexit 0\n")
+            tool.chmod(0o755)
         (bin_dir / "grep").symlink_to(shutil.which("grep"))
-        (bin_dir / "getconf").symlink_to(shutil.which("getconf"))
+        getconf = bin_dir / "getconf"
+        getconf.write_text("#!/usr/bin/env bash\nprintf '8\\n'\n")
+        getconf.chmod(0o755)
         (bin_dir / "sha256sum").symlink_to(shutil.which("sha256sum"))
         (bin_dir / "sed").symlink_to(shutil.which("sed"))
         (bin_dir / "find").symlink_to(shutil.which("find"))
@@ -209,7 +230,7 @@ class CopyComparisonRunnerTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def run_runner(self, *, outside="1", mode="", profile="duplex-shared", jobs="3"):
+    def run_runner(self, *, outside="1", mode="", profile="duplex-shared", jobs=None):
         if self.out.exists():
             shutil.rmtree(self.out)
         for path in self.state.iterdir():
@@ -223,8 +244,13 @@ class CopyComparisonRunnerTests(unittest.TestCase):
             "TMPDIR": str(scratch), "TMP": str(scratch), "TEMP": str(scratch),
             "STUB_STATE": str(self.state), "STUB_OUT": str(self.out),
             "BURST_COPY_COMPARISON_OUTSIDE_SANDBOX": outside,
-            "COPY_COMPARISON_JOBS": jobs,
         })
+        if jobs is not None:
+            env["COPY_COMPARISON_JOBS"] = jobs
+        else:
+            env.pop("COPY_COMPARISON_JOBS", None)
+        env.pop("MODELSIM_ROOT", None)
+        env.pop("BAMBU_HLS_BACKEND_PATH", None)
         env.pop("STUB_MODE", None)
         env.pop("STUB_PROFILE", None)
         if mode:
@@ -246,13 +272,16 @@ class CopyComparisonRunnerTests(unittest.TestCase):
         self.assertEqual(len(runs), 8)
         self.assertEqual(len({run["cwd"] for run in runs}), 8)
         self.assertEqual(len({run["tmp"] for run in runs}), 8)
-        self.assertTrue(1 < int((self.state / "maximum").read_text()) <= 3)
+        self.assertTrue(1 < int((self.state / "maximum").read_text()) <= 2)
         observed = {}
         common_argv = None
         for run in runs:
             profile_arg = next(arg for arg in run["args"] if arg.startswith("--extra-cc-options=-DCOPY_COMPARISON_PROFILE="))
             profile = PROFILES[profile_arg.rsplit("=", 1)[1]]
-            self.assertIn("--simulator=VERILATOR", run["args"])
+            self.assertIn("--simulator=MODELSIM", run["args"])
+            self.assertFalse(any("VERILATOR" in arg for arg in run["args"]))
+            mentor_roots = [arg for arg in run["args"] if arg.startswith("--mentor-root=")]
+            self.assertEqual(mentor_roots, [f"--mentor-root={self.root}"])
             feature_args = [arg for arg in run["args"]
                             if arg.startswith("--bambu-parameter=m-axi-burst=")]
             self.assertEqual(feature_args,
@@ -271,10 +300,12 @@ class CopyComparisonRunnerTests(unittest.TestCase):
         self.assertTrue((self.out / "checker-called").is_file())
 
     def test_bad_job_count_fails_before_output_creation(self):
-        result = self.run_runner(jobs="0")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("COPY_COMPARISON_JOBS", result.stdout)
-        self.assertFalse(self.out.exists())
+        for jobs in ("0", "3"):
+            with self.subTest(jobs=jobs):
+                result = self.run_runner(jobs=jobs)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("COPY_COMPARISON_JOBS must be between 1 and 2", result.stdout)
+                self.assertFalse(self.out.exists())
 
     def test_compiler_failure_stops_gate(self):
         result = self.run_runner(mode="compiler-failure")

@@ -184,6 +184,11 @@ def expected_owner_recognition(top: str, reads: int, writes: int) -> tuple[str, 
     return recognized, recognized
 
 
+def expected_owner_fallback(fallback: str, accesses: int) -> str:
+    """A direction without classified accesses has no fallback to report."""
+    return fallback if accesses else "-"
+
+
 PRIVATE_FIELDS = ("start", "opcode", "size", "data", "address", "count", "done", "result")
 
 
@@ -1623,11 +1628,13 @@ def verify(output: Path, top: str, source: Path, bambu: Path, plugin: Path,
         access_counts.append((int(reads), int(writes)))
         expected_read_recognized, expected_write_recognized = expected_owner_recognition(
             top, int(reads), int(writes))
+        owner_read_fallback = expected_owner_fallback(expected_read_fallback, int(reads))
+        owner_write_fallback = expected_owner_fallback(expected_write_fallback, int(writes))
         need((read_requested, read_recognized, read_fallback) ==
-             ("1", expected_read_recognized, expected_read_fallback),
+             ("1", expected_read_recognized, owner_read_fallback),
              "read request/recognition/fallback does not match the exact preanalysis contract")
         need((write_requested, write_recognized, write_fallback) ==
-             ("1", expected_write_recognized, expected_write_fallback),
+             ("1", expected_write_recognized, owner_write_fallback),
              "write request/recognition/fallback does not match the exact preanalysis contract")
         expected_candidate = "1" if expected_semantic else "0"
         need(candidate == expected_candidate and reason == expected_reason,

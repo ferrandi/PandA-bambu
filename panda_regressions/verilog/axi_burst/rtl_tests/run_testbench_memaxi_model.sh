@@ -244,6 +244,13 @@ else
             tail -n 120 "$LOG" >&2
             exit 1
         }
+        normalized="$LOG.normalized"
+        sed -E 's/^# //' "$LOG" >"$normalized"
+        grep -Fqx 'F0_RESPONSE_INJECTION_PASS read=SLVERR,DECERR,OKAY write=SLVERR,DECERR,OKAY reset=cleared stall=stable' "$normalized" || {
+            echo "qualify mode did not prove TestbenchMEMAXI response injection for WRITE_DELAY=$delay" >&2
+            tail -n 120 "$LOG" >&2
+            exit 1
+        }
         if grep -Eq 'F0_QUALIFY_FAILURE|F0_EXPECTED_VIOLATION' "$LOG"; then
             echo "qualify mode reported a violation for WRITE_DELAY=$delay" >&2
             tail -n 120 "$LOG" >&2

@@ -466,6 +466,112 @@ module tb_testbench_memaxi_model;
         end
     endtask
 
+    task automatic expect_read_response(input logic [1:0] expected_resp,
+                                        input logic [31:0] expected_data,
+                                        input logic expected_last);
+        integer elapsed;
+        logic [37:0] held_payload;
+        begin
+            elapsed = 0;
+            while (!rvalid && elapsed < READ_DELAY + 16)
+            begin
+                @(negedge clock);
+                elapsed = elapsed + 1;
+            end
+            if (!rvalid)
+                record_violation("INJECTED_RRESP_TIMEOUT", $sformatf("resp=%b data=%h", expected_resp, expected_data));
+            else
+            begin
+                if (rid !== 0 || rresp !== expected_resp || rdata !== expected_data ||
+                    ruser !== 0 || rlast !== expected_last)
+                    record_violation("INJECTED_RRESP_PAYLOAD", $sformatf("rid=%b resp=%b data=%h user=%b last=%b expected_resp=%b expected_data=%h expected_last=%b",
+                        rid, rresp, rdata, ruser, rlast, expected_resp, expected_data, expected_last));
+                held_payload = {rid, rdata, rresp, ruser, rlast};
+                repeat (3) @(negedge clock);
+                if (rvalid !== 1'b1 || {rid, rdata, rresp, ruser, rlast} !== held_payload)
+                    record_violation("INJECTED_RRESP_STALL_UNSTABLE", $sformatf("expected=%h current=%h valid=%b",
+                        held_payload, {rid, rdata, rresp, ruser, rlast}, rvalid));
+                rready = 1;
+                @(posedge clock);
+                @(negedge clock);
+                rready = 0;
+            end
+        end
+    endtask
+
+    task automatic expect_write_response(input logic [0:0] expected_id, input logic [1:0] expected_resp);
+        integer elapsed;
+        logic [2:0] held_payload;
+        begin
+            elapsed = 0;
+            while (!bvalid && elapsed < WRITE_DELAY + 16)
+            begin
+                @(negedge clock);
+                elapsed = elapsed + 1;
+            end
+            if (!bvalid)
+                record_violation("INJECTED_BRESP_TIMEOUT", $sformatf("id=%b resp=%b", expected_id, expected_resp));
+            else
+            begin
+                if (bid !== expected_id || bresp !== expected_resp)
+                    record_violation("INJECTED_BRESP_PAYLOAD", $sformatf("id=%b resp=%b expected_id=%b expected_resp=%b",
+                        bid, bresp, expected_id, expected_resp));
+                held_payload = {bid, bresp};
+                repeat (3) @(negedge clock);
+                if (bvalid !== 1'b1 || {bid, bresp} !== held_payload)
+                    record_violation("INJECTED_BRESP_STALL_UNSTABLE", $sformatf("expected=%b current=%b valid=%b",
+                        held_payload, {bid, bresp}, bvalid));
+                bready = 1;
+                @(posedge clock);
+                @(negedge clock);
+                bready = 0;
+            end
+        end
+    endtask
+
+    task automatic run_response_injection_case;
+        begin
+            reset_case();
+            memory.m_utils.set_word(READ_BASE, 32'hcafe_8000);
+            memory.m_utils.set_word(READ_BASE + 4, 32'hcafe_8001);
+            memory.m_utils.set_word(READ_BASE + 8, 32'hcafe_8002);
+            memory.inject_next_read_response(2'b10);
+            send_ar(READ_BASE, 2);
+            memory.inject_next_read_response(2'b11);
+            send_ar(READ_BASE + 8, 1);
+            expect_read_response(2'b10, 32'hcafe_8000, 1'b0);
+            expect_read_response(2'b10, 32'hcafe_8001, 1'b1);
+            expect_read_response(2'b11, 32'hcafe_8002, 1'b1);
+
+            reset_case();
+            memory.inject_next_read_response(2'b10);
+            reset_case();
+            send_ar(READ_BASE, 1);
+            expect_read_response(2'b00, 32'hcafe_8000, 1'b1);
+
+            reset_case();
+            bready = 0;
+            memory.inject_next_write_response(2'b10);
+            send_aw_with_id(1'b0, 32'h0000_2480, 1);
+            memory.inject_next_write_response(2'b11);
+            send_aw_with_id(1'b1, 32'h0000_2484, 1);
+            send_w(32'hcafe_9000, 1'b1);
+            send_w(32'hcafe_9001, 1'b1);
+            expect_write_response(1'b0, 2'b10);
+            expect_write_response(1'b1, 2'b11);
+
+            reset_case();
+            memory.inject_next_write_response(2'b10);
+            reset_case();
+            bready = 0;
+            send_aw_with_id(1'b0, 32'h0000_2490, 1);
+            send_w(32'hcafe_9002, 1'b1);
+            expect_write_response(1'b0, 2'b00);
+            bready = 1;
+            $display("F0_RESPONSE_INJECTION_PASS read=SLVERR,DECERR,OKAY write=SLVERR,DECERR,OKAY reset=cleared stall=stable");
+        end
+    endtask
+
     function automatic [31:0] queued_write_data(input integer beat);
         queued_write_data = 32'h7100_0000 + beat;
     endfunction
@@ -826,6 +932,7 @@ module tb_testbench_memaxi_model;
             run_write_timing_case(0);
             run_write_timing_case(1);
             run_write_timing_case(2);
+            run_response_injection_case();
             if (unexpected_count != 0)
                 $fatal(1, "F0_QUALIFY_FAIL failures=%0d", unexpected_count);
             $display("F0_QUALIFY_PASS read=%0d write=%0d", r_handshakes, memory.m_utils.write_calls);

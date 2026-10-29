@@ -128,7 +128,8 @@ class AxiLatencyMetadataTest(unittest.TestCase):
         infer = (ROOT / "src/frontend_analysis/IR_analysis/InterfaceInfer.cpp").read_text(encoding="utf-8")
 
         self.assertIn('attr_id == "latency"', plugin)
-        self.assertIn('std::numeric_limits<std::uint32_t>::max()', plugin)
+        self.assertIn('#include "axi_interface_profile.hpp"', plugin)
+        self.assertIn('parse_axi_profile_decimal(attr_value, 0U, panda::utility::axi_latency_max, value)', plugin)
         self.assertNotIn('key_loc_t("latency", SourceLocation())', plugin)
         self.assertIn("Invalid AXI interface attribute 'latency' for bundle '", manager_cpp)
         self.assertIn('mode->second != "m_axi"', manager_cpp)

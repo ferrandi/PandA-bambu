@@ -13,6 +13,7 @@
 #include "library_manager.hpp"
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
+#include "utility/axi_interface_profile.hpp"
 
 #include <algorithm>
 #include <array>
@@ -55,29 +56,16 @@ namespace
    {
       const auto text = read_attribute(mod, name);
       unsigned int value = 0;
-      for(const char ch : text)
+      const auto parse_result = panda::utility::parse_axi_profile_decimal(text, minimum, maximum, value);
+      if(parse_result == panda::utility::bounded_decimal_result::invalid_format)
       {
-         if(ch < '0' || ch > '9')
-         {
-            THROW_ERROR_USAGE("Duplex m_axi aggregator metadata '" + name + "' must be an ASCII decimal integer.");
-         }
-         const auto digit = static_cast<unsigned int>(ch - '0');
-         if(value > (maximum - digit) / 10U)
-         {
-            THROW_ERROR_USAGE("Duplex m_axi aggregator metadata '" + name + "' is out of range.");
-         }
-         value = value * 10U + digit;
+         THROW_ERROR_USAGE("Duplex m_axi aggregator metadata '" + name + "' must be an ASCII decimal integer.");
       }
-      if(value < minimum || value > maximum)
+      if(parse_result != panda::utility::bounded_decimal_result::valid)
       {
          THROW_ERROR_USAGE("Duplex m_axi aggregator metadata '" + name + "' is out of range.");
       }
       return value;
-   }
-
-   bool is_power_of_two(const unsigned int value)
-   {
-      return value && (value & (value - 1U)) == 0U;
    }
 
    DuplexProfile load_profile(const structural_objectRef& mod)
@@ -101,17 +89,24 @@ namespace
       DuplexProfile profile{bundle,
                             parse_decimal(mod, "bambu_axi_address_bitsize", 32U, 64U),
                             parse_decimal(mod, "bambu_axi_latency", 0U, UINT32_MAX),
-                            parse_decimal(mod, "bambu_max_read_burst_length", 1U, 256U),
-                            parse_decimal(mod, "bambu_num_read_outstanding", 1U, 16U),
-                            parse_decimal(mod, "bambu_read_fifo_depth", 1U, 4096U),
-                            parse_decimal(mod, "bambu_max_write_burst_length", 1U, 256U),
-                            parse_decimal(mod, "bambu_write_burst_outstanding", 1U, 16U),
-                            parse_decimal(mod, "bambu_write_fifo_depth", 1U, 4096U)};
+                            parse_decimal(mod, "bambu_max_read_burst_length", panda::utility::axi_burst_length_min,
+                                          panda::utility::axi_burst_length_max),
+                            parse_decimal(mod, "bambu_num_read_outstanding", panda::utility::axi_outstanding_min,
+                                          panda::utility::axi_outstanding_max),
+                            parse_decimal(mod, "bambu_read_fifo_depth", panda::utility::axi_fifo_depth_min,
+                                          panda::utility::axi_fifo_depth_max),
+                            parse_decimal(mod, "bambu_max_write_burst_length", panda::utility::axi_burst_length_min,
+                                          panda::utility::axi_burst_length_max),
+                            parse_decimal(mod, "bambu_write_burst_outstanding", panda::utility::axi_outstanding_min,
+                                          panda::utility::axi_outstanding_max),
+                            parse_decimal(mod, "bambu_write_fifo_depth", panda::utility::axi_fifo_depth_min,
+                                          panda::utility::axi_fifo_depth_max)};
       if(profile.address_bits != 32U && profile.address_bits != 64U)
       {
          THROW_ERROR_USAGE("Duplex m_axi address width must be 32 or 64 bits.");
       }
-      if(!is_power_of_two(profile.read_fifo) || !is_power_of_two(profile.write_fifo) ||
+      if(!panda::utility::is_axi_fifo_depth_valid(profile.read_fifo) ||
+         !panda::utility::is_axi_fifo_depth_valid(profile.write_fifo) ||
          profile.write_fifo < profile.write_burst)
       {
          THROW_ERROR_USAGE("Duplex m_axi FIFO depths must be powers of two; write_fifo_depth must be at least "

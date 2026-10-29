@@ -33,7 +33,7 @@ class RegressionRestartTests(unittest.TestCase):
         self.repo = self.root / "repo"
         family = self.repo / "panda_regressions/hls/bambu_axi_burst"
         family.mkdir(parents=True)
-        shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o5.cpp", family)
+        shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_profile.cpp", family)
         shutil.copy2(WRAPPER, self.repo / "panda_regressions/hls/bambu_axi_burst.sh")
         shutil.copy2(PARALLEL_HELPERS, family / "parallel_helpers.sh")
         regressions = self.repo / "panda_regressions/hls"
@@ -134,12 +134,19 @@ case $script in
     printf '%s\n' "${script##*/}:$mode" >>"${FAKE_JOB_LOG_FILE:?}"
     [[ ${FAKE_FAIL_JOB:-} != "${script##*/}" ]] || exit 9
     ;;
-  */run_read_burst_modelsim.sh|*/run_write_burst_engine.sh|*/run_vlog_portability.sh|*/run_generated_kernel_tests.sh|*/run_generated_wrapper_rid_tests.sh|*/test_compiler_runner_export_root.sh|*/run_burst_fault_diagnostics.sh|*/run_axi_width_contract.sh|*/run_duplex_core_tests.sh|*/run_generated_duplex_tests.sh|*/run_generated_duplex_kernel_tests.sh|*/run_generated_write_kernel_tests.sh|*/run_duplex_alias_tests.sh|*/run_duplex_fallback_tests.sh|*/run_duplex_independent_tests.sh|*/run_adapter_size_guard.sh|*/run_mdpi_extent_tests.sh|*/run_testbench_memaxi_model.sh|*/run_default_burst_tests.sh|*/run_default_duplex_reduction_modelsims.sh)
+  */run_read_burst_modelsim.sh|*/run_write_burst_engine.sh|*/run_vlog_portability.sh|*/run_generated_kernel_tests.sh|*/run_generated_wrapper_rid_tests.sh|*/test_compiler_runner_export_root.sh|*/run_burst_fault_diagnostics.sh|*/run_axi_width_contract.sh|*/run_duplex_core_tests.sh|*/run_generated_duplex_tests.sh|*/run_generated_duplex_kernel_tests.sh|*/run_generated_write_kernel_tests.sh|*/run_duplex_alias_tests.sh|*/run_duplex_fallback_tests.sh|*/run_duplex_independent_tests.sh|*/run_adapter_size_guard.sh|*/run_mdpi_extent_tests.sh|*/run_testbench_memaxi_model.sh|*/run_generated_memaxi_response_tests.sh|*/run_vector_payload_tests.sh|*/run_copy_comparison_tests.sh|*/run_default_burst_tests.sh|*/run_default_duplex_reduction_modelsims.sh)
     name=${script##*/}
     printf '%s\n' "$name" >>"${FAKE_JOB_LOG_FILE:?}"
     if [[ $name == run_default_duplex_reduction_modelsims.sh ]]; then
       printf '%s|%s|%s|%s\n' "$name" "${2:-}" "${3:-}" \
         "${BURST_DUPLEX_DEFAULT_SIM_OUTSIDE_SANDBOX:-unset}" >>"${FAKE_JOB_ARGS_FILE:?}"
+    fi
+    if [[ $name == run_write_burst_engine.sh || $name == run_vector_payload_tests.sh || \
+          $name == run_generated_memaxi_response_tests.sh || $name == run_copy_comparison_tests.sh ]]; then
+      printf '%s|%s|%s|%s|%s\n' "$name" "${BURST_WRITER_GROUP_JOBS:-unset}" \
+        "${SIM_JOBS:-unset}" "${COPY_COMPARISON_JOBS:-unset}" \
+        "${BURST_COPY_COMPARISON_OUTSIDE_SANDBOX:-${BURST_MODELSIM_OUTSIDE_SANDBOX:-unset}}" \
+        >>"${FAKE_JOB_ARGS_FILE:?}"
     fi
     destination=${!#}
     mkdir -p "$destination"
@@ -300,13 +307,51 @@ esac
         self.assertEqual(calls.count("run_generated_write_kernel_tests.sh"), 3)
         self.assertEqual(calls.count("run_duplex_alias_tests.sh"), 2)
         job_args = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
-        self.assertEqual(len(job_args), 1, job_args)
-        runner, bambu, destination, guard = job_args[0].split("|")
+        reduction_args = [row for row in job_args if row.startswith("run_default_duplex_reduction_modelsims.sh|")]
+        self.assertEqual(len(reduction_args), 1, job_args)
+        runner, bambu, destination, guard = reduction_args[0].split("|")
         self.assertEqual(runner, "run_default_duplex_reduction_modelsims.sh")
         self.assertEqual(bambu, str((self.install / "bin/bambu").resolve()))
         self.assertEqual(destination, str((output / "rtl-default-duplex-reduction").resolve()))
         self.assertEqual(guard, "1")
         self.assertTrue(Path(destination).is_dir())
+
+    def test_functional_dispatch_caps_modelsims_and_keeps_nested_jobs_serial(self) -> None:
+        output = self.root / "out_functional_concurrency"
+        result = self.run_regression(
+            "--group=functional", "--no-clean", "-j4", "-o", str(output),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        mantis_args = self.mantis_args_file.read_text(encoding="utf-8")
+        self.assertIn("--parallel=2", mantis_args)
+        self.assertNotIn("--parallel=4", mantis_args)
+        calls = (self.root / "job-calls").read_text(encoding="utf-8")
+        for runner in (
+            "run_vector_payload_tests.sh", "run_generated_memaxi_response_tests.sh",
+            "run_copy_comparison_tests.sh",
+        ):
+            self.assertIn(runner, calls)
+        self.assertTrue((output / "rtl-vector-payload").is_dir())
+        self.assertTrue((output / "rtl-generated-memaxi-response").is_dir())
+        self.assertTrue((output / "rtl-copy-comparison").is_dir())
+        rows = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
+        settings = {row.split("|", 1)[0]: row.split("|") for row in rows}
+        self.assertEqual(settings["run_write_burst_engine.sh"][1], "1")
+        self.assertEqual(settings["run_vector_payload_tests.sh"][4], "1")
+        self.assertEqual(settings["run_generated_memaxi_response_tests.sh"][2], "1")
+        self.assertEqual(settings["run_copy_comparison_tests.sh"][3], "1")
+        self.assertEqual(settings["run_copy_comparison_tests.sh"][4], "1")
+
+    def test_functional_dispatch_cleans_new_runner_outputs_by_default(self) -> None:
+        output = self.root / "out_functional_cleanup"
+        result = self.run_regression(
+            "--group=functional", "-j2", "-o", str(output),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for name in (
+            "rtl-vector-payload", "rtl-generated-memaxi-response", "rtl-copy-comparison",
+        ):
+            self.assertFalse((output / name).exists(), name)
 
     def test_fixed_fallback_arguments_preserve_shell_special_paths(self) -> None:
         marker = self.root / "shell-injection-marker"
@@ -332,7 +377,7 @@ esac
         default_read = shlex.split(next(line for line in lines if "--benchmark-name=plain-m-axi-no-latency" in line))
         self.assertNotIn("--bambu-parameter=m-axi-burst=0", default_read)
         fixed_case = shlex.split(lines[-1])
-        expected_source = str(self.repo.resolve() / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o5.cpp")
+        expected_source = str(self.repo.resolve() / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_profile.cpp")
         self.assertTrue(Path(expected_source).is_file())
         expected_tb = str(self.repo.resolve() / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_tb.cpp")
         expected_device = str(output.resolve() / "fixed-burst-fallback-inputs/xcu250-fixed.xml")
@@ -346,7 +391,8 @@ esac
             "BENCHMARK_ENV=MANTIS_POST_CHECK=" + shlex.join(expected_post_argv),
             expected_source, "--top-fname=kernel", f"--generate-tb={expected_tb}",
             "--tb-arg=1024", "--tb-param-size=src:16384", "--extra-cc-options=-DBAMBU",
-            "--extra-cc-options=-DBURST_TEST_DEFAULT_N=1024", f"--target-file={expected_device}",
+            "--extra-cc-options=-DBAMBU_AXI_SUM_O5", "--extra-cc-options=-DBURST_TEST_DEFAULT_N=1024",
+            f"--target-file={expected_device}",
             "--benchmark-name=fixed-burst-fallback",
         ]
         self.assertEqual(fixed_case, expected_fixed_case)

@@ -81,6 +81,9 @@ if [[ ${MOCK_MODE:-pass} == positive-error ]]; then
     exit 0
 fi
 echo "F0_QUALIFY_PASS delay=$delay"
+if [[ ${MOCK_MODE:-pass} != missing-response-injection-marker ]]; then
+    echo "# F0_RESPONSE_INJECTION_PASS read=SLVERR,DECERR,OKAY write=SLVERR,DECERR,OKAY reset=cleared stall=stable"
+fi
 echo "F0_WITNESS_PASS R_MULTI_BEAT_DRAIN"
 for order in 0 1 2; do echo "F0_WRITE_TIMING_PASS order=$order delay=$delay beat=0"; done
 exit 0'''
@@ -117,6 +120,15 @@ exit 0'''
         result = self.run_qualify("positive-error")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("failed despite any transcript markers", result.stdout)
+
+    def test_missing_response_injection_marker_fails_closed(self) -> None:
+        result = self.run_qualify("missing-response-injection-marker")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("did not prove TestbenchMEMAXI response injection", result.stdout)
+        log = self.case / "out-missing-response-injection-marker/logs/qualify-delay-1.log"
+        self.assertTrue(log.is_file())
+        self.assertIn("F0_QUALIFY_PASS", log.read_text(encoding="utf-8"))
+        self.assertNotIn("F0_RESPONSE_INJECTION_PASS", log.read_text(encoding="utf-8"))
 
     def test_raw_134_accepts_exact_fatal_with_single_aborted_and_context(self) -> None:
         result = self.run_qualify("aborted")

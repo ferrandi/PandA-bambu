@@ -54,6 +54,7 @@
 #include <pugixml.hpp>
 
 #include "bounded_decimal.hpp"
+#include "axi_interface_profile.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -1581,8 +1582,7 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             return;
          }
          std::uint32_t value = 0;
-         constexpr auto maximum = std::numeric_limits<std::uint32_t>::max();
-         if(panda::utility::parse_bounded_ascii_decimal(attr_value, 0U, maximum, value) !=
+         if(panda::utility::parse_axi_profile_decimal(attr_value, 0U, panda::utility::axi_latency_max, value) !=
             panda::utility::bounded_decimal_result::valid)
          {
             ReportError(attr_key.loc, "latency must be an ASCII decimal integer in [0,4294967295]");
@@ -1619,15 +1619,18 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
             return;
          }
          std::uint32_t value = 0;
-         const auto limit = outstanding_attr ? 16U : 4096U;
-         const auto parse_result = panda::utility::parse_bounded_ascii_decimal(attr_value, 1U, limit, value);
+         const auto limit = outstanding_attr ? panda::utility::axi_outstanding_max :
+                                                panda::utility::axi_fifo_depth_max;
+         const auto minimum = outstanding_attr ? panda::utility::axi_outstanding_min :
+                                                 panda::utility::axi_fifo_depth_min;
+         const auto parse_result = panda::utility::parse_axi_profile_decimal(attr_value, minimum, limit, value);
          if(parse_result == panda::utility::bounded_decimal_result::invalid_format)
          {
             ReportError(attr_key.loc, source_attr + " must be a decimal integer in its supported range");
             return;
          }
          const bool valid_value = parse_result == panda::utility::bounded_decimal_result::valid &&
-                                  (outstanding_attr || (value & (value - 1U)) == 0U);
+                                  (outstanding_attr || panda::utility::is_axi_fifo_depth_valid(value));
          if(!valid_value)
          {
             ReportError(attr_key.loc, source_attr + (outstanding_attr ?
@@ -1687,7 +1690,8 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
                continue;
             }
             std::uint32_t burst_length = 0;
-            if(panda::utility::parse_bounded_ascii_decimal(attr.second, 1U, 256U, burst_length) !=
+            if(panda::utility::parse_axi_profile_decimal(attr.second, panda::utility::axi_burst_length_min,
+                                                         panda::utility::axi_burst_length_max, burst_length) !=
                panda::utility::bounded_decimal_result::valid)
             {
                ReportError(attr.first.loc, "Maximum AXI burst length must be an integer in [1,256]");

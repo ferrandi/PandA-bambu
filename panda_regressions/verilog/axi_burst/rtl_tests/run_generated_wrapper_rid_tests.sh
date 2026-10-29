@@ -43,7 +43,7 @@ mkdir -p "$TASK_OUT/tmp"
 export TMPDIR="$TASK_OUT/tmp" TMP="$TASK_OUT/tmp" TEMP="$TASK_OUT/tmp"
 : >"$TASK_OUT/aggregate.log"
 
-SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_o1.cpp"
+SOURCE="$ROOT/panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_profile.cpp"
 GENERATION_ARGS=("$SOURCE" --top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER
   --device-name=xcu250,-2L,figd2104 --no-clean
   --mem-delay-read=64 --mem-delay-write=64

@@ -31,6 +31,7 @@
 
 #include "application_manager.hpp"
 #include "custom_map.hpp"
+#include "utility/axi_interface_profile.hpp"
 
 #include <boost/preprocessor/seq/for_each.hpp>
 
@@ -61,7 +62,7 @@ class SimulationInformation;
        iface_register)(iface_cache_ways)(iface_cache_line_count)(iface_cache_line_size)(                           \
        iface_cache_num_write_outstanding)(iface_cache_rep_policy)(iface_cache_bus_size)(iface_cache_write_policy)( \
        iface_cache_word_size)(iface_bank_number)(iface_chunk_size)(iface_max_read_burst_length)(                 \
-       iface_max_write_burst_length)(iface_burst_enabled)(iface_num_read_outstanding)(iface_read_fifo_depth)( \
+       iface_max_write_burst_length)(iface_num_read_outstanding)(iface_read_fifo_depth)( \
        iface_write_burst_outstanding)(iface_write_fifo_depth)(iface_latency)
 
 REF_FORWARD_DECL(FunctionArchitecture);
@@ -96,18 +97,8 @@ class FunctionArchitecture
    std::map<std::string, iface_attrs> ifaces;
 };
 
-struct AXIReadBurstProfile
-{
-   unsigned int max_outstanding = 16;
-   unsigned int fifo_depth = 256;
-};
-
-struct AXIWriteBurstProfile
-{
-   unsigned int max_burst_length = 16;
-   unsigned int max_outstanding = 16;
-   unsigned int fifo_depth = 32;
-};
+using AXIReadBurstProfile = panda::utility::axi_read_profile;
+using AXIWriteBurstProfile = panda::utility::axi_write_profile;
 
 AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_attrs& iface_attrs,
                                              const std::string& bundle_name);
