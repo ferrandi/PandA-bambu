@@ -1,0 +1,4 @@
+# ModelSim wrapper runs both BP_MODE=0 and BP_MODE=2 for every design.
+BENCHMARK_ENV=LP_TB=tb_lp_array_write.v,LP_TB_TOP=tb_lp_array_write,LP_LATENCY=2,MANTIS_EXPECT_LOOP_II=1,MANTIS_EXPECT_LOOP_BB=2,MANTIS_EXPECT_FUNCTION=_Z11store_stageRA16_iR10ac_channelIiE lp_array_write.cpp --top-fname=store_stage --benchmark-name=lp_array_write
+BENCHMARK_ENV=LP_TB=tb_lp_dual_array.v,LP_TB_TOP=tb_lp_dual_read,LP_LATENCY=2,MANTIS_EXPECT_LOOP_II=1,MANTIS_EXPECT_LOOP_BB=2,MANTIS_EXPECT_FUNCTION=_Z9dual_readRA16_iS0_R10ac_channelIiE lp_dual_array_read.cpp --top-fname=dual_read --benchmark-name=lp_dual_array_read
+BENCHMARK_ENV=LP_TB=tb_lp_dual_array.v,LP_TB_TOP=tb_lp_dual_read_acc,LP_LATENCY=2,MANTIS_EXPECT_LOOP_II=1,MANTIS_EXPECT_LOOP_BB=2,MANTIS_EXPECT_FUNCTION=_Z13dual_read_accRA16_iS0_R10ac_channelIiE lp_array_write_acc.cpp --top-fname=dual_read_acc --benchmark-name=lp_array_write_acc
