@@ -162,17 +162,27 @@ class WriteEngineExtractorTests(unittest.TestCase):
             with self.subTest(active_low=active_low):
                 generated = EXTRACTOR.extract(XML, target="MinimalAXI4MasterPipelined",
                                               async_reset=True, active_low=active_low)
-                reset_branch = re.search(
-                    rf"if \(reset == 1'b{value}\) begin(?P<body>.*?)\n\s*end\s*\n\s*else if \(activate_configure",
-                    generated, re.DOTALL)
-                if reset_branch is None:
-                    self.fail("reader reset branch does not precede the activation branch")
                 for assignment in (
                         "fifo_credit_committed_reg <= FIFO_DEPTH;",
                         "fifo_credit_minus_one_reg <= FIFO_DEPTH - 1'b1;",
                         "fifo_credit_token_reg <= 1'b0;"):
+                    assignment_at = generated.index(assignment)
+                    process_start = generated.rfind("always @", 0, assignment_at)
+                    process_end = generated.find("\nalways @", assignment_at)
+                    self.assertGreaterEqual(process_start, 0)
+                    self.assertGreater(process_end, assignment_at)
+                    credit_process = generated[process_start:process_end]
+                    reset_branch = re.search(
+                        rf"if \(reset == 1'b{value}\)\s*begin(?P<body>.*?)\n\s*end\s*\n\s*else if \(activate_configure",
+                        credit_process, re.DOTALL)
+                    if reset_branch is None:
+                        self.fail(f"{assignment.split()[0]} reset branch does not precede activation")
                     self.assertIn(assignment, reset_branch.group("body"))
-                self.assertRegex(generated, r"else if \(activate_configure\s*\|\|")
+                    activation_branch = re.search(
+                        r"else if \(activate_configure\s*\|\|.*?\)\s*begin(?P<body>.*?)\n\s*end",
+                        credit_process, re.DOTALL)
+                    self.assertIsNotNone(activation_branch)
+                    self.assertIn(assignment, activation_branch.group("body"))
                 self.assertEqual(generated.count("wire reset_n ="), 1)
                 self.assertNotIn("if (!reset_n", generated)
                 self.assertIn(f"wire reset_n = !(reset == 1'b{value});", generated)

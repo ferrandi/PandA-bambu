@@ -36,7 +36,7 @@ class GeneratedDuplexRunnerTests(unittest.TestCase):
         shutil.copy2(RUNNER, self.rtl_tests / RUNNER.name)
         shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/parallel_helpers.sh",
                      self.family / "parallel_helpers.sh")
-        shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/rtl_tests/modelsim_helpers.sh",
+        shutil.copy2(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/modelsim_helpers.sh",
                      self.rtl_tests / "modelsim_helpers.sh")
         lookup = self.repo / "etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
         lookup.parent.mkdir(parents=True)

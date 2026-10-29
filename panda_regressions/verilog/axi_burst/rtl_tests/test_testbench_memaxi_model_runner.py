@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[4]
-SCRIPT = ROOT / "panda_regressions/hls/bambu_axi_burst/rtl_tests/run_testbench_memaxi_model.sh"
+SCRIPT = ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/run_testbench_memaxi_model.sh"
 SCRATCH = ROOT / "documentation/tmp/wp7-model-runner-abort-20261027"
 
 

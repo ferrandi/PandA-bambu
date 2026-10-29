@@ -135,11 +135,13 @@ module tb_generated_duplex #(
     integer b_pending = 0;
     integer simultaneous_rw = 0;
     integer simultaneous_done = 0;
+    integer load_completion_count = 0;
     integer fault_r_seen = 0, fault_b_seen = 0;
     integer accepted_load_ops = 0;
     logic b_fault_read_success = 0;
     logic last_load_immediate = 0;
     logic [31:0] last_load_value = 0;
+    logic [31:0] last_load_completion_data = 0;
     logic stall_ar = 0, stall_r = 0, stall_aw = 0, stall_w = 0, stall_b = 0;
     logic prev_ar_stalled = 0, prev_aw_stalled = 0, prev_w_stalled = 0;
     logic [ADDRESS_BITS+18:0] prev_ar_payload, prev_aw_payload;
@@ -177,6 +179,7 @@ module tb_generated_duplex #(
             ar_wr = 0; ar_rd = 0; aw_wr = 0; aw_rd = 0; w_wr = 0; w_rd = 0;
             read_beats = 0; accepted_ar = 0; accepted_aw = 0; accepted_w = 0;
             committed_w = 0; accepted_b = 0; b_pending = 0; simultaneous_rw = 0; simultaneous_done = 0;
+            load_completion_count = 0; last_load_completion_data = 0;
             ar_outstanding = 0; aw_outstanding = 0;
             peak_ar_outstanding = 0; peak_aw_outstanding = 0;
             fault_r_seen = 0; fault_b_seen = 0;
@@ -185,6 +188,12 @@ module tb_generated_duplex #(
         end
         else
         begin
+            if (aggregator.read_engine.fifo_load_done) begin
+                if (read_done !== 1'b1)
+                    $fatal(1, "GENERATED_LOAD_COMPLETION_NOT_PUBLIC");
+                load_completion_count = load_completion_count + 1;
+                last_load_completion_data = read_result;
+            end
             if (core_read_start && core_read_opcode == OP_LOAD)
                 accepted_load_ops = accepted_load_ops + 1;
             if (fault_b_seen != 0 && read_done)
@@ -295,15 +304,20 @@ module tb_generated_duplex #(
         repeat (n) @(negedge clock);
     endtask
 
-    task automatic wait_read_done;
+    task automatic wait_read_done(input integer before_count, output logic [31:0] completed_data);
         integer limit;
         begin
             limit = 0;
-            while (!read_done && limit < 10000)
+            while (load_completion_count == before_count && limit < 10000)
             begin
-              @(negedge clock); limit = limit + 1;
+              @(posedge clock); #1; limit = limit + 1;
             end
-            if (!read_done) $fatal(1, "GENERATED_READ_TIMEOUT");
+            if (load_completion_count == before_count)
+                $fatal(1, "GENERATED_READ_TIMEOUT");
+            if (load_completion_count != before_count + 1)
+                $fatal(1, "GENERATED_READ_COMPLETION_COUNT_INVALID before=%0d after=%0d",
+                       before_count, load_completion_count);
+            completed_data = last_load_completion_data;
         end
     endtask
 
@@ -345,41 +359,19 @@ module tb_generated_duplex #(
     task automatic load_word(input logic [ADDRESS_BITS-1:0] address);
         logic [31:0] expected_read;
         logic [31:0] captured_read;
-        bit completed;
-        integer limit;
+        integer before_count;
         begin
             expected_read = memory[memory_index(address)];
             @(negedge clock);
             // A preceding CONFIGURE can still expose its acknowledgement.
             // Let it retire before interpreting done as a LOAD result.
             while (read_done) @(negedge clock);
+            before_count = load_completion_count;
             read_opcode = OP_LOAD; read_size = 32; read_address = address; read_start = 1;
             #1;
-            completed = read_done;
-            last_load_immediate = completed;
-            if (completed) captured_read = read_result;
-            if (!completed)
-            begin
-                @(posedge clock); #1;
-                completed = read_done;
-                if (completed) captured_read = read_result;
-            end
-            if (!completed)
-            begin
-                @(negedge clock); read_start = 0;
-                limit = 0;
-                while (!read_done && limit < 10000)
-                begin
-                  @(negedge clock); #1; limit = limit + 1;
-                end
-                if (!read_done) $fatal(1, "GENERATED_READ_TIMEOUT");
-                captured_read = read_result;
-                @(posedge clock); @(negedge clock);
-            end
-            else
-            begin
-                @(posedge clock); @(negedge clock); read_start = 0;
-            end
+            last_load_immediate = read_done;
+            wait_read_done(before_count, captured_read);
+            @(negedge clock); read_start = 0;
             if (captured_read !== expected_read)
                 $fatal(1, "GENERATED_READ_DATA_MISMATCH address=%h got=%h expected=%h", address, captured_read, expected_read);
             last_load_value = captured_read;
@@ -502,8 +494,10 @@ module tb_generated_duplex #(
 
     task automatic run_case(input string name);
         integer before_ar, before_aw, before_w, before_r, before_rw, before_done, t;
+        integer before_loads;
         integer expected_write_beats, expected_b_responses, saved_expected_index;
         logic [31:0] saved_payload;
+        logic [31:0] completed_read;
         logic [31:0] saved_expected_word;
         logic saved_expected_valid;
         logic [ADDRESS_BITS-1:0] saved_address;
@@ -516,6 +510,7 @@ module tb_generated_duplex #(
                 begin
                     expected_write_beats=4; expected_b_responses=1;
                     stall_r = 1; configure(1, READ_BASE, 4); configure(0, WRITE_BASE, 4);
+                    before_loads = load_completion_count;
                     @(negedge clock); read_opcode = OP_LOAD; read_address = READ_BASE; read_start = 1;
                     for (t=0;t<4;t=t+1) store_word(WRITE_BASE+t*4, 32'h11000000+t);
                     if (read_done || read_beats != 0 || accepted_aw != 0)
@@ -523,8 +518,9 @@ module tb_generated_duplex #(
                     drain();
                     if (committed_w != 4 || accepted_b != 1 || !write_done || read_done)
                         $fatal(1, "GENERATED_STORE_DRAIN_DID_NOT_PROGRESS_WHILE_READ_STALLED");
-                    stall_r = 0; wait_read_done(); if (read_result !== memory[64]) $fatal(1, "GENERATED_LOAD_RESUME_MISMATCH");
-                    read_start = 0;
+                    stall_r = 0; wait_read_done(before_loads, completed_read);
+                    if (completed_read !== memory[64]) $fatal(1, "GENERATED_LOAD_RESUME_MISMATCH");
+                    @(negedge clock); read_start = 0;
                 end
                 "STORE_WAIT_LOAD":
                 begin
@@ -572,6 +568,7 @@ module tb_generated_duplex #(
                 begin
                     expected_write_beats=4; expected_b_responses=1;
                     before_ar=accepted_ar; before_r=read_beats; before_done=accepted_load_ops;
+                    before_loads=load_completion_count;
                     stall_ar=1; stall_r=1;
                     configure(1,READ_BASE,4); configure(0,WRITE_BASE,4);
                     @(negedge clock); read_opcode=OP_LOAD; read_address=READ_BASE; read_start=1;
@@ -595,7 +592,10 @@ module tb_generated_duplex #(
                     if (read_beats==before_r)
                         $fatal(1, "GENERATED_STALLED_R_NOT_RETIRED ar=%0d r=%0d queued=%0d",
                                accepted_ar-before_ar, read_beats-before_r, ar_wr-ar_rd);
-                    wait_read_done(); drain();
+                    wait_read_done(before_loads, completed_read);
+                    if (completed_read !== memory[memory_index(READ_BASE)])
+                        $fatal(1, "GENERATED_STALLED_READ_DATA_INVALID");
+                    drain();
                 end
                 "SIMULTANEOUS":
                 begin
@@ -604,6 +604,7 @@ module tb_generated_duplex #(
                     before_ar=accepted_ar; before_aw=accepted_aw; before_r=read_beats;
                     before_rw=simultaneous_rw;
                     before_done=simultaneous_done;
+                    before_loads=load_completion_count;
                     configure(1,READ_BASE,2); configure(0,WRITE_BASE,1);
                     t=0; while (accepted_ar==before_ar && t<2000)
                     begin
@@ -643,19 +644,15 @@ module tb_generated_duplex #(
                     if (ar_rd==ar_wr || !stall_r || !stall_b)
                         $fatal(1, "GENERATED_SIMULTANEOUS_R_OR_B_NOT_PENDING");
                     stall_b=0;
-                    stall_r=0;
                     @(posedge clock); #1;
-                    if (!read_done || !write_done || read_result!==memory[memory_index(READ_BASE+4)])
-                        $fatal(1, "GENERATED_SIMULTANEOUS_DONE_NOT_COINCIDENT");
-                    t=0; while (!write_done && t<2000)
-                    begin
-                      @(negedge clock); t=t+1;
-                    end
                     if (!write_done || accepted_b!=1)
-                        $fatal(1, "GENERATED_SIMULTANEOUS_DRAIN_COMPLETION_INVALID");
-                    @(posedge clock); #1;
-                    if (simultaneous_done==before_done)
-                        $fatal(1, "GENERATED_SIMULTANEOUS_DONE_NOT_SAMPLED");
+                        $fatal(1, "GENERATED_SIMULTANEOUS_WRITE_COMPLETION_INVALID");
+                    @(negedge clock); stall_r=0;
+                    wait_read_done(before_loads + 1, completed_read);
+                    if (completed_read!==memory[memory_index(READ_BASE+4)])
+                        $fatal(1, "GENERATED_SIMULTANEOUS_READ_DATA_INVALID");
+                    if (simultaneous_done!=before_done+1)
+                        $fatal(1, "GENERATED_SIMULTANEOUS_DONE_NOT_COINCIDENT");
                     @(negedge clock);
                     if (accepted_ar!=before_ar+1 || accepted_aw!=before_aw+1 || accepted_w!=1 || committed_w!=1 || read_beats!=before_r+2)
                         $fatal(1, "GENERATED_SIMULTANEOUS_COUNTS_INVALID");
