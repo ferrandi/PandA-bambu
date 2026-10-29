@@ -452,5 +452,6 @@ int main()
    network_free(net);
    free(imgs);
 
+   assert(!error && "MNIST output differs from the host reference");
    return error;
 }

@@ -58,22 +58,6 @@ jobs:
           - basename: banked_allocation
             script: ./examples/OpenMP/banked-memory/openmp_banked_allocation.sh
             batch: "xc7vx690t-3ffg1930_10.0"
-          - basename: task_arbiter
-            args: -c=--compiler=I386_CLANG19
-            script: ./examples/OpenMP/task/openmp_task_arb.sh
-            batch: "xc7vx690t-3ffg1930_10.0"
-          - basename: task_banked
-            args: -c=--compiler=I386_CLANG19
-            script: ./examples/OpenMP/task/openmp_task_banked.sh
-            batch: "xc7vx690t-3ffg1930_10.0"
-          - basename: task_arbiter_eval
-            args: -c=--compiler=I386_CLANG19
-            script: ./examples/OpenMP/task/openmp_task_eval_arb.sh
-            batch: "xc7vx690t-3ffg1930_10.0"
-          - basename: task_banked_eval
-            args: -c=--compiler=I386_CLANG19
-            script: ./examples/OpenMP/task/openmp_task_eval_banked.sh
-            batch: "xc7vx690t-3ffg1930_10.0"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5

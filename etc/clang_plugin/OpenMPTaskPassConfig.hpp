@@ -28,10 +28,12 @@
 #ifndef OPENMP_TASK_PASS_CONFIG_HPP
 #define OPENMP_TASK_PASS_CONFIG_HPP
 
+#ifdef PANDA_OPENMP_TASK_DEBUG
 #define VERBOSE
+#define SHOW_INPUT_PROXIES
+#endif
 #define SYSTEM_32_BIT
 #define REMOVE_OUTLINED_GEP
-#define SHOW_INPUT_PROXIES
 // Currently this is handled inside bambu FU binding
 #define DISABLE_RESOURCE_DUPLICATION
 

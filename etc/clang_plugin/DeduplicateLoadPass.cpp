@@ -31,7 +31,10 @@
 
 #include "OmpTaskGraphConstants.hpp"
 #include "OpenMPTaskPassConfig.hpp"
+#include "Utils.hpp"
 
+#include <llvm/Analysis/AliasAnalysis.h>
+#include <llvm/Analysis/ValueTracking.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/Instructions.h>
@@ -107,16 +110,10 @@ namespace
 
    struct DeduplicateLoadPass : public PassInfoMixin<DeduplicateLoadPass>
    {
-      // Known methodology limitation: conditional task creation and control-flow
-      // paths requiring dominance-aware load replacement are not supported. This
-      // pass retains loads across basic blocks and assumes that a reused load
-      // dominates all its replacements; it does not validate that precondition.
-      // Known methodology limitation: repeated simple loads from the same pointer
-      // must have the same value, including across stores and calls. General
-      // memory-clobber analysis is not implemented. Clearing the map on every
-      // possible write (including OpenMP runtime calls) prevents canonicalization
-      // required by task dependency extraction and changes the extracted graph.
-      PreservedAnalyses run(Function& F, FunctionAnalysisManager&)
+      // The static task model requires captured base pointers to remain invariant
+      // while runtime calls submit tasks. Other loads obey ordinary clobber rules;
+      // reuse stays within one block so the original load always dominates it.
+      PreservedAnalyses run(Function& F, FunctionAnalysisManager& FAM)
       {
          // Map to keep track of unique loads per pointer operand
          std::map<Value*, LoadInst*> uniqueLoads;
@@ -129,12 +126,16 @@ namespace
             return PreservedAnalyses::all();
          }
 
-         errs() << "Visiting target function: " << F.getName() << "\n";
-
+         if(Bambu::OpenMP::Task::Utils::Verbose)
+         {
+            errs() << "Visiting target function: " << F.getName() << "\n";
+         }
          bool modified = false;
 
+         auto& AA = FAM.getResult<AAManager>(F);
          for(auto& BB : F)
          {
+            uniqueLoads.clear();
             const bool validBlock = isValidBlock(BB);
             for(auto& I : BB)
             {
@@ -145,6 +146,44 @@ namespace
                   (isa<LoadInst>(I) && !cast<LoadInst>(I).isSimple()))
                {
                   uniqueLoads.clear();
+               }
+               const auto* call = dyn_cast<CallBase>(&I);
+               const auto* callee = call ? call->getCalledFunction() : nullptr;
+               const auto allocation = callee && callee->getName() == targetOmpTaskAllocName;
+               const auto submission = callee && (callee->getName() == targetOmpTaskSubmissionDepsName ||
+                                                  callee->getName() == targetOmpTaskSubmissionName);
+               // Task/private stores address fresh runtime-owned allocations,
+               // including the shareds field reached through the task header.
+               const auto isTaskAllocation = [](const Value* pointer) {
+                  const auto* base = getUnderlyingObject(pointer);
+                  if(const auto* load = dyn_cast<LoadInst>(base))
+                  {
+                     // Only the first (shareds) header field is guaranteed to
+                     // point to fresh storage, not arbitrary captured pointers.
+                     base = load->getPointerOperand()->stripPointerCasts();
+                  }
+                  const auto* alloc = dyn_cast<CallBase>(base);
+                  const auto* function = alloc ? alloc->getCalledFunction() : nullptr;
+                  return function && function->getName() == targetOmpTaskAllocName;
+               };
+               const auto* store = dyn_cast<StoreInst>(&I);
+               const bool freshStorage = store && isTaskAllocation(store->getPointerOperand());
+               if(I.mayWriteToMemory() && !allocation && !freshStorage)
+               {
+                  for(auto it = uniqueLoads.begin(); it != uniqueLoads.end();)
+                  {
+                     const auto* capture = dyn_cast<Argument>(it->first);
+                     const bool invariantCapture =
+                         submission && capture && capture->getArgNo() >= 2 && it->second->getType()->isPointerTy();
+                     if(!invariantCapture && isModSet(AA.getModRefInfo(&I, MemoryLocation::get(it->second))))
+                     {
+                        it = uniqueLoads.erase(it);
+                     }
+                     else
+                     {
+                        ++it;
+                     }
+                  }
                }
                if(!validBlock)
                {
@@ -173,7 +212,10 @@ namespace
                      std::string stringBuff2;
                      raw_string_ostream stream2(stringBuff2);
                      uniqueLoads[ptrOperand]->print(stream2);
-                     errs() << "Replacing " << stringBuff << " with " << stringBuff2 << '\n';
+                     if(Bambu::OpenMP::Task::Utils::Verbose)
+                     {
+                        errs() << "Replacing " << stringBuff << " with " << stringBuff2 << '\n';
+                     }
                      LoadInst* firstLoad = uniqueLoads[ptrOperand];
                      assert(firstLoad);
 
@@ -209,7 +251,7 @@ namespace
 
    struct DeduplicateLoadPass : public PassInfoMixin<DeduplicateLoadPass>
    {
-      PreservedAnalyses run(Function& F, FunctionAnalysisManager&)
+      PreservedAnalyses run(Function& F, FunctionAnalysisManager& FAM)
       {
          return PreservedAnalyses::all();
       }
@@ -221,11 +263,9 @@ namespace
 // Registration for the new pass
 llvm::PassPluginLibraryInfo getDeduplicateLoadPassPluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, "DeduplicateLoadPass", LLVM_VERSION_STRING, [](PassBuilder& PB)
-           {
+   return {LLVM_PLUGIN_API_VERSION, "DeduplicateLoadPass", LLVM_VERSION_STRING, [](PassBuilder& PB) {
               PB.registerPipelineParsingCallback(
-                  [](StringRef Name, FunctionPassManager& FPM, ArrayRef<PassBuilder::PipelineElement>)
-                  {
+                  [](StringRef Name, FunctionPassManager& FPM, ArrayRef<PassBuilder::PipelineElement>) {
                      if(Name == "deduplicateLoadInst")
                      {
                         FPM.addPass(DeduplicateLoadPass());

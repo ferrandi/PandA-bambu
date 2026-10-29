@@ -85,8 +85,14 @@ do
    # Expose the failure even when the full package is on private storage.
    printf '::group::Failure details: %s\n' "${rel_case}"
    tail -n 100 "${marker}" || true
+   log_count=0
    while IFS= read -r -d '' log_file
    do
+      if (( log_count >= 10 )); then
+         echo "Further logs omitted from console; see the post-mortem artifact."
+         break
+      fi
+      log_count=$((log_count + 1))
       printf '\n--- %s ---\n' "${log_file#${case_copy}/}"
       tail -n 60 "${log_file}" || true
    done < <(find "${case_copy}" -type f \( -name simulation.log -o -name launch.log -o -name transcript \) -print0)

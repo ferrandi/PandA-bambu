@@ -190,7 +190,7 @@ library_manager::library_manager(std::string library_name, ParameterConstRef _Pa
 }
 
 void library_manager::xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
-                           const std::string& priority_encoder_prefix)
+                            const std::string& priority_encoder_prefix)
 {
 #ifndef NDEBUG
    int debug_level = Param->get_class_debug_level("library_manager");

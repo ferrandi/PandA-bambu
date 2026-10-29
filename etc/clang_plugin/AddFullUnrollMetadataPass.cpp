@@ -47,7 +47,6 @@ using namespace llvm;
 
 namespace
 {
-
 #if PANDA_LLVM_CLANG_MAJOR >= 19
    /**
     * @brief LLVM Pass that adds full unroll metadata to loops within OpenMP outlined functions
@@ -85,7 +84,10 @@ namespace
          // Iterate over all loops in the function.
          Bambu::OpenMP::Task::Utils::log(errs(), 0, 1, "Visiting loop");
          L->print(errs(), false);
-         errs() << "\n\n";
+         if(Bambu::OpenMP::Task::Utils::Verbose)
+         {
+            errs() << "\n\n";
+         }
          MDNode* LoopID = L->getLoopID();
          if(!LoopID)
          {
@@ -241,11 +243,9 @@ namespace
 // Registration for the new Pass Manager.
 extern "C" PassPluginLibraryInfo LLVM_ATTRIBUTE_WEAK __attribute__((visibility("default"))) llvmGetPassPluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, "AddFullUnrollMetadataPass", "v0.1.0", [](PassBuilder& PB)
-           {
+   return {LLVM_PLUGIN_API_VERSION, "AddFullUnrollMetadataPass", "v0.1.0", [](PassBuilder& PB) {
               PB.registerPipelineParsingCallback(
-                  [](StringRef Name, FunctionPassManager& FPM, ArrayRef<PassBuilder::PipelineElement>)
-                  {
+                  [](StringRef Name, FunctionPassManager& FPM, ArrayRef<PassBuilder::PipelineElement>) {
                      if(Name == "addFullUnrollMetadata")
                      {
                         FPM.addPass(AddFullUnrollMetadataPass());

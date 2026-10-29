@@ -29,7 +29,9 @@ __attribute__((noinline)) void fn(int* data)
          for(unsigned i = 0; i < size; ++i)
          {
 #pragma omp task firstprivate(i) depend(inout : data[i])
-            { data[i] += static_cast<int>(i) + 1; }
+            {
+               data[i] += static_cast<int>(i) + 1;
+            }
          }
       }
    }
