@@ -27,6 +27,7 @@
  *
  */
 #include "classic_datapath.hpp"
+#include "openmp_task_constants.hpp"
 
 #include "BambuParameter.hpp"
 #include "Parameter.hpp"
@@ -270,8 +271,7 @@ DesignFlowStep_Status classic_datapath::InternalExec()
 
    /// allocate interconnections
    const bool is_openmp = parameters->isOption(OPT_openmp) && parameters->getOption<bool>(OPT_openmp);
-   const auto use_omp_task_graph =
-       parameters->IsParameter("enable-task") && parameters->GetParameter<int>("enable-task") == 1;
+   const auto use_omp_task_graph = openmp_task::IsEnabled(*parameters);
    bool is_task_graph_datapath = fsymbol.find("task_graph") != std::string::npos;
    auto datapath_cir_module = GetPointer<module_o>(datapath_cir);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding interconnections");

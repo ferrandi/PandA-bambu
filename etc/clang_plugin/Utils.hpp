@@ -33,6 +33,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -44,6 +45,10 @@ namespace Bambu
       {
          namespace Utils
          {
+            inline const bool Verbose = []() {
+               const auto* value = std::getenv("BAMBU_OPENMP_TASK_VERBOSE");
+               return value && std::string(value) == "1";
+            }();
 #ifdef PUGIXML_NO_XPATH
             template <typename CallBack>
             void searchAndApply(pugi::xml_node node, const std::string& targetNode, CallBack callback);
@@ -57,6 +62,10 @@ namespace Bambu
             void log(llvm::raw_fd_ostream& out, uint8_t indent, uint8_t noNewLines, T&&... args)
             {
 #if defined(__cplusplus) && __cplusplus >= 201703L
+               if(!Verbose)
+               {
+                  return;
+               }
                std::string indentStr = "";
                for(uint8_t i = 0; i < indent; ++i)
                {
@@ -227,8 +236,8 @@ namespace Bambu
                log(llvm::errs(), 0, 2, "\n######################### Time taken for", name, ":", duration, "ms");
             }
          }; // namespace Utils
-      } // namespace Task
-   } // namespace OpenMP
+      }     // namespace Task
+   }        // namespace OpenMP
 } // namespace Bambu
 
 #endif

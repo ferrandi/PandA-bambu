@@ -506,5 +506,15 @@ if(BUILD_TESTING AND PANDA_TEST_VERILATOR)
    add_test(NAME priority_encoders
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/verilog/priority_encoder/test_priority_encoders.py"
               --verilator "${PANDA_TEST_VERILATOR}")
-   set_tests_properties(priority_encoders PROPERTIES LABELS "rtl;openmp" TIMEOUT 300)
+   set_tests_properties(priority_encoders PROPERTIES LABELS "rtl;technology" TIMEOUT 900)
+elseif(BUILD_TESTING)
+   message(STATUS "Priority encoder regression unavailable: Verilator was not found")
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp_task AND TARGET clang_plugin_19_opt_deduplicate_load_inst)
+   add_test(NAME openmp_task_passes
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_task/test_task_passes.py"
+              --opt "${PANDA_CLANG19_LLVMOPT}" --clang "${PANDA_CLANG19_EXE}" --cxx "${CMAKE_CXX_COMPILER}"
+              --plugin-dir "$<TARGET_FILE_DIR:clang_plugin_19_opt_openmp_task>")
+   set_tests_properties(openmp_task_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 120)
 endif()

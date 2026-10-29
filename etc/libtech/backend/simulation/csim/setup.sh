@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-# Compile the generated models and CSIM runtime as C, even for C++ input kernels.
+# Compile the generated C models and CSIM runtime as C, even for C++ input kernels.
+# Input kernel sources are compiled separately by the frontend; files selected
+# below are generated simulation outputs, including C code with a .cpp suffix.
 CSIMFLAGS=" -DBAMBU_CSIM ${BEH_CFLAGS} -x c -std=gnu11"
 
 case "$(bambu_results /application/sources@cflags)" in

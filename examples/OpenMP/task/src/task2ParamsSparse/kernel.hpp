@@ -25,7 +25,6 @@
 #include <mdpi/mdpi_user.h>
 #endif
 
-#include <cstdlib>
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>

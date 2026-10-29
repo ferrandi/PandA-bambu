@@ -1098,10 +1098,10 @@ jobs:
           - { test: banked_profiling, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--noc-profiling -c=--compiler=I386_CLANG13" }
           - { test: banked_cache, script: ./examples/OpenMP/banked-memory/openmp_banked_cache.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
           - { test: banked_allocation, script: ./examples/OpenMP/banked-memory/openmp_banked_allocation.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
-          - { test: task_arbiter, script: ./examples/OpenMP/task/openmp_task_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG19" }
-          - { test: task_banked, script: ./examples/OpenMP/task/openmp_task_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG19" }
-          - { test: task_arbiter_eval, script: ./examples/OpenMP/task/openmp_task_eval_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG19" }
-          - { test: task_banked_eval, script: ./examples/OpenMP/task/openmp_task_eval_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG19" }
+          - { test: task_arbiter, script: ./examples/OpenMP/task/openmp_task_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
+          - { test: task_banked, script: ./examples/OpenMP/task/openmp_task_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
+          - { test: task_arbiter_eval, script: ./examples/OpenMP/task/openmp_task_eval_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
+          - { test: task_banked_eval, script: ./examples/OpenMP/task/openmp_task_eval_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
     env:
       outname: OpenMP_${{matrix.test}}
       args: -c=--simulator=MODELSIM ${{matrix.args}}
@@ -1110,7 +1110,13 @@ jobs:
         uses: actions/checkout@v5
       - name: Check priority encoder implementations
         if: matrix.test == 'task_arbiter'
-        run: python3 panda_regressions/verilog/priority_encoder/test_priority_encoders.py
+        shell: bash
+        run: |
+          if command -v verilator >/dev/null 2>&1; then
+            python3 panda_regressions/verilog/priority_encoder/test_priority_encoders.py
+          else
+            echo "::warning::Priority encoder regression skipped: Verilator is unavailable"
+          fi
       - name: Setup repository + distribution
         uses: ./.github/actions/panda-setup
         with:

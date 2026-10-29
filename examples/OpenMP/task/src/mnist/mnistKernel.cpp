@@ -1142,10 +1142,10 @@ __attribute__((noinline)) void fn(Matrix* hidden_weights_accumulator, Matrix* ou
                                   Matrix* out12, Matrix* out13, Matrix* out15, Matrix* out16, Matrix* out17,
                                   Matrix* out18, Matrix* out19, Matrix* out20)
 {
-#pragma omp parallel default(none)                                                                                     \
-    shared(hidden_weights_accumulator, output_weights_accumulator, hidden_weights, output_weights, imgs, flatten,      \
-               output, out1, out2, out3, out4, out5, out6, out7, out8, out9, out10, out11, out12, out13, out15, out16, \
-               out17, out18, out19, out20) num_threads(1)
+#pragma omp parallel default(none)                                                                                 \
+    shared(hidden_weights_accumulator, output_weights_accumulator, hidden_weights, output_weights, imgs, flatten,  \
+           output, out1, out2, out3, out4, out5, out6, out7, out8, out9, out10, out11, out12, out13, out15, out16, \
+           out17, out18, out19, out20) num_threads(1)
    {
 #pragma omp single nowait
       {
@@ -1334,7 +1334,7 @@ void network_save(NeuralNetwork* net, char const* file_string)
    chdir("-"); // Go back to the orignal directory
 }
 
-#if FAKE_DATASET ==  0
+#if FAKE_DATASET == 0
 NeuralNetwork* network_load(char const* file_string)
 {
    NeuralNetwork* net = (NeuralNetwork*)malloc(sizeof(NeuralNetwork));

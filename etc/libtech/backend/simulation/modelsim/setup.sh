@@ -25,8 +25,15 @@ OPT_FLAGS="-O5"
 case "$(vsim -version 2>&1)" in
   *"STARTER EDITION"*)
     OPT_FLAGS=""
-    exec {MODELSIM_LOCK_FD}> "${TMPDIR:-/tmp}/bambu-modelsim-starter-${UID}.lock"
-    flock "${MODELSIM_LOCK_FD}"
+    if ! command -v flock >/dev/null 2>&1; then
+      echo "ModelSim Starter simulations require flock (util-linux)." >&2
+      return 1
+    fi
+    exec {MODELSIM_LOCK_FD}> "${TMPDIR:-/tmp}/bambu-modelsim-starter-${UID}.lock" || return 1
+    if ! flock -w "${BAMBU_MODELSIM_LOCK_TIMEOUT:-600}" "${MODELSIM_LOCK_FD}"; then
+      echo "Timed out waiting for another ModelSim Starter simulation to finish." >&2
+      return 1
+    fi
     ;;
 esac
 
