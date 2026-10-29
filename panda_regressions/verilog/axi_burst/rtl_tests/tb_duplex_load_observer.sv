@@ -10,8 +10,8 @@ module MinimalAXI4MasterPipelined #(
   input logic start,
   input logic [1:0] in1,
   input logic fifo_load_pop,
-  input logic [30:0] consumed,
-  input logic [30:0] region_count
+  input logic [30:0] consumed_reg,
+  input logic [30:0] region_count_reg
 );
 endmodule
 

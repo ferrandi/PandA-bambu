@@ -81,6 +81,6 @@ bind MinimalAXI4MasterPipelined duplex_load_observer #(
   .start(start),
   .operation(in1),
   .fifo_load_pop(fifo_load_pop),
-  .consumed_reg(consumed),
-  .region_count_reg(region_count)
+  .consumed(consumed_reg),
+  .region_count(region_count_reg)
 );

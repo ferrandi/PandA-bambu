@@ -81,11 +81,12 @@ of 8, 16, 32, 64, 128, 256, 512 and 1024 bits (ARSIZE 0 through 7), and rejects
 2048- and 4096-bit reader widths. The current writer cell accepts 32-bit data
 beats only.
 
-The `latency` interface attribute is scheduling metadata for `m_axi`, not a
-simulation-memory delay. Equal explicit values are merged per bundle, conflicting
-explicit values are rejected, and omitted values resolve to zero. Simulation
-stimulus delay is controlled separately with `--mem-delay-read` and
-`--mem-delay-write`.
+The `latency` interface attribute is accepted and validated for `m_axi`, then
+carried as bundle metadata; it currently does not alter request scheduling or
+prefetch behavior. It is separate from simulation-memory delay. Equal explicit
+values are merged per bundle, conflicting explicit values are rejected, and
+omitted values resolve to zero. Simulation stimulus delay is controlled
+separately with `--mem-delay-read` and `--mem-delay-write`.
 
 For MDPI simulation, pointer extents must be known from source array/reference
 metadata, `--tb-param-size`, or testbench `m_param_alloc`. An unknown or zero
