@@ -32,8 +32,8 @@
  */
 #include "CompilerWrapper.hpp"
 
-#include "Parameter.hpp"
 #include "BambuParameterRegistry.hpp"
+#include "Parameter.hpp"
 #include "compiler_constants.hpp"
 #include "cpu_stats.hpp"
 #include "cpu_time.hpp"
@@ -172,8 +172,7 @@
 
 #define SCRIPT_NEWLINE " \\\n  "
 PANDA_REGISTER_PARAMETER("emit-llvm", PandaParamType::Bool, "0",
-                         "Emit the compiled source file in symbolic llvm instead of an object file",
-                         "debugging");
+                         "Emit the compiled source file in symbolic llvm instead of an object file", "debugging");
 
 enum CompilerMode : int
 {
@@ -187,7 +186,7 @@ enum CompilerMode : int
    CM_OPT_DUMPBAMBUIR = 1 << 10,   // Enable IR dump plugin
    CM_OPT_CHANNELCTOR = 1 << 11,   // Enable ac_channel/hls::stream construction cleanup plugin
    CM_OPT_OPENMP = 1 << 12,        // Enable OpenMP plugin
-   CM_OPT_ALL = 31 << 7,         // Enable backend HLS optimization plugins
+   CM_OPT_ALL = 31 << 7,           // Enable backend HLS optimization plugins
    CM_LTO_FLAG = 1 << 16,          // Enable LTO optimization flags
    CM_COMPILER_STD = 1 << 24,      // Use default compiler
    CM_COMPILER_OPT = 1 << 25,      // Use compiler optimizer

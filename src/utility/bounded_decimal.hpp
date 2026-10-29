@@ -30,53 +30,53 @@
 
 namespace panda
 {
-namespace utility
-{
-enum class bounded_decimal_result
-{
-   valid,
-   invalid_format,
-   out_of_range
-};
-
-inline bounded_decimal_result parse_bounded_ascii_decimal(const std::string& text, const std::uint32_t minimum,
-                                                          const std::uint32_t maximum, std::uint32_t& result)
-{
-   if(text.empty() || minimum > maximum)
+   namespace utility
    {
-      return text.empty() ? bounded_decimal_result::invalid_format : bounded_decimal_result::out_of_range;
-   }
-
-   std::uint32_t value = 0;
-   bool exceeds_maximum = false;
-   for(const char raw_ch : text)
-   {
-      const auto ch = static_cast<unsigned char>(raw_ch);
-      if(ch < '0' || ch > '9')
+      enum class bounded_decimal_result
       {
-         return bounded_decimal_result::invalid_format;
-      }
-      if(!exceeds_maximum)
+         valid,
+         invalid_format,
+         out_of_range
+      };
+
+      inline bounded_decimal_result parse_bounded_ascii_decimal(const std::string& text, const std::uint32_t minimum,
+                                                                const std::uint32_t maximum, std::uint32_t& result)
       {
-         const auto digit = static_cast<std::uint32_t>(ch - '0');
-         if(value > maximum / 10U || (value == maximum / 10U && digit > maximum % 10U))
+         if(text.empty() || minimum > maximum)
          {
-            exceeds_maximum = true;
+            return text.empty() ? bounded_decimal_result::invalid_format : bounded_decimal_result::out_of_range;
          }
-         else
+
+         std::uint32_t value = 0;
+         bool exceeds_maximum = false;
+         for(const char raw_ch : text)
          {
-            value = value * 10U + digit;
+            const auto ch = static_cast<unsigned char>(raw_ch);
+            if(ch < '0' || ch > '9')
+            {
+               return bounded_decimal_result::invalid_format;
+            }
+            if(!exceeds_maximum)
+            {
+               const auto digit = static_cast<std::uint32_t>(ch - '0');
+               if(value > maximum / 10U || (value == maximum / 10U && digit > maximum % 10U))
+               {
+                  exceeds_maximum = true;
+               }
+               else
+               {
+                  value = value * 10U + digit;
+               }
+            }
          }
+         if(exceeds_maximum || value < minimum)
+         {
+            return bounded_decimal_result::out_of_range;
+         }
+         result = value;
+         return bounded_decimal_result::valid;
       }
-   }
-   if(exceeds_maximum || value < minimum)
-   {
-      return bounded_decimal_result::out_of_range;
-   }
-   result = value;
-   return bounded_decimal_result::valid;
-}
-} // namespace utility
+   } // namespace utility
 } // namespace panda
 
 #endif // PANDA_BOUNDED_DECIMAL_HPP

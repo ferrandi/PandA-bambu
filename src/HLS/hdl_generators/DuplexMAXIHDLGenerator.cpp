@@ -51,8 +51,8 @@ namespace
       return value->get_content_str();
    }
 
-   unsigned int parse_decimal(const structural_objectRef& mod, const std::string& name,
-                              const unsigned int minimum, const unsigned int maximum)
+   unsigned int parse_decimal(const structural_objectRef& mod, const std::string& name, const unsigned int minimum,
+                              const unsigned int maximum)
    {
       const auto text = read_attribute(mod, name);
       unsigned int value = 0;
@@ -106,8 +106,7 @@ namespace
          THROW_ERROR_USAGE("Duplex m_axi address width must be 32 or 64 bits.");
       }
       if(!panda::utility::is_axi_fifo_depth_valid(profile.read_fifo) ||
-         !panda::utility::is_axi_fifo_depth_valid(profile.write_fifo) ||
-         profile.write_fifo < profile.write_burst)
+         !panda::utility::is_axi_fifo_depth_valid(profile.write_fifo) || profile.write_fifo < profile.write_burst)
       {
          THROW_ERROR_USAGE("Duplex m_axi FIFO depths must be powers of two; write_fifo_depth must be at least "
                            "max_write_burst_length.");
@@ -121,7 +120,7 @@ namespace
    {
       const structural_type_descriptorRef type(new structural_type_descriptor("bool", width));
       const auto port = vector ? structural_manager::add_port_vector(name, direction, 1U, mod, type) :
-                                structural_manager::add_port(name, direction, mod, type);
+                                 structural_manager::add_port(name, direction, mod, type);
       GetPointerS<port_o>(port)->set_port_interface(port_interface);
       return port;
    }
@@ -297,34 +296,36 @@ void DuplexMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objectRe
        << "  .BITSIZE_in1(2), .BITSIZE_in2(32), .BITSIZE_in3(32), .BITSIZE_in4(" << profile.address_bits
        << "), .BITSIZE_in5(32), .BITSIZE_out1(32), .BITSIZE_m_axi_araddr(" << profile.address_bits
        << "), .BITSIZE_m_axi_arlen(8), .BITSIZE_m_axi_arsize(3), .BITSIZE_m_axi_arburst(2),\n"
-       << "  .BITSIZE_m_axi_arid(1), .BITSIZE_m_axi_rdata(32), .BITSIZE_m_axi_rresp(2), .BITSIZE_m_axi_rid(1)) read_engine (\n"
+       << "  .BITSIZE_m_axi_arid(1), .BITSIZE_m_axi_rdata(32), .BITSIZE_m_axi_rresp(2), .BITSIZE_m_axi_rid(1)) "
+          "read_engine (\n"
        << "  .clock(clock), .reset(reset_cache), .start(read_start), .peer_fault(read_peer_fault),\n"
        << "  .in1(read_opcode), .in2(read_size), .in3(read_data), .in4(read_address), .in5(read_count),\n"
        << "  .done(read_core_done), .out1(read_core_result), .fault(read_core_fault),\n"
        << "  .m_axi_araddr(read_core_araddr), .m_axi_arlen(read_core_arlen), .m_axi_arsize(read_core_arsize),\n"
        << "  .m_axi_arburst(read_core_arburst), .m_axi_arid(read_core_arid), .m_axi_arvalid(read_core_arvalid),\n"
        << "  .m_axi_arready(" << p("arready") << "), .m_axi_rdata(" << p("rdata") << "),\n"
-       << "  .m_axi_rresp(" << p("rresp") << "), .m_axi_rid((|" << p("rid") << ")), .m_axi_rlast("
-       << p("rlast") << "), .m_axi_rvalid(" << p("rvalid") << "), .m_axi_rready(read_core_rready));\n"
+       << "  .m_axi_rresp(" << p("rresp") << "), .m_axi_rid((|" << p("rid") << ")), .m_axi_rlast(" << p("rlast")
+       << "), .m_axi_rvalid(" << p("rvalid") << "), .m_axi_rready(read_core_rready));\n"
        << "MinimalAXI4MasterPipelinedWrite #(.B_MAX(" << profile.write_burst << "), .MAX_OUTSTANDING("
-       << profile.write_outstanding << "), .FIFO_DEPTH(" << profile.write_fifo << "), .PEER_FAULT_ENABLE(1), "
+       << profile.write_outstanding << "), .FIFO_DEPTH(" << profile.write_fifo
+       << "), .PEER_FAULT_ENABLE(1), "
        // The early STORE acknowledgement is always on in generated kernels; the libtech
        // module keeps FAST_STORE_ACK as an RTL-qualification handle with default 1.
        << ".FAST_STORE_ACK(1),\n"
        << "  .BITSIZE_in1(2), .BITSIZE_in2(32), .BITSIZE_in3(32), .BITSIZE_in4(" << profile.address_bits
        << "), .BITSIZE_in5(32), .BITSIZE_out1(32), .BITSIZE_m_axi_awaddr(" << profile.address_bits
        << "), .BITSIZE_m_axi_awlen(8), .BITSIZE_m_axi_awsize(3), .BITSIZE_m_axi_awburst(2), .BITSIZE_m_axi_awid(1),\n"
-       << "  .BITSIZE_m_axi_wdata(32), .BITSIZE_m_axi_wstrb(4), .BITSIZE_m_axi_bresp(2), .BITSIZE_m_axi_bid(1)) write_engine (\n"
+       << "  .BITSIZE_m_axi_wdata(32), .BITSIZE_m_axi_wstrb(4), .BITSIZE_m_axi_bresp(2), .BITSIZE_m_axi_bid(1)) "
+          "write_engine (\n"
        << "  .clock(clock), .reset(reset_cache), .start(write_start), .peer_fault(write_peer_fault),\n"
        << "  .in1(write_opcode), .in2(write_size), .in3(write_data), .in4(write_address), .in5(write_count),\n"
        << "  .done(write_core_done), .out1(write_core_result), .fault(write_core_fault),\n"
        << "  .m_axi_awaddr(write_core_awaddr), .m_axi_awlen(write_core_awlen), .m_axi_awsize(write_core_awsize),\n"
        << "  .m_axi_awburst(write_core_awburst), .m_axi_awid(write_core_awid), .m_axi_awvalid(write_core_awvalid),\n"
        << "  .m_axi_awready(" << p("awready") << "), .m_axi_wdata(write_core_wdata), .m_axi_wstrb(write_core_wstrb),\n"
-       << "  .m_axi_wlast(write_core_wlast), .m_axi_wvalid(write_core_wvalid), .m_axi_wready(" << p("wready")
-       << "),\n"
-       << "  .m_axi_bresp(" << p("bresp") << "), .m_axi_bid((|" << p("bid") << ")), .m_axi_bvalid("
-       << p("bvalid") << "), .m_axi_bready(write_core_bready));\n";
+       << "  .m_axi_wlast(write_core_wlast), .m_axi_wvalid(write_core_wvalid), .m_axi_wready(" << p("wready") << "),\n"
+       << "  .m_axi_bresp(" << p("bresp") << "), .m_axi_bid((|" << p("bid") << ")), .m_axi_bvalid(" << p("bvalid")
+       << "), .m_axi_bready(write_core_bready));\n";
 
    structural_manager::add_NP_functionality(mod, NP_functionality::IP_COMPONENT,
                                             "MinimalAXI4MasterPipelined,MinimalAXI4MasterPipelinedWrite");

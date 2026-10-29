@@ -62,8 +62,8 @@
 #include "op_graph.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
-#include <boost/range/adaptor/reversed.hpp>
 #include <algorithm>
+#include <boost/range/adaptor/reversed.hpp>
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling_c_writer.hpp"
 #endif

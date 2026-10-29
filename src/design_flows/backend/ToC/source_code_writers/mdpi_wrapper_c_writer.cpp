@@ -483,7 +483,8 @@ void MdpiWrapperCWriter::InternalWriteFile()
             args_init += "if(__m_param_size(" + std::to_string(param_idx) + ") == 0)\n{\n";
             args_init += "fprintf(stderr, \"MDPI parameter extent is zero: pointer parameter '" + parm_name +
                          "' of function '" + top_fname +
-                         "' must resolve to a positive size from the source extent, --tb-param-size, or m_param_alloc before the top-function call.\\n\");\n";
+                         "' must resolve to a positive size from the source extent, --tb-param-size, or m_param_alloc "
+                         "before the top-function call.\\n\");\n";
             args_init += "fflush(stderr);\n__m_sim_preflight_fail();\n}\n";
          }
          if(is_banked)
@@ -799,8 +800,8 @@ void MdpiWrapperCWriter::WriteSimulatorInitMemory(const unsigned int function_id
          if(name != "bus")
          {
             const auto mode = attrs.find(FunctionArchitecture::iface_mode);
-            const auto is_bound = std::any_of(
-                architecture->parms.begin(), architecture->parms.end(), [&](const auto& parameter) {
+            const auto is_bound =
+                std::any_of(architecture->parms.begin(), architecture->parms.end(), [&](const auto& parameter) {
                    const auto bundle = parameter.second.find(FunctionArchitecture::parm_bundle);
                    return bundle != parameter.second.end() && bundle->second == name;
                 });
