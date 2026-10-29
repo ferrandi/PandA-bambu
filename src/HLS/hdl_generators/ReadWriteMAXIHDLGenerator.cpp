@@ -170,8 +170,8 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
       burst_count_bitsize = ports_in_arg[i_cache_reset].type_size;
       // The legacy generator uses positional indices. Move the inserted in5 entry
       // to the end of a private view so cache_reset and the AXI pins retain legacy indices.
-      std::rotate(normalized_ports_in.begin() + i_cache_reset,
-                  normalized_ports_in.begin() + i_cache_reset + 1, normalized_ports_in.end());
+      std::rotate(normalized_ports_in.begin() + i_cache_reset, normalized_ports_in.begin() + i_cache_reset + 1,
+                  normalized_ports_in.end());
    }
    const auto& _ports_in = normalized_ports_in;
    THROW_ASSERT(_ports_in.size() >= i_last, "");
@@ -240,32 +240,30 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
    if(line_count == 0 && configured_write_resource)
    {
       const auto write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
-      THROW_ASSERT(axi_burst_type == 1U,
-                   "Configured AXI write burst resource requires AXI INCR burst type.");
-      THROW_ASSERT(_ports_in[i_in1].type_size == 2 && _ports_in[i_in2].type_size == 32 &&
-                       _ports_in[i_in3].type_size == 32 && burst_count_bitsize == 32 &&
-                       (_ports_in[i_in4].type_size == 32 || _ports_in[i_in4].type_size == 64) &&
-                       _ports_in[i_in4].type_size == _ports_out[o_awaddr].type_size &&
-                       _ports_in[i_awready].type_size == 1 && _ports_in[i_wready].type_size == 1 &&
-                       _ports_in[i_bresp].type_size == 2 && _ports_in[i_bid].type_size == 6 &&
-                       _ports_in[i_bvalid].type_size == 1 && _ports_out[o_out1].type_size == 32 &&
-                       _ports_out[o_awlen].type_size == 8 && _ports_out[o_awsize].type_size == 3 &&
-                       _ports_out[o_awburst].type_size == 2 && _ports_out[o_awid].type_size == 6 &&
-                       _ports_out[o_awlock].type_size == 1 && _ports_out[o_awcache].type_size == 4 &&
-                       _ports_out[o_awprot].type_size == 3 && _ports_out[o_awqos].type_size == 4 &&
-                       _ports_out[o_awregion].type_size == 4 && _ports_out[o_awuser].type_size == 1 &&
-                       _ports_out[o_awvalid].type_size == 1 && _ports_out[o_wdata].type_size == 32 &&
-                       _ports_out[o_wstrb].type_size == 4 && _ports_out[o_wlast].type_size == 1 &&
-                       _ports_out[o_wuser].type_size == 1 && _ports_out[o_wvalid].type_size == 1 &&
-                       _ports_out[o_bready].type_size == 1 &&
-                       _ports_out[o_araddr].type_size == _ports_in[i_in4].type_size &&
-                       _ports_out[o_arlen].type_size == 8 && _ports_out[o_arsize].type_size == 3 &&
-                       _ports_out[o_arburst].type_size == 2 && _ports_out[o_arid].type_size == 6 &&
-                       _ports_out[o_arlock].type_size == 1 && _ports_out[o_arcache].type_size == 4 &&
-                       _ports_out[o_arprot].type_size == 3 && _ports_out[o_arqos].type_size == 4 &&
-                       _ports_out[o_arregion].type_size == 4 && _ports_out[o_aruser].type_size == 1 &&
-                       _ports_out[o_arvalid].type_size == 1 && _ports_out[o_rready].type_size == 1,
-                   "Configured AXI write burst resource has incompatible command/data/address/AXI widths.");
+      THROW_ASSERT(axi_burst_type == 1U, "Configured AXI write burst resource requires AXI INCR burst type.");
+      THROW_ASSERT(
+          _ports_in[i_in1].type_size == 2 && _ports_in[i_in2].type_size == 32 && _ports_in[i_in3].type_size == 32 &&
+              burst_count_bitsize == 32 && (_ports_in[i_in4].type_size == 32 || _ports_in[i_in4].type_size == 64) &&
+              _ports_in[i_in4].type_size == _ports_out[o_awaddr].type_size && _ports_in[i_awready].type_size == 1 &&
+              _ports_in[i_wready].type_size == 1 && _ports_in[i_bresp].type_size == 2 &&
+              _ports_in[i_bid].type_size == 6 && _ports_in[i_bvalid].type_size == 1 &&
+              _ports_out[o_out1].type_size == 32 && _ports_out[o_awlen].type_size == 8 &&
+              _ports_out[o_awsize].type_size == 3 && _ports_out[o_awburst].type_size == 2 &&
+              _ports_out[o_awid].type_size == 6 && _ports_out[o_awlock].type_size == 1 &&
+              _ports_out[o_awcache].type_size == 4 && _ports_out[o_awprot].type_size == 3 &&
+              _ports_out[o_awqos].type_size == 4 && _ports_out[o_awregion].type_size == 4 &&
+              _ports_out[o_awuser].type_size == 1 && _ports_out[o_awvalid].type_size == 1 &&
+              _ports_out[o_wdata].type_size == 32 && _ports_out[o_wstrb].type_size == 4 &&
+              _ports_out[o_wlast].type_size == 1 && _ports_out[o_wuser].type_size == 1 &&
+              _ports_out[o_wvalid].type_size == 1 && _ports_out[o_bready].type_size == 1 &&
+              _ports_out[o_araddr].type_size == _ports_in[i_in4].type_size && _ports_out[o_arlen].type_size == 8 &&
+              _ports_out[o_arsize].type_size == 3 && _ports_out[o_arburst].type_size == 2 &&
+              _ports_out[o_arid].type_size == 6 && _ports_out[o_arlock].type_size == 1 &&
+              _ports_out[o_arcache].type_size == 4 && _ports_out[o_arprot].type_size == 3 &&
+              _ports_out[o_arqos].type_size == 4 && _ports_out[o_arregion].type_size == 4 &&
+              _ports_out[o_aruser].type_size == 1 && _ports_out[o_arvalid].type_size == 1 &&
+              _ports_out[o_rready].type_size == 1,
+          "Configured AXI write burst resource has incompatible command/data/address/AXI widths.");
       THROW_ASSERT(_ports_in[i_cache_reset].name == CACHE_RESET_PORT_NAME,
                    "Configured AXI write burst resource input ordering is incompatible with the legacy AXI ABI.");
 
@@ -317,25 +315,22 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "assign " << _ports_out[o_aruser].name << " = 0;\n"
           << "assign " << _ports_out[o_arvalid].name << " = 0;\n"
           << "assign " << _ports_out[o_rready].name << " = 0;\n"
-          << "MinimalAXI4MasterPipelinedWrite #(.B_MAX(" << write_profile.max_burst_length
-          << "), .MAX_OUTSTANDING(" << write_profile.max_outstanding
-          << "), .FIFO_DEPTH(" << write_profile.fifo_depth
+          << "MinimalAXI4MasterPipelinedWrite #(.B_MAX(" << write_profile.max_burst_length << "), .MAX_OUTSTANDING("
+          << write_profile.max_outstanding << "), .FIFO_DEPTH("
+          << write_profile.fifo_depth
           // The early STORE acknowledgement is always on; the module parameter keeps its
           // role of RTL-qualification handle (default 1).
           << "), .PEER_FAULT_ENABLE(0), .FAST_STORE_ACK(1),\n"
-          << "  .BITSIZE_in1(" << _ports_in[i_in1].type_size << "), .BITSIZE_in2("
-          << _ports_in[i_in2].type_size << "), .BITSIZE_in3(" << _ports_in[i_in3].type_size
-          << "), .BITSIZE_in4(" << _ports_in[i_in4].type_size << "), .BITSIZE_in5("
-          << burst_count_bitsize << "), .BITSIZE_out1(" << _ports_out[o_out1].type_size << "),\n"
+          << "  .BITSIZE_in1(" << _ports_in[i_in1].type_size << "), .BITSIZE_in2(" << _ports_in[i_in2].type_size
+          << "), .BITSIZE_in3(" << _ports_in[i_in3].type_size << "), .BITSIZE_in4(" << _ports_in[i_in4].type_size
+          << "), .BITSIZE_in5(" << burst_count_bitsize << "), .BITSIZE_out1(" << _ports_out[o_out1].type_size << "),\n"
           << "  .BITSIZE_m_axi_awaddr(" << _ports_out[o_awaddr].type_size << "), .BITSIZE_m_axi_awlen("
           << _ports_out[o_awlen].type_size << "), .BITSIZE_m_axi_awsize(" << _ports_out[o_awsize].type_size
           << "), .BITSIZE_m_axi_awburst(" << _ports_out[o_awburst].type_size
           << "), .BITSIZE_m_axi_awid(1), .BITSIZE_m_axi_wdata(" << _ports_out[o_wdata].type_size
           << "), .BITSIZE_m_axi_wstrb(" << _ports_out[o_wstrb].type_size << "),\n"
-          << "  .BITSIZE_m_axi_bresp(" << _ports_in[i_bresp].type_size
-          << "), .BITSIZE_m_axi_bid(1)) burst_engine (\n"
-          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name
-          << "), .peer_fault(1'b0),\n"
+          << "  .BITSIZE_m_axi_bresp(" << _ports_in[i_bresp].type_size << "), .BITSIZE_m_axi_bid(1)) burst_engine (\n"
+          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name << "), .peer_fault(1'b0),\n"
           << "  .in1(" << _ports_in[i_in1].name << "), .in2(" << _ports_in[i_in2].name << "),\n"
           << "  .in3(" << _ports_in[i_in3].name << "), .in4(" << _ports_in[i_in4].name << "),\n"
           << "  .in5(" << burst_count_port_name << "), .done(burst_done), .out1(burst_out1), .fault(burst_fault),\n"
@@ -354,10 +349,8 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
                    "Configured m_axi burst resource has no max_read_burst_length attribute.");
       const auto burst_max = std::stoul(max_read_burst->second);
       const auto read_profile = ParseAXIReadBurstProfile(iface_attrs, bundle_name);
-      THROW_ASSERT(burst_max >= 1 && burst_max <= 256,
-                   "Configured m_axi burst maximum must be in [1,256].");
-      THROW_ASSERT(axi_burst_type == 1U,
-                   "Configured m_axi burst resource requires AXI INCR burst type.");
+      THROW_ASSERT(burst_max >= 1 && burst_max <= 256, "Configured m_axi burst maximum must be in [1,256].");
+      THROW_ASSERT(axi_burst_type == 1U, "Configured m_axi burst resource requires AXI INCR burst type.");
       // Data stays 32-bit; the address operand may be 32 or 64 bit and must
       // match the AXI address port, since the component derives its beat and
       // 4 KiB boundary arithmetic from that width.
@@ -415,22 +408,18 @@ void ReadWriteMAXIHDLGenerator::InternalExec(std::ostream& out, structural_objec
           << "MinimalAXI4MasterPipelined #(.B_MAX(" << burst_max << "), .MAX_OUTSTANDING("
           << read_profile.max_outstanding << "), .FIFO_DEPTH(" << read_profile.fifo_depth
           << "), .PEER_FAULT_ENABLE(0),\n"
-          << "  .BITSIZE_in1(" << _ports_in[i_in1].type_size << "), .BITSIZE_in2("
-          << _ports_in[i_in2].type_size << "),\n"
-          << "  .BITSIZE_in3(" << _ports_in[i_in3].type_size << "), .BITSIZE_in4("
-          << _ports_in[i_in4].type_size << "),\n"
-          << "  .BITSIZE_in5(" << burst_count_bitsize << "), .BITSIZE_out1("
-          << _ports_out[o_out1].type_size << "),\n"
+          << "  .BITSIZE_in1(" << _ports_in[i_in1].type_size << "), .BITSIZE_in2(" << _ports_in[i_in2].type_size
+          << "),\n"
+          << "  .BITSIZE_in3(" << _ports_in[i_in3].type_size << "), .BITSIZE_in4(" << _ports_in[i_in4].type_size
+          << "),\n"
+          << "  .BITSIZE_in5(" << burst_count_bitsize << "), .BITSIZE_out1(" << _ports_out[o_out1].type_size << "),\n"
           << "  .BITSIZE_m_axi_araddr(" << _ports_out[o_araddr].type_size << "), .BITSIZE_m_axi_arlen("
           << _ports_out[o_arlen].type_size << "),\n"
           << "  .BITSIZE_m_axi_arsize(" << _ports_out[o_arsize].type_size << "), .BITSIZE_m_axi_arburst("
           << _ports_out[o_arburst].type_size << "),\n"
-          << "  .BITSIZE_m_axi_arid(1), .BITSIZE_m_axi_rdata(" << _ports_in[i_rdata].type_size
-          << "),\n"
-          << "  .BITSIZE_m_axi_rresp(" << _ports_in[i_rresp].type_size
-          << "), .BITSIZE_m_axi_rid(1)) burst_engine (\n"
-          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name
-          << "), .peer_fault(1'b0),\n"
+          << "  .BITSIZE_m_axi_arid(1), .BITSIZE_m_axi_rdata(" << _ports_in[i_rdata].type_size << "),\n"
+          << "  .BITSIZE_m_axi_rresp(" << _ports_in[i_rresp].type_size << "), .BITSIZE_m_axi_rid(1)) burst_engine (\n"
+          << "  .clock(clock), .reset(reset), .start(" << _ports_in[i_start].name << "), .peer_fault(1'b0),\n"
           << "  .in1(" << _ports_in[i_in1].name << "), .in2(" << _ports_in[i_in2].name << "),\n"
           << "  .in3(" << _ports_in[i_in3].name << "), .in4(" << _ports_in[i_in4].name << "),\n"
           << "  .in5(" << burst_count_port_name << "), .done(burst_done),\n"

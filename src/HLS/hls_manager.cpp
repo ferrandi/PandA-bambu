@@ -44,9 +44,9 @@
 #include "polixml.hpp"
 #include "storage_value_information.hpp"
 #include "utility.hpp"
+#include "utility/bounded_decimal.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-#include "utility/bounded_decimal.hpp"
 
 #define MAX_BITWIDTH_SIZE 4096
 
@@ -405,13 +405,12 @@ AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_a
    };
 
    AXIReadBurstProfile profile;
-   profile.max_outstanding = parse_bounded_decimal(FunctionArchitecture::iface_num_read_outstanding,
-                                                   "num_read_outstanding", panda::utility::axi_outstanding_default,
-                                                   panda::utility::axi_outstanding_max);
-   profile.max_burst_length = parse_bounded_decimal(FunctionArchitecture::iface_max_read_burst_length,
-                                                    "max_read_burst_length",
-                                                    panda::utility::axi_burst_length_default,
-                                                    panda::utility::axi_burst_length_max);
+   profile.max_outstanding =
+       parse_bounded_decimal(FunctionArchitecture::iface_num_read_outstanding, "num_read_outstanding",
+                             panda::utility::axi_outstanding_default, panda::utility::axi_outstanding_max);
+   profile.max_burst_length =
+       parse_bounded_decimal(FunctionArchitecture::iface_max_read_burst_length, "max_read_burst_length",
+                             panda::utility::axi_burst_length_default, panda::utility::axi_burst_length_max);
    if(iface_attrs.find(FunctionArchitecture::iface_read_fifo_depth) == iface_attrs.end())
    {
       // No explicit depth: size the FIFO so the credit never shortens a burst.
@@ -420,14 +419,14 @@ AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_a
       // a second full burst. Below this the engine issues shorter bursts and
       // pays another bus round trip: measured at 64-cycle memory latency,
       // depth B costs 6% cycles over depth 2B for one outstanding burst.
-      profile.fifo_depth = panda::utility::derive_axi_read_fifo_depth(profile.max_burst_length,
-                                                                      profile.max_outstanding);
+      profile.fifo_depth =
+          panda::utility::derive_axi_read_fifo_depth(profile.max_burst_length, profile.max_outstanding);
    }
    else
    {
-      profile.fifo_depth = parse_bounded_decimal(FunctionArchitecture::iface_read_fifo_depth, "read_fifo_depth",
-                                                 panda::utility::axi_read_fifo_depth_default,
-                                                 panda::utility::axi_fifo_depth_max);
+      profile.fifo_depth =
+          parse_bounded_decimal(FunctionArchitecture::iface_read_fifo_depth, "read_fifo_depth",
+                                panda::utility::axi_read_fifo_depth_default, panda::utility::axi_fifo_depth_max);
    }
    if(!panda::utility::is_axi_fifo_depth_valid(profile.fifo_depth))
    {
@@ -441,8 +440,8 @@ AXIWriteBurstProfile ParseAXIWriteBurstProfile(const FunctionArchitecture::iface
                                                const std::string& bundle_name)
 {
    const auto fail = [&](const char* attr_name, const std::string& expectation) -> void {
-      THROW_ERROR_USAGE("Invalid AXI interface attribute '" + std::string(attr_name) + "' for bundle '" +
-                        bundle_name + "': " + expectation + ".");
+      THROW_ERROR_USAGE("Invalid AXI interface attribute '" + std::string(attr_name) + "' for bundle '" + bundle_name +
+                        "': " + expectation + ".");
    };
    const auto parse_bounded_decimal = [&](const FunctionArchitecture::iface_attr attr, const char* attr_name,
                                           const unsigned int minimum, const unsigned int maximum) {
@@ -456,27 +455,25 @@ AXIWriteBurstProfile ParseAXIWriteBurstProfile(const FunctionArchitecture::iface
       if(panda::utility::parse_axi_profile_decimal(text, minimum, maximum, value) !=
          panda::utility::bounded_decimal_result::valid)
       {
-         fail(attr_name,
-              "expected an ASCII decimal integer in [" + STR(minimum) + "," + STR(maximum) + "]");
+         fail(attr_name, "expected an ASCII decimal integer in [" + STR(minimum) + "," + STR(maximum) + "]");
       }
       return static_cast<unsigned int>(value);
    };
 
    AXIWriteBurstProfile profile;
    const auto max_burst_length = iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length);
-   profile.max_burst_length = max_burst_length == iface_attrs.end() ?
-                                  panda::utility::axi_burst_length_default :
-                                  parse_bounded_decimal(FunctionArchitecture::iface_max_write_burst_length,
-                                                        "max_write_burst_length",
-                                                        panda::utility::axi_burst_length_min,
-                                                        panda::utility::axi_burst_length_max);
+   profile.max_burst_length =
+       max_burst_length == iface_attrs.end() ?
+           panda::utility::axi_burst_length_default :
+           parse_bounded_decimal(FunctionArchitecture::iface_max_write_burst_length, "max_write_burst_length",
+                                 panda::utility::axi_burst_length_min, panda::utility::axi_burst_length_max);
 
    const auto outstanding = iface_attrs.find(FunctionArchitecture::iface_write_burst_outstanding);
-   profile.max_outstanding = outstanding == iface_attrs.end() ?
-                                 panda::utility::axi_outstanding_default :
-                                 parse_bounded_decimal(FunctionArchitecture::iface_write_burst_outstanding,
-                                                       "write_burst_outstanding", panda::utility::axi_outstanding_min,
-                                                       panda::utility::axi_outstanding_max);
+   profile.max_outstanding =
+       outstanding == iface_attrs.end() ?
+           panda::utility::axi_outstanding_default :
+           parse_bounded_decimal(FunctionArchitecture::iface_write_burst_outstanding, "write_burst_outstanding",
+                                 panda::utility::axi_outstanding_min, panda::utility::axi_outstanding_max);
 
    const auto fifo_depth = iface_attrs.find(FunctionArchitecture::iface_write_fifo_depth);
    if(fifo_depth == iface_attrs.end())
@@ -485,9 +482,9 @@ AXIWriteBurstProfile ParseAXIWriteBurstProfile(const FunctionArchitecture::iface
    }
    else
    {
-      profile.fifo_depth = parse_bounded_decimal(FunctionArchitecture::iface_write_fifo_depth, "write_fifo_depth",
-                                                 panda::utility::axi_fifo_depth_min,
-                                                 panda::utility::axi_fifo_depth_max);
+      profile.fifo_depth =
+          parse_bounded_decimal(FunctionArchitecture::iface_write_fifo_depth, "write_fifo_depth",
+                                panda::utility::axi_fifo_depth_min, panda::utility::axi_fifo_depth_max);
    }
    if(!panda::utility::is_axi_fifo_depth_valid(profile.fifo_depth))
    {
@@ -501,7 +498,7 @@ AXIWriteBurstProfile ParseAXIWriteBurstProfile(const FunctionArchitecture::iface
 }
 
 std::uint32_t ParseAXIInterfaceLatency(const FunctionArchitecture::iface_attrs& iface_attrs,
-                                      const std::string& bundle_name)
+                                       const std::string& bundle_name)
 {
    const auto it = iface_attrs.find(FunctionArchitecture::iface_latency);
    if(it == iface_attrs.end())
@@ -577,7 +574,8 @@ ModuleArchitecture::ModuleArchitecture(const std::string& filename)
                   if(existing != iface_attr.end() && existing->second != normalized)
                   {
                      THROW_ERROR_USAGE("Conflicting num_write_outstanding and write_burst_outstanding values for "
-                                       "bundle '" + bundle_name + "'.");
+                                       "bundle '" +
+                                       bundle_name + "'.");
                   }
                   iface_attr.emplace(FunctionArchitecture::iface_write_burst_outstanding, normalized);
                   continue;

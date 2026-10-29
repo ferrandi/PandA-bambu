@@ -149,8 +149,7 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
    const auto mem_delay_write = HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_write);
    if(mem_delay_write < 2)
    {
-      const std::string warning = "Warning: AXI does not support mem-delay-write==" +
-                                  std::to_string(mem_delay_write) +
+      const std::string warning = "Warning: AXI does not support mem-delay-write==" + std::to_string(mem_delay_write) +
                                   ", as it requires at least a cycle of latency -> "
                                   "mem-delay-write changed to 2.\n";
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 4, warning);
@@ -158,11 +157,10 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
    out << internal_port_assign << "\n"
        << "TestbenchMEMAXI #(.index(index),\n"
        << ".WRITE_DELAY("
-       << "WRITE_DELAY ? (WRITE_DELAY > 1 ? WRITE_DELAY - 1 : 1) : "
-       << (std::max(2U, mem_delay_write) - 1) << "),\n"
+       << "WRITE_DELAY ? (WRITE_DELAY > 1 ? WRITE_DELAY - 1 : 1) : " << (std::max(2U, mem_delay_write) - 1) << "),\n"
        << ".READ_DELAY("
-       << "READ_DELAY ? READ_DELAY - 1 : "
-       << (HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_read) - 1) << "),\n"
+       << "READ_DELAY ? READ_DELAY - 1 : " << (HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_read) - 1)
+       << "),\n"
        << ".QUEUE_SIZE(" << (HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size) + 1)
        << "),\n" // + 1 needed to create a buffer in case of a valid response not accepted by the accelerator and a
                  // valid input.

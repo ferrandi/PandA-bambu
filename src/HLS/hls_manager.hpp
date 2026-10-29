@@ -61,8 +61,8 @@ class SimulationInformation;
    (iface_name)(iface_global)(iface_mode)(iface_direction)(iface_bitwidth)(iface_alignment)(iface_depth)(          \
        iface_register)(iface_cache_ways)(iface_cache_line_count)(iface_cache_line_size)(                           \
        iface_cache_num_write_outstanding)(iface_cache_rep_policy)(iface_cache_bus_size)(iface_cache_write_policy)( \
-       iface_cache_word_size)(iface_bank_number)(iface_chunk_size)(iface_max_read_burst_length)(                 \
-       iface_max_write_burst_length)(iface_num_read_outstanding)(iface_read_fifo_depth)( \
+       iface_cache_word_size)(iface_bank_number)(iface_chunk_size)(iface_max_read_burst_length)(                   \
+       iface_max_write_burst_length)(iface_num_read_outstanding)(iface_read_fifo_depth)(                           \
        iface_write_burst_outstanding)(iface_write_fifo_depth)(iface_latency)
 
 REF_FORWARD_DECL(FunctionArchitecture);
@@ -105,7 +105,7 @@ AXIReadBurstProfile ParseAXIReadBurstProfile(const FunctionArchitecture::iface_a
 AXIWriteBurstProfile ParseAXIWriteBurstProfile(const FunctionArchitecture::iface_attrs& iface_attrs,
                                                const std::string& bundle_name);
 std::uint32_t ParseAXIInterfaceLatency(const FunctionArchitecture::iface_attrs& iface_attrs,
-                                      const std::string& bundle_name);
+                                       const std::string& bundle_name);
 
 REF_FORWARD_DECL(ModuleArchitecture);
 class ModuleArchitecture
