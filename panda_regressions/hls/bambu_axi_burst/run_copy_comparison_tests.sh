@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the four copy transport modes twice each with isolated Verilator outputs.
+# Run the four copy transport modes twice each with isolated ModelSim outputs.
 # Usage: BURST_COPY_COMPARISON_OUTSIDE_SANDBOX=1 run_copy_comparison_tests.sh BAMBU OUTPUT_DIR
 set -Eeuo pipefail
 
@@ -10,6 +10,8 @@ source_file="$script_dir/bambu_axi_burst_copy_comparison.cpp"
 testbench="$script_dir/copy_comparison_tb.cpp"
 checker="$script_dir/check_copy_comparison_results.py"
 helpers="$script_dir/parallel_helpers.sh"
+modelsim_helpers="$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/modelsim_helpers.sh"
+ROOT=$repo_root
 
 usage() {
   echo "usage: BURST_COPY_COMPARISON_OUTSIDE_SANDBOX=1 $0 BAMBU FRESH_OUTPUT_DIR" >&2
@@ -29,11 +31,11 @@ else
   [[ -z $bambu ]] || bambu=$(realpath "$bambu")
 fi
 [[ -n ${bambu:-} && -x $bambu ]] || { echo "Bambu executable not found: $bambu_arg" >&2; exit 2; }
-command -v verilator >/dev/null || { echo "Verilator is required" >&2; exit 2; }
 command -v grep >/dev/null || { echo "grep is required to validate scenario markers" >&2; exit 2; }
-[[ -r $source_file && -r $testbench && -r $checker && -r $helpers ]] || {
+[[ -r $source_file && -r $testbench && -r $checker && -r $helpers && -r $modelsim_helpers ]] || {
   echo "copy-comparison source, testbench, checker, or parallel helper is missing" >&2; exit 2;
 }
+source "$modelsim_helpers"
 
 prefix=$(dirname "$(dirname "$bambu")")
 settings="$prefix/settings.sh"
@@ -44,20 +46,22 @@ source "$settings"
 [[ $(realpath -m "${BAMBU_HLS:-}") == $(realpath "$prefix") ]] || {
   echo "settings.sh selected an unexpected BAMBU_HLS=${BAMBU_HLS:-<unset>}" >&2; exit 2;
 }
+modelsim_resolve || exit 2
+MODELSIM_ROOT=$BAMBU_MODELSIM_ROOT
+simulator=$(realpath "$MODELSIM_VSIM")
 
 requested_jobs=${COPY_COMPARISON_JOBS:-}
 if [[ -z $requested_jobs ]]; then
   detected_jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '1')
   [[ $detected_jobs =~ ^[1-9][0-9]*$ ]] || detected_jobs=1
-  if (( detected_jobs > 4 )); then requested_jobs=4; else requested_jobs=$detected_jobs; fi
+  if (( detected_jobs > 2 )); then requested_jobs=2; else requested_jobs=$detected_jobs; fi
 else
   if [[ ! $requested_jobs =~ ^[0-9]+$ ]]; then
     echo "COPY_COMPARISON_JOBS must be a positive integer (got '$requested_jobs')" >&2; exit 2
   fi
   while [[ $requested_jobs == 0* && ${#requested_jobs} -gt 1 ]]; do requested_jobs=${requested_jobs#0}; done
-  if [[ $requested_jobs == 0 || ${#requested_jobs} -gt 10 ]] || \
-    { ((${#requested_jobs} == 10)) && [[ $requested_jobs > 2147483647 ]]; }; then
-    echo "COPY_COMPARISON_JOBS must be between 1 and 2147483647 (got '${COPY_COMPARISON_JOBS}')" >&2; exit 2
+  if [[ $requested_jobs != 1 && $requested_jobs != 2 ]]; then
+    echo "COPY_COMPARISON_JOBS must be between 1 and 2 (got '${COPY_COMPARISON_JOBS}')" >&2; exit 2
   fi
   requested_jobs=$((10#$requested_jobs))
 fi
@@ -77,7 +81,7 @@ common=(--top-fname=kernel --compiler=I386_CLANG16 --generate-interface=INFER
   # The fixtures declare the streamed data as unbounded pointers, so the extent of the memory
   # behind them is not visible to the back-end; size the co-simulation image explicitly.
   --tb-param-size=src:16384 --tb-param-size=dst:16384
-  --no-clean --simulate --simulator=VERILATOR "--generate-tb=$testbench"
+  --no-clean --simulate --simulator=MODELSIM "--mentor-root=$MODELSIM_ROOT" "--generate-tb=$testbench"
   --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
 
 mkdir -p "$out/jobs"
@@ -85,14 +89,14 @@ out=$(realpath "$out")
 export PYTHONDONTWRITEBYTECODE=1
 
 git_head=$(git -C "$repo_root" rev-parse HEAD)
-simulator=$(realpath "$(command -v verilator)")
 {
   printf 'git_head=%s\ninvocation=' "$git_head"
   printf '%q ' "$0" "$bambu_arg" "$out_arg"
   printf '\nrepo_root=%s\noutput=%s\nbambu=%s\nprefix=%s\nsettings=%s\nplugin=%s\n' \
     "$repo_root" "$out" "$bambu" "$prefix" "$(realpath "$settings")" "$(realpath "$plugin")"
-  printf 'simulator=%s\nsimulator_version=' "$simulator"
-  "$simulator" --version 2>&1 | sed -n '1p'
+  printf 'simulator_source=%s\nsimulator_invocation=%s\nsimulator=%s\nsimulator_root=%s\nsimulator_version=' \
+    "$MODELSIM_SOURCE" "$MODELSIM_VSIM" "$simulator" "$MODELSIM_ROOT"
+  modelsim_version 2>&1 | sed -n '1p'
   printf 'jobs=%s\nsource=%s\ntestbench=%s\nchecker=%s\n' \
     "$requested_jobs" "$source_file" "$testbench" "$checker"
   printf 'source_sha256='; sha256sum "$source_file"
@@ -130,6 +134,8 @@ run_copy_job() {
       "$profile" "$run" "$macro" "$feature" "$source_file" "$testbench" "$marker"
     printf 'cwd=%s\nTMPDIR=%s\nargv=' "$case_dir" "$TMPDIR"
     printf '%q ' "$bambu" "$source_file" "${args[@]}"; printf '\n'
+    printf 'simulator_root=%s\nsimulator=%s\nsimulator_version=' "$MODELSIM_ROOT" "$simulator"
+    modelsim_version 2>&1 | sed -n '1p'
     sha256sum "$source_file" "$testbench" "$bambu" "$settings" "$plugin" "$simulator" "$runner_file"
   } >"$case_dir/provenance.txt"
   if ! (cd "$case_dir" && "$bambu" "$source_file" "${args[@]}" >stdout.log 2>stderr.log); then

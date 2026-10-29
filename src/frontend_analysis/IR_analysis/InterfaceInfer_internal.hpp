@@ -155,6 +155,14 @@ struct FrozenDuplexContribution
    std::uint32_t latency = 0;
 };
 
+struct AXIBurstProfileOrigins
+{
+   bool read_burst_default = false;
+   bool read_outstanding_default = false;
+   bool write_burst_default = false;
+   bool write_outstanding_default = false;
+};
+
 void PreanalyzeBursts(
     bool burst_feature_enabled, unsigned int effective_burst_type, unsigned int root_id,
     const function_val_node* fd, const FunctionArchitectureRef& func_arch,

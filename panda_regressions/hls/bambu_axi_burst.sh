@@ -44,6 +44,18 @@ if ! normalize_regression_args "${wrapper_args[@]}"; then
   exit 2
 fi
 parallelism=$BURST_PARALLELISM
+# Functional jobs can launch licensed ModelSim processes. Keep both the Mantis
+# phase and helper pool within the two-process session limit.
+if [[ $group != compiler ]] && (( parallelism > 2 )); then
+  parallelism=2
+fi
+if [[ $group != compiler ]]; then
+  for i in "${!BURST_NORMALIZED_ARGS[@]}"; do
+    if [[ ${BURST_NORMALIZED_ARGS[i]} == --parallel=* ]]; then
+      BURST_NORMALIZED_ARGS[i]="--parallel=$parallelism"
+    fi
+  done
+fi
 mantis_args=("${BURST_NORMALIZED_ARGS[@]}")
 out_root=$BURST_OUTPUT
 
@@ -56,14 +68,7 @@ for mantis_arg in "${mantis_args[@]}"; do
     retain_artifacts=1
   fi
 done
-writer_group_jobs=${BURST_WRITER_GROUP_JOBS:-8}
-if [[ ! $writer_group_jobs =~ ^[1-9][0-9]*$ ]]; then
-  echo "BURST_WRITER_GROUP_JOBS must be a positive integer, got: $writer_group_jobs" >&2
-  exit 2
-fi
-if (( writer_group_jobs > parallelism )); then
-  writer_group_jobs=$parallelism
-fi
+writer_group_jobs=1
 
 # Fail closed before invoking any Bambu executable. -L also catches dangling
 # symlinks, which `-e` alone would miss. With --restart the root must already
@@ -138,10 +143,11 @@ script_dir, fixed_device = sys.argv[1:]
 post_check = shlex.join(["python3", "-B", f"{script_dir}/bambu_axi_burst/check_fixed_burst_fallback.py",
                          "--output", ".", "--target-file", fixed_device])
 fields = ["BENCHMARK_ENV=MANTIS_POST_CHECK=" + post_check,
-          f"{script_dir}/bambu_axi_burst/bambu_axi_burst_sum_o5.cpp", "--top-fname=kernel",
+          f"{script_dir}/bambu_axi_burst/bambu_axi_burst_sum_profile.cpp", "--top-fname=kernel",
           f"--generate-tb={script_dir}/bambu_axi_burst/bambu_axi_burst_tb.cpp", "--tb-arg=1024",
           "--tb-param-size=src:16384", "--extra-cc-options=-DBAMBU",
-          "--extra-cc-options=-DBURST_TEST_DEFAULT_N=1024", f"--target-file={fixed_device}",
+          "--extra-cc-options=-DBAMBU_AXI_SUM_O5", "--extra-cc-options=-DBURST_TEST_DEFAULT_N=1024",
+          f"--target-file={fixed_device}",
           "--benchmark-name=fixed-burst-fallback"]
 print(shlex.join(fields))' "$script_dir" "$fixed_device" >>"$fixed_list"
   bambu_args=$(python3 -c 'import shlex, sys
@@ -290,6 +296,19 @@ run_post_mantis_job() {
       BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
         bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_testbench_memaxi_model.sh" qualify "$scratch/rtl-testbench-memaxi-qualify"
       ;;
+    rtl-vector-payload)
+      BURST_MODELSIM_OUTSIDE_SANDBOX=1 \
+        bash "$script_dir/bambu_axi_burst/run_vector_payload_tests.sh" "$bambu" "$scratch/rtl-vector-payload"
+      ;;
+    rtl-generated-memaxi-response)
+      BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
+        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_memaxi_response_tests.sh" \
+          "$bambu" "$scratch/rtl-generated-memaxi-response"
+      ;;
+    rtl-copy-comparison)
+      BURST_COPY_COMPARISON_OUTSIDE_SANDBOX=1 COPY_COMPARISON_JOBS=1 \
+        bash "$script_dir/bambu_axi_burst/run_copy_comparison_tests.sh" "$bambu" "$scratch/rtl-copy-comparison"
+      ;;
     rtl-modelsim-transactions|rtl-modelsim-credits|rtl-modelsim-bounds|rtl-modelsim-configure)
       local suite=${job#rtl-modelsim-}
       bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh" \
@@ -333,7 +352,8 @@ functional_jobs=(rtl-modelsim-transactions rtl-modelsim-credits rtl-modelsim-bou
   rtl-write-engine rtl-vlog generated-kernel-wrapper rtl-burst-diagnostics rtl-width-contract
   rtl-duplex-core rtl-generated-duplex rtl-generated-duplex-kernel rtl-generated-write-kernels
   rtl-default-duplex-reduction rtl-duplex-alias rtl-duplex-fallback rtl-duplex-independent rtl-adapter-size rtl-mdpi-extent
-  functional-float-read-write rtl-testbench-memaxi-qualify)
+  functional-float-read-write rtl-testbench-memaxi-qualify rtl-vector-payload
+  rtl-generated-memaxi-response rtl-copy-comparison)
 jobs=()
 case $group in
   compiler) jobs=("${compiler_jobs[@]}") ;;
@@ -372,6 +392,7 @@ rm -rf -- \
   "$scratch/rtl-duplex-alias-integer" "$scratch/rtl-duplex-alias-float32" \
   "$scratch/rtl-duplex-fallback" "$scratch/rtl-duplex-independent" \
   "$scratch/rtl-adapter-size" "$scratch/rtl-mdpi-extent" \
-  "$scratch/functional-float-read-write" "$scratch/rtl-testbench-memaxi-qualify"
+  "$scratch/functional-float-read-write" "$scratch/rtl-testbench-memaxi-qualify" \
+  "$scratch/rtl-vector-payload" "$scratch/rtl-generated-memaxi-response" "$scratch/rtl-copy-comparison"
 fi
 printf 'AXI burst regression PASS: %s\n' "$scratch"

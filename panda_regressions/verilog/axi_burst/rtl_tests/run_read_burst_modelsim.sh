@@ -255,6 +255,8 @@ if [[ $SUITE == all || $SUITE == credits ]]; then
     run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D1" tb_burst_engine CREDIT_LIMIT READY_CREDIT_PROOF
     run_build tb_burst_engine 1 "$TB" "" 1 1 no
     run_scenarios "$TASK_OUT/build-tb_burst_engine-B1-O1-D1" tb_burst_engine CONFIG_PIPELINE_B1
+    run_build tb_burst_engine 1 "$TB" "" 3 8 no
+    run_scenarios "$TASK_OUT/build-tb_burst_engine-B1-O3-D8" tb_burst_engine MULTI
 fi
 
 if [[ $SUITE == all || $SUITE == bounds ]]; then

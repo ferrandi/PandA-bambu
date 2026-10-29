@@ -987,7 +987,10 @@ reg [BITSIZE_addr-1:0] ar_addr_reg [0:C_AR-1];
 reg [BITSIZE_size-1:0] ar_size_reg [0:C_AR-1];
 reg [BITSIZE_burst-1:0] ar_burst_reg [0:C_AR-1];
 reg [BITSIZE_len-1:0] ar_len_reg [0:C_AR-1];
+reg [BITSIZE_rresp-1:0] ar_resp_reg [0:C_AR-1];
 timestamp_t ar_time_reg [0:C_AR-1];
+reg next_read_resp_valid;
+reg [BITSIZE_rresp-1:0] next_read_resp_value;
 integer aw_head_reg;
 integer aw_tail_reg;
 integer aw_count_reg;
@@ -996,7 +999,10 @@ reg [BITSIZE_addr-1:0] aw_addr_reg [0:C_AW-1];
 reg [BITSIZE_size-1:0] aw_size_reg [0:C_AW-1];
 reg [BITSIZE_burst-1:0] aw_burst_reg [0:C_AW-1];
 reg [BITSIZE_len-1:0] aw_len_reg [0:C_AW-1];
+reg [BITSIZE_bresp-1:0] aw_resp_reg [0:C_AW-1];
 timestamp_t aw_time_reg [0:C_AW-1];
+reg next_write_resp_valid;
+reg [BITSIZE_bresp-1:0] next_write_resp_value;
 integer aw_committed_reg [0:C_AW-1];
 reg aw_complete_reg [0:C_AW-1];
 integer w_head_reg;
@@ -1014,6 +1020,24 @@ reg [BITSIZE_data-1:0] rdata_reg;
 reg [BITSIZE_rresp-1:0] rresp_reg;
 reg [BITSIZE_ruser-1:0] ruser_reg;
 
+task automatic inject_next_read_response(input [BITSIZE_rresp-1:0] response);
+begin
+  if (next_read_resp_valid)
+    $fatal(1, &quot;AXI read response override is already pending&quot;);
+  next_read_resp_value = response;
+  next_read_resp_valid = 1'b1;
+end
+endtask
+
+task automatic inject_next_write_response(input [BITSIZE_bresp-1:0] response);
+begin
+  if (next_write_resp_valid)
+    $fatal(1, &quot;AXI write response override is already pending&quot;);
+  next_write_resp_value = response;
+  next_write_resp_valid = 1'b1;
+end
+endtask
+
 assign arready = ar_count_reg &lt; C_AR;
 assign awready = aw_count_reg &lt; C_AW;
 assign wready = w_count_reg &lt; C_W;
@@ -1025,7 +1049,7 @@ assign rresp = rresp_reg;
 assign ruser = ruser_reg;
 assign bvalid = aw_count_reg &gt; 0 &amp;&amp; aw_complete_reg[aw_head_reg];
 assign bid = bvalid ? aw_id_reg[aw_head_reg] : '0;
-assign bresp = '0;
+assign bresp = bvalid ? aw_resp_reg[aw_head_reg] : '0;
 assign buser = '0;
 
 wire ar_push = arvalid &amp;&amp; arready;
@@ -1185,6 +1209,24 @@ begin : update_ar_len
 end
 
 always @(posedge clock)
+begin : update_ar_resp
+  integer ar_resp_i;
+  if (1RESET_VALUE)
+  begin
+    next_read_resp_valid &lt;= 1'b0;
+    next_read_resp_value &lt;= '0;
+    for (ar_resp_i = 0; ar_resp_i &lt; C_AR; ar_resp_i = ar_resp_i + 1)
+      ar_resp_reg[ar_resp_i] &lt;= '0;
+  end
+  else if (ar_push)
+  begin
+    ar_resp_reg[ar_tail_reg] &lt;= next_read_resp_valid ? next_read_resp_value : '0;
+    if (next_read_resp_valid)
+      next_read_resp_valid &lt;= 1'b0;
+  end
+end
+
+always @(posedge clock)
 begin : update_ar_time
   integer ar_time_i;
   if (1RESET_VALUE)
@@ -1239,7 +1281,7 @@ begin
   else
   begin
     if (read_load)
-      rresp_reg &lt;= '0;
+      rresp_reg &lt;= ar_resp_reg[read_slot];
   end
 end
 
@@ -1332,6 +1374,24 @@ begin : update_aw_len
   begin
     if (aw_push)
       aw_len_reg[aw_tail_reg] &lt;= awlen;
+  end
+end
+
+always @(posedge clock)
+begin : update_aw_resp
+  integer aw_resp_i;
+  if (1RESET_VALUE)
+  begin
+    next_write_resp_valid &lt;= 1'b0;
+    next_write_resp_value &lt;= '0;
+    for (aw_resp_i = 0; aw_resp_i &lt; C_AW; aw_resp_i = aw_resp_i + 1)
+      aw_resp_reg[aw_resp_i] &lt;= '0;
+  end
+  else if (aw_push)
+  begin
+    aw_resp_reg[aw_tail_reg] &lt;= next_write_resp_valid ? next_write_resp_value : '0;
+    if (next_write_resp_valid)
+      next_write_resp_valid &lt;= 1'b0;
   end
 end
 

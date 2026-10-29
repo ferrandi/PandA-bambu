@@ -23,6 +23,10 @@ class CopyComparisonTests(unittest.TestCase):
         self.output = self.root / "out"
         self.output.mkdir()
         self.report = self.root / "report.json"
+        self.simulator = self.root / "modelsim" / "bin" / "vsim"
+        self.simulator.parent.mkdir(parents=True)
+        self.simulator.write_text("fake ModelSim executable\n", encoding="utf-8")
+        self.simulator_root = self.simulator.parent.parent
         self.inputs = {}
         names = {"source": "bambu_axi_burst_copy_comparison.cpp", "testbench": "copy_comparison_tb.cpp",
                  "bambu": "bambu", "settings": "settings.sh", "plugin": "ASTAnalyzer.so",
@@ -60,7 +64,7 @@ class CopyComparisonTests(unittest.TestCase):
         bundles.setdefault(write_bundle, {}).update(
             {"max_write_burst_length": 16, "write_burst_outstanding": 1, "write_fifo_depth": 32})
         bundle_xml = "".join(
-            f'<bundle mode="m_axi" name="{name}" latency="0" ' +
+            f'<bundle mode="m_axi" name="{name}" ' +
             " ".join(f'{key}="{value}"' for key, value in attrs.items()) + "></bundle>"
             for name, attrs in bundles.items())
         (directory / "panda-temp").mkdir(exist_ok=True)
@@ -120,15 +124,18 @@ class CopyComparisonTests(unittest.TestCase):
         (directory / "stderr.log").write_text(stderr, encoding="utf-8")
         args = [str(self.inputs["bambu"]), str(self.inputs["source"]),
                 *checker.COMMON_ARGS[:-2], f"--generate-tb={self.inputs['testbench']}",
-                *checker.COMMON_ARGS[-2:],
+                *checker.COMMON_ARGS[-2:], f"--mentor-root={self.simulator_root}",
                 f"--bambu-parameter=m-axi-burst={config['feature']}",
                 f"--extra-cc-options=-DCOPY_COMPARISON_PROFILE={macro}"]
         metadata = [f"profile={profile}", f"run={run}", f"macro={macro}",
                     f"feature={config['feature']}",
                     f"source={self.inputs['source']}", f"testbench={self.inputs['testbench']}",
+                    f"simulator_root={self.simulator_root}", f"simulator={self.simulator}",
+                    "simulator_version=ModelSim test stub",
                     "argv=" + shlex.join(args)]
         metadata.extend(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path}"
                         for path in self.inputs.values())
+        metadata.append(f"{hashlib.sha256(self.simulator.read_bytes()).hexdigest()}  {self.simulator}")
         (directory / "provenance.txt").write_text("\n".join(metadata) + "\n", encoding="utf-8")
         self.write_manifest(directory)
 
@@ -441,6 +448,13 @@ class CopyComparisonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invocation common settings differ"):
             self.verify_run()
 
+    def test_verilator_selection_in_provenance_is_rejected(self):
+        path = self.output / "burst-two-bundles" / "run1" / "provenance.txt"
+        path.write_text(path.read_text().replace("--simulator=MODELSIM", "--simulator=VERILATOR"),
+                        encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "invocation must select ModelSim"):
+            self.verify_run()
+
     def test_wrong_architecture_requested_parameter_is_rejected(self):
         path = self.output / "burst-two-bundles" / "run1" / "panda-temp" / "architecture.xml"
         path.write_text(path.read_text(encoding="utf-8").replace(
@@ -465,12 +479,16 @@ class CopyComparisonTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "architecture.xml src/dst bundle mapping is incorrect"):
             self.verify_run("legacy-two-bundles")
 
+    def test_omitted_architecture_latency_is_accepted(self):
+        self.verify_run("duplex-shared")
+
     def test_nonzero_architecture_latency_is_rejected(self):
         path = self.output / "duplex-shared" / "run1" / "panda-temp" / "architecture.xml"
-        path.write_text(path.read_text(encoding="utf-8").replace('latency="0"', 'latency="1"'),
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            '<bundle mode="m_axi"', '<bundle mode="m_axi" latency="1"', 1),
                         encoding="utf-8")
         self.write_manifest(path.parents[1])
-        with self.assertRaisesRegex(ValueError, "must explicitly have latency=0"):
+        with self.assertRaisesRegex(ValueError, "explicit m_axi latency must be 0"):
             self.verify_run("duplex-shared")
 
     def test_legacy_missing_each_feature_off_diagnostic_is_rejected(self):

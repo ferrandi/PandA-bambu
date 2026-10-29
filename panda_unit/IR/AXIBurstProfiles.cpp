@@ -60,3 +60,41 @@ BOOST_AUTO_TEST_CASE(axi_burst_profiles_reject_invalid_explicit_overrides)
    write_attrs[FunctionArchitecture::iface_max_write_burst_length] = "257";
    BOOST_CHECK_THROW(ParseAXIWriteBurstProfile(write_attrs, "write"), std::string);
 }
+
+BOOST_AUTO_TEST_CASE(axi_burst_profiles_cover_bounds_and_fifo_derivation)
+{
+   FunctionArchitecture::iface_attrs read_attrs;
+   read_attrs[FunctionArchitecture::iface_max_read_burst_length] = "1";
+   read_attrs[FunctionArchitecture::iface_num_read_outstanding] = "1";
+   BOOST_CHECK_EQUAL(ParseAXIReadBurstProfile(read_attrs, "read").fifo_depth, 2U);
+   read_attrs[FunctionArchitecture::iface_max_read_burst_length] = "256";
+   read_attrs[FunctionArchitecture::iface_num_read_outstanding] = "16";
+   BOOST_CHECK_EQUAL(ParseAXIReadBurstProfile(read_attrs, "read").fifo_depth, 4096U);
+
+   read_attrs[FunctionArchitecture::iface_read_fifo_depth] = "1";
+   BOOST_CHECK_EQUAL(ParseAXIReadBurstProfile(read_attrs, "read").fifo_depth, 1U);
+   read_attrs[FunctionArchitecture::iface_read_fifo_depth] = "3";
+   BOOST_CHECK_THROW(ParseAXIReadBurstProfile(read_attrs, "read"), std::string);
+   read_attrs[FunctionArchitecture::iface_read_fifo_depth] = "4097";
+   BOOST_CHECK_THROW(ParseAXIReadBurstProfile(read_attrs, "read"), std::string);
+
+   FunctionArchitecture::iface_attrs write_attrs;
+   write_attrs[FunctionArchitecture::iface_max_write_burst_length] = "1";
+   BOOST_CHECK_EQUAL(ParseAXIWriteBurstProfile(write_attrs, "write").fifo_depth, 2U);
+   write_attrs[FunctionArchitecture::iface_max_write_burst_length] = "256";
+   BOOST_CHECK_EQUAL(ParseAXIWriteBurstProfile(write_attrs, "write").fifo_depth, 512U);
+   write_attrs[FunctionArchitecture::iface_write_fifo_depth] = "128";
+   BOOST_CHECK_THROW(ParseAXIWriteBurstProfile(write_attrs, "write"), std::string);
+   write_attrs[FunctionArchitecture::iface_write_fifo_depth] = "257";
+   BOOST_CHECK_THROW(ParseAXIWriteBurstProfile(write_attrs, "write"), std::string);
+}
+
+BOOST_AUTO_TEST_CASE(axi_latency_profile_accepts_zero_and_uint32_max)
+{
+   FunctionArchitecture::iface_attrs attrs;
+   BOOST_CHECK_EQUAL(ParseAXIInterfaceLatency(attrs, "latency"), 0U);
+   attrs[FunctionArchitecture::iface_latency] = "4294967295";
+   BOOST_CHECK_EQUAL(ParseAXIInterfaceLatency(attrs, "latency"), UINT32_MAX);
+   attrs[FunctionArchitecture::iface_latency] = "4294967296";
+   BOOST_CHECK_THROW(ParseAXIInterfaceLatency(attrs, "latency"), std::string);
+}

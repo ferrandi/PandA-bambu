@@ -22,6 +22,7 @@ from check_duplex_effect_analysis_artifacts import (  # noqa: E402
     CheckError, FALLBACK_READ, FALLBACK_WRITE, SUCCESS,
     verify, verify_functional, verify_restrict_architecture_metadata,
     verify_success_record, check_production_duplex, expected_owner_recognition,
+    expected_owner_fallback,
     verify_configure_count_expressions,
     verify_unsigned_prefix_comparison,
     verify_prefix_loop_trip_control,
@@ -191,7 +192,42 @@ class DuplexEffectArtifactTests(unittest.TestCase):
                                     reason, "same_base_duplex_reason", {3})
 
     def test_single_direction_veto_uses_activation_reason_for_both_orders(self):
-        for case in (5, 6, 7, 8):
+        observed_single_direction_reason = "original effects are not fully classified ordinary accesses"
+        for case in (5, 6):
+            self.assertEqual(VETO_REASON[case], observed_single_direction_reason)
+            self.assertEqual(VETO_REASON_FIELD[case], "activation_reason")
+            for owner_order in ((3, 6), (6, 3)):
+                traces = []
+                for owner in owner_order:
+                    if owner == 3:
+                        traces.append(
+                            'AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=3 '
+                            'read_accesses=1 write_accesses=1 read_requested=1 read_recognized=0 '
+                            'read_fallback="bundle contains stores" write_requested=1 '
+                            'write_recognized=0 write_fallback="bundle contains reads; '
+                            'same-bundle read/write requires duplex support" '
+                            'same_base_duplex_candidate=1 '
+                            'same_base_duplex_reason="same-base pointwise read-before-write candidate" '
+                            'production_activated=0 '
+                            'activation_reason="original effects are not fully classified ordinary accesses"')
+                    else:
+                        traces.append(
+                            'AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=6 '
+                            'read_accesses=0 write_accesses=1 read_requested=1 read_recognized=0 '
+                            'read_fallback="-" write_requested=1 write_recognized=1 write_fallback="-" '
+                            'same_base_duplex_candidate=0 same_base_duplex_reason="no read access" '
+                            'production_activated=0 '
+                            'activation_reason="original effects are not fully classified ordinary accesses"')
+                self.assertIn("read_accesses=0 write_accesses=1", traces[owner_order.index(6)])
+                verify_preanalysis_veto("\n".join(traces), observed_single_direction_reason,
+                                        VETO_REASON_FIELD[case], {3, 6})
+                with self.assertRaisesRegex(ValueError, "no shared-bundle preanalysis record"):
+                    verify_preanalysis_veto("\n".join(traces).replace(
+                        f'activation_reason="{observed_single_direction_reason}"',
+                        'activation_reason="unrelated"'), observed_single_direction_reason,
+                        VETO_REASON_FIELD[case], {3, 6})
+
+        for case in (7, 8):
             reason = VETO_REASON[case]
             self.assertEqual(VETO_REASON_FIELD[case], "activation_reason")
             for owner_order in ((3, 6), (6, 3)):
@@ -317,24 +353,26 @@ class DuplexEffectArtifactTests(unittest.TestCase):
                 verify_dataflow_task_memory(path, "matrix_dataflow_task")
 
     def test_unused_peer_semantic_proof_does_not_promote_to_activation(self):
-        reason = "original effects are not fully classified ordinary accesses"
+        activation_reason = "original effects are not fully classified ordinary accesses"
+        peer_reason = "no read access"
         candidate = ('AXI_BURST_PREANALYSIS bundle=shared owner_argument_index=11 '
                      'read_accesses=1 write_accesses=1 read_requested=1 read_recognized=0 '
                      'read_fallback="bundle contains stores" write_requested=1 write_recognized=0 '
                      'write_fallback="bundle contains reads; same-bundle read/write requires duplex support" '
                      'same_base_duplex_candidate=1 same_base_duplex_reason="same-base pointwise read-before-write candidate" '
-                     f'production_activated=0 activation_reason="{reason}"\n')
+                     f'production_activated=0 activation_reason="{activation_reason}"\n')
         candidate_proof = {"semantic_proof": True,
                            "semantic_reason": "same-base pointwise read-before-write candidate"}
-        unused_proof = {"semantic_proof": False, "semantic_reason": reason}
+        unused_proof = {"semantic_proof": False, "semantic_reason": peer_reason}
         log = (candidate + "  AXI_BURST_DUPLEX_PROOF " + json.dumps(candidate_proof) + "\n" +
                "  AXI_BURST_DUPLEX_PROOF " + json.dumps(unused_proof) + "\n")
-        verify_unused_peer_veto(log, reason)
+        verify_unused_peer_veto(log, activation_reason, peer_reason)
         with self.assertRaisesRegex(ValueError, "vetoed application-wide"):
-            verify_unused_peer_veto(log.replace("production_activated=0", "production_activated=1"), reason)
+            verify_unused_peer_veto(log.replace("production_activated=0", "production_activated=1"),
+                                    activation_reason, peer_reason)
         with self.assertRaisesRegex(ValueError, "lacks its unused contribution"):
             verify_unused_peer_veto(candidate + "AXI_BURST_DUPLEX_PROOF " +
-                                    json.dumps(candidate_proof) + "\n", reason)
+                                    json.dumps(candidate_proof) + "\n", activation_reason, peer_reason)
         self.assertEqual(activation_markers(
             "---Activated same-base pointwise duplex m_axi bundle shared for root matrix_candidate\n"
             "Activated same-base pointwise duplex m_axi bundle shared for root matrix_peer\n"),
@@ -342,7 +380,10 @@ class DuplexEffectArtifactTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "did not veto production activation"):
             verify_unused_peer_veto(log +
                                     "Activated same-base pointwise duplex m_axi bundle shared for root matrix_candidate\n",
-                                    reason)
+                                    activation_reason, peer_reason)
+        with self.assertRaisesRegex(ValueError, "lacks its unused contribution"):
+            verify_unused_peer_veto(log.replace(peer_reason, "unrelated peer veto"),
+                                    activation_reason, peer_reason)
 
     def test_multi_root_contract_requires_five_calls_in_each_positive_root(self):
         with tempfile.TemporaryDirectory(dir=TMP_ROOT) as directory:
@@ -1336,6 +1377,12 @@ class DuplexEffectArtifactTests(unittest.TestCase):
     def test_distinct_base_64_profile_keeps_per_owner_recognition_expectations(self) -> None:
         self.assertEqual(expected_owner_recognition("distinct_bases_asymmetric_64", 1, 0), ("1", "0"))
         self.assertEqual(expected_owner_recognition("distinct_bases_asymmetric_64", 0, 1), ("0", "1"))
+
+    def test_preanalysis_fallback_is_reported_only_for_directions_with_accesses(self) -> None:
+        self.assertEqual(expected_owner_fallback(FALLBACK_READ, 1), FALLBACK_READ)
+        self.assertEqual(expected_owner_fallback(FALLBACK_WRITE, 1), FALLBACK_WRITE)
+        self.assertEqual(expected_owner_fallback(FALLBACK_READ, 0), "-")
+        self.assertEqual(expected_owner_fallback(FALLBACK_WRITE, 0), "-")
 
     def test_mismatched_bound_fixture_does_not_claim_comparison_guard_coverage(self) -> None:
         reason, owners, read_fallback, write_fallback, semantic, profile = CASES[

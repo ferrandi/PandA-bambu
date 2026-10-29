@@ -90,17 +90,17 @@ def effective_model_write_delay(path: pathlib.Path, parameter: int) -> tuple[int
 
 def check_stimulus_independence(bambu: pathlib.Path, out: pathlib.Path,
                                 burst_parameter: str) -> list[dict[str, object]]:
-    source = TESTS / "bambu_axi_burst_sum_o1.cpp"
-    source_128 = TESTS / "bambu_axi_burst_sum_o1_lat128.cpp"
+    source = TESTS / "bambu_axi_burst_sum_profile.cpp"
     tb = TESTS / "bambu_axi_burst_tb.cpp"
-    cases = (("metadata64-cli7", source, 7, 5),
-             ("metadata128-cli7", source_128, 7, 5),
-             ("metadata128-cli9", source_128, 9, 6))
+    cases = (("metadata64-cli7", source, 7, 5, []),
+             ("metadata128-cli7", source, 7, 5, ["--extra-cc-options=-DBAMBU_AXI_SUM_LAT128"]),
+             ("metadata128-cli9", source, 9, 6, ["--extra-cc-options=-DBAMBU_AXI_SUM_LAT128"]))
     results: list[dict[str, object]] = []
-    for name, kernel_source, read_delay, write_delay in cases:
+    for name, kernel_source, read_delay, write_delay, profile_args in cases:
         case = out / "stimulus" / name
         result = run(case, [str(bambu), str(kernel_source), *BASE_ARGS,
                             f"--top-fname=kernel", f"--generate-tb={tb}", "--tb-arg=1024",
+                            *profile_args,
                             "--memory-allocation-policy=NO_BRAM",
                             "--tb-param-size=src:16384", f"--mem-delay-read={read_delay}",
                             f"--mem-delay-write={write_delay}",
@@ -126,7 +126,7 @@ def check_stimulus_independence(bambu: pathlib.Path, out: pathlib.Path,
 def check_write_delay_clamp(bambu: pathlib.Path, out: pathlib.Path,
                             burst_parameter: str) -> list[dict[str, object]]:
     """Check both generated clamp branches at the minimum valid CLI delay."""
-    source = TESTS / "bambu_axi_burst_sum_o1.cpp"
+    source = TESTS / "bambu_axi_burst_sum_profile.cpp"
     tb = TESTS / "bambu_axi_burst_tb.cpp"
     case = out / "write-delay-clamp" / "global-fallback-cli-one"
     result = run(case, [str(bambu), str(source), *BASE_ARGS, "--top-fname=kernel",

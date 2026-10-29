@@ -40,7 +40,7 @@ COMMON_ARGS = (
     # The streamed buffers are unbounded pointers in the fixture: the co-simulation image of
     # the pointed memory must be sized by the gate, sized like the testbench buffers.
     "--tb-param-size=src:16384", "--tb-param-size=dst:16384",
-    "--no-clean", "--simulate", "--simulator=VERILATOR", "--extra-cc-options=-DNDEBUG",
+    "--no-clean", "--simulate", "--simulator=MODELSIM", "--extra-cc-options=-DNDEBUG",
     "--extra-cc-options=-DBAMBU",
 )
 PARAM_ATTRS = {
@@ -205,7 +205,21 @@ def check_provenance(run_dir, profile, run, inputs):
     macro_args = [arg for arg in argv if arg.startswith("--extra-cc-options=-DCOPY_COMPARISON_PROFILE=")]
     need(macro_args == [f"--extra-cc-options=-DCOPY_COMPARISON_PROFILE={macro}"],
          f"{run_dir}: invocation does not select exactly profile {profile}")
-    common = [arg for arg in argv[2:] if arg not in feature_args and arg not in macro_args]
+    simulator_args = [arg for arg in argv if arg.startswith("--simulator=")]
+    mentor_root_args = [arg for arg in argv if arg.startswith("--mentor-root=")]
+    need(simulator_args == ["--simulator=MODELSIM"] and len(mentor_root_args) == 1,
+         f"{run_dir}: invocation must select ModelSim and one mentor root")
+    sim_meta = dict(re.findall(r"(?m)^(simulator_root|simulator|simulator_version)=(.*)$", text))
+    need(set(sim_meta) == {"simulator_root", "simulator", "simulator_version"},
+         f"{run_dir}: ModelSim provenance is incomplete")
+    simulator = Path(sim_meta["simulator"])
+    simulator_root = Path(sim_meta["simulator_root"])
+    need(simulator.is_file() and not simulator.is_symlink() and simulator_root.is_dir() and
+         mentor_root_args == [f"--mentor-root={sim_meta['simulator_root']}"] and
+         re.search(rf"(?m)^{sha256(simulator)}\s+{re.escape(str(simulator))}$", text) is not None,
+         f"{run_dir}: ModelSim path, root, or digest does not match invocation")
+    common = [arg for arg in argv[2:] if arg not in feature_args and arg not in macro_args and
+              arg not in mentor_root_args]
     expected_common = [*COMMON_ARGS[:-2], f"--generate-tb={inputs['testbench']}", *COMMON_ARGS[-2:]]
     need(common == expected_common,
          f"{run_dir}: invocation common settings differ from the controlled comparison")
@@ -255,8 +269,11 @@ def check_architecture(run_dir, profile):
     need({node.get("name") for node in m_axi_bundles} == expected_bundle_names and
          len(m_axi_bundles) == len(expected_bundle_names),
          f"{run_dir}: architecture.xml m_axi bundle inventory is incorrect")
-    need(all(node.get("latency") == "0" for node in m_axi_bundles),
-         f"{run_dir}: every m_axi bundle must explicitly have latency=0")
+    # `latency` is optional in architecture.xml. Its absence means the interface
+    # did not request a latency override; only an explicit nonzero value is invalid
+    # for this controlled comparison.
+    need(all(node.get("latency") in (None, "0") for node in m_axi_bundles),
+         f"{run_dir}: explicit m_axi latency must be 0 when specified")
     bundles = {node.get("name"): node for node in m_axi_bundles}
     for direction, port in (("read", "src"), ("write", "dst")):
         bundle_name = owners[port]

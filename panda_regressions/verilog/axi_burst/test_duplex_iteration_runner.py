@@ -23,6 +23,13 @@ class DuplexIterationRunnerTests(unittest.TestCase):
         self.env.update({"TMPDIR": str(self.scratch), "TMP": str(self.scratch),
                          "TEMP": str(self.scratch), "PYTHONDONTWRITEBYTECODE": "1"})
 
+    def test_runner_uses_only_the_shared_modelsim_flow(self):
+        source = RUNNER.read_text(encoding="utf-8").lower()
+        for token in ("modelsim_helpers.sh", "modelsim_resolve", "modelsim_compile", "modelsim_run",
+                      "modelsim_normalize_log"):
+            self.assertIn(token, source)
+        self.assertNotIn("verilator", source)
+
     def _run(self, *args, **overrides):
         env = self.env.copy()
         env.update(overrides)
@@ -42,6 +49,17 @@ class DuplexIterationRunnerTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("SIM_JOBS must be a positive integer", result.stdout)
         self.assertFalse(output.exists())
+
+    def test_modelsim_parallelism_is_capped_before_creating_output(self):
+        for variable in ("SIM_JOBS", "DUPLEX_G2_JOBS"):
+            with self.subTest(variable=variable):
+                output = TMP_ROOT / f"out_g33_{variable.lower()}_cap_test"
+                self.assertFalse(output.exists())
+                result = self._run("/bin/true", output, DUPLEX_G3_SIM_OUTSIDE_SANDBOX="1",
+                                   **{variable: "3"})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("limited to 2 concurrent ModelSim jobs", result.stdout)
+                self.assertFalse(output.exists())
 
     def test_preexisting_output_override_is_rejected(self):
         prefix = self.scratch / "install"

@@ -49,8 +49,8 @@ TYPE_VETO_REASON = "bundle element must be a direct 32-bit integer or floating-p
 VETO_REASON = {
     3: "read/write accesses do not share one canonical loop",
     4: "read/write accesses do not share one canonical loop",
-    5: "bundle does not explicitly request both read and write bursts",
-    6: "bundle does not explicitly request both read and write bursts",
+    5: "original effects are not fully classified ordinary accesses",
+    6: "original effects are not fully classified ordinary accesses",
     7: "original effects are not fully classified ordinary accesses",
     8: "original effects are not fully classified ordinary accesses",
     9: "DATAFLOW/forwarded bundle ownership is unsupported",
@@ -326,12 +326,13 @@ def verify_no_legacy_access_contract(path: Path, roots: set[str]) -> None:
              f"post-InterfaceInfer unused root {root} unexpectedly has legacy memory calls: {unexpected}")
 
 
-def verify_unused_peer_veto(combined: str, expected_reason: str) -> None:
+def verify_unused_peer_veto(combined: str, expected_activation_reason: str,
+                            expected_peer_reason: str) -> None:
     candidate_records = re.findall(
         r'^\s*AXI_BURST_PREANALYSIS .*same_base_duplex_candidate=1 .*'
         r'production_activated=(\d) activation_reason="([^"]*)"\s*$',
         combined, re.MULTILINE)
-    need(len(candidate_records) == 1 and candidate_records[0] == ("0", expected_reason),
+    need(len(candidate_records) == 1 and candidate_records[0] == ("0", expected_activation_reason),
          "same-base candidate was not vetoed application-wide for the expected unused-peer reason")
     need(not activation_markers(combined),
          "unused same-bundle peer did not veto production activation")
@@ -349,7 +350,7 @@ def verify_unused_peer_veto(combined: str, expected_reason: str) -> None:
              for record in proofs),
          "unused-peer veto fixture lacks its candidate-level positive semantic proof")
     need(any(record.get("semantic_proof") is False and
-             record.get("semantic_reason") == expected_reason for record in proofs),
+             record.get("semantic_reason") == expected_peer_reason for record in proofs),
          "unused-peer veto fixture lacks its unused contribution proof record")
 
 
@@ -548,6 +549,10 @@ def verify_architecture(path: Path, roots: tuple[str, ...], case: int) -> None:
             selected = [bundle for bundle in bundles if bundle.get("name") == "shared"]
         need(len(selected) == 1 and selected[0].get("mode") == "m_axi",
              f"root {symbol} lacks the intended explicit m_axi bundle architecture")
+        if case in {5, 6} and symbol == "matrix_peer":
+            need("max_read_burst_length" not in selected[0].attrib and
+                 selected[0].get("max_write_burst_length") == "16",
+                 "single-direction peer did not retain only its explicit write burst request")
         if (case not in {5, 6, 15} or symbol != "matrix_peer") and not (
                 case in {9, 10} and symbol == "matrix_peer"):
             need(selected[0].get("max_read_burst_length") is not None and
@@ -1068,7 +1073,7 @@ def verify(case: int, output: Path, return_code: int) -> None:
         verify_case16_called_contributions(before, combined)
     if case in {7, 8}:
         verify_no_legacy_access_contract(after, {"matrix_peer"})
-        verify_unused_peer_veto(combined, VETO_REASON[case])
+        verify_unused_peer_veto(combined, VETO_REASON[case], "no read access")
     for root in positive_roots:
         verify_drain_exit(after, combined, root)
     if case in VETO_REASON and case not in {9, 10, 11, 12}:
