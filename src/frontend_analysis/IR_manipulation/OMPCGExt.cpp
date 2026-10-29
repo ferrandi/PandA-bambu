@@ -26,6 +26,7 @@
  */
 
 #include "OMPCGExt.hpp"
+#include "openmp_task_constants.hpp"
 
 #include "Parameter.hpp"
 #include "Range.hpp"
@@ -150,7 +151,7 @@ DesignFlowStep_Status OMPCGExt::InternalExec()
       return DesignFlowStep_Status::UNCHANGED;
    }
 
-   const bool use_tasks = parameters->IsParameter("enable-task") && parameters->GetParameter<int>("enable-task") == 1;
+   const bool use_tasks = openmp_task::IsEnabled(*parameters);
    const auto task_entry_name = function_behavior->CGetBehavioralHelper()->GetFunctionName();
    if(use_tasks && task_entry_name.find("omp_task_entry") != std::string::npos && !function_behavior->GetOMPInfo())
    {

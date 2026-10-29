@@ -47,9 +47,13 @@ __attribute__((noinline)) void fn(int* data)
          for(unsigned i = 0; i < size; ++i)
          {
 #pragma omp task firstprivate(i) depend(inout : data[i])
-            { data[i] = nested(data[i]); }
+            {
+               data[i] = nested(data[i]);
+            }
 #pragma omp task firstprivate(i) depend(inout : data[i])
-            { data[i] += nested(data[i] + 2); }
+            {
+               data[i] += nested(data[i] + 2);
+            }
          }
       }
    }

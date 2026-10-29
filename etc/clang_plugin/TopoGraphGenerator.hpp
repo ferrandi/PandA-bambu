@@ -37,6 +37,7 @@
 #include "Types.hpp"
 #include "Utils.hpp"
 
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/raw_ostream.h>
 
 #include "pugixml.hpp"
@@ -53,7 +54,6 @@ namespace Bambu
    {
       namespace Task
       {
-
          class TopoGraphGenerator
          {
             using Resources = std::unordered_map<unsigned, unsigned>;
@@ -145,6 +145,7 @@ namespace Bambu
              */
             void buildTopo()
             {
+               topo.clear();
                initNodeTypes();
                Utils::log(llvm::errs(), 0, 1, "Building topo graph");
                if(adjMap.size() == 0 || nodes.size() == 0)
@@ -213,7 +214,10 @@ namespace Bambu
                printTopo(topo);
 #endif
 
-               assert(visited == nodes.size() && "can not build topological graph");
+               if(visited != nodes.size())
+               {
+                  llvm::report_fatal_error("OpenMP task dependency graph contains a cycle or an unknown node");
+               }
             }
 
             TopoGraphGenerator(AdjMap const& _adjMap, Nodes const& _nodes, Resources const& _resources,
@@ -225,6 +229,7 @@ namespace Bambu
                   nodesInputs(_nodesInputs),
                   topModuleInputs(_topModuleInputs)
             {
+               topo.clear();
                initNodeTypes();
                buildTopo();
             }
@@ -256,8 +261,7 @@ namespace Bambu
 
             void dump_xml(std::string const& filename)
             {
-               const auto recoverLambdaIdFromUniqueId = [](std::string const& uniqueId)
-               {
+               const auto recoverLambdaIdFromUniqueId = [](std::string const& uniqueId) {
                   unsigned s = 0;
                   while(s < uniqueId.size() && (uniqueId[s] < '0' || uniqueId[s] > '9'))
                   {
@@ -341,7 +345,7 @@ namespace Bambu
             }
          };
       } // namespace Task
-   } // namespace OpenMP
+   }    // namespace OpenMP
 } // namespace Bambu
 
 #endif

@@ -56,7 +56,7 @@ __attribute__((noinline)) void fn(int* data1, int* data2, int* data3, int* data4
                data3[i] *= 2;
                data4[i] *= 2;
             } // end task
-         } // end for
-      } // end single
-   } // end parallel
+         }    // end for
+      }       // end single
+   }          // end parallel
 }

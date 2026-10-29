@@ -1,4 +1,3 @@
-#include <cassert>
 /*
  *
  *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
@@ -19,6 +18,8 @@
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
  *
  */
+#include <cassert>
+
 #include "kernel.hpp"
 
 int main()

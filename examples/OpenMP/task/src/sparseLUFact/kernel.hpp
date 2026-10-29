@@ -21,7 +21,6 @@
 #ifndef KERNEL_HPP
 #define KERNEL_HPP
 
-
 #include <cassert>
 #include <cfloat>
 #include <cstdio>
@@ -46,12 +45,10 @@ constexpr int mat_size = 6;
 constexpr int block_size = 10;
 #endif
 
-#define block_offset block_size * block_size
+#define block_offset block_size* block_size
 
 #define FALSE 0
 #define TRUE 1
-
-
 
 void original_init(Real*** pBENCH, char const* pass);
 void init(Real* mat, char const* name);

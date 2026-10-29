@@ -39,5 +39,5 @@ __attribute__((noinline)) void fn(int* data1)
             } // end task
          }
       } // end single
-   } // end parallel
+   }    // end parallel
 }

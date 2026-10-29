@@ -1,23 +1,3 @@
-/*
- *
- *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *     _/      _/    _/ _/    _/ _/   _/ _/    _/
- *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
- *
- *  ***********************************************
- *                   PandA Project
- *   URL: https://github.com/ferrandi/PandA-bambu
- *            Politecnico di Milano - DEIB
- *             System Architectures Group
- *  ***********************************************
- *   Copyright (C) 2025-2026 Politecnico di Milano
- *
- * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
- * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
- *
- */
 /**********************************************************************************************/
 /*  This program is part of the Barcelona OpenMP Tasks Suite */
 /*  Copyright (C) 2009 Barcelona Supercomputing Center - Centro Nacional de
@@ -395,7 +375,6 @@ void print_mat_flat(Real* mat)
    fprintf(stderr, "]\n");
 }
 
-
 #if BANK_NUMBER == 2
 #if BANK_CHUNK_SIZE == 4
 #pragma HLS bus bank_number = 2 chunk_size = 4
@@ -566,8 +545,10 @@ __attribute__((noinline)) void fn(Real* mat)
 
             for(unsigned jj = kk + 1; jj < mat_size; jj++)
             {
-#pragma omp task firstprivate(kk, jj) depend(in : mat[(kk * mat_size + kk) * block_offset]) \
-    depend(inout : mat[(kk * mat_size + jj) * block_offset])
+#pragma omp task firstprivate(kk, jj) depend(in                                          \
+                                             : mat[(kk * mat_size + kk) * block_offset]) \
+    depend(inout                                                                         \
+           : mat[(kk * mat_size + jj) * block_offset])
                {
                   if(mat[(kk * mat_size + jj) * block_offset] != null)
                   {
@@ -578,8 +559,10 @@ __attribute__((noinline)) void fn(Real* mat)
 
             for(unsigned ii = kk + 1; ii < mat_size; ii++)
             {
-#pragma omp task firstprivate(kk, ii) shared(mat) depend(in : mat[(kk * mat_size + kk) * block_offset]) \
-    depend(inout : mat[(ii * mat_size + kk) * block_offset])
+#pragma omp task firstprivate(kk, ii) shared(mat) depend(in                                          \
+                                                         : mat[(kk * mat_size + kk) * block_offset]) \
+    depend(inout                                                                                     \
+           : mat[(ii * mat_size + kk) * block_offset])
                {
                   if(mat[(ii * mat_size + kk) * block_offset] != null)
                   {
@@ -592,11 +575,14 @@ __attribute__((noinline)) void fn(Real* mat)
             {
                for(unsigned jj = kk + 1; jj < mat_size; jj++)
                {
-#pragma omp task firstprivate(kk, ii, jj)                                               \
-    depend(in : mat[(kk * mat_size + jj) * block_offset], mat[(ii * mat_size + kk) * block_offset]) \
-    depend(inout : mat[(ii * mat_size + jj) * block_offset])
+#pragma omp task firstprivate(kk, ii, jj)                                                        \
+    depend(in                                                                                    \
+           : mat[(kk * mat_size + jj) * block_offset], mat[(ii * mat_size + kk) * block_offset]) \
+        depend(inout                                                                             \
+               : mat[(ii * mat_size + jj) * block_offset])
                   {
-                     if(mat[(kk * mat_size + jj) * block_offset] != null && mat[(ii * mat_size + kk) * block_offset] != null)
+                     if(mat[(kk * mat_size + jj) * block_offset] != null &&
+                        mat[(ii * mat_size + kk) * block_offset] != null)
                      {
                         if(mat[(ii * mat_size + jj) * block_offset] == null)
                         {
@@ -615,7 +601,7 @@ __attribute__((noinline)) void fn(Real* mat)
             }
          }
       } // end single
-   } // end parallel
+   }    // end parallel
 }
 
 void original_init(Real*** pBENCH, char const* pass)

@@ -96,8 +96,6 @@ DesignFlowStep_Status TopEntityOmpTaskGraph::InternalExec()
 
    circuit->set_black_box(false);
 
-   std::cerr << "--> circuit name " << circuit->get_id() << '\n';
-
    /// Set some descriptions and legal stuff
    GetPointerS<module_o>(circuit)->set_description("Top component for " + function_name);
    GetPointerS<module_o>(circuit)->set_copyright(GENERATED_COPYRIGHT);

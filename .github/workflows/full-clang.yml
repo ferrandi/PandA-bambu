@@ -165,6 +165,13 @@ jobs:
       test-compiler: ${{matrix.compiler}}
     secrets: inherit  
 
+  openmp-task:
+    needs: [build, simulate-all]
+    uses: ./.github/workflows/reusable-openmp-task.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+    secrets: inherit
+
   openmp-complex:
     needs: [build, simulate-all]
     uses: ./.github/workflows/reusable-openmp-complex.yml

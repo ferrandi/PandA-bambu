@@ -36,9 +36,13 @@ __attribute__((noinline)) void fn(float* data)
          for(unsigned i = 0; i < size; ++i)
          {
 #pragma omp task firstprivate(i) depend(inout : data[i])
-            { data[i] = evaluate(data[i]); }
+            {
+               data[i] = evaluate(data[i]);
+            }
 #pragma omp task firstprivate(i) depend(inout : data[i])
-            { data[i] = evaluate(data[i] + 1.0f); }
+            {
+               data[i] = evaluate(data[i] + 1.0f);
+            }
          }
       }
    }

@@ -31,9 +31,10 @@
  *
  */
 #include "CompilerWrapper.hpp"
+#include "openmp_task_constants.hpp"
 
-#include "Parameter.hpp"
 #include "BambuParameterRegistry.hpp"
+#include "Parameter.hpp"
 #include "compiler_constants.hpp"
 #include "cpu_stats.hpp"
 #include "cpu_time.hpp"
@@ -178,8 +179,7 @@
 
 #define SCRIPT_NEWLINE " \\\n  "
 PANDA_REGISTER_PARAMETER("emit-llvm", PandaParamType::Bool, "0",
-                         "Emit the compiled source file in symbolic llvm instead of an object file",
-                         "debugging");
+                         "Emit the compiled source file in symbolic llvm instead of an object file", "debugging");
 
 enum CompilerMode : int64_t
 {
@@ -490,8 +490,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    std::string real_filename = input_filename;
    std::string load_prefix = "";
    std::string command;
-   const auto load_and_run_plugin = [&](const std::string& plugin_name, bool generateIr = false)
-   {
+   const auto load_and_run_plugin = [&](const std::string& plugin_name, bool generateIr = false) {
       if(cm & CM_COMPILER_STD)
       {
          load_prefix += SCRIPT_NEWLINE + load_plugin(plugin_name);
@@ -665,6 +664,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       {
          append_arg("-panda-Internalize");
       }
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-task-graph-topfname");
+      }
       load_and_run_plugin(COMPILER_TOPFNAME_PLUGIN);
    }
    // customSROA inlines: it must run after topfname has marked top/dataflow functions NoInline
@@ -689,6 +692,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       load_and_run_plugin(COMPILER_OPENMP_PLUGIN);
       command += " -dflt_nthreads=" + Param->getOption<std::string>(OPT_num_accelerators);
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-openmp-task-graph");
+      }
    }
 
    command += SCRIPT_NEWLINE + parameters_line;
@@ -697,8 +704,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       append_arg("-panda-outputdir=" + output_temporary_directory);
       append_arg("-panda-infile=" + input_filename);
-      if(Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp) && Param->IsParameter("enable-task") &&
-         Param->GetParameter<int>("enable-task") == 1)
+      if(openmp_task::IsEnabled(*Param))
       {
          append_arg("-panda-task-graph");
       }
@@ -833,8 +839,8 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   const auto compiler_mode = [&]() -> int {
-      int flags = 0;
+   const auto compiler_mode = [&]() -> int64_t {
+      int64_t flags = 0;
       if(preprocess_only || compile_only)
       {
          return flags;
@@ -903,11 +909,13 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       CompileFile(lto_source, lto_obj, "", passes, CM_COMPILER_LTO, "");
 
       const bool isOpenmp = Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp);
-      const bool useTask = Param->IsParameter("enable-task") && Param->GetParameter<int>("enable-task") == 1;
+      const bool useTask = openmp_task::IsEnabled(*Param);
       if(isOpenmp && useTask)
       {
-         THROW_ASSERT(isCurrentOrNewer(compiler_target, CompilerWrapper_CompilerTarget::CT_I386_CLANG19),
-                      "OpenMP task are supported with llvm19");
+         if(compiler_target != CompilerWrapper_CompilerTarget::CT_I386_CLANG19)
+         {
+            THROW_ERROR_USAGE("OpenMP tasks require --compiler=I386_CLANG19");
+         }
          lto_source = lto_obj;
          lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.ll";
          CompileFile(lto_source, lto_obj, "", passes, CM_COMPILER_DIS, costTable);

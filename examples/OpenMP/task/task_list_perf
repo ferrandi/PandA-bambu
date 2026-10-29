@@ -1,4 +1,4 @@
-# Some test skips bambu verification to due floating point differences
+# Some test skips bambu verification due floating point differences
 
 # Banked
 src/sparseLUFact/kernel.cpp                  -DMAT_SIZE=6 -DBLOCK_SIZE=40 -fopenmp -DBANK_NUMBER=32 -DBANK_CHUNK_SIZE=4 --channels-type=MEM_ACC_NN --channels-number=4 -DBAMBU_SKIP_VERIFICATION --top-fname=fn --generate-tb=BENCHMARKS_ROOT/src/sparseLUFact/tb.cpp --benchmark-name=sparseLUFactStackBankChunkSize_4

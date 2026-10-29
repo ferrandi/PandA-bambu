@@ -87,7 +87,7 @@ namespace Bambu
          }; // namespace Constants
 
       } // namespace Task
-   } // namespace OpenMP
+   }    // namespace OpenMP
 } // namespace Bambu
 
 #endif

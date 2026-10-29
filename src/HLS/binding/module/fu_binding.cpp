@@ -28,6 +28,7 @@
  *
  */
 #include "fu_binding.hpp"
+#include "openmp_task_constants.hpp"
 
 #include "HDLGeneratorManager.hpp"
 #include "OmpTaskFuBinding.hpp"
@@ -775,12 +776,16 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
 {
    const auto fname = ir_helper::GetFunctionName(_HLSMgr->get_ir_manager()->GetIRNode(_function_id));
    const bool isOpenmp = _parameters->isOption(OPT_openmp) && _parameters->getOption<bool>(OPT_openmp);
-   const bool useTask = _parameters->IsParameter("enable-task") && _parameters->GetParameter<int>("enable-task") == 1;
+   const bool useTask = openmp_task::IsEnabled(*_parameters);
+   if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call") && useTask)
+   {
+      THROW_ERROR_USAGE("OpenMP task mode does not support residual parallel fork calls");
+   }
    if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call") && !useTask)
    {
       return fu_bindingRef(new omp_fork_fu_binding(_HLSMgr, _function_id, _parameters));
    }
-   else if(fname.find("task_graph") != std::string::npos && useTask && isOpenmp)
+   else if(openmp_task::IsGraphEntry(fname) && useTask && isOpenmp)
    {
       return fu_bindingRef(new OmpTaskFuBinding(_HLSMgr, _function_id, _parameters));
    }

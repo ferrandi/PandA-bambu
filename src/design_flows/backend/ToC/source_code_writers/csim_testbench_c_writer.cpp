@@ -124,8 +124,8 @@ void CSimTestbenchCWriter::InternalWriteFile()
          arg_decls += raw_typename + " " + arg_name + ";\n";
          const auto setup_interface =
              arg_interface == "default" && ir_helper::IsPointerType(arg) ? "ptr" : arg_interface;
-         arg_setup +=
-             "if_setup_" + setup_interface + "(" + std::to_string(if_idx) + ", " + arg_name + ", " + arg_bitsize + ");\n";
+         arg_setup += "if_setup_" + setup_interface + "(" + std::to_string(if_idx) + ", " + arg_name + ", " +
+                      arg_bitsize + ");\n";
          if(if_idx > 0)
          {
             dut_call += ", ";

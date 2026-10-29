@@ -28,8 +28,8 @@
 #ifndef NDEBUG
 #define NDEBUG
 #endif
-#include "plugin_includes.hpp"
 #include "PointerResolutionPass.hpp"
+#include "plugin_includes.hpp"
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringExtras.h>

@@ -50,6 +50,7 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
 #include <llvm/Support/Casting.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
@@ -73,7 +74,6 @@ using namespace Bambu::OpenMP::Task;
 // everything in an anonymous namespace.
 namespace
 {
-
 #if PANDA_LLVM_CLANG_MAJOR >= 19
 
    cl::opt<std::string> outDirName("outputdir", cl::desc("Destination path for the output XML file"),
@@ -81,6 +81,16 @@ namespace
 
    cl::opt<unsigned> resourceDuplicationNum("resource-duplication", cl::desc("The number of duplicated resources"),
                                             cl::value_desc("number of resources duplication"), cl::init(1));
+
+   Function* requireDirectCallee(const CallInst* call)
+   {
+      auto* callee = call->getCalledFunction();
+      if(!callee)
+      {
+         report_fatal_error("OpenMP task extraction does not support indirect calls in the task graph");
+      }
+      return callee;
+   }
 
    // Forward declaration
    void visitor(Function& F, std::set<unsigned> const* entryPointInputs, unsigned& taskHash, TopoGraphGenerator& topo,
@@ -90,7 +100,7 @@ namespace
    {
       bool operator()(std::pair<unsigned, unsigned> const& a, std::pair<unsigned, unsigned> const& b) const
       {
-         return a.second > b.second;
+         return a.second != b.second ? a.second > b.second : a.first < b.first;
       }
    };
 
@@ -271,7 +281,7 @@ namespace
       }
       if(!isa<GetElementPtrInst>(op))
       {
-         llvm_unreachable("not impl");
+         report_fatal_error("not impl");
       }
       return loadFromGep(dyn_cast<GetElementPtrInst>(op));
    }
@@ -286,7 +296,7 @@ namespace
       }
       if(!isa<LoadInst>(op))
       {
-         llvm_unreachable("not impl");
+         report_fatal_error("not impl");
       }
       return argFromLoad(dyn_cast<LoadInst>(op));
    }
@@ -302,7 +312,7 @@ namespace
       StringRef opcode_name = inst.getOpcodeName();
       if(auto* CI = dyn_cast<CallInst>(&inst))
       {
-         StringRef name = CI->getCalledFunction()->getName();
+         StringRef name = requireDirectCallee(CI)->getName();
          if(flag == Constants::OPEN_FLAG && name.data() == Constants::targetOmpTaskAllocName)
          {
             return true;
@@ -352,6 +362,10 @@ namespace
          {
             instructions.push_back(&inst);
          }
+      }
+      if(inside)
+      {
+         report_fatal_error("OpenMP task allocation and submission must be in the same basic block");
       }
    }
 
@@ -631,7 +645,7 @@ namespace
          {
             stringBuff.clear();
             source->print(stream);
-            llvm_unreachable(std::string("not impl. Instruction is " + stringBuff).c_str());
+            report_fatal_error(std::string("not impl. Instruction is " + stringBuff).c_str());
          }
          index++;
       }
@@ -682,8 +696,7 @@ namespace
    std::vector<std::tuple<int, std::string, Instruction const*>> collectUsesAsStoreInstOf(const GetElementPtrInst* GEP)
    {
       // Retrieve the label of a pointer
-      auto getPtrLabel = [](const std::string& str)
-      {
+      auto getPtrLabel = [](const std::string& str) {
          std::string label = "";
          unsigned i = 0;
          // Remove any initial whitespace
@@ -703,8 +716,7 @@ namespace
       };
 
       // Retrieve the label of a constant value
-      auto getValueLabel = [](const std::string& str)
-      {
+      auto getValueLabel = [](const std::string& str) {
          std::string label = "";
          unsigned i = 0;
          // Remove any initial whitespace
@@ -812,8 +824,7 @@ namespace
       // The input position in the argument list
       unsigned position = 0;
 
-      auto cleanOperandString = [](std::string const& str)
-      {
+      auto cleanOperandString = [](std::string const& str) {
          unsigned index = 0;
          std::string cleaned = "";
          while(index < str.size() && str[index] != '%')
@@ -829,8 +840,7 @@ namespace
       };
 
       // A const input is expected to work correctly
-      auto cleanOperandString2 = [](std::string const& str)
-      {
+      auto cleanOperandString2 = [](std::string const& str) {
          unsigned index = 0;
          std::string cleaned = "";
          uint8_t spaces = 0;
@@ -853,8 +863,7 @@ namespace
       };
 
       auto saveStore = [&swapMap, &cleanOperandString, &cleanOperandString2, &inputs, &constInputs, &inputsRef,
-                        &position](StoreInst* storeInst, const auto index)
-      {
+                        &position](StoreInst* storeInst, const auto index) {
          std::string stringBuff;
          raw_string_ostream stream(stringBuff);
          storeInst->getOperand(index)->print(stream);
@@ -893,7 +902,7 @@ namespace
       if(auto* callInst = dyn_cast<CallInst>(&I))
       {
          // Check if it's a call to __kmpc_omp_task_alloc
-         assert(callInst->getCalledFunction()->getName() == Constants::targetOmpTaskAllocName);
+         assert(requireDirectCallee(callInst)->getName() == Constants::targetOmpTaskAllocName);
 
          for(auto* user : callInst->users())
          {
@@ -1018,8 +1027,7 @@ namespace
 
       Utils::log(errs(), 0, 1, "Updating pointer parents inside task inputs");
 
-      const auto findParentWeight = [](const unsigned key, std::string const& id)
-      {
+      const auto findParentWeight = [](const unsigned key, std::string const& id) {
          for(auto& p : taskEntryInputs[id])
          {
             if(p.first == key)
@@ -1037,13 +1045,14 @@ namespace
          return NOT_FOUND;
       };
 
-      const auto updateWeight = [&fnName](const unsigned key, const unsigned w)
-      {
+      const auto updateWeight = [&fnName](const unsigned key, const unsigned w) {
          for(auto it = taskEntryInputs[fnName].begin(); it != taskEntryInputs[fnName].end(); it++)
          {
             if(it->first == key)
             {
-               const_cast<unsigned&>(it->second) = w;
+               const auto input = it->first;
+               taskEntryInputs[fnName].erase(it);
+               taskEntryInputs[fnName].insert({input, w});
                return true;
             }
          }
@@ -1115,7 +1124,10 @@ namespace
             continue;
          }
          Utils::log(errs(), 2, 1, "Analyzing uses of ");
-         arg.print(errs());
+         if(Bambu::OpenMP::Task::Utils::Verbose)
+         {
+            arg.print(errs());
+         }
          Utils::log(errs(), 0, 1, "");
          for(auto& u : arg.uses())
          {
@@ -1123,9 +1135,15 @@ namespace
             {
                strBuff.clear();
                Utils::log(errs(), 2, 0, "replacing ");
-               loadInst->print(errs());
+               if(Bambu::OpenMP::Task::Utils::Verbose)
+               {
+                  loadInst->print(errs());
+               }
                Utils::log(errs(), 0, 0, " with ");
-               arg.print(errs());
+               if(Bambu::OpenMP::Task::Utils::Verbose)
+               {
+                  arg.print(errs());
+               }
                Utils::log(errs(), 0, 1, "");
 
                auto swapFrom = loadInst;
@@ -1234,19 +1252,17 @@ namespace
                         // Create an inbounds GEP.
                         Value* newGEP = builder.CreateGEP(elemTy, &I, index, "baseidxgep");
 
-                        AI->replaceUsesWithIf(newGEP,
-                                              [=](Use& u)
-                                              {
-                                                 if(auto* isGep = dyn_cast<GetElementPtrInst>(u.getUser()))
-                                                 {
-                                                    return false;
-                                                 }
-                                                 if(auto* isGep = dyn_cast<CallInst>(u.getUser()))
-                                                 {
-                                                    return false;
-                                                 }
-                                                 return true;
-                                              });
+                        AI->replaceUsesWithIf(newGEP, [=](Use& u) {
+                           if(auto* isGep = dyn_cast<GetElementPtrInst>(u.getUser()))
+                           {
+                              return false;
+                           }
+                           if(auto* isGep = dyn_cast<CallInst>(u.getUser()))
+                           {
+                              return false;
+                           }
+                           return true;
+                        });
                      }
                   }
                }
@@ -1316,34 +1332,32 @@ namespace
          }
       }
 
-      std::sort(collector.begin(), collector.end(),
-                [](const Instruction* a, const Instruction* b)
-                {
-                   auto* gepA = dyn_cast<GetElementPtrInst>(a);
-                   auto* gepB = dyn_cast<GetElementPtrInst>(b);
-                   // Get the base pointer operands.
-                   const auto* ptrOpA = gepA->getPointerOperand();
-                   const auto* ptrOpB = gepB->getPointerOperand();
+      std::sort(collector.begin(), collector.end(), [](const Instruction* a, const Instruction* b) {
+         auto* gepA = dyn_cast<GetElementPtrInst>(a);
+         auto* gepB = dyn_cast<GetElementPtrInst>(b);
+         // Get the base pointer operands.
+         const auto* ptrOpA = gepA->getPointerOperand();
+         const auto* ptrOpB = gepB->getPointerOperand();
 
-                   // Compare ptr operands
-                   std::string stringBuff = "";
-                   raw_string_ostream stream(stringBuff);
-                   ptrOpA->print(stream);
-                   std::string nameA = stringBuff;
-                   stringBuff.clear();
-                   ptrOpB->print(stream);
-                   std::string nameB = stringBuff;
-                   if(nameA != nameB)
-                   {
-                      return nameA < nameB;
-                   }
+         // Compare ptr operands
+         std::string stringBuff = "";
+         raw_string_ostream stream(stringBuff);
+         ptrOpA->print(stream);
+         std::string nameA = stringBuff;
+         stringBuff.clear();
+         ptrOpB->print(stream);
+         std::string nameB = stringBuff;
+         if(nameA != nameB)
+         {
+            return nameA < nameB;
+         }
 
-                   // If they have the same base pointer, compare by the first index.
-                   // We assume the first index operand (after the base) is a ConstantInt.
-                   auto* constOpA = dyn_cast<ConstantInt>(a->getOperand(1));
-                   auto* constOpB = dyn_cast<ConstantInt>(b->getOperand(1));
-                   return constOpA->getZExtValue() < constOpB->getZExtValue();
-                });
+         // If they have the same base pointer, compare by the first index.
+         // We assume the first index operand (after the base) is a ConstantInt.
+         auto* constOpA = dyn_cast<ConstantInt>(a->getOperand(1));
+         auto* constOpB = dyn_cast<ConstantInt>(b->getOperand(1));
+         return constOpA->getZExtValue() < constOpB->getZExtValue();
+      });
    }
 
 #ifdef ENABLE_RECURSIVE_SEARCH
@@ -1512,8 +1526,7 @@ namespace
          INOUT_DEP
       };
 
-      const auto addDeps = [](auto& deps, auto& lambdaId, auto& source, const DepType type)
-      {
+      const auto addDeps = [](auto& deps, auto& lambdaId, auto& source, const DepType type) {
          if(type == IN_DEP)
          {
             std::get<0>(deps[lambdaId]).insert(source);
@@ -1551,13 +1564,13 @@ namespace
       {
          if(CallInst* ompTaskAPICall = dyn_cast<CallInst>(inst))
          {
-            auto calledFnName = ompTaskAPICall->getCalledFunction()->getName().str();
+            auto calledFnName = requireDirectCallee(ompTaskAPICall)->getName().str();
             // It's not either a task creation open call or close call
             if((calledFnName != Constants::targetOmpTaskAllocName) &&
                (calledFnName != Constants::targetOmpTaskSubmissionDepsName) &&
                (calledFnName != Constants::targetOmpTaskSubmissionName))
             {
-               llvm_unreachable("Call instruction inside the lambda regions are not supported.");
+               report_fatal_error("Call instruction inside the lambda regions are not supported.");
             }
             else if(calledFnName == Constants::targetOmpTaskAllocName)
             {
@@ -1724,8 +1737,7 @@ namespace
          }
       }
 
-      const auto formatId = [](std::string s)
-      {
+      const auto formatId = [](std::string s) {
          size_t pos = 0;
          const std::string from = ",}";
          const std::string to = "}";
@@ -2120,7 +2132,10 @@ namespace
       const std::vector<std::pair<std::string, std::string>> vecEdges(edges.begin(), edges.end());
       Utils::log(errs(), 0, 1, "");
       const std::string dotPath = outDirName.empty() ? ("graph.dot") : (outDirName.getValue() + "/" + "graph.dot");
-      g.generate_dot(errs(), dotPath, nodes, vecEdges);
+      if(Utils::Verbose)
+      {
+         g.generate_dot(errs(), dotPath, nodes, vecEdges);
+      }
 
       // Populate edge map
       for(auto& p : edges)
@@ -2140,7 +2155,7 @@ namespace
       {
          if(CallInst* ompTaskAPICall = dyn_cast<CallInst>(I))
          {
-            auto calledFnName = ompTaskAPICall->getCalledFunction()->getName().str();
+            auto calledFnName = requireDirectCallee(ompTaskAPICall)->getName().str();
             // It's not either a task creation open call or close call
             if(calledFnName == Constants::targetOmpTaskAllocName)
             {
@@ -2343,7 +2358,7 @@ namespace
       LLVMContext& Context = M->getContext();
       const auto fnName = F.getName().str();
 
-      Function* externFn;
+      Function* externFn = nullptr;
       std::vector<Value*> externFnInputValues;
       std::unordered_map<std::string, Function*> fnCache;
       std::vector<std::tuple<Instruction*, Function*, std::vector<Value*>>> instructionsToAdd;
@@ -2361,7 +2376,7 @@ namespace
                {
                   continue;
                }
-               auto* called = callInst->getCalledFunction();
+               auto* called = requireDirectCallee(callInst);
 
                // Here we look for task alloc and task submit
 
@@ -2371,6 +2386,10 @@ namespace
                {
                   auto nextIt = it;
                   std::advance(nextIt, 1);
+                  if(!externFn || externFnInputValues.size() < 2)
+                  {
+                     report_fatal_error("OpenMP task submission without a matching allocation is unsupported");
+                  }
                   instructionsToAdd.push_back({&(*nextIt), externFn, externFnInputValues});
 
                   // Handle resource duplication. Duplicated calls will be inserted with dummy inputs for const values
@@ -2504,7 +2523,10 @@ namespace
                std::unordered_map<Value const*, Value const*> accessToSource;
                for(auto a : uniqueAccesses)
                {
-                  a->print(errs());
+                  if(Bambu::OpenMP::Task::Utils::Verbose)
+                  {
+                     a->print(errs());
+                  }
                   Utils::log(errs(), 2, 1, "");
                   if(auto* loadInst = dyn_cast<LoadInst>(a))
                   {
@@ -2520,9 +2542,12 @@ namespace
                      }
                      else
                      {
-                        llvm_unreachable("not impl");
+                        report_fatal_error("not impl");
                      }
-                     argOp->print(errs());
+                     if(Bambu::OpenMP::Task::Utils::Verbose)
+                     {
+                        argOp->print(errs());
+                     }
                      Utils::log(errs(), 0, 1, "");
 
                      accessToSource[a] = argOp;
@@ -2530,11 +2555,17 @@ namespace
                   else if(auto* gep = dyn_cast<GetElementPtrInst>(a))
                   {
                      Utils::log(errs(), 4, 0, "gep instruction, operand: ");
-                     gep->getPointerOperand()->print(errs());
+                     if(Bambu::OpenMP::Task::Utils::Verbose)
+                     {
+                        gep->getPointerOperand()->print(errs());
+                     }
                      auto* fromArg = argFromLoad(loadFromGep(gep));
                      Utils::log(errs(), 0, 1, "");
                      Utils::log(errs(), 4, 0, "from arg ");
-                     fromArg->print(errs());
+                     if(Bambu::OpenMP::Task::Utils::Verbose)
+                     {
+                        fromArg->print(errs());
+                     }
                      Utils::log(errs(), 0, 1, "");
 
                      accessToSource[a] = fromArg;
@@ -2542,14 +2573,17 @@ namespace
                   else if(auto* arg = dyn_cast<Argument>(a))
                   {
                      Utils::log(errs(), 4, 0, "argument value: ");
-                     arg->print(errs());
+                     if(Bambu::OpenMP::Task::Utils::Verbose)
+                     {
+                        arg->print(errs());
+                     }
                      Utils::log(errs(), 0, 1, "");
 
                      accessToSource[a] = arg;
                   }
                   else
                   {
-                     llvm_unreachable("not impl");
+                     report_fatal_error("not impl");
                   }
                }
                // Build the instrumented fn call arguments
@@ -2560,29 +2594,25 @@ namespace
                {
                   accessValues.push_back(const_cast<Value*>(V));
                }
-               std::sort(accessValues.begin(), accessValues.end(),
-                         [&](Value* a, Value* b)
-                         {
-                            assert(accessToSource.count(a) > 0 && accessToSource.count(b) > 0);
-                            // Get the argument
-                            auto* argA = accessToSource[a];
-                            auto* argB = accessToSource[b];
+               std::sort(accessValues.begin(), accessValues.end(), [&](Value* a, Value* b) {
+                  assert(accessToSource.count(a) > 0 && accessToSource.count(b) > 0);
+                  // Get the argument
+                  auto* argA = accessToSource[a];
+                  auto* argB = accessToSource[b];
 
-                            assert(isa<Argument>(argA));
-                            assert(isa<Argument>(argB));
+                  assert(isa<Argument>(argA));
+                  assert(isa<Argument>(argB));
 
-                            std::string stringBuff;
-                            raw_string_ostream stream(stringBuff);
-                            argA->print(stream);
-                            const auto labelA =
-                                static_cast<unsigned>(std::stoul(retrieveLabelFromChar(stringBuff, '%')));
-                            stringBuff.clear();
-                            argB->print(stream);
-                            const auto labelB =
-                                static_cast<unsigned>(std::stoul(retrieveLabelFromChar(stringBuff, '%')));
+                  std::string stringBuff;
+                  raw_string_ostream stream(stringBuff);
+                  argA->print(stream);
+                  const auto labelA = static_cast<unsigned>(std::stoul(retrieveLabelFromChar(stringBuff, '%')));
+                  stringBuff.clear();
+                  argB->print(stream);
+                  const auto labelB = static_cast<unsigned>(std::stoul(retrieveLabelFromChar(stringBuff, '%')));
 
-                            return inputsRefWeights[labelA] < inputsRefWeights[labelB];
-                         });
+                  return inputsRefWeights[labelA] < inputsRefWeights[labelB];
+               });
 
                vecValues.insert(vecValues.end(), accessValues.begin(), accessValues.end());
                for(unsigned i = 0; i < numConstInputs; ++i)
@@ -2653,7 +2683,7 @@ namespace
                {
                   continue;
                }
-               auto* called = callInst->getCalledFunction();
+               auto* called = requireDirectCallee(callInst);
 
                if(called->getName() == Constants::targetOmpTaskAllocName ||
                   called->getName() == Constants::targetOmpEndSingle ||
@@ -2732,7 +2762,7 @@ namespace
                if(auto* callInst = dyn_cast<CallInst>(&*it))
                {
                   // Don't remove calls that are not omp runtime
-                  if(callInst->getCalledFunction()->getName().find("kmp") != std::string::npos)
+                  if(requireDirectCallee(callInst)->getName().find("kmp") != std::string::npos)
                   {
                      deleteArr.push_back(&(*it));
                   }
@@ -3019,7 +3049,7 @@ namespace
          {
             if(auto* callInst = dyn_cast<CallInst>(&I))
             {
-               if(callInst->getCalledFunction()->getName().find(Constants::targetOmpForkCall) != std::string::npos)
+               if(requireDirectCallee(callInst)->getName().find(Constants::targetOmpForkCall) != std::string::npos)
                {
                   forkCall = callInst;
                   found = true;
@@ -3050,9 +3080,15 @@ namespace
                {
                   auto it = paramsRef.find(storeInst->getPointerOperand());
                   Utils::log(errs(), 2, 0, "replacing ");
-                  storeInst->getPointerOperand()->print(errs());
+                  if(Bambu::OpenMP::Task::Utils::Verbose)
+                  {
+                     storeInst->getPointerOperand()->print(errs());
+                  }
                   Utils::log(errs(), 0, 0, " with ");
-                  storeInst->getValueOperand()->print(errs());
+                  if(Bambu::OpenMP::Task::Utils::Verbose)
+                  {
+                     storeInst->getValueOperand()->print(errs());
+                  }
                   Utils::log(errs(), 0, 1, "");
                   (*it)->replaceAllUsesWith(storeInst->getValueOperand());
                   storesToRemove.push_back(storeInst);
@@ -3158,20 +3194,17 @@ namespace
       const auto lastArg = newFunction->getArg(1);
       std::vector<Use*> lastArgUses;
 
-      const auto makeUsesSorted = [&orderMap](std::vector<Use*>& dest, auto fromIt, auto endIt)
-      {
+      const auto makeUsesSorted = [&orderMap](std::vector<Use*>& dest, auto fromIt, auto endIt) {
          while(fromIt != endIt)
          {
             dest.push_back(&(*fromIt));
             fromIt++;
          }
-         std::sort(dest.begin(), dest.end(),
-                   [&orderMap](Use const* a, Use const* b)
-                   {
-                      assert(orderMap.find(a->getUser()) != orderMap.end() &&
-                             orderMap.find(a->getUser()) != orderMap.end() && "Can not find in map");
-                      return orderMap[a->getUser()] < orderMap[b->getUser()];
-                   });
+         std::sort(dest.begin(), dest.end(), [&orderMap](Use const* a, Use const* b) {
+            assert(orderMap.find(a->getUser()) != orderMap.end() && orderMap.find(a->getUser()) != orderMap.end() &&
+                   "Can not find in map");
+            return orderMap[a->getUser()] < orderMap[b->getUser()];
+         });
       };
 
       std::vector<Use*> sortedLastArgUses;
@@ -3239,7 +3272,7 @@ namespace
             }
             else
             {
-               llvm_unreachable("can not retrieve the offset");
+               report_fatal_error("can not retrieve the offset");
             }
             assert(allGepOffsets.find(offset) != allGepOffsets.end());
             unsigned constArgIndex = (offset - *allGepOffsets.begin()) / gepOffsetsDelta;
@@ -3485,7 +3518,7 @@ namespace
                   }
                   else
                   {
-                     llvm_unreachable("Can not retrive gep offset");
+                     report_fatal_error("Can not retrive gep offset");
                   }
                   makeUsesSorted(gep1SortedUses, gep1->use_begin(), gep1->use_end());
 #ifdef VERBOSE
@@ -3619,7 +3652,7 @@ namespace
          {
             if(auto* callInst = dyn_cast<CallInst>(&I))
             {
-               auto* called = callInst->getCalledFunction();
+               auto* called = requireDirectCallee(callInst);
                if(!called)
                {
                   continue;
@@ -3638,6 +3671,42 @@ namespace
 
    PreservedAnalyses execute(Module& M, ModuleAnalysisManager& MAM)
    {
+      if(M.getDataLayout().getPointerSizeInBits() != 32)
+      {
+         report_fatal_error("OpenMP task extraction requires 32-bit pointers (use I386_CLANG19)");
+      }
+      if(resourceDuplicationNum == 0)
+      {
+         report_fatal_error("OpenMP task resource duplication must be greater than zero");
+      }
+      // These runtime operations carry synchronization semantics not represented
+      // by the static dependency graph. Do not erase them during simplification.
+      for(const auto& F : M)
+      {
+         if(F.getName().contains(Constants::bambuHostReservedFnName))
+         {
+            continue;
+         }
+         for(const auto& BB : F)
+         {
+            for(const auto& I : BB)
+            {
+               const auto* call = dyn_cast<CallBase>(&I);
+               const auto* callee = call ? call->getCalledFunction() : nullptr;
+               if(!callee)
+               {
+                  continue;
+               }
+               const auto name = callee->getName();
+               if(name.starts_with("__kmpc_omp_taskwait") || name.starts_with("__kmpc_taskgroup") ||
+                  name.starts_with("__kmpc_end_taskgroup") || name.starts_with("__kmpc_omp_taskyield") ||
+                  name.starts_with("__kmpc_taskloop"))
+               {
+                  report_fatal_error(Twine("OpenMP task extraction does not support ") + name);
+               }
+            }
+         }
+      }
       if(NamedMDNode* NMD = M.getNamedMetadata(Constants::llvmIndentName))
       {
          for(unsigned i = 0, e = NMD->getNumOperands(); i < e; ++i)
@@ -3656,7 +3725,7 @@ namespace
       }
       else
       {
-         llvm_unreachable("Can not find clang version in metadata");
+         report_fatal_error("Can not find clang version in metadata");
       }
       // Cache the Function reference for recursive usage later inside the
       // visitor. Some visitor fn may access some Function which has not
@@ -3692,7 +3761,10 @@ namespace
          if(fnName.find(Constants::targetOmpOutlinedFnNamePrefix) != std::string::npos &&
             fnName.find(Constants::bambuHostReservedFnName) == std::string::npos)
          {
-            assert(targetOutlined == nullptr && "expected to optimize a single parent omp_outlined");
+            if(targetOutlined)
+            {
+               report_fatal_error("OpenMP task extraction supports a single parallel region");
+            }
             targetOutlined = &F;
 
             // Recover the task entries
@@ -3827,11 +3899,9 @@ namespace
 //-----------------------------------------------------------------------------
 PassPluginLibraryInfo getOmpDependencyFinderPlugInInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, "TaskCallGraphPass", LLVM_VERSION_STRING, [](PassBuilder& PB)
-           {
+   return {LLVM_PLUGIN_API_VERSION, "TaskCallGraphPass", LLVM_VERSION_STRING, [](PassBuilder& PB) {
               PB.registerPipelineParsingCallback(
-                  [](StringRef Name, ModulePassManager& MPM, ArrayRef<PassBuilder::PipelineElement>)
-                  {
+                  [](StringRef Name, ModulePassManager& MPM, ArrayRef<PassBuilder::PipelineElement>) {
                      if(Name == "openmpTask")
                      {
                         MPM.addPass(TaskCallGraphPass());

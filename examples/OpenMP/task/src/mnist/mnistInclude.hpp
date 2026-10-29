@@ -70,7 +70,7 @@
 #error "Wrong configuration"
 #endif
 
-#define MAX_BUFF_SIZE IMG_SIZE * IMG_SIZE * HIDDEN_LAYER_SIZE
+#define MAX_BUFF_SIZE IMG_SIZE* IMG_SIZE* HIDDEN_LAYER_SIZE
 
 typedef struct
 {

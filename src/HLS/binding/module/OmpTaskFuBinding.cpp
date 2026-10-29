@@ -60,8 +60,11 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
+#include "openmp_task_constants.hpp"
+
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <string>
 
 PANDA_REGISTER_PARAMETER("enable-task", PandaParamType::Bool, "0", "Enable OpenMP task graph extraction", "openmp");
@@ -345,7 +348,10 @@ void OmpTaskFuBinding::parse_lambda_modules()
          for(auto& n : entry_names)
          {
             auto task_body_name = n;
-            if(id.find(task_body_name) != std::string::npos)
+            const auto position = id.find(task_body_name);
+            const auto end = position == std::string::npos ? position : position + task_body_name.size();
+            if(position != std::string::npos && (end == id.size() || id[end] == '_') &&
+               (position == 0 || id[position - 1] == '_'))
             {
                THROW_ASSERT(task_entry_name_bambu_to_original_dict.find(task_body_name) ==
                                 task_entry_name_bambu_to_original_dict.end(),
@@ -504,6 +510,37 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
       THROW_ERROR("pugixml failed to open file " + file_name);
    }
 
+   const auto read_number = [&file_name](pugi::xml_node element, const char* attribute,
+                                         bool signed_value = false) -> unsigned {
+      const std::string value = element.attribute(attribute).value();
+      try
+      {
+         size_t consumed = 0;
+         if(signed_value)
+         {
+            const auto number = std::stoi(value, &consumed);
+            if(consumed == value.size())
+            {
+               return static_cast<unsigned>(number);
+            }
+         }
+         else if(!value.empty() && value.front() != '-')
+         {
+            const auto number = std::stoul(value, &consumed);
+            if(consumed == value.size() && number <= std::numeric_limits<unsigned>::max())
+            {
+               return static_cast<unsigned>(number);
+            }
+         }
+      }
+      catch(const std::exception&)
+      {
+      }
+      THROW_ERROR("Invalid task graph attribute '" + std::string(attribute) + "' on <" + element.name() + "> in " +
+                  file_name + ": '" + value + "'");
+      return 0;
+   };
+
    // Get the root element
    pugi::xml_node graph = doc.child("graph");
    THROW_ASSERT(graph, "No graph element found");
@@ -520,10 +557,10 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
          boost::replace_all(id, ",", "_");
          boost::replace_all(id, "{", "$");
          boost::replace_all(id, "}", "$");
-         const unsigned long in_edges = std::stoul(node_element.attribute("activating_conditions_count").value());
+         const unsigned long in_edges = read_number(node_element, "activating_conditions_count");
          // We add at least one out edge for the final join
          const unsigned long out_edges =
-             std::max(std::stoul(node_element.attribute("out_activating_conditions_count").value()), 1UL);
+             std::max(static_cast<unsigned long>(read_number(node_element, "out_activating_conditions_count")), 1UL);
          std::string task_name = node_element.attribute("omp_entry_name").value();
          boost::replace_all(task_name, "..", "_");
          boost::replace_all(task_name, ".", "_");
@@ -543,8 +580,8 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
          for(pugi::xml_node input_element : node_element.children("input"))
          {
             const auto param_type = TASK_INPUT_PTR;
-            const unsigned base_ref = static_cast<unsigned>(std::stoi(input_element.attribute("base_ref").value()));
-            const unsigned offset = static_cast<unsigned>(std::stoi(input_element.attribute("offset").value()));
+            const unsigned base_ref = read_number(input_element, "base_ref");
+            const unsigned offset = read_number(input_element, "offset", true);
             // TODO: Use this param
             // const int bitSize = std::stoi(inputElement.attribute("bit_size").value());
             const unsigned bit_size = OmpTaskFuBinding::param_port_size;
@@ -562,13 +599,17 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
          {
             const auto param_type = TASK_INPUT_COMPILE_TIME_CONST_INT32;
             const unsigned base_ref = UINT32_MAX;
-            const unsigned offset = static_cast<unsigned>(std::stoi(input_element.attribute("value").value()));
+            const unsigned offset = read_number(input_element, "value", true);
             // TODO: Use this param
             // const int bitSize = std::stoi(inputElement.attribute("bit_size").value());
             const unsigned bit_size = OmpTaskFuBinding::param_port_size;
             inputs.push_back({param_type, base_ref, offset, bit_size});
          }
-         (nodes)[id] = {in_edges, out_edges, task_name, inputs};
+         if(id.empty() || nodes.count(id))
+         {
+            THROW_ERROR("Empty or duplicate task graph node in " + file_name + ": " + id);
+         }
+         nodes[id] = {in_edges, out_edges, task_name, inputs};
          nodes_list.push_back({id, node_counter++});
       }
    }
@@ -592,7 +633,7 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
       {
          std::string id_str = std::string(input_element.attribute("id").value());
          std::string id_index_str = std::string(input_element.attribute("index").value());
-         top_module_inputs_map[std::stoul(id_str)] = std::stoul(id_index_str);
+         top_module_inputs_map[read_number(input_element, "id")] = read_number(input_element, "index");
       }
    }
 
@@ -612,6 +653,10 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
          boost::replace_all(dest, ",", "_");
          boost::replace_all(dest, "{", "$");
          boost::replace_all(dest, "}", "$");
+         if(!nodes.count(src) || !nodes.count(dest))
+         {
+            THROW_ERROR("Unknown task graph edge endpoint in " + file_name + ": " + src + " -> " + dest);
+         }
          adjency_list[src].push_back(dest);
       }
    }
@@ -1057,8 +1102,8 @@ void OmpTaskFuBinding::write_resource_manager(structural_managerRef component, c
    // ParamIn1 (port_vector_o) = 4
    // ParamOut1 (port_o) = 5
 
-   unsigned resource_number =
-       static_cast<unsigned>(std::max(std::size_t{1U}, duplicated_fus.begin()->second.size() + 1));
+   const unsigned resource_number =
+       duplicated_fus.empty() ? 1U : static_cast<unsigned>(duplicated_fus.begin()->second.size() + 1);
    const auto resource_number_size = std::max(ceil_log2(resource_number), 1U);
    std::string verilog_code = "";
    std::string verilog_component = "left_priority_arbiter_core,MUX_N_to_1_enabled";
@@ -1117,7 +1162,8 @@ void OmpTaskFuBinding::write_resource_manager(structural_managerRef component, c
       verilog_code += "  end\n";
       verilog_code += "end\n\n";
 
-      verilog_code += " " + encoder_prefix + STR(resource_number) + "_" + STR(resource_number_size) + " resource_encoder (.i(resource_reg),\n";
+      verilog_code += " " + encoder_prefix + STR(resource_number) + "_" + STR(resource_number_size) +
+                      " resource_encoder (.i(resource_reg),\n";
       verilog_code += "  .o(resource_selected));\n";
       verilog_code += "assign resource_next = (valid_wire && |resource_reg) ? (resource_reg & ~(1'b1 << "
                       "resource_selected)) | " +
@@ -1301,7 +1347,8 @@ void OmpTaskFuBinding::write_resource_manager(structural_managerRef component, c
    verilog_code += "\n";
    if(resource_number > 1)
    {
-      verilog_code += " " + encoder_prefix + STR(resource_number) + "_" + STR(resource_number_size) + " done_encoder (.i(" + ports[0].name + " | done_reg),\n";
+      verilog_code += " " + encoder_prefix + STR(resource_number) + "_" + STR(resource_number_size) +
+                      " done_encoder (.i(" + ports[0].name + " | done_reg),\n";
       verilog_code += "  .o(done_selected),\n";
       verilog_code += "  .empty(done_empty));\n";
       verilog_code +=
@@ -1493,7 +1540,7 @@ void OmpTaskFuBinding::write_execution_manager(structural_managerRef component, 
 #ifdef REMOVE_OUTLINED_GEP
    verilog_code += "assign " + ports[5].name + " = " + ports[4].name + ";\n";
 #else
-   verilog_code += "assign " + ports[5].name + " = " + ports[4].name + " + " + STR(const_offsets[i]) + ";\n";
+   THROW_ERROR("OpenMP task binding requires unshifted base pointers (REMOVE_OUTLINED_GEP)");
 #endif
    verilog_code += "assign " + ports[2].name + " = {" + "PORTSIZE_" + ports[2].name + "{" + ports[3].name + "}};\n";
 
@@ -1710,7 +1757,8 @@ void OmpTaskFuBinding::generate_topo_graph()
       {
          structural_objectRef found_port;
          THROW_ASSERT(hls_params.rm_modules.find(rm) != hls_params.rm_modules.end(), "can not rm module_o");
-         [[maybe_unused]] const auto found = try_find_port(*p_name, hls_params.rm_modules[rm], port_vector_o_K, found_port);
+         [[maybe_unused]] const auto found =
+             try_find_port(*p_name, hls_params.rm_modules[rm], port_vector_o_K, found_port);
          THROW_ASSERT(found, "can not find port");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                         "found const input port in RM " + found_port->get_path() + " for " + *p_name);
@@ -2227,7 +2275,8 @@ void OmpTaskFuBinding::manage_memory_ports_parallel_chained(const HLS_managerRef
       THROW_ASSERT(hls_params.mem_channel_num <= 2, "not impl");
    }
 
-   const auto file_name = parameters->getOption<std::string>(OPT_output_temporary_directory) + "/task_graph.xml";
+   const auto file_name =
+       parameters->getOption<std::string>(OPT_output_temporary_directory) + "/" + openmp_task::GraphFilename;
    parse_xml(file_name);
 
    // Meory modules should contains omp lambda entry functionsUnique id

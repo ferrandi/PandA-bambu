@@ -30,6 +30,7 @@
 #if PANDA_LLVM_CLANG_MAJOR >= 13
 
 #include "OpenMPTaskPassConfig.hpp"
+#include "Utils.hpp"
 
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Passes/PassBuilder.h>
@@ -40,7 +41,6 @@ using namespace llvm;
 
 namespace
 {
-
    struct DcePass : public PassInfoMixin<DcePass>
    {
       PreservedAnalyses run(Function& F, FunctionAnalysisManager& FAM)
@@ -56,11 +56,9 @@ namespace
 // Registration for the new pass
 llvm::PassPluginLibraryInfo getDcePassPluginInfo()
 {
-   return {LLVM_PLUGIN_API_VERSION, "DcePass", "v0.1.0", [](PassBuilder& PB)
-           {
+   return {LLVM_PLUGIN_API_VERSION, "DcePass", "v0.1.0", [](PassBuilder& PB) {
               PB.registerPipelineParsingCallback(
-                  [](StringRef Name, FunctionPassManager& FPM, ArrayRef<PassBuilder::PipelineElement>)
-                  {
+                  [](StringRef Name, FunctionPassManager& FPM, ArrayRef<PassBuilder::PipelineElement>) {
                      if(Name == "deadCodeElimination")
                      {
                         FPM.addPass(DcePass());

@@ -880,147 +880,148 @@ int BambuParameter::Exec()
    const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:H:sSc:C::b:w:p::" CC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
-       COMMON_LONG_OPTIONS,
-       /// General options
-       {"top-fname", required_argument, nullptr, OPT_TOP_FNAME},
-       {"top-rtldesign-name", required_argument, nullptr, OPT_TOP_RTLDESIGN_NAME},
-       {"file-input-data", required_argument, nullptr, INPUT_OPT_FILE_INPUT_DATA},
-       /// Scheduling options
-       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
-       {"pipelining", optional_argument, nullptr, 'p'},
-       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
-       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
-       {"no-chaining", no_argument, nullptr, 0},
-       /// module binding
-       {"module-binding", required_argument, nullptr, 0},
-       /// register allocation
-       {"register-allocation", required_argument, nullptr, OPT_REGISTER_ALLOCATION},
-       {"storage-value-insertion", required_argument, nullptr, 0},
-       /// Memory allocation
-       {"memory-allocation-policy", required_argument, nullptr, 0},
-       {"xml-memory-allocation", required_argument, nullptr, 0},
-       {"base-address", required_argument, nullptr, 0},
-       {"initial-internal-address", required_argument, nullptr, 0},
-       {"channels-type", required_argument, nullptr, 0},
-       {"channels-number", required_argument, nullptr, 0},
-       {"memory-ctrl-type", required_argument, nullptr, 0},
-       {"sparse-memory", optional_argument, nullptr, 0},
-       {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
-       // parameter based resource constraints
-       {"constraints", required_argument, nullptr, 'C'},
-       {"resource-constraints", required_argument, nullptr, 'c'},
-       /// evaluation options
-       {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
-       {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
-       {"assert-debug", no_argument, nullptr, 0},
-       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
-       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
-       {"priority-encoder", required_argument, nullptr, OPT_PRIORITY_ENCODER},
-       {"clock-name", required_argument, nullptr, OPT_CLOCK_NAME},
-       {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
-       {"start-name", required_argument, nullptr, OPT_START_NAME},
-       {"done-name", required_argument, nullptr, OPT_DONE_NAME},
-       {"idle-name", required_argument, nullptr, OPT_IDLE_NAME},
-       {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
-       {"connect-iob", no_argument, nullptr, OPT_CONNECT_IOB},
-       {"reset-type", required_argument, nullptr, OPT_RESET_TYPE},
-       {"reset-level", required_argument, nullptr, OPT_RESET_LEVEL},
-       {"disable-reg-init-value", no_argument, nullptr, OPT_DISABLE_REG_INIT_VALUE},
-       {"fp-subnormal", no_argument, nullptr, OPT_FP_SUB},
-       {"fp-rounding-mode", required_argument, nullptr, OPT_FP_RND},
-       {"fp-exception-mode", required_argument, nullptr, OPT_FP_EXC},
-       {"hls-div", optional_argument, nullptr, OPT_HLS_DIV},
-       {"hls-fpdiv", optional_argument, nullptr, OPT_HLS_FPDIV},
-       {"max-ulp", required_argument, nullptr, OPT_MAX_ULP},
-       {"skip-pipe-parameter", required_argument, nullptr, OPT_SKIP_PIPE_PARAMETER},
-       {"unaligned-access", no_argument, nullptr, OPT_UNALIGNED_ACCESS_PARAMETER},
-       {"aligned-access", no_argument, nullptr, OPT_ALIGNED_ACCESS_PARAMETER},
-       {"backend-script-extensions", required_argument, nullptr, OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER},
-       {"backend-sdc-extensions", required_argument, nullptr, OPT_BACKEND_SDC_EXTENSIONS_PARAMETER},
-       {"parallel-backend", required_argument, nullptr, OPT_PARALLEL_BACKEND},
-       {"VHDL-library", required_argument, nullptr, OPT_VHDL_LIBRARY_PARAMETER},
-       {"do-not-use-asynchronous-memories", no_argument, nullptr, OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES},
-       {"do-not-chain-memories", no_argument, nullptr, OPT_DO_NOT_CHAIN_MEMORIES},
-       {"rom-duplication", no_argument, nullptr, OPT_ROM_DUPLICATION},
-       {"bram-high-latency", optional_argument, nullptr, OPT_BRAM_HIGH_LATENCY},
-       {"cprf", required_argument, nullptr, OPT_CLOCK_PERIOD_RESOURCE_FRACTION},
-       {"experimental-setup", required_argument, nullptr, OPT_EXPERIMENTAL_SETUP},
-       {"distram-threshold", required_argument, nullptr, OPT_DISTRAM_THRESHOLD},
-       {"DSP-allocation-coefficient", required_argument, nullptr, OPT_DSP_ALLOCATION_COEFFICIENT},
-       {"DSP-margin-combinational", required_argument, nullptr, OPT_DSP_MARGIN_COMBINATIONAL},
-       {"DSP-margin-pipelined", required_argument, nullptr, OPT_DSP_MARGIN_PIPELINED},
-       {"DSP-fracturing", optional_argument, nullptr, OPT_DSP_FRACTURING},
-       {"mux-margins", required_argument, nullptr, OPT_SCHEDULING_MUX_MARGINS},
-       {"use-ALUs", no_argument, nullptr, OPT_USE_ALUS},
-       {"timing-model", required_argument, nullptr, OPT_TIMING_MODEL},
-       {"registered-inputs", required_argument, nullptr, OPT_REGISTERED_INPUTS},
-       {"fsm-encoding", required_argument, nullptr, OPT_FSM_ENCODING},
-       /// target options
-       {"target-file", required_argument, nullptr, 'b'},
-       {"export-core", required_argument, nullptr, 0},
-       /// Output options
-       {"writer", required_argument, nullptr, 'w'},
-       {"no-mixed-design", no_argument, nullptr, OPT_NO_MIXED_DESIGN},
-       {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
-       {"generate-interface", required_argument, nullptr, 0},
-       {"architecture-xml", required_argument, nullptr, OPT_ARCHITECTURE_XML},
-       {"data-bus-bitsize", required_argument, nullptr, 0},
-       {"addr-bus-bitsize", required_argument, nullptr, 0},
-       {"generate-tb", optional_argument, nullptr, OPT_TESTBENCH},
-       {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
-       {"tb-param-size", required_argument, nullptr, OPT_TESTBENCH_PARAM_SIZE},
-       {"tb-memory-mapping", required_argument, nullptr, OPT_TESTBENCH_MAP_MODE},
-       {"tb-extra-cc-options", required_argument, nullptr, OPT_TB_EXTRA_CC_OPTIONS},
-       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
-       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
-       {"simulate", no_argument, nullptr, OPT_SIMULATE},
-       {"simulator", required_argument, nullptr, 0},
-       {"enable-function-proxy", no_argument, nullptr, OPT_ENABLE_FUNCTION_PROXY},
-       {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
-       {"disable-bounded-function", no_argument, nullptr, OPT_DISABLE_BOUNDED_FUNCTION},
-       {"memory-mapped-top", no_argument, nullptr, OPT_MEMORY_MAPPED_TOP},
-       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
-       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
-       {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
-       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
-       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
-       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
-       {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
-       {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
-       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
-       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
-       {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
-       {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
-       {"fp-format-propagate", optional_argument, nullptr, OPT_FP_FORMAT_PROPAGATE},
-       {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
-       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
-       {"bus-pipelined", optional_argument, nullptr, OPT_BUS_PIPELINED},
-       {"bus-arbiter-type", optional_argument, nullptr, OPT_BUS_ARBITER_TYPE},
-       {"bus-architecture", optional_argument, nullptr, OPT_BUS_ARCHITECTURE},
-       {"AXI-burst-type", optional_argument, nullptr, OPT_AXI_BURST_TYPE},
-       {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
-       {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
+      COMMON_LONG_OPTIONS,
+      /// General options
+      {"top-fname", required_argument, nullptr, OPT_TOP_FNAME},
+      {"top-rtldesign-name", required_argument, nullptr, OPT_TOP_RTLDESIGN_NAME},
+      {"file-input-data", required_argument, nullptr, INPUT_OPT_FILE_INPUT_DATA},
+      /// Scheduling options
+      {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
+      {"pipelining", optional_argument, nullptr, 'p'},
+      {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
+      {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
+      {"no-chaining", no_argument, nullptr, 0},
+      /// module binding
+      {"module-binding", required_argument, nullptr, 0},
+      /// register allocation
+      {"register-allocation", required_argument, nullptr, OPT_REGISTER_ALLOCATION},
+      {"storage-value-insertion", required_argument, nullptr, 0},
+      /// Memory allocation
+      {"memory-allocation-policy", required_argument, nullptr, 0},
+      {"xml-memory-allocation", required_argument, nullptr, 0},
+      {"base-address", required_argument, nullptr, 0},
+      {"initial-internal-address", required_argument, nullptr, 0},
+      {"channels-type", required_argument, nullptr, 0},
+      {"channels-number", required_argument, nullptr, 0},
+      {"memory-ctrl-type", required_argument, nullptr, 0},
+      {"sparse-memory", optional_argument, nullptr, 0},
+      {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
+      // parameter based resource constraints
+      {"constraints", required_argument, nullptr, 'C'},
+      {"resource-constraints", required_argument, nullptr, 'c'},
+      /// evaluation options
+      {"evaluation", optional_argument, nullptr, OPT_EVALUATION},
+      {"timing-violation", no_argument, nullptr, OPT_TIMING_VIOLATION},
+      {"assert-debug", no_argument, nullptr, 0},
+      {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
+      {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
+      {"priority-encoder", required_argument, nullptr, OPT_PRIORITY_ENCODER},
+      {"clock-name", required_argument, nullptr, OPT_CLOCK_NAME},
+      {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
+      {"start-name", required_argument, nullptr, OPT_START_NAME},
+      {"done-name", required_argument, nullptr, OPT_DONE_NAME},
+      {"idle-name", required_argument, nullptr, OPT_IDLE_NAME},
+      {"power-optimization", no_argument, nullptr, OPT_POWER_OPTIMIZATION},
+      {"connect-iob", no_argument, nullptr, OPT_CONNECT_IOB},
+      {"reset-type", required_argument, nullptr, OPT_RESET_TYPE},
+      {"reset-level", required_argument, nullptr, OPT_RESET_LEVEL},
+      {"disable-reg-init-value", no_argument, nullptr, OPT_DISABLE_REG_INIT_VALUE},
+      {"fp-subnormal", no_argument, nullptr, OPT_FP_SUB},
+      {"fp-rounding-mode", required_argument, nullptr, OPT_FP_RND},
+      {"fp-exception-mode", required_argument, nullptr, OPT_FP_EXC},
+      {"hls-div", optional_argument, nullptr, OPT_HLS_DIV},
+      {"hls-fpdiv", optional_argument, nullptr, OPT_HLS_FPDIV},
+      {"max-ulp", required_argument, nullptr, OPT_MAX_ULP},
+      {"skip-pipe-parameter", required_argument, nullptr, OPT_SKIP_PIPE_PARAMETER},
+      {"unaligned-access", no_argument, nullptr, OPT_UNALIGNED_ACCESS_PARAMETER},
+      {"aligned-access", no_argument, nullptr, OPT_ALIGNED_ACCESS_PARAMETER},
+      {"backend-script-extensions", required_argument, nullptr, OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER},
+      {"backend-sdc-extensions", required_argument, nullptr, OPT_BACKEND_SDC_EXTENSIONS_PARAMETER},
+      {"parallel-backend", required_argument, nullptr, OPT_PARALLEL_BACKEND},
+      {"VHDL-library", required_argument, nullptr, OPT_VHDL_LIBRARY_PARAMETER},
+      {"do-not-use-asynchronous-memories", no_argument, nullptr, OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES},
+      {"do-not-chain-memories", no_argument, nullptr, OPT_DO_NOT_CHAIN_MEMORIES},
+      {"rom-duplication", no_argument, nullptr, OPT_ROM_DUPLICATION},
+      {"bram-high-latency", optional_argument, nullptr, OPT_BRAM_HIGH_LATENCY},
+      {"cprf", required_argument, nullptr, OPT_CLOCK_PERIOD_RESOURCE_FRACTION},
+      {"experimental-setup", required_argument, nullptr, OPT_EXPERIMENTAL_SETUP},
+      {"distram-threshold", required_argument, nullptr, OPT_DISTRAM_THRESHOLD},
+      {"DSP-allocation-coefficient", required_argument, nullptr, OPT_DSP_ALLOCATION_COEFFICIENT},
+      {"DSP-margin-combinational", required_argument, nullptr, OPT_DSP_MARGIN_COMBINATIONAL},
+      {"DSP-margin-pipelined", required_argument, nullptr, OPT_DSP_MARGIN_PIPELINED},
+      {"DSP-fracturing", optional_argument, nullptr, OPT_DSP_FRACTURING},
+      {"mux-margins", required_argument, nullptr, OPT_SCHEDULING_MUX_MARGINS},
+      {"use-ALUs", no_argument, nullptr, OPT_USE_ALUS},
+      {"timing-model", required_argument, nullptr, OPT_TIMING_MODEL},
+      {"registered-inputs", required_argument, nullptr, OPT_REGISTERED_INPUTS},
+      {"fsm-encoding", required_argument, nullptr, OPT_FSM_ENCODING},
+      /// target options
+      {"target-file", required_argument, nullptr, 'b'},
+      {"export-core", required_argument, nullptr, 0},
+      /// Output options
+      {"writer", required_argument, nullptr, 'w'},
+      {"no-mixed-design", no_argument, nullptr, OPT_NO_MIXED_DESIGN},
+      {"pretty-print", required_argument, nullptr, OPT_PRETTY_PRINT},
+      {"generate-interface", required_argument, nullptr, 0},
+      {"architecture-xml", required_argument, nullptr, OPT_ARCHITECTURE_XML},
+      {"data-bus-bitsize", required_argument, nullptr, 0},
+      {"addr-bus-bitsize", required_argument, nullptr, 0},
+      {"generate-tb", optional_argument, nullptr, OPT_TESTBENCH},
+      {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
+      {"tb-param-size", required_argument, nullptr, OPT_TESTBENCH_PARAM_SIZE},
+      {"tb-memory-mapping", required_argument, nullptr, OPT_TESTBENCH_MAP_MODE},
+      {"tb-extra-cc-options", required_argument, nullptr, OPT_TB_EXTRA_CC_OPTIONS},
+      {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
+      {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
+      {"simulate", no_argument, nullptr, OPT_SIMULATE},
+      {"simulator", required_argument, nullptr, 0},
+      {"enable-function-proxy", no_argument, nullptr, OPT_ENABLE_FUNCTION_PROXY},
+      {"disable-function-proxy", no_argument, nullptr, OPT_DISABLE_FUNCTION_PROXY},
+      {"disable-bounded-function", no_argument, nullptr, OPT_DISABLE_BOUNDED_FUNCTION},
+      {"memory-mapped-top", no_argument, nullptr, OPT_MEMORY_MAPPED_TOP},
+      {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
+      {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
+      {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
+      {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
+      {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
+      {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
+      {"discrepancy-force-uninitialized", no_argument, nullptr, OPT_DISCREPANCY_FORCE},
+      {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
+      {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
+      {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
+      {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
+      {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
+      {"fp-format-propagate", optional_argument, nullptr, OPT_FP_FORMAT_PROPAGATE},
+      {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
+      {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
+      {"bus-pipelined", optional_argument, nullptr, OPT_BUS_PIPELINED},
+      {"bus-arbiter-type", optional_argument, nullptr, OPT_BUS_ARBITER_TYPE},
+      {"bus-architecture", optional_argument, nullptr, OPT_BUS_ARCHITECTURE},
+      {"AXI-burst-type", optional_argument, nullptr, OPT_AXI_BURST_TYPE},
+      {"C-no-parse", required_argument, nullptr, INPUT_OPT_C_NO_PARSE},
+      {"accept-nonzero-return", no_argument, nullptr, OPT_ACCEPT_NONZERO_RETURN},
 #if !HAVE_UNORDERED
 #ifndef NDEBUG
-       {"test-multiple-non-deterministic-flows", required_argument, nullptr,
-        INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS},
-       {"test-single-non-deterministic-flow", required_argument, nullptr, INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW},
+      {"test-multiple-non-deterministic-flows", required_argument, nullptr,
+       INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS},
+      {"test-single-non-deterministic-flow", required_argument, nullptr, INPUT_OPT_TEST_SINGLE_NON_DETERMINISTIC_FLOW},
 #endif
 #endif
-       {"dry-run-evaluation", no_argument, nullptr, INPUT_OPT_DRY_RUN_EVALUATION},
-       {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
-       {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
-       {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
-       {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
-       {"synopsys-vcs-root", optional_argument, nullptr, OPT_SYNOPSYS_VCS_ROOT},
-       {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
-       {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
-       {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
-       {"inline-fname", required_argument, nullptr, OPT_INLINE_FUNCTIONS},
-       {"noc-profiling", optional_argument, nullptr, OPT_NOC_PROFILING},
-       {"generate-components", optional_argument, nullptr, OPT_GENERATE_COMPONENTS},
-       CC_LONG_OPTIONS,
-       {nullptr, 0, nullptr, 0}};
+      {"dry-run-evaluation", no_argument, nullptr, INPUT_OPT_DRY_RUN_EVALUATION},
+      {"altera-root", optional_argument, nullptr, OPT_ALTERA_ROOT},
+      {"lattice-root", optional_argument, nullptr, OPT_LATTICE_ROOT},
+      {"mentor-root", optional_argument, nullptr, OPT_MENTOR_ROOT},
+      {"mentor-optimizer", optional_argument, nullptr, OPT_MENTOR_OPTIMIZER},
+      {"synopsys-vcs-root", optional_argument, nullptr, OPT_SYNOPSYS_VCS_ROOT},
+      {"nanoxplore-root", optional_argument, nullptr, OPT_NANOXPLORE_ROOT},
+      {"xilinx-root", optional_argument, nullptr, OPT_XILINX_ROOT},
+      {"shared-input-registers", no_argument, nullptr, OPT_SHARED_INPUT_REGISTERS},
+      {"inline-fname", required_argument, nullptr, OPT_INLINE_FUNCTIONS},
+      {"noc-profiling", optional_argument, nullptr, OPT_NOC_PROFILING},
+      {"generate-components", optional_argument, nullptr, OPT_GENERATE_COMPONENTS},
+      CC_LONG_OPTIONS,
+      {nullptr, 0, nullptr, 0}
+   };
 
    if(argc == 1) // Bambu called without arguments, it simple prints help message
    {
@@ -2309,6 +2310,30 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
+   if(IsParameter("enable-task"))
+   {
+      const auto value = GetParameter<std::string>("enable-task");
+      if(value != "0" && value != "1" && value != "false" && value != "true")
+      {
+         THROW_ERROR_USAGE("enable-task must be 0, 1, false, or true");
+      }
+      if(value == "1" || value == "true")
+      {
+         if(!isOption(OPT_openmp) || !getOption<bool>(OPT_openmp))
+         {
+            THROW_ERROR_USAGE("enable-task requires OpenMP (-fopenmp)");
+         }
+         if(isOption(OPT_input_format) &&
+            getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW)
+         {
+            THROW_ERROR_USAGE("enable-task requires source or LLVM IR input, not raw Bambu IR");
+         }
+      }
+   }
+   if(IsParameter("task-resource-duplication") && GetParameter<unsigned>("task-resource-duplication") == 0)
+   {
+      THROW_ERROR_USAGE("task-resource-duplication must be greater than zero");
+   }
 
    setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/bambu_time_simulation.txt");
    setOption(OPT_profiling_output, getOption<std::string>(OPT_output_directory) + "/bambu_profiling_simulation.txt");
