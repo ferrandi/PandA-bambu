@@ -313,6 +313,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
       - name: Setup repository + distribution
+        id: setup
         uses: ./.github/actions/panda-setup
         with:
           package-name: ${{ needs.build.outputs.package-name }}
@@ -329,6 +330,14 @@ jobs:
           export OMP_NUM_THREADS=1 CMAKE_BUILD_PARALLEL_LEVEL=1
           mkdir -p ${{env.report-dir}}
           ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Launch Bambu loop-pipelining array/channel test
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && matrix.simulator == 'MODELSIM' }}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p "$GITHUB_WORKSPACE/documentation/tmp" "${{env.report-dir}}/lp-array-channel"
+          export TMPDIR="$GITHUB_WORKSPACE/documentation/tmp" TMP="$GITHUB_WORKSPACE/documentation/tmp" TEMP="$GITHUB_WORKSPACE/documentation/tmp"
+          ./panda_regressions/hls/bambu_lp_array_channel.sh --returnfail --no-clean -j3 --timeout=40m --junitdir="${{env.report-dir}}/lp-array-channel"
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
@@ -1548,6 +1557,9 @@ jobs:
         run: exit 1
       - name: Check 'Interface Test' status
         if: ${{ needs['interface-test'].result != 'success' }}
+        run: exit 1
+      - name: Check 'Simulation Logging Test' status
+        if: ${{ needs['simulation-logging-test'].result != 'success' }}
         run: exit 1
       - name: Check 'Vector Test' status
         if: ${{ needs['vector-test'].result != 'success' }}

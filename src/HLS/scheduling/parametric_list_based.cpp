@@ -290,6 +290,16 @@ check_if_is_live_in_next_cycle(const std::set<OpGraph::vertex_descriptor, cs_ord
    return false;
 }
 
+/// Tell whether an operation still running at the current cycle keeps occupying its functional unit
+/// also in the next one, and therefore keeps blocking the operations that cannot be stalled, i.e.
+/// the unbounded ones. A non-pipelined multi-cycle unit (initiation time zero) blocks until it is
+/// over, while a pipelined one is released after its initiation time: this is the same condition
+/// used by check_if_is_live_in_next_cycle, applied to the next cycle.
+static bool blocks_next_cycle(unsigned int II, unsigned int current_cycle, double op_starting_time, double clock_cycle)
+{
+   return II == 0u || (current_cycle + 1) < (II + static_cast<unsigned int>(floor(op_starting_time / clock_cycle)));
+}
+
 ParametricListBasedSpecialization::ParametricListBasedSpecialization(
     const ParametricListBased_Metric _parametric_list_based_metric)
     : parametric_list_based_metric(_parametric_list_based_metric)
@@ -1098,7 +1108,10 @@ bool parametric_list_based::exec(
       while(live_vertex_it != live_vertices.end())
       {
          const auto& live_info = flow_graph.CGetNodeInfo(*live_vertex_it);
-         if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time)
+         auto fu_name = res_binding->get_assign(*live_vertex_it);
+         const auto II = HLS->allocation_information->get_initiation_time(fu_name, *live_vertex_it);
+         if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time &&
+            (!LPBB_predicate || blocks_next_cycle(II, current_cycle, starting_time.at(*live_vertex_it), clock_cycle)))
          {
             seeMulticycle = true;
             auto& attrib = used_resources.getRefAttribute();
@@ -1119,8 +1132,6 @@ bool parametric_list_based::exec(
                cstep_has_RET_conflict = true;
             }
 
-            auto fu_name = res_binding->get_assign(*live_vertex_it);
-            const auto II = HLS->allocation_information->get_initiation_time(fu_name, *live_vertex_it);
             auto is_bounded = HLS->allocation_information->is_operation_bounded(flow_graph, *live_vertex_it, fu_name);
             auto latency = HLS->allocation_information->GetCycleLatency(*live_vertex_it);
             if(LPBB_predicate && (II > LP_II || (is_bounded && II == 0 && latency > LP_II)))
@@ -1881,8 +1892,13 @@ bool parametric_list_based::exec(
                    current_vertex,
                    current_cycle + static_cast<unsigned int>(floor(ending_time[current_vertex] / clock_cycle) -
                                                              double(current_cycle)));
-               /// check if we have operations taking more than one cycle
-               if(is_current_vertex_bounded && ending_time[current_vertex] > current_cycle_ending_time)
+               /// check if we have operations taking more than one cycle. In a pipelined schedule a
+               /// unit with a non-zero initiation time is already released when the next operations
+               /// are taken into account, so it must not be marked as blocking unbounded ones.
+               if(is_current_vertex_bounded && ending_time[current_vertex] > current_cycle_ending_time &&
+                  (!LPBB_predicate ||
+                   blocks_next_cycle(HLS->allocation_information->get_initiation_time(fu_type, current_vertex),
+                                     current_cycle, starting_time[current_vertex], clock_cycle)))
                {
                   seeMulticycle = true;
                   attrib_update = attrib_update | ResourceAttribute::SEEMULTICYCLE;
