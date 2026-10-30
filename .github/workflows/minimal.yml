@@ -298,7 +298,7 @@ jobs:
         shell: bash
         run: ./panda_regressions/hls/bambu_simulation_logging_test.sh
 
-  vector-test:
+  vector-and-loop-pipeline-test:
     needs: [build]
     if: ${{!cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
@@ -308,11 +308,12 @@ jobs:
         simulator: [MODELSIM, VERILATOR]
     env:
       script: ./panda_regressions/hls/bambu_vector_test.sh
-      args: -j4 --timeout=20m -c=--simulator=${{matrix.simulator}}
+      args: --timeout=20m -c=--simulator=${{matrix.simulator}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
       - name: Setup repository + distribution
+        id: setup
         uses: ./.github/actions/panda-setup
         with:
           package-name: ${{ needs.build.outputs.package-name }}
@@ -320,6 +321,10 @@ jobs:
           username: ${{ env.storage-user }}
           password: ${{ env.storage-token }}
           submodules: "false"
+      - name: Check the loop-pipelining launcher offline
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && matrix.simulator == 'MODELSIM' }}
+        shell: bash
+        run: python3 -B panda_regressions/hls/bambu_lp_array_channel/test_lp_array_channel.py
       - name: Launch Bambu vector test ${{matrix.simulator}}
         shell: bash
         run: |
@@ -329,6 +334,14 @@ jobs:
           export OMP_NUM_THREADS=1 CMAKE_BUILD_PARALLEL_LEVEL=1
           mkdir -p ${{env.report-dir}}
           ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Launch Bambu loop-pipelining array/channel test
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && matrix.simulator == 'MODELSIM' }}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          mkdir -p "$GITHUB_WORKSPACE/documentation/tmp" "${{env.report-dir}}/lp-array-channel"
+          export TMPDIR="$GITHUB_WORKSPACE/documentation/tmp" TMP="$GITHUB_WORKSPACE/documentation/tmp" TEMP="$GITHUB_WORKSPACE/documentation/tmp"
+          ./panda_regressions/hls/bambu_lp_array_channel.sh --returnfail --no-clean -j3 --timeout=40m --junitdir="${{env.report-dir}}/lp-array-channel"
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
@@ -1519,7 +1532,7 @@ jobs:
       - gcc_regression_simple-pretty_print
       - interface-test
       - simulation-logging-test
-      - vector-test
+      - vector-and-loop-pipeline-test
       - vector-frontend-test
       - bambu2hls4ml
       - libm-tests
@@ -1549,8 +1562,11 @@ jobs:
       - name: Check 'Interface Test' status
         if: ${{ needs['interface-test'].result != 'success' }}
         run: exit 1
+      - name: Check 'Simulation Logging Test' status
+        if: ${{ needs['simulation-logging-test'].result != 'success' }}
+        run: exit 1
       - name: Check 'Vector Test' status
-        if: ${{ needs['vector-test'].result != 'success' }}
+        if: ${{ needs['vector-and-loop-pipeline-test'].result != 'success' }}
         run: exit 1
       - name: Check 'Vector Frontend Test' status
         if: ${{ needs['vector-frontend-test'].result != 'success' }}

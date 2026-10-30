@@ -55,3 +55,6 @@ obj/
 panda_dist/
 install/
 documentation/tmp/
+
+# regression drivers write out_<test name> where they are launched from
+out_bambu*
