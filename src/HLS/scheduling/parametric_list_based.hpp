@@ -227,7 +227,7 @@ class parametric_list_based : public SchedulingStep
        bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
        bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& cannotBeChained3, bool& MultiCond0,
        bool& MultiCond1, bool& LoadStoreFunctionConflict, bool& FunctionLoadStoreConflict, bool& proxyFunCond,
-       bool unbounded_RW, bool seeMulticycle, bool is_current_vertex_bounded);
+       bool unbounded_RW, bool seeMulticycle, bool pipelined_co_launch, bool is_current_vertex_bounded);
 
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 

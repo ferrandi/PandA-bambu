@@ -557,7 +557,8 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
          if((data.CGetNodeInfo(def_op).node_type & TYPE_PHI) == 0 &&
             def_op_ending_states.find(state_src) != def_op_ending_states.end())
          {
-            const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
+            const auto timed_capture = HLS->Rconn->get_timed_capture(def_op);
+            const generic_objRef fu_src_obj = timed_capture ? timed_capture : HLS->Rfu->get(def_op);
             HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                           data_transfer(ir_var, precision, state_src, state_tgt, op));
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -631,7 +632,8 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
             }
             if(def_op_ending_states.find(state_src) != def_op_ending_states.end() && same_stage)
             {
-               const auto fu_src_obj = HLS->Rfu->get(def_op);
+               const auto timed_capture = HLS->Rconn->get_timed_capture(def_op);
+               const auto fu_src_obj = timed_capture ? timed_capture : HLS->Rfu->get(def_op);
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                              data_transfer(ir_var, precision, state_src, state_tgt, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -823,6 +825,116 @@ void mux_connection_binding::create_connections()
    const auto data = FB->GetOpGraph(FunctionBehavior::FDFG);
    const auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
    HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, BH, parameters));
+
+   std::vector<generic_objRef> input_hold_units;
+   for(const auto op : data.vertices())
+   {
+      const auto fu_type = HLS->Rfu->get_assign(op);
+      if(HLS->allocation_information->is_operation_bounded(data, op, fu_type) &&
+         HLS->allocation_information->get_initiation_time(fu_type, op) > 1U)
+      {
+         const auto fu_unit = HLS->Rfu->get(op);
+         if(std::find(input_hold_units.begin(), input_hold_units.end(), fu_unit) == input_hold_units.end())
+         {
+            input_hold_units.push_back(fu_unit);
+         }
+      }
+   }
+
+   for(const auto& fu_unit : input_hold_units)
+   {
+      const auto* fu_instance = GetPointer<funit_obj>(fu_unit);
+      THROW_ASSERT(fu_instance, "Pipelined resource assignment is not a functional unit instance");
+      const auto group_name = "input_hold_" + fu_unit->get_string();
+      const auto group = generic_objRef(new generic_obj(generic_obj::CONNECTION_ELEMENT, group_name));
+      HLS->Rconn->bind_input_hold_group(group, fu_unit);
+      const auto launch = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, group, 0);
+
+      for(const auto op : data.vertices())
+      {
+         if(HLS->Rfu->get(op) != fu_unit)
+         {
+            continue;
+         }
+         for(const auto state : HLS->fsm_info->vertices())
+         {
+            const auto& state_info = HLS->fsm_info->getState(state);
+            if(!state_info.isDummy &&
+               std::find(state_info.startingOperations.begin(), state_info.startingOperations.end(), op) !=
+                   state_info.startingOperations.end())
+            {
+               GetPointer<commandport_obj>(launch)->add_activation(commandport_obj::transition(
+                   state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+            }
+         }
+      }
+   }
+
+   // Capture the output of a pipelined value-producing operation that shares its launch state with an
+   // unbounded operation.  Its result can otherwise be lost while the FSM waits for the latter.
+   const auto is_unbounded_command = [&](const auto op) {
+      const auto fu_type = HLS->Rfu->get_assign(op);
+      const auto fu = GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu_type));
+      const auto fu_module = fu->CM ? fu->CM->get_circ() : structural_objectRef{};
+      const bool has_start_port = fu_module && fu_module->find_member(START_PORT_NAME, port_o_K, fu_module);
+      return !HLS->allocation_information->is_operation_bounded(data, op, fu_type) || has_start_port;
+   };
+
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      const bool co_starts_unbounded =
+          std::any_of(state_info.startingOperations.begin(), state_info.startingOperations.end(), is_unbounded_command);
+      if(!co_starts_unbounded || state_info.isDummy)
+      {
+         continue;
+      }
+      for(const auto op : state_info.startingOperations)
+      {
+         const auto fu_type = HLS->Rfu->get_assign(op);
+         const auto latency = HLS->Rsch->get_cstep_end(op).second - HLS->Rsch->get_cstep(op).second;
+         const auto initiation_interval = HLS->allocation_information->get_initiation_time(fu_type, op);
+         const auto var_written = HLSMgr->get_produced_value(HLS->functionId, op);
+         if(!HLS->allocation_information->is_operation_bounded(data, op, fu_type) || initiation_interval == 0 ||
+            latency == 0 || var_written == 0)
+         {
+            continue;
+         }
+         const auto bitsize =
+             static_cast<unsigned int>(object_bitsize(IRM, HLS_manager::io_binding_type(var_written, 0)));
+         const bool new_adapter = !HLS->Rconn->get_timed_capture(op);
+         const auto adapter = HLS->Rconn->bind_timed_capture(op, latency, bitsize, data.CGetNodeInfo(op).vertex_name);
+         const auto selector = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 0);
+         if(new_adapter)
+         {
+            HLS->Rconn->add_data_transfer(selector, adapter, 0, 0,
+                                          data_transfer(0, 1, state, FSMInfo::invalidState, OpGraph::null_vertex()));
+            HLS->Rconn->add_data_transfer(HLS->Rfu->get(op), adapter, 1, 0,
+                                          data_transfer(var_written, bitsize, state, FSMInfo::invalidState, op));
+         }
+      }
+   }
+   // The adapter is used for every source of this static operation, including its LP prolog and
+   // other normal starts that do not co-start the unbounded command.
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      if(state_info.isDummy)
+      {
+         continue;
+      }
+      for(const auto op : state_info.startingOperations)
+      {
+         const auto adapter = HLS->Rconn->get_timed_capture(op);
+         if(!adapter)
+         {
+            continue;
+         }
+         const auto selector = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 0);
+         GetPointer<commandport_obj>(selector)->add_activation(commandport_obj::transition(
+             state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+      }
+   }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");
 
@@ -1329,8 +1441,10 @@ void mux_connection_binding::create_connections()
                          HLS->storage_value_information->get_storage_value_index(s_out, var_written, step_write);
                      auto r_index = HLS->Rreg->get_register(storage_value);
                      auto tgt_reg_obj = HLS->Rreg->get(r_index);
+                     const auto timed_capture = HLS->Rconn->get_timed_capture(op);
+                     const auto result_obj = timed_capture ? timed_capture : fu_obj;
                      HLS->Rconn->add_data_transfer(
-                         fu_obj, tgt_reg_obj, 0, 0,
+                         result_obj, tgt_reg_obj, 0, 0,
                          data_transfer(var_written, ir_helper::Size(IRM->GetIRNode(var_written)), estate, s_out, op));
                      PRINT_DBG_MEX(
                          DEBUG_LEVEL_PEDANTIC, debug_level,

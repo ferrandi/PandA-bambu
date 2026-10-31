@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <template>
+      <name>ui_mul_node_FU</name>
+      <no_constant_characterization></no_constant_characterization>
+      <operation operation_name="mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
+      <circuit>
+        <module_o id="ui_mul_node_FU">
+          <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="ui_mul_node_FU"/>
+          <parameter name="PIPE_PARAMETER">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="lhs" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="rhs" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_mul_node_FU lhs rhs out1 PIPE_PARAMETER" VERILOG_PROVIDED="
+generate
+  if(PIPE_PARAMETER==1)
+  begin
+    reg [BITSIZE_out1-1:0] out1_reg;
+    assign out1 = out1_reg;
+    always @(posedge clock)
+    begin
+      out1_reg &lt;= lhs * rhs;
+    end
+  end
+  else if(PIPE_PARAMETER&gt;1)
+  begin
+    reg [BITSIZE_lhs-1:0] lhs_in;
+    reg [BITSIZE_rhs-1:0] rhs_in;
+    wire [BITSIZE_out1-1:0] mult_res;
+    reg [BITSIZE_out1-1:0] mul [PIPE_PARAMETER-2:0];
+    integer i;
+    assign mult_res = lhs_in * rhs_in;
+    always @(posedge clock)
+    begin
+      lhs_in &lt;= lhs;
+      rhs_in &lt;= rhs;
+      mul[PIPE_PARAMETER-2] &lt;= mult_res;
+      for (i=0; i&lt;PIPE_PARAMETER-2; i=i+1)
+        mul[i] &lt;= mul[i+1];
+    end
+    assign out1 = mul[0];
+  end
+  else
+  begin
+    assign out1 = lhs * rhs;
+  end
+endgenerate
+" VHDL_PROVIDED="  signal lhs_int : unsigned (BITSIZE_lhs-1 downto 0);
+  signal rhs_int : unsigned (BITSIZE_rhs-1 downto 0);
+begin
+  cond: if(PIPE_PARAMETER=0) generate
+    out1 &lt;= resize(lhs * rhs, BITSIZE_out1);
+  end generate cond;
+  cond1 : if(PIPE_PARAMETER=1) generate
+    out1 &lt;= resize(lhs_int * rhs_int, BITSIZE_out1);
+    process(clock)
+    begin
+      if clock&apos;event and clock = &apos;1&apos; then
+        lhs_int &lt;= lhs;
+        rhs_int &lt;= rhs;
+      end if;
+    end process;
+  end generate cond1;
+  cond2 : if(PIPE_PARAMETER &gt;1) generate
+    type levels_of_registers is array (PIPE_PARAMETER-1 downto 0) of unsigned (BITSIZE_out1-1 downto 0);
+    signal out1_int : levels_of_registers;
+  begin
+    out1 &lt;= out1_int (0);
+    process(clock)
+    begin
+      if clock&apos;event and clock = &apos;1&apos; then
+        lhs_int &lt;= lhs;
+        rhs_int &lt;= rhs;
+        out1_int(PIPE_PARAMETER-2) &lt;= resize(lhs_int * rhs_int, BITSIZE_out1);
+        for i in 0 to PIPE_PARAMETER-3 loop
+          out1_int (i) &lt;= out1_int (i+1);
+        end loop;
+      end if;
+    end process;
+  end generate cond2;
+"/>
+        </module_o>
+      </circuit>
+    </template>
+    <cell>
+      <name>ui_mul_node_FU_32_32_32_2</name>
+      <attribute name="area" value_type="float64">17</attribute>
+      <attribute name="REGISTERS" value_type="float64">113</attribute>
+      <attribute name="SLICE_LUTS" value_type="float64">17</attribute>
+      <attribute name="SLICE" value_type="float64">36</attribute>
+      <attribute name="LUT" value_type="float64">17</attribute>
+      <attribute name="DSP" value_type="float64">3</attribute>
+      <template name="ui_mul_node_FU" parameter="32 32 32 2"/>
+      <characterization_timestamp>2099-01-01T00:00:00</characterization_timestamp>
+      <operation operation_name="mul_node" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32"
+                 pipe_parameters="2" cycles="3" initiation_time="2" stage_period="3.952"/>
+    </cell>
+  </library>
+</technology>

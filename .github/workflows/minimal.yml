@@ -309,6 +309,7 @@ jobs:
     env:
       script: ./panda_regressions/hls/bambu_vector_test.sh
       args: --timeout=20m -c=--simulator=${{matrix.simulator}}
+      J: 4
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -341,7 +342,7 @@ jobs:
           source ${{env.dist-dir}}/settings.sh
           mkdir -p "$GITHUB_WORKSPACE/documentation/tmp" "${{env.report-dir}}/lp-array-channel"
           export TMPDIR="$GITHUB_WORKSPACE/documentation/tmp" TMP="$GITHUB_WORKSPACE/documentation/tmp" TEMP="$GITHUB_WORKSPACE/documentation/tmp"
-          ./panda_regressions/hls/bambu_lp_array_channel.sh --returnfail --no-clean -j3 --timeout=40m --junitdir="${{env.report-dir}}/lp-array-channel"
+          ./panda_regressions/hls/bambu_lp_array_channel.sh ${{env.NO_CLEAN_ARG}} --returnfail -j${{env.J}} --timeout=40m --junitdir="${{env.report-dir}}/lp-array-channel"
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
@@ -1565,7 +1566,7 @@ jobs:
       - name: Check 'Simulation Logging Test' status
         if: ${{ needs['simulation-logging-test'].result != 'success' }}
         run: exit 1
-      - name: Check 'Vector Test' status
+      - name: Check 'Vector and Loop Pipeline Test' status
         if: ${{ needs['vector-and-loop-pipeline-test'].result != 'success' }}
         run: exit 1
       - name: Check 'Vector Frontend Test' status

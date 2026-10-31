@@ -143,6 +143,17 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
    {
       LOAD_XVM(cycles, Enode);
    }
+   if(cycles == 0 && initiation_time != 0)
+   {
+      THROW_ERROR("Invalid timing model for operation \"" + operation_name + "\" in unit " + fu->get_name() +
+                  ": cycles=0 is reserved for non-pipelineable units; a positive initiation_time requires explicit "
+                  "cycles");
+   }
+   if(initiation_time > cycles)
+   {
+      THROW_ERROR("Invalid timing model for operation \"" + operation_name + "\" in unit " + fu->get_name() +
+                  ": initiation_time (" + STR(initiation_time) + ") exceeds latency (cycles=" + STR(cycles) + ")");
+   }
    if(CE_XVM(stage_period, Enode))
    {
       LOAD_XVM(stage_period, Enode);

@@ -80,6 +80,171 @@ assign out1 = merge(in1);"/>
       </circuit>
     </cell>
     <cell>
+      <name>TIMED_CAPTURE</name>
+      <circuit>
+        <module_o id="TIMED_CAPTURE">
+          <description>Latency-aligned result capture for co-started operations</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="TIMED_CAPTURE"/>
+          <parameter name="LATENCY">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="launch" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="TIMED_CAPTURE LATENCY in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_out1-1:0] captured 1INIT_ZERO_VALUE;
+wire capture_due;
+generate
+  if (LATENCY == 0) begin: zero_latency
+    assign capture_due = 1&apos;b0;
+  end else if (LATENCY == 1) begin: one_cycle_delay
+    reg launch_delay 1INIT_ZERO_VALUE;
+    always @(posedge clock)
+      launch_delay &lt;= launch &amp;&amp; !(1RESET_VALUE);
+    assign capture_due = launch_delay;
+  end else begin: srl_delay
+    (* SRL_STYLE = &quot;srl&quot; *) reg [LATENCY-1:0] launch_delay 1INIT_ZERO_VALUE;
+    always @(posedge clock)
+      launch_delay &lt;= (launch_delay &lt;&lt; 1) | (launch &amp;&amp; !(1RESET_VALUE));
+    assign capture_due = launch_delay[LATENCY-1];
+  end
+endgenerate
+assign out1 = capture_due ? in1 : captured;
+always @(posedge clock)
+  if (1RESET_VALUE)
+    captured &lt;= {BITSIZE_out1{1&apos;b0}};
+  else if (LATENCY == 0 &amp;&amp; launch)
+    captured &lt;= in1;
+  else if (capture_due)
+    captured &lt;= in1;"
+            VHDL_PROVIDED="
+signal captured : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
+signal capture_due : std_logic;
+signal launch_valid : std_logic;
+begin
+  launch_valid &lt;= launch when not (1RESET_VALUE) else &apos;0&apos;;
+  out1 &lt;= in1 when capture_due = &apos;1&apos; else captured;
+
+  zero_latency: if LATENCY = 0 generate
+    capture_due &lt;= &apos;0&apos;;
+  end generate;
+
+  one_cycle_delay: if LATENCY = 1 generate
+    signal launch_delay : std_logic := &apos;0&apos;;
+  begin
+    process(clock)
+    begin
+      if(clock&apos;event and clock = &apos;1&apos;) then
+        launch_delay &lt;= launch_valid;
+      end if;
+    end process;
+    capture_due &lt;= launch_delay;
+  end generate;
+
+  srl_delay: if LATENCY &gt; 1 generate
+    signal launch_delay : std_logic_vector(LATENCY-1 downto 0) := (others =&gt; &apos;0&apos;);
+    attribute SRL_STYLE : string;
+    attribute SRL_STYLE of launch_delay : signal is &quot;srl&quot;;
+  begin
+    process(clock)
+    begin
+      if(clock&apos;event and clock = &apos;1&apos;) then
+        launch_delay &lt;= launch_delay(LATENCY-2 downto 0) &amp; launch_valid;
+      end if;
+    end process;
+    capture_due &lt;= launch_delay(LATENCY-1);
+  end generate;
+
+  process(clock)
+  begin
+    if(clock&apos;event and clock = &apos;1&apos;) then
+      if(1RESET_VALUE) then
+        captured &lt;= (others =&gt; &apos;0&apos;);
+      elsif(LATENCY = 0 and launch = &apos;1&apos;) then
+        captured &lt;= in1;
+      elsif(capture_due = &apos;1&apos;) then
+        captured &lt;= in1;
+      end if;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>INPUT_HOLD</name>
+      <circuit>
+        <module_o id="INPUT_HOLD">
+          <description>Hold a pipelined unit input between legal initiation cycles</description>
+          <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="INPUT_HOLD"/>
+          <parameter name="BITSIZE_in1">1</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="launch" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="INPUT_HOLD in1 out1" VERILOG_PROVIDED="
+reg [BITSIZE_in1-1:0] held 1INIT_ZERO_VALUE;
+assign out1 = (1RESET_VALUE) ? {BITSIZE_out1{1'b0}} : (launch ? in1 : held);
+always @(posedge clock 1RESET_EDGE_FORCE)
+  if (1RESET_VALUE)
+    held &lt;= {BITSIZE_in1{1'b0}};
+  else if (launch)
+    held &lt;= in1;"
+            VHDL_PROVIDED="
+signal held : std_logic_vector(BITSIZE_in1-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+  process(reset, launch, in1, held)
+  begin
+    if(1RESET_VALUE) then
+      out1 &lt;= (others =&gt; '0');
+    elsif(launch = '1') then
+      out1 &lt;= in1;
+    else
+      out1 &lt;= held;
+    end if;
+  end process;
+  process(clock, reset)
+  begin
+    if(1RESET_VALUE) then
+      held &lt;= (others =&gt; '0');
+    elsif(clock'event and clock = '1') then
+      if(launch = '1') then
+        held &lt;= in1;
+      end if;
+    end if;
+  end process;
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>join_signal</name>
       <attribute name="area" value_type="float64">0</attribute>
       <circuit>

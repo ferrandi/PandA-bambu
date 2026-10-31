@@ -1741,6 +1741,8 @@ DesignFlowStep_Status allocation::InternalExec()
             {
                allocation_information->binding[node_id] =
                    std::pair<std::string, unsigned int>(current_op, fu_name_to_id[key][fu_index]);
+               allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)]
+                   .insert(fu_name_to_id[key][fu_index]);
             }
             else
             {

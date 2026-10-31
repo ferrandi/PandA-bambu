@@ -210,6 +210,42 @@ generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir
    return selectors[dir][std::make_pair(elem, op)];
 }
 
+generic_objRef conn_binding::bind_timed_capture(gc_vertex_descriptor op, unsigned int latency, unsigned int bitsize,
+                                                const std::string& operation_name)
+{
+   const auto existing = timed_captures.find(op);
+   if(existing != timed_captures.end())
+   {
+      THROW_ASSERT(timed_capture_parameters.at(op) == std::make_pair(latency, bitsize),
+                   "Timed capture metadata changed between FSM start states");
+      return existing->second;
+   }
+   const auto adapter =
+       generic_objRef(new generic_obj(generic_obj::CONNECTION_ELEMENT, "timed_capture_" + operation_name));
+   timed_captures[op] = adapter;
+   timed_capture_parameters[op] = std::make_pair(latency, bitsize);
+   return adapter;
+}
+
+generic_objRef conn_binding::get_timed_capture(gc_vertex_descriptor op) const
+{
+   const auto it = timed_captures.find(op);
+   return it == timed_captures.end() ? generic_objRef() : it->second;
+}
+
+void conn_binding::bind_input_hold_group(const generic_objRef selector, const generic_objRef fu_unit)
+{
+   THROW_ASSERT(selector, "Input hold group requires a launch selector");
+   THROW_ASSERT(fu_unit, "Input hold group requires a functional unit");
+   input_hold_groups.push_back({selector, fu_unit, {}});
+}
+
+structural_objectRef conn_binding::get_input_hold_input(const structural_objectRef fu_input) const
+{
+   const auto it = input_hold_inputs.find(fu_input);
+   return it == input_hold_inputs.end() ? structural_objectRef{} : it->second;
+}
+
 generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir, unsigned int mode,
                                                 gc_vertex_descriptor cond, const OpGraph& data)
 {
@@ -243,8 +279,14 @@ bool conn_binding::check_pv_allconnected(structural_objectRef port_i)
 
 void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM)
 {
+   add_input_holds(HLS, SM);
+
    /// add command ports
    add_command_ports(HLSMgr, HLS, SM);
+   connect_input_hold_launches(SM);
+
+   /// add result capture adapters for co-started pipelined operations
+   add_timed_captures(HLSMgr, HLS, SM);
 
    /// add sparse logic
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding sparse logic to the datapath");
@@ -349,6 +391,110 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    command_predicates.clear();
 }
 
+void conn_binding::add_timed_captures(const HLS_managerRef, const hlsRef HLS, const structural_managerRef SM)
+{
+   if(timed_captures.empty())
+   {
+      return;
+   }
+   const auto TM = HLS->HLS_D->get_technology_manager();
+   const auto circuit = SM->get_circ();
+   const auto clock = circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit);
+   const auto reset = circuit->find_member(RESET_PORT_NAME, port_o_K, circuit);
+   THROW_ASSERT(clock && reset, "Timed capture requires datapath clock and reset ports");
+   for(const auto& capture : timed_captures)
+   {
+      const auto op = capture.first;
+      const auto latency = timed_capture_parameters.at(op).first;
+      const auto bitsize = timed_capture_parameters.at(op).second;
+      const auto module = SM->add_module_from_technology_library(capture.second->get_string(), "TIMED_CAPTURE",
+                                                                 LIBRARY_STD, circuit, TM);
+      module->SetParameter("LATENCY", STR(latency));
+      SM->add_connection(clock, module->find_member(CLOCK_PORT_NAME, port_o_K, module));
+      SM->add_connection(reset, module->find_member(RESET_PORT_NAME, port_o_K, module));
+      auto launch = module->find_member("launch", port_o_K, module);
+      auto data_in = module->find_member("in1", port_o_K, module);
+      auto data_out = module->find_member("out1", port_o_K, module);
+      THROW_ASSERT(launch && data_in && data_out, "Malformed timed capture cell");
+      data_in->type_resize(bitsize);
+      data_out->type_resize(bitsize);
+      capture.second->set_structural_obj(module);
+   }
+}
+
+void conn_binding::add_input_holds(const hlsRef HLS, const structural_managerRef SM)
+{
+   if(input_hold_groups.empty())
+   {
+      return;
+   }
+   const auto TM = HLS->HLS_D->get_technology_manager();
+   const auto circuit = SM->get_circ();
+   const auto clock = circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit);
+   const auto reset = circuit->find_member(RESET_PORT_NAME, port_o_K, circuit);
+   THROW_ASSERT(clock && reset, "Input hold adapters require datapath clock and reset ports");
+   for(auto& group : input_hold_groups)
+   {
+      const auto fu_module_ref = group.fu_unit->get_structural_obj();
+      auto* fu_module = GetPointer<module_o>(fu_module_ref);
+      const auto* fu_instance = GetPointer<funit_obj>(group.fu_unit);
+      THROW_ASSERT(fu_module && fu_instance, "Pipelined FU has no physical module instance");
+      for(unsigned int i = 0; i < fu_module->get_in_port_size(); ++i)
+      {
+         auto fu_input = fu_module->get_in_port(i);
+         const auto port_id = fu_input->get_id();
+         if(port_id == CLOCK_PORT_NAME || port_id == RESET_PORT_NAME || port_id == START_PORT_NAME ||
+            GetPointer<port_o>(fu_input)->get_is_memory() || GetPointer<port_o>(fu_input)->get_is_global() ||
+            GetPointer<port_o>(fu_input)->get_is_extern())
+         {
+            continue;
+         }
+         if(fu_input->get_kind() == port_vector_o_K)
+         {
+            const auto ports_size = GetPointer<port_o>(fu_input)->get_ports_size();
+            THROW_ASSERT(ports_size != 0, "Empty vector input port on pipelined FU: " + fu_input->get_path());
+            fu_input = GetPointer<port_o>(fu_input)->get_port(fu_instance->get_index() % ports_size);
+         }
+         const auto bitsize = GET_TYPE_SIZE(fu_input);
+         const auto name =
+             "input_hold_" + group.selector->get_string() + "_" + fu_input->get_id() + "_" + STR(unique_id++);
+         const auto module = SM->add_module_from_technology_library(name, "INPUT_HOLD", LIBRARY_STD, circuit, TM);
+         module->SetParameter("BITSIZE_in1", STR(bitsize));
+         const auto hold_clock = module->find_member(CLOCK_PORT_NAME, port_o_K, module);
+         const auto hold_reset = module->find_member(RESET_PORT_NAME, port_o_K, module);
+         const auto launch = module->find_member("launch", port_o_K, module);
+         const auto hold_input = module->find_member("in1", port_o_K, module);
+         const auto hold_output = module->find_member("out1", port_o_K, module);
+         THROW_ASSERT(hold_clock && hold_reset && launch && hold_input && hold_output,
+                      "Malformed INPUT_HOLD technology cell");
+         hold_input->type_resize(bitsize);
+         hold_output->type_resize(bitsize);
+         SM->add_connection(clock, hold_clock);
+         SM->add_connection(reset, hold_reset);
+         const auto held_signal = SM->add_sign(name + "_out", circuit, fu_input->get_typeRef());
+         SM->add_connection(hold_output, held_signal);
+         SM->add_connection(held_signal, fu_input);
+         input_hold_inputs[fu_input] = hold_input;
+         group.launch_ports.push_back(launch);
+      }
+   }
+}
+
+void conn_binding::connect_input_hold_launches(const structural_managerRef SM)
+{
+   for(const auto& group : input_hold_groups)
+   {
+      const auto selector_it = selectors.at(IN).find(std::make_pair(group.selector, 0U));
+      THROW_ASSERT(selector_it != selectors.at(IN).end(), "Missing INPUT_HOLD launch selector");
+      const auto selector = selector_it->second->get_structural_obj();
+      THROW_ASSERT(selector, "INPUT_HOLD launch selector was not materialized");
+      for(const auto& launch : group.launch_ports)
+      {
+         SM->add_connection(launch, selector);
+      }
+   }
+}
+
 void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
@@ -450,6 +596,11 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          tgt_module->print(std::cerr);
          THROW_ERROR("target module does not have the expected input port: " + tgt_module->get_id() + " - " +
                      tgt_module->get_path() + "\nCheck the module specification");
+      }
+
+      if(const auto hold_input = get_input_hold_input(port_tgt))
+      {
+         port_tgt = hold_input;
       }
 
       structural_type_descriptorRef port_src_type = port_src->get_typeRef();
@@ -1079,7 +1230,8 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                                          ->get_port(GetPointer<funit_obj>(elem)->get_index() %
                                                     GetPointer<port_o>(port_selector)->get_ports_size());
                   }
-                  SM->add_connection(port_selector, sel_obj);
+                  const auto hold_input = get_input_hold_input(port_selector);
+                  SM->add_connection(hold_input ? hold_input : port_selector, sel_obj);
                }
                break;
             }
