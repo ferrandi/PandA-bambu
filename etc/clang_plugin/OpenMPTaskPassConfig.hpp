@@ -32,7 +32,6 @@
 #define VERBOSE
 #define SHOW_INPUT_PROXIES
 #endif
-#define SYSTEM_32_BIT
 #define REMOVE_OUTLINED_GEP
 // Currently this is handled inside bambu FU binding
 #define DISABLE_RESOURCE_DUPLICATION

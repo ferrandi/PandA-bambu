@@ -57,6 +57,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <fstream>
 #include <iterator>
 #include <map>
 #include <string>
@@ -84,13 +85,16 @@ namespace
 
    Function* requireDirectCallee(const CallInst* call)
    {
-      auto* callee = call->getCalledFunction();
+      auto* callee = dyn_cast<Function>(call->getCalledOperand()->stripPointerCastsAndAliases());
       if(!callee)
       {
          report_fatal_error("OpenMP task extraction does not support indirect calls in the task graph");
       }
       return callee;
    }
+
+   cl::opt<bool> detectOnly("task-detect-only", cl::init(false),
+                            cl::desc("Report whether LLVM IR contains OpenMP task operations"));
 
    // Forward declaration
    void visitor(Function& F, std::set<unsigned> const* entryPointInputs, unsigned& taskHash, TopoGraphGenerator& topo,
@@ -313,15 +317,15 @@ namespace
       if(auto* CI = dyn_cast<CallInst>(&inst))
       {
          StringRef name = requireDirectCallee(CI)->getName();
-         if(flag == Constants::OPEN_FLAG && name.data() == Constants::targetOmpTaskAllocName)
+         if(flag == Constants::OPEN_FLAG && name == Constants::targetOmpTaskAllocName)
          {
             return true;
          }
-         else if(flag == Constants::CLOSE_FLAG_WITH_DEPS && name.data() == Constants::targetOmpTaskSubmissionDepsName)
+         else if(flag == Constants::CLOSE_FLAG_WITH_DEPS && name == Constants::targetOmpTaskSubmissionDepsName)
          {
             return true;
          }
-         else if(flag == Constants::CLOSE_FLAG && name.data() == Constants::targetOmpTaskSubmissionName)
+         else if(flag == Constants::CLOSE_FLAG && name == Constants::targetOmpTaskSubmissionName)
          {
             return true;
          }
@@ -864,9 +868,20 @@ namespace
 
       auto saveStore = [&swapMap, &cleanOperandString, &cleanOperandString2, &inputs, &constInputs, &inputsRef,
                         &position](StoreInst* storeInst, const auto index) {
+         const auto* stored = storeInst->getOperand(index);
+         if(const auto* constant = dyn_cast<ConstantInt>(stored))
+         {
+            if(constant->getBitWidth() != 32)
+            {
+               report_fatal_error(
+                   "Static OpenMP task scalar captures require 32-bit integers; pointer widths may be 32 or 64 bits");
+            }
+            constInputs.push_back({static_cast<unsigned>(constant->getZExtValue()), position++});
+            return;
+         }
          std::string stringBuff;
          raw_string_ostream stream(stringBuff);
-         storeInst->getOperand(index)->print(stream);
+         stored->print(stream);
          std::string parsedOperand = "";
          const bool validPtr = isPtr(stringBuff);
          if(validPtr)
@@ -1102,8 +1117,7 @@ namespace
    /// @param F The omp outlined function
    void promoteOmpOutlinedBaseAddr(Function& F)
    {
-      assert(F.getName().find(Constants::targetOmpOutlinedFnNamePrefix) != std::string::npos &&
-             "Input function is not the outlined");
+      assert(openmp_task::IsOutlinedFunction(F.getName().str()) && "Input function is not the outlined");
       assert(
           F.getName().find(Constants::bambuHostReservedFnName) == std::string::npos &&
           "Input function is a reserved function. You have either mistaken the call or used a reserved function name");
@@ -1293,7 +1307,7 @@ namespace
    ///    - First index value (secondary key, assumes ConstantInt indices)
    ///
    /// Assumptions:
-   /// - The allocated arrays have the expected alignment (Constants::structAlignment)
+   /// - The allocated arrays meet the target ABI alignment
    /// - GEP instructions accessing the arrays have ConstantInt as their first index operand
    ///
    /// Example usage:
@@ -1318,7 +1332,11 @@ namespace
                {
                   if(ST->getName() == Constants::targetOmpDepsStructName)
                   {
-                     assert(AI->getAlign().value() == Constants::structAlignment);
+                     const auto& layout = AI->getModule()->getDataLayout();
+                     if(AI->getAlign() < layout.getABITypeAlign(ST))
+                     {
+                        report_fatal_error("Misaligned OpenMP dependency descriptor");
+                     }
                      for(auto& U : I->uses())
                      {
                         if(auto* GEP = dyn_cast<GetElementPtrInst>(U.getUser()))
@@ -1442,7 +1460,31 @@ namespace
                auto offSet = CI->getValue().getSExtValue();
                // For reference: %struct.kmp_depend_info = type { i64, i64, i8 }
                // %5 = alloca [2 x %struct.kmp_depend_info], align 8
-               offSet = (offSet % (Constants::structAlignment * 3)) / Constants::structAlignment;
+               const auto& layout = GEP->getModule()->getDataLayout();
+               const auto* descriptor =
+                   StructType::getTypeByName(GEP->getContext(), Constants::targetOmpDepsStructName);
+               if(!descriptor || descriptor->getNumElements() < 3)
+               {
+                  report_fatal_error("Unsupported OpenMP dependency descriptor layout");
+               }
+               const auto* descriptorLayout = layout.getStructLayout(const_cast<StructType*>(descriptor));
+               const auto byteOffset = offSet % descriptorLayout->getSizeInBytes();
+               if(byteOffset == descriptorLayout->getElementOffset(0))
+               {
+                  offSet = 0;
+               }
+               else if(byteOffset == descriptorLayout->getElementOffset(1))
+               {
+                  offSet = 1;
+               }
+               else if(byteOffset == descriptorLayout->getElementOffset(2))
+               {
+                  offSet = 2;
+               }
+               else
+               {
+                  report_fatal_error("Unsupported offset in an OpenMP dependency descriptor");
+               }
                Utils::log(errs(), 0, 1, "Visiting GEP on allocation instruction with offset", offSet);
 
                if(offSet == 0)
@@ -2213,7 +2255,15 @@ namespace
             // errs() << "GEP: " << stringBuff
             const auto label = parseUnamedNameFromInstruction(stringBuff);
             const auto gepStr = subStrFromChar(stringBuff, '=', 2);
-            if(gepStr.find("kmp") == std::string::npos)
+            Type* sourceType = gep->getSourceElementType();
+            while(const auto* array = dyn_cast<ArrayType>(sourceType))
+            {
+               sourceType = array->getElementType();
+            }
+            const auto* structure = dyn_cast<StructType>(sourceType);
+            const bool runtimeStructure =
+                structure && structure->hasName() && structure->getName().starts_with("struct.kmp_");
+            if(!runtimeStructure)
             {
                unsigned labelValue = std::stoi(label);
                if(sameGEPs[fnName].find(gepStr) == sameGEPs[fnName].end())
@@ -2762,7 +2812,7 @@ namespace
                if(auto* callInst = dyn_cast<CallInst>(&*it))
                {
                   // Don't remove calls that are not omp runtime
-                  if(requireDirectCallee(callInst)->getName().find("kmp") != std::string::npos)
+                  if(openmp_task::IsRuntimeFunction(requireDirectCallee(callInst)->getName().str()))
                   {
                      deleteArr.push_back(&(*it));
                   }
@@ -3049,7 +3099,7 @@ namespace
          {
             if(auto* callInst = dyn_cast<CallInst>(&I))
             {
-               if(requireDirectCallee(callInst)->getName().find(Constants::targetOmpForkCall) != std::string::npos)
+               if(requireDirectCallee(callInst)->getName() == Constants::targetOmpForkCall)
                {
                   forkCall = callInst;
                   found = true;
@@ -3562,10 +3612,11 @@ namespace
 #ifdef REMOVE_OUTLINED_GEP
                               found = true;
                               // assert(gepToReplaceCounter < newTypesPtrSize);
-                              assert(gepOffset % Constants::structAlignment == 0);
+                              assert(gepOffset % M->getDataLayout().getPointerSize() == 0);
                               // We prefer this version as GEP offset inside the IR may be shuffled. With this op we
                               // can always retrive the right offset for getArg
-                              Value* V = newFunction->getArg(argsOffset + (gepOffset / Constants::structAlignment));
+                              Value* V =
+                                  newFunction->getArg(argsOffset + (gepOffset / M->getDataLayout().getPointerSize()));
 // Value* V = newFunction->getArg(argsOffset + gepToReplaceCounter);
 #ifdef VERBOSE
                               {
@@ -3590,9 +3641,9 @@ namespace
                                     assert(gepToReplaceCounter < newTypesPtrSize);
                                     // We prefer this version as GEP offset inside the IR may be shuffled. With this op
                                     // we can always retrive the right offset for getArg
-                                    assert(gepOffset % Constants::structAlignment == 0);
-                                    Value* V =
-                                        newFunction->getArg(argsOffset + (gepOffset / Constants::structAlignment));
+                                    assert(gepOffset % M->getDataLayout().getPointerSize() == 0);
+                                    Value* V = newFunction->getArg(argsOffset +
+                                                                   (gepOffset / M->getDataLayout().getPointerSize()));
                                     // Value* V = newFunction->getArg(argsOffset + gepToReplaceCounter);
 #ifdef VERBOSE
                                     {
@@ -3657,7 +3708,7 @@ namespace
                {
                   continue;
                }
-               if(called->getName().find(Constants::targetOmpTaskAllocName) != std::string::npos)
+               if(called->getName() == Constants::targetOmpTaskAllocName)
                {
                   Value* operand = callInst->getOperand(operandIndex);
                   assert(isa<Function>(operand));
@@ -3671,9 +3722,49 @@ namespace
 
    PreservedAnalyses execute(Module& M, ModuleAnalysisManager& MAM)
    {
-      if(M.getDataLayout().getPointerSizeInBits() != 32)
+      if(detectOnly)
       {
-         report_fatal_error("OpenMP task extraction requires 32-bit pointers (use I386_CLANG19)");
+         bool hasTasks = false;
+         for(const auto& F : M)
+         {
+            if(F.getName().contains(Constants::bambuHostReservedFnName))
+            {
+               continue;
+            }
+            for(const auto& BB : F)
+            {
+               for(const auto& I : BB)
+               {
+                  const auto* call = dyn_cast<CallBase>(&I);
+                  const auto* target =
+                      call ? dyn_cast<Function>(call->getCalledOperand()->stripPointerCastsAndAliases()) : nullptr;
+                  if(target)
+                  {
+                     const auto name = target->getName();
+                     hasTasks |= name == Constants::targetOmpTaskAllocName ||
+                                 name == Constants::targetOmpTaskSubmissionName ||
+                                 name == Constants::targetOmpTaskSubmissionDepsName ||
+                                 name.starts_with("__kmpc_taskloop") || name.starts_with("__kmpc_omp_taskwait") ||
+                                 name == "__kmpc_taskgroup" || name == "__kmpc_omp_taskyield";
+                  }
+               }
+            }
+         }
+         const auto filename =
+             (outDirName.empty() ? std::string() : outDirName.getValue() + "/") + openmp_task::DetectionFilename;
+         std::ofstream output(filename);
+         output << (hasTasks ? "tasks" : "ordinary") << ' ' << M.getDataLayout().getPointerSizeInBits() << '\n';
+         output.close();
+         if(!output)
+         {
+            report_fatal_error("Cannot write OpenMP task detection result");
+         }
+         return PreservedAnalyses::all();
+      }
+      const auto pointerBits = M.getDataLayout().getPointerSizeInBits();
+      if(pointerBits != 32 && pointerBits != 64)
+      {
+         report_fatal_error("OpenMP task extraction supports 32-bit and 64-bit pointers");
       }
       if(resourceDuplicationNum == 0)
       {
@@ -3753,12 +3844,12 @@ namespace
       {
          // Visit only functions of interest
          const auto fnName = F.getName().str();
-         if(fnName.find(Constants::targetTaskEntryNamePrefix) != std::string::npos)
+         if(openmp_task::IsFrontendTaskEntry(fnName))
          {
             removeFnAttribute(F, Attribute::AlwaysInline);
             addFnAttribute(F, Attribute::NoInline);
          }
-         if(fnName.find(Constants::targetOmpOutlinedFnNamePrefix) != std::string::npos &&
+         if(openmp_task::IsOutlinedFunction(fnName) &&
             fnName.find(Constants::bambuHostReservedFnName) == std::string::npos)
          {
             if(targetOutlined)
@@ -3778,6 +3869,12 @@ namespace
          Utils::log(errs(), 0, 1, "Skipping the visit of function called", fnName, "as of not interest");
       }
 
+      if(!targetOutlined)
+      {
+         report_fatal_error(
+             "No supported parallel task region found; task extraction requires one outlined parallel region");
+      }
+
       // Perform post graph extraction optimizations
       std::vector<std::string> newFnNames;
       for(Function& F : M)
@@ -3795,8 +3892,7 @@ namespace
                if(auto* callInstr = dyn_cast<CallInst>(&I))
                {
                   auto* calledFn = callInstr->getCalledFunction();
-                  if(calledFn != nullptr &&
-                     calledFn->getName().find(Constants::targetOmpForkCall) != std::string::npos &&
+                  if(calledFn != nullptr && calledFn->getName() == Constants::targetOmpForkCall &&
                      F.getName().find(Constants::bambuHostReservedFnName) == std::string::npos)
                   {
                      promoteForkCallBaseAddr(F);
@@ -3857,6 +3953,7 @@ namespace
       const std::string xmlPath =
           outDirName.empty() ? (Constants::outXMLFileName) : (outDirName.getValue() + "/" + Constants::outXMLFileName);
 
+      topo.setPointerBits(pointerBits);
       topo.dump_xml(xmlPath);
 
       return PreservedAnalyses::none();

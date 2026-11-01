@@ -55,9 +55,6 @@
 
 const unsigned int technology_manager::XML = 1 << 0;
 
-PANDA_REGISTER_PARAMETER("priority-encoder", PandaParamType::String, "hierarchical",
-                         "Combinatorial priority encoder implementation: hierarchical, tree or gates", "rtl");
-
 technology_manager::technology_manager(const ParameterConstRef _Param) : Param(_Param)
 {
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
@@ -66,7 +63,7 @@ technology_manager::technology_manager(const ParameterConstRef _Param) : Param(_
 std::string technology_manager::get_priority_encoder_prefix() const
 {
    const auto family =
-       Param->IsParameter("priority-encoder") ? Param->GetParameter<std::string>("priority-encoder") : "hierarchical";
+       Param->isOption(OPT_priority_encoder) ? Param->getOption<std::string>(OPT_priority_encoder) : "hierarchical";
    if(family != "hierarchical" && family != "tree" && family != "gates")
    {
       THROW_ERROR("Unknown priority encoder family: " + family);

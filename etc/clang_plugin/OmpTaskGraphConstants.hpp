@@ -33,6 +33,7 @@
 #if PANDA_LLVM_CLANG_MAJOR >= 13
 
 #include "OpenMPTaskPassConfig.hpp"
+#include "openmp_task_names.hpp"
 
 #include <cstdint>
 #include <string>
@@ -47,13 +48,6 @@ namespace Bambu
       {
          namespace Constants
          {
-#ifdef SYSTEM_32_BIT
-            // Bambu works with 32 bit
-            const uint64_t structAlignment = 4U;
-#else
-            const uint64_t structAlignment = 8U;
-#endif
-
             const std::string FAILURE_MSG = "[FAILURE]";
             const std::string INFO_MSG = "[INFO]";
 
@@ -76,9 +70,9 @@ namespace Bambu
             const std::string targetTaskEntryNamePrefix = ".omp_task_entry";
             const std::string targetTransformedTaskEntryNameSuffix = "transformed";
             const std::string targetOmpForkCall = "__kmpc_fork_call";
-            const std::string outXMLFileName = "task_graph.xml";
+            const std::string outXMLFileName = openmp_task::GraphFilename;
             const std::string injectedTaskNamePreifx = "injected_task_";
-            const std::string taskGraphName = "task_graph";
+            const std::string taskGraphName = openmp_task::GraphEntryName;
 
             constexpr uint8_t OPEN_FLAG = 0;
             constexpr uint8_t CLOSE_FLAG_WITH_DEPS = 1;

@@ -197,7 +197,7 @@ namespace
        */
       PreservedAnalyses run(Function& F, FunctionAnalysisManager& FAM)
       {
-         if(F.getName().find(Bambu::OpenMP::Task::Constants::targetOmpOutlinedFnNamePrefix) != std::string::npos &&
+         if(openmp_task::IsOutlinedFunction(F.getName().str()) &&
             F.getName().find(Bambu::OpenMP::Task::Constants::bambuHostReservedFnName) == std::string::npos)
          {
             Bambu::OpenMP::Task::Utils::log(errs(), 0, 1, "Adding unroll metadata to", F.getName());

@@ -1,7 +1,9 @@
 # OpenMP task regressions
 
 These tests require the LLVM 19 frontend (`--compiler=I386_CLANG19`) and
-`--bambu-parameter=enable-task=1`. Source the installed Bambu `settings.sh` first.
+OpenMP (`-fopenmp`). Task mode is selected automatically from runtime calls in
+the linked LLVM IR; there is no `enable-task` switch. Source the installed Bambu
+`settings.sh` first. Both `-m32` (default) and `-m64` are supported.
 
 Run the same suites used by CI, for example:
 
@@ -57,7 +59,7 @@ configurations in the arbiter and banked scripts exercise the alternative famili
 ## Supported subset
 
 Task mode extracts one statically constructed task dependency graph from a single
-parallel region, using LLVM 19 and 32-bit pointers. The regression suites cover
+parallel region, using LLVM 19 and 32-bit or 64-bit pointers. The regression suites cover
 unconditional task creation with `depend(in/out/inout)` and direct calls beneath
 task entries. Conditional task creation, multiple parallel regions, nested task
 creation, indirect calls in graph construction, taskwait, taskgroup, taskyield,
@@ -78,3 +80,29 @@ Captured base pointer values must remain invariant during graph construction,
 including while submitted tasks run. Task bodies may modify the pointed-to data,
 but may not reassign those captured base pointers. Extraction relies on this
 static-graph precondition; it does not prove it for arbitrary task bodies.
+
+## Task options and pointer-width regressions
+
+`--task-resource-duplication=N` selects a positive number of instances of each task
+resource (default 1). `--priority-encoder=hierarchical|tree|gates` selects the RTL
+implementation (default hierarchical). Both options are shown by `--help` and
+are not `--bambu-parameter` entries. Old spellings are rejected with a migration
+message. Task detection examines actual runtime calls, not source text or user
+function names, and also works across multiple translation units.
+
+The arbiter suite includes `taskPointerWidths` at `-m32` and `-m64`, plus a 64-bit
+case with a base address above 4 GiB. It uses two pointers, 64-bit data, dependent
+tasks and non-inlined user functions whose names contain `task_graph` and
+`omp_task_entry`. The graph XML records `pointer_bits`; binding checks that it
+matches the selected target. Private address spaces and widths other than 32/64
+are not supported. Runtime base pointer reassignment remains outside the static
+subset.
+
+Benchmark source attribution is in `src/mnist/PROVENANCE.md`; dataset provenance,
+licenses and a pinned download script are in `src/mnist/dataset/`.
+
+`taskMultiSource` places the task region in a separate translation unit beneath
+the top function. The suite checks that detection happens after linking. Scalar
+`firstprivate` constants currently use the existing 32-bit integer protocol;
+wider scalar captures are rejected explicitly. This restriction does not limit
+the width of pointers or of data loaded/stored by task bodies.

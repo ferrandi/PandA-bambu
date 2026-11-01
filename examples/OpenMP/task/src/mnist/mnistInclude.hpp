@@ -15,7 +15,9 @@
  *   Copyright (C) 2025-2026 Politecnico di Milano
  *
  * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
- * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ * Portions derived from markkraay/mnist-from-scratch, Copyright (c) 2023 Mark Kraay.
+ * Original portions are MIT licensed; see LICENSE.markkraay and PROVENANCE.md.
+ * SPDX-License-Identifier: MIT AND (Apache-2.0 WITH LLVM-exception)
  *
  */
 #ifndef MNIST_INCLUDE_HPP
