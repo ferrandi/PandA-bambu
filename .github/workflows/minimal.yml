@@ -37,8 +37,6 @@ env:
   storage-url: "${{secrets.CI_STORAGE_URL}}"
   storage-user: "${{secrets.CI_STORAGE_USER}}"
   storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
-  host_jobs: $J
-  host_threads: $OMP_NUM_THREADS
   dist-dir: panda_dist
   CI_COMPILERS: clang-4.0,clang-6.0,clang-7,clang-11,clang-13,clang-16,clang-19
 
@@ -78,8 +76,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
-          echo "threads=${{env.host_threads}}" >> $GITHUB_OUTPUT
+          echo "jobs=${J:-1}" >> $GITHUB_OUTPUT
+          echo "threads=${OMP_NUM_THREADS:-1}" >> $GITHUB_OUTPUT
           cat > docker_exec.sh << EOF
           #!/bin/bash -e
           # Remove generated sources from compilation database
@@ -92,7 +90,7 @@ jobs:
       - name: Run CPPCheck
         uses: ./.github/actions/codechecks-runner
         with:
-          command: ./docker_exec.sh -j${{env.host_jobs}}
+          command: ./docker_exec.sh -j${{steps.host.outputs.jobs}}
           jobs: ${{steps.host.outputs.jobs}}
           threads: ${{steps.host.outputs.threads}}
       - name: Upload CPPCheck HTML report
@@ -791,8 +789,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
-          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
+          echo "jobs=${J:-1}" >> "$GITHUB_OUTPUT"
+          echo "threads=${OMP_NUM_THREADS:-1}" >> "$GITHUB_OUTPUT"
       - name: Verify SoftFloat implementation
         uses: ./.github/actions/base-runner
         with:
@@ -867,8 +865,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
-          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
+          echo "jobs=${J:-1}" >> "$GITHUB_OUTPUT"
+          echo "threads=${OMP_NUM_THREADS:-1}" >> "$GITHUB_OUTPUT"
       - name: Verify LibM functions implementation
         uses: ./.github/actions/base-runner
         with:
@@ -1211,25 +1209,12 @@ jobs:
           - { test: banked_profiling, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--noc-profiling -c=--compiler=I386_CLANG13" }
           - { test: banked_cache, script: ./examples/OpenMP/banked-memory/openmp_banked_cache.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
           - { test: banked_allocation, script: ./examples/OpenMP/banked-memory/openmp_banked_allocation.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
-          - { test: task_arbiter, script: ./examples/OpenMP/task/openmp_task_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
-          - { test: task_banked, script: ./examples/OpenMP/task/openmp_task_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
-          - { test: task_arbiter_eval, script: ./examples/OpenMP/task/openmp_task_eval_arb.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
-          - { test: task_banked_eval, script: ./examples/OpenMP/task/openmp_task_eval_banked.sh, args: "-t 20m -c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930" }
     env:
       outname: OpenMP_${{matrix.test}}
       args: -c=--simulator=MODELSIM ${{matrix.args}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-      - name: Check priority encoder implementations
-        if: matrix.test == 'task_arbiter'
-        shell: bash
-        run: |
-          if command -v verilator >/dev/null 2>&1; then
-            python3 panda_regressions/verilog/priority_encoder/test_priority_encoders.py
-          else
-            echo "::warning::Priority encoder regression skipped: Verilator is unavailable"
-          fi
       - name: Setup repository + distribution
         uses: ./.github/actions/panda-setup
         with:
@@ -1743,3 +1728,12 @@ jobs:
       - name: Check 'PandA benchmarks for OpenROAD 2' status
         if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
         run: exit 1
+
+  OpenMP-task-support:
+    needs: [build]
+    uses: ./.github/workflows/reusable-openmp-task.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      no-clean: ${{inputs.no-clean || false}}
+      runner-labels: '["self-hosted", "mentor"]'
+    secrets: inherit

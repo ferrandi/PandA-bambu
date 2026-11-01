@@ -40,6 +40,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/PassPlugin.h>
+#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 
 #include <cassert>
@@ -112,15 +113,16 @@ namespace
    {
       std::vector<std::tuple<Instruction*, Function*, std::vector<Value*>>> instructionsToAdd;
       std::vector<Instruction*> deleteList;
-      if(F.getName().find("kmp") != std::string::npos)
+      if(openmp_task::IsRuntimeFunction(F.getName().str()) || F.getName() == "omp_get_thread_num" ||
+         F.getName() == "omp_get_num_threads")
       {
          return;
       }
-      if(F.getName().find("omp") != std::string::npos)
+      if(openmp_task::IsFrontendTaskEntry(F.getName().str()) || openmp_task::IsOutlinedFunction(F.getName().str()))
       {
          return;
       }
-      if(F.getName().find(Constants::injectedTaskNamePreifx) != std::string::npos)
+      if(F.getName().str().compare(0, Constants::injectedTaskNamePreifx.size(), Constants::injectedTaskNamePreifx) == 0)
       {
          return;
       }
@@ -137,7 +139,7 @@ namespace
             if(auto* callInst = dyn_cast<CallInst>(&(*it)))
             {
                if(callInst->getCalledFunction() &&
-                  callInst->getCalledFunction()->getName().find(Constants::targetOmpForkCall) != std::string::npos)
+                  callInst->getCalledFunction()->getName() == Constants::targetOmpForkCall)
                {
                   Utils::log(errs(), 2, 1, "got", callInst->getCalledFunction()->getName());
                   Value* lambdaFn = callInst->getArgOperand(2);
@@ -166,7 +168,7 @@ namespace
                   deleteList.push_back(callInst);
                }
                else if(callInst->getCalledFunction() &&
-                       callInst->getCalledFunction()->getName().find("kmp") != std::string::npos)
+                       openmp_task::IsRuntimeFunction(callInst->getCalledFunction()->getName().str()))
                {
                   deleteList.push_back(callInst);
                }
@@ -179,9 +181,13 @@ namespace
          builder.CreateCall(called, args);
       }
 
-      for(auto& I : deleteList)
+      for(auto it = deleteList.rbegin(); it != deleteList.rend(); ++it)
       {
-         I->eraseFromParent();
+         if(!(*it)->use_empty())
+         {
+            llvm::report_fatal_error("Unsupported use of an OpenMP runtime result during task lowering");
+         }
+         (*it)->eraseFromParent();
       }
    }
 
@@ -203,7 +209,8 @@ namespace
                {
                   continue;
                }
-               if(callInst->getCalledFunction()->getName().find(Constants::injectedTaskNamePreifx) != std::string::npos)
+               if(callInst->getCalledFunction()->getName().str().compare(0, Constants::injectedTaskNamePreifx.size(),
+                                                                         Constants::injectedTaskNamePreifx) == 0)
                {
                   Utils::log(errs(), 2, 1, "got", callInst->getCalledFunction()->getName());
                   Value* lambdaFn = callInst->getArgOperand(1);
@@ -275,6 +282,10 @@ namespace
       }
 
       FunctionType* NewFuncType = FunctionType::get(F->getReturnType(), argTypes, F->isVarArg());
+      if(M->getFunction(Constants::taskGraphName))
+      {
+         llvm::report_fatal_error("The name task_graph is reserved for the extracted OpenMP task graph");
+      }
       Function* newFunction = Function::Create(NewFuncType, F->getLinkage(), Constants::taskGraphName, M);
 
       ValueToValueMapTy vMap;
@@ -337,12 +348,12 @@ namespace
             }
             const auto fnName = F.getName().str();
 
-            if(fnName.find(Constants::targetTaskEntryNamePrefix) != std::string::npos &&
+            if(openmp_task::IsFrontendTaskEntry(fnName) &&
                fnName.find(Constants::targetTransformedTaskEntryNameSuffix) != std::string::npos)
             {
                taskFunctions.push_back(&F);
             }
-            if(fnName.find(Constants::targetOmpOutlinedFnNamePrefix) != std::string::npos &&
+            if(openmp_task::IsOutlinedFunction(fnName) &&
                fnName.find(Constants::bambuHostReservedFnName) == std::string::npos)
             {
                outlinedFunctions.push_back(&F);
@@ -364,7 +375,7 @@ namespace
             {
                continue;
             }
-            if(F.getName().find(Constants::taskGraphName) != std::string::npos)
+            if(openmp_task::IsGraphEntry(F.getName().str()))
             {
                simplifyInstrumentation(F);
             }

@@ -153,7 +153,7 @@ DesignFlowStep_Status OMPCGExt::InternalExec()
 
    const bool use_tasks = openmp_task::IsEnabled(*parameters);
    const auto task_entry_name = function_behavior->CGetBehavioralHelper()->GetFunctionName();
-   if(use_tasks && task_entry_name.find("omp_task_entry") != std::string::npos && !function_behavior->GetOMPInfo())
+   if(use_tasks && openmp_task::IsTaskEntry(task_entry_name) && !function_behavior->GetOMPInfo())
    {
       // A task entry owns an independent call graph, just like an outlined
       // OpenMP core. OMPLowering clones callees and propagates this context,

@@ -203,6 +203,7 @@ enum CompilerMode : int64_t
    CM_DEDUPLICATE_LOAD_INST = 1LL << 29,  // Use deduplicate load instructions plugin
    CM_OPENMP_TASK_EXTRACTION = 1LL << 30, // Use the OpenMP task graph extractor plugin
    CM_DCE = 1LL << 31,                    // Use the dce plugin
+   CM_OPENMP_TASK_DETECTION = 1LL << 33,  // Detect runtime task calls before choosing the OpenMP flow
    CM_OPENMP_SIMPLIFY_ARGS = 1LL << 32,   // Use the OpenMP argument simplify plugin
 };
 
@@ -490,7 +491,7 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    std::string real_filename = input_filename;
    std::string load_prefix = "";
    std::string command;
-   const auto load_and_run_plugin = [&](const std::string& plugin_name, bool generateIr = false) {
+   const auto load_and_run_plugin = [&](const std::string& plugin_name) {
       if(cm & CM_COMPILER_STD)
       {
          load_prefix += SCRIPT_NEWLINE + load_plugin(plugin_name);
@@ -498,10 +499,6 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       else
       {
          load_prefix += SCRIPT_NEWLINE + load_plugin_opt(plugin_name);
-         if(generateIr)
-         {
-            load_prefix += SCRIPT_NEWLINE + std::string("-S");
-         }
          passes.add_pass(plugin_name);
       }
    };
@@ -536,13 +533,16 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       load_prefix += compiler.llvm_opt + " -S";
       load_and_run_plugin(COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN);
    }
+   else if(cm & CM_OPENMP_TASK_DETECTION)
+   {
+      load_prefix += compiler.llvm_opt;
+      load_and_run_plugin(COMPILER_OPENMP_TASK_PLUGIN);
+      load_prefix +=
+          SCRIPT_NEWLINE + std::string("-task-detect-only -outputdir=\"") + output_temporary_directory + "\"";
+   }
    else if(cm & CM_OPENMP_TASK_EXTRACTION)
    {
-      unsigned resourceDuplicationCount = 1U;
-      if(Param->IsParameter("task-resource-duplication"))
-      {
-         resourceDuplicationCount = Param->GetParameter<unsigned>("task-resource-duplication");
-      }
+      const auto resourceDuplicationCount = Param->getOption<unsigned>(OPT_task_resource_duplication);
       load_prefix += compiler.llvm_opt + " -S";
       load_and_run_plugin(COMPILER_OPENMP_TASK_PLUGIN);
       load_prefix += STR(SCRIPT_NEWLINE) + "-resource-duplication=" + STR(resourceDuplicationCount);
@@ -812,7 +812,9 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
 
    const auto compiler = GetCompiler();
    const auto multi_source = source_files.size() > 1;
-   const auto enable_LTO = multi_source;
+   const bool isOpenmp = Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp);
+   const auto enable_LTO = multi_source || isOpenmp;
+   Param->SetOpenMPTaskGraphDetected(false);
    const auto compile_only = Param->isOption(OPT_cc_S) && Param->getOption<bool>(OPT_cc_S);
    const auto preprocess_only = Param->isOption(OPT_cc_E) && Param->getOption<bool>(OPT_cc_E);
    const auto optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
@@ -850,13 +852,9 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       {
          flags |= CM_OPT_CUSTOMSROA;
       }
-      if(multi_source)
+      if(enable_LTO)
       {
          flags |= CM_LTO_FLAG;
-         if(!enable_LTO)
-         {
-            flags |= CM_OPT_DUMPBAMBUIR;
-         }
       }
       else
       {
@@ -874,10 +872,13 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       const auto obj_file = ((compile_only || preprocess_only) && Param->isOption(OPT_output_file)) ?
                                 Param->getOption<std::string>(OPT_output_file) :
                                 unique_path(output_temporary_directory + "/" + leaf_name + ".%%%%%%.o").string();
-      const auto is_llvmir = std::filesystem::path(source_file).extension() == ".ll";
-      const auto local_compiler_mode = (is_llvmir ? CM_COMPILER_OPT : CM_COMPILER_STD) | compiler_mode;
+      const auto source_extension = std::filesystem::path(source_file).extension();
+      const auto is_llvmir = source_extension == ".ll" || source_extension == ".bc";
+      const auto local_compiler_mode = is_llvmir ?
+                                           CM_COMPILER_OPT | (compiler_mode & ~(CM_ANALYZER_ALL | CM_LTO_FLAG)) :
+                                           CM_COMPILER_STD | compiler_mode;
       auto local_compiler_parameters = is_llvmir ? "" : frontend_compiler_parameters;
-      if(Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp))
+      if(!is_llvmir && isOpenmp)
       {
          local_compiler_parameters += " -fopenmp ";
       }
@@ -908,9 +909,28 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       std::string lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.bc";
       CompileFile(lto_source, lto_obj, "", passes, CM_COMPILER_LTO, "");
 
-      const bool isOpenmp = Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp);
-      const bool useTask = openmp_task::IsEnabled(*Param);
-      if(isOpenmp && useTask)
+      if(isOpenmp && compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG19)
+      {
+         const auto detection_file = std::filesystem::path(output_temporary_directory) / openmp_task::DetectionFilename;
+         std::filesystem::remove(detection_file);
+         auto detection_source = lto_obj;
+         CompileFile(detection_source, output_temporary_directory + "/task-detected.bc", "", passes,
+                     CM_OPENMP_TASK_DETECTION, costTable);
+         std::ifstream detection(detection_file);
+         std::string result;
+         unsigned detectedPointerBits = 0;
+         if(!(detection >> result >> detectedPointerBits) || (result != "tasks" && result != "ordinary"))
+         {
+            THROW_ERROR("OpenMP task detection did not produce a valid result");
+         }
+         if(result == "tasks" && detectedPointerBits != CGetPointerSize(Param))
+         {
+            THROW_ERROR_USAGE(
+                "LLVM task input pointer width differs from the selected target; specify matching -m32/-m64 options");
+         }
+         Param->SetOpenMPTaskGraphDetected(result == "tasks");
+      }
+      if(openmp_task::IsEnabled(*Param))
       {
          if(compiler_target != CompilerWrapper_CompilerTarget::CT_I386_CLANG19)
          {

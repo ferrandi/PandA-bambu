@@ -80,15 +80,15 @@ namespace
             return false;
          }
          StringRef name = callee->getName();
-         if(flag == OPEN_FLAG && name.data() == targetOmpTaskAllocName)
+         if(flag == OPEN_FLAG && name == targetOmpTaskAllocName)
          {
             return true;
          }
-         else if(flag == CLOSE_FLAG_WITH_DEPS && name.data() == targetOmpTaskSubmissionDepsName)
+         else if(flag == CLOSE_FLAG_WITH_DEPS && name == targetOmpTaskSubmissionDepsName)
          {
             return true;
          }
-         else if(flag == CLOSE_FLAG && name.data() == targetOmpTaskSubmissionName)
+         else if(flag == CLOSE_FLAG && name == targetOmpTaskSubmissionName)
          {
             return true;
          }
@@ -119,8 +119,7 @@ namespace
          std::map<Value*, LoadInst*> uniqueLoads;
          std::vector<Instruction*> toRemove;
 
-         if(F.getName().str().find(Bambu::OpenMP::Task::Constants::targetOmpOutlinedFnNamePrefix) ==
-                std::string::npos ||
+         if(!openmp_task::IsOutlinedFunction(F.getName().str()) ||
             F.getName().find(Bambu::OpenMP::Task::Constants::bambuHostReservedFnName) != std::string::npos)
          {
             return PreservedAnalyses::all();

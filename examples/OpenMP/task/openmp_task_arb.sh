@@ -2,7 +2,7 @@
 script_dir="$(dirname "$(readlink -e "$0")")"
 ggo_require_compiler=1
 
-BATCH_ARGS=("--std=c++17" "-lm" "-fopenmp" "--compiler=I386_CLANG19" "--simulate" "--bambu-parameter=enable-task=1" "--generate-interface=INFER" "--max-sim-cycles=10000000")
+BATCH_ARGS=("--std=c++17" "-lm" "-fopenmp" "--compiler=I386_CLANG19" "--simulate" "--generate-interface=INFER" "--max-sim-cycles=10000000")
 OUT_SUFFIX="openmp_task_arb"
 
 python3 "$script_dir/../../../etc/scripts/mantis.py" --tool=bambu  \

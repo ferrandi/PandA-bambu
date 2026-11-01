@@ -23,7 +23,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='bambu-task-passes-') as directory:
         work = Path(directory)
 
-        def transform(name, source, pipeline, expected_error=None):
+        def transform(name, source, pipeline, expected_error=None, extra=()):
             source_file = work / (name + '.ll')
             output = work / (name + '.out.ll')
             source_file.write_text(source)
@@ -31,7 +31,7 @@ def main():
                       'openmpTask': 'opt_openmpTask.so'}[pipeline]
             result = subprocess.run(
                 [args.opt, '-load-pass-plugin=' + str(args.plugin_dir / plugin),
-                 '-passes=' + pipeline, '-verify-each', '-S', str(source_file), '-o', str(output)],
+                 '-passes=' + pipeline, '-verify-each', '-S', str(source_file), '-o', str(output), *extra],
                 cwd=work, text=True, capture_output=True)
             if expected_error:
                 if result.returncode == 0 or expected_error not in result.stderr:
@@ -95,11 +95,15 @@ def main():
             }
         ''', 'deduplicateLoadInst')
         for name, source, message in [
-            ('pointer_width', 'target datalayout = "e-p:64:64"\n', 'requires 32-bit pointers'),
+            ('pointer_width', 'target datalayout = "e-p:128:128"\n', 'supports 32-bit and 64-bit pointers'),
             ('taskwait', '''target datalayout = "e-p:32:32"
                 declare void @__kmpc_omp_taskwait()
                 define void @f() { call void @__kmpc_omp_taskwait() ret void }
             ''', 'does not support __kmpc_omp_taskwait'),
+            ('no_parallel_region', '''target datalayout = "e-p:64:64"
+                declare ptr @__kmpc_omp_task_alloc()
+                define void @fn() { %p = call ptr @__kmpc_omp_task_alloc() ret void }
+            ''', 'No supported parallel task region'),
             ('indirect_call', '''target datalayout = "e-p:32:32"
                 define void @kernel.omp_outlined(ptr %callback) {
                     call void %callback()
@@ -108,13 +112,26 @@ def main():
             ''', 'does not support indirect calls'),
         ]:
             transform(name, source + metadata, 'openmpTask', message)
+        # Detection depends on actual calls, not declarations or user names.
+        for bits in (32, 64):
+            for name, body, expected in [
+                ('user_name', 'define void @build_task_graph() { ret void }', 'ordinary'),
+                ('declaration', 'declare ptr @__kmpc_omp_task_alloc()', 'ordinary'),
+                ('runtime_call', 'declare ptr @__kmpc_omp_task_alloc()\n'
+                 'define void @f() { %p = call ptr @__kmpc_omp_task_alloc() ret void }', 'tasks'),
+            ]:
+                transform(f'detect_{bits}_{name}', f'target datalayout = "e-p:{bits}:{bits}"\n' + body,
+                          'openmpTask', extra=('-task-detect-only',))
+                if (work / 'openmp-task-detected.txt').read_text().split() != [expected, str(bits)]:
+                    raise RuntimeError(f'Incorrect task detection for {name}/{bits}')
+
         root = Path(__file__).resolve().parents[3]
         config = Path(args.opt).with_name('llvm-config-19')
         flags = shlex.split(subprocess.check_output(
             [str(config), '--cxxflags', '--ldflags', '--libs', 'support', '--system-libs'], text=True))
         topology = work / 'topology'
         subprocess.run([args.cxx, '-DPANDA_CLANG_MAJOR=19', '-DNDEBUG',
-                        '-I' + str(root / 'etc/clang_plugin'), '-I' + str(root / 'ext/pugixml/src'),
+                        '-I' + str(root / 'etc/clang_plugin'), '-I' + str(root / 'src/constants'), '-I' + str(root / 'ext/pugixml/src'),
                         str(Path(__file__).with_name('topology.cpp')), '-o', str(topology), *flags], check=True)
         subprocess.run([str(topology)], check=True)
         cyclic = subprocess.run([str(topology), 'cycle'], capture_output=True, text=True)

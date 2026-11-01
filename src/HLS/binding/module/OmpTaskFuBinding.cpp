@@ -60,6 +60,7 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 
+#include "CompilerWrapper.hpp"
 #include "openmp_task_constants.hpp"
 
 #include <cstddef>
@@ -67,16 +68,9 @@
 #include <limits>
 #include <string>
 
-PANDA_REGISTER_PARAMETER("enable-task", PandaParamType::Bool, "0", "Enable OpenMP task graph extraction", "openmp");
-
-PANDA_REGISTER_PARAMETER("task-resource-duplication", PandaParamType::UInt, "1",
-                         "Number of instances of each task resource", "openmp");
-
 const OmpTaskFuBinding::task_names OmpTaskFuBinding::name_dict = {
     "Arbiter_connection_interface", "Simple_arbiter_connection_interface", "Banked_memory_connection_interface",
     "task_entry", "duplicated"};
-
-const unsigned OmpTaskFuBinding::ptr_size = 32U;
 
 const std::string OmpTaskFuBinding::lambda_module_param_port_prefix = "Pd";
 
@@ -192,12 +186,15 @@ std::string OmpTaskFuBinding::rm_name_prefix = "RM_";
 
 std::string OmpTaskFuBinding::final_join_name = "final_join";
 
-unsigned OmpTaskFuBinding::param_port_size = 32;
-
 OmpTaskFuBinding::OmpTaskFuBinding(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id,
                                    const ParameterConstRef _parameters)
     : fu_binding(_HLSMgr, _function_id, _parameters), closing_nodes(0)
 {
+   ptr_size = static_cast<unsigned>(CompilerWrapper::CGetPointerSize(_parameters));
+   if(ptr_size != 32 && ptr_size != 64)
+   {
+      THROW_ERROR_USAGE("OpenMP tasks support 32-bit and 64-bit pointers");
+   }
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
@@ -308,17 +305,14 @@ void OmpTaskFuBinding::parse_lambda_modules()
       entry_names.insert(n.second.task_name);
    }
 
-   unsigned resource_duplication_count = 1U;
-   if(parameters->IsParameter("task-resource-duplication"))
-   {
-      resource_duplication_count = parameters->GetParameter<unsigned>("task-resource-duplication");
-   }
+   const auto resource_duplication_count = parameters->getOption<unsigned>(OPT_task_resource_duplication);
 
    THROW_ASSERT(resource_duplication_count > 0U, "Task resource duplication must be positive");
    for(const auto& m : hls_params.modules)
    {
       const auto id = m->get_typeRef()->id_type;
-      if(id.find(name_dict.lambda_prefix) != std::string::npos)
+      const auto task_type = id.compare(0, 2, "p_") == 0 ? id.substr(1) : id;
+      if(openmp_task::IsTaskEntry(task_type))
       {
          hls_params.lambda_modules.push_back(m);
          if(id.find(name_dict.duplicated_fu_name_token) == std::string::npos)
@@ -544,6 +538,12 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
    // Get the root element
    pugi::xml_node graph = doc.child("graph");
    THROW_ASSERT(graph, "No graph element found");
+   const auto graph_pointer_bits = read_number(graph, "pointer_bits");
+   if(graph_pointer_bits != ptr_size)
+   {
+      THROW_ERROR_USAGE(
+          "OpenMP task graph pointer width differs from the configured target; use matching -m32/-m64 options");
+   }
 
    // Parse nodes
    unsigned node_counter = 0;
@@ -584,7 +584,7 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
             const unsigned offset = read_number(input_element, "offset", true);
             // TODO: Use this param
             // const int bitSize = std::stoi(inputElement.attribute("bit_size").value());
-            const unsigned bit_size = OmpTaskFuBinding::param_port_size;
+            const unsigned bit_size = ptr_size;
 #ifdef REMOVE_OUTLINED_GEP
             if(visited_inputs.find(base_ref) == visited_inputs.end())
             {
@@ -602,7 +602,7 @@ void OmpTaskFuBinding::parse_xml(const std::string& file_name)
             const unsigned offset = read_number(input_element, "value", true);
             // TODO: Use this param
             // const int bitSize = std::stoi(inputElement.attribute("bit_size").value());
-            const unsigned bit_size = OmpTaskFuBinding::param_port_size;
+            const unsigned bit_size = 32U;
             inputs.push_back({param_type, base_ref, offset, bit_size});
          }
          if(id.empty() || nodes.count(id))

@@ -7,6 +7,21 @@ on:
         description: "Bambu AppImage package name"
         required: true
         type: string
+      simulator:
+        description: "Simulator for task co-simulation"
+        required: false
+        type: string
+        default: MODELSIM
+      no-clean:
+        description: "Retain successful task workdirs for debugging"
+        required: false
+        type: boolean
+        default: false
+      runner-labels:
+        description: "JSON runner labels; callers retain their simulator runner pool"
+        required: false
+        type: string
+        default: '["self-hosted", "long", "xilinx"]'
     secrets:
       CI_STORAGE_URL:
         required: true
@@ -22,18 +37,18 @@ env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
-  host_jobs: $J
   dist-dir: panda_dist
 
 jobs:
   openmp-base-tests:
-    runs-on: [self-hosted, long, xilinx]
+    runs-on: ${{fromJSON(inputs.runner-labels)}}
     timeout-minutes: 600
     env:
       basename: openmp-base
       args:
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         include:
           - basename: task_arbiter
@@ -53,6 +68,15 @@ jobs:
         uses: actions/checkout@v5
         with:
           submodules: 'true'
+      - name: Check priority encoder implementations
+        if: matrix.basename == 'task_arbiter'
+        shell: bash
+        run: |
+          if command -v verilator >/dev/null 2>&1; then
+            python3 panda_regressions/verilog/priority_encoder/test_priority_encoders.py
+          else
+            echo "::warning::Priority encoder regression skipped: Verilator is unavailable"
+          fi
       - name: Download PandA distribution
         uses: ./.github/actions/storage-download
         with:
@@ -70,28 +94,17 @@ jobs:
       - name: Launch test batch
         id: batch
         shell: bash
-        run: |
-          source ${{env.dist-dir}}/settings.sh
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          test_dir="test_out"
-          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
-          IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
-          for configuration in "${configurations[@]}"
-          do
-            unset device
-            unset period
-            unset args
-            rm -rf $test_dir
-            IFS='_ ' read device period args <<< "$configuration"
-            echo "::group::Run for ${device} at ${period} ${args[@]/#/'with additional args '}"
-            IFS=' ' read -r -a args <<< "$args"
-            config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
-            config_out="$out_dir/$config_name"
-            mkdir -p "$config_out"
-            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --summary="$config_out/perf.xml" -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
-            echo "::endgroup::"
-          done
+        env:
+          OPENMP_BATCH_SCRIPT: ${{matrix.script}}
+          OPENMP_BATCH_CONFIGURATIONS: ${{matrix.batch}}
+          OPENMP_REPORT_DIR: ${{env.report-dir}}
+          OPENMP_DIST_DIR: ${{env.dist-dir}}
+          OPENMP_EXTRA_ARGS: -c=--simulator=${{inputs.simulator}} ${{inputs.no-clean && '--no-clean' || ''}} ${{env.args}} ${{matrix.args}}
+        run: bash .github/scripts/run-openmp-batch.sh
+      - name: Collect post-mortem data
+        if: ${{failure()}}
+        shell: bash
+        run: bash .github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
       - name: Upload test reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
