@@ -1747,6 +1747,22 @@ namespace llvm
 #endif
          }
 
+         for(const auto& F : M)
+         {
+            for(const auto& BB : F)
+            {
+               for(const auto& I : BB)
+               {
+                  const auto* call = dyn_cast<CallInst>(&I);
+                  const auto* target = call ? call->getCalledFunction() : nullptr;
+                  if(target && target->getName() == "__kmpc_omp_task_alloc")
+                  {
+                     llvm::report_fatal_error("OpenMP tasks require the LLVM19 frontend (--compiler=I386_CLANG19)");
+                  }
+               }
+            }
+         }
+
          auto default_nt = llvm::ConstantInt::get(M.getContext(), llvm::APInt(32, dflt_nthreads));
          std::set<Function*> ompOutlinedList;
          std::map<Function*, std::set<uint64_t>> argToPromote;

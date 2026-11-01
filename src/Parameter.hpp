@@ -88,7 +88,8 @@ class xml_element;
        verilator)(verilator_timescale_override)(synopsys_vcs_root)(synopsys_vcs_home)(altera_root)(quartus_settings)(  \
        quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(shared_input_registers)(           \
        inline_functions)(function_constraints)(resource_constraints)(axi_burst_type)(generate_components)(             \
-       bus_pipelined)(bus_arbiter_type)(bus_architecture)(backend_pipeline)
+       bus_pipelined)(bus_arbiter_type)(bus_architecture)(backend_pipeline)(priority_encoder)(                         \
+       task_resource_duplication)
 
 #define FRAMEWORK_OPTIONS                                                                                          \
    (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(                \
@@ -247,6 +248,8 @@ class Parameter
 
    /// Map between an enum option and the related string-form value
    CustomMap<enum enum_option, std::string> enum_options;
+
+   mutable bool openmp_task_graph_detected = false;
 
    /// Name of the enum options
    static const CustomMap<enum enum_option, std::string> option_name;
@@ -567,6 +570,16 @@ class Parameter
    {
       THROW_ASSERT(bambu_parameters.find(name) != bambu_parameters.end(), "Parameter \"" + name + "\" not stored");
       return boost::lexical_cast<G>(bambu_parameters.find(name)->second);
+   }
+
+   void SetOpenMPTaskGraphDetected(bool detected) const
+   {
+      openmp_task_graph_detected = detected;
+   }
+
+   bool HasOpenMPTaskGraph() const
+   {
+      return openmp_task_graph_detected;
    }
 
    void SetPandaParameter(const std::string& name, const std::string& value)

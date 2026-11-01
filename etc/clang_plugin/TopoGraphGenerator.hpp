@@ -61,6 +61,7 @@ namespace Bambu
             using NodeType = std::unordered_map<NodeId, unsigned>;
 
           private:
+            unsigned pointerBits = 0;
             AdjMap adjMap;
             Nodes nodes;
             std::unordered_map<std::string, std::pair<Inputs, ConstInputs>> nodesInputs;
@@ -249,6 +250,11 @@ namespace Bambu
                topModuleInputs = _topModuleInputs;
             }
 
+            void setPointerBits(unsigned bits)
+            {
+               pointerBits = bits;
+            }
+
             void setTaskEntries(std::vector<std::string> const& _taskEntriesNames)
             {
                taskEntriesNames = _taskEntriesNames;
@@ -275,6 +281,7 @@ namespace Bambu
 
                // Create root element <graph>
                pugi::xml_node graph = doc.append_child("graph");
+               graph.append_attribute("pointer_bits") = pointerBits;
 
                // Create <nodes> section
                pugi::xml_node xml_nodes = graph.append_child("nodes");

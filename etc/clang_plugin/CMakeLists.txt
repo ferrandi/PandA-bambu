@@ -37,6 +37,7 @@ set(_panda_plugin_common_includes
    "${_panda_plugin_sources_dir}"
    "${CMAKE_SOURCE_DIR}/etc/libopenmp"
    "${CMAKE_SOURCE_DIR}/src/IR"
+   "${CMAKE_SOURCE_DIR}/src/constants"
 )
 
 set(_panda_plugin_buddy_lib "")
