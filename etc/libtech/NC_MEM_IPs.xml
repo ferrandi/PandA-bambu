@@ -10944,7 +10944,7 @@ reg [(PORTSIZE_address_inw*BITSIZE_address_inw)+(-1):0] address_inw1;
 wire [(PORTSIZE_address_inr*BITSIZE_address_inr)+(-1):0] address_inr_mem;
 reg [(PORTSIZE_address_inr*BITSIZE_address_inr)+(-1):0] address_inr1;
 
-reg [BITSIZE_read_selector-1:0] live_value_table [0:n_elements-1] /* synthesis syn_ramstyle = &quot;registers,no_rw_check&quot; */;
+(* ram_style = &quot;registers&quot; *) reg [BITSIZE_read_selector-1:0] live_value_table [0:n_elements-1] /* synthesis syn_ramstyle = &quot;registers,no_rw_check&quot; */;
 integer index, i1;
 
 initial
