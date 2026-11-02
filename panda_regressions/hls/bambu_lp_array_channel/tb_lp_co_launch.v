@@ -37,7 +37,9 @@ module tb_lp_co_launch;
 
    always #5 clock = ~clock;
    integer cycle = 0, count = 0, errors = 0, stalls = 0, started = 0, start_cycle = 0;
+   integer stall_cycles = 0;
    integer first_output_cycle = -1;
+   wire stall = dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.selector_stallable_fus;
    always @(negedge clock) begin
       if(!reset || BP_MODE == 0) out_full_n = 1;
       else if(BP_MODE == 1) out_full_n = (cycle % 5) < 2;
@@ -46,6 +48,7 @@ module tb_lp_co_launch;
    always @(posedge clock) begin
       cycle = cycle + 1;
       if(reset && started && !out_full_n && !done_port) stalls = stalls + 1;
+      if(reset && started && !out_full_n && stall === 1'b1) stall_cycles = stall_cycles + 1;
       if(reset && started && out_write && out_full_n) begin
          if(count >= 16 || out_din !== count) begin
             errors = errors + 1;
@@ -67,6 +70,7 @@ module tb_lp_co_launch;
       else if(BP_MODE && !stalls) $display("INCONCLUSIVE [BP=%0d] no stall", BP_MODE);
       else $display("PASS [BP=%0d] writes=%0d return=%0d latency=%0d stalls=%0d", BP_MODE, count,
                     return_port, cycle - start_cycle, stalls);
+      if(BP_MODE != 0) $display("STALLABLE_STALL_ORACLE stall_cycles=%0d", stall_cycles);
       $finish;
    end
    initial begin #(MAX_CYCLE * 20); $display("FAIL [BP=%0d] watchdog", BP_MODE); $finish; end

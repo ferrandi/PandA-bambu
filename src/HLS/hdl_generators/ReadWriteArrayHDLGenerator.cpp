@@ -38,6 +38,8 @@
 #include "math_function.hpp"
 #include "structural_objects.hpp"
 
+#include <algorithm>
+
 enum in_port
 {
    i_clock = 0,
@@ -78,9 +80,13 @@ void ReadWriteArrayHDLGenerator::InternalExec(std::ostream& out, structural_obje
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_fname);
    THROW_ASSERT(func_arch, "Expected function architecture for function " + top_fname);
    const auto isAlignedPowerOfTwo = _ports_in[i_in4].alignment == ceil_pow2(_ports_in[i_in4].alignment);
+   const auto stall_port =
+       std::find_if(_ports_in.begin(), _ports_in.end(), [](const auto& port) { return port.name == STALL_PORT_NAME; });
+   const auto request =
+       _ports_in[i_start].name + "[0]" + (stall_port == _ports_in.end() ? "" : " & ~" + stall_port->name);
 
    out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
-   out << "assign " << _ports_out[o_ce].name << " = " << _ports_in[i_start].name << "[0];\n";
+   out << "assign " << _ports_out[o_ce].name << " = " << request << ";\n";
 
    if(isAlignedPowerOfTwo)
    {
@@ -103,9 +109,8 @@ void ReadWriteArrayHDLGenerator::InternalExec(std::ostream& out, structural_obje
 
    if(_ports_out.size() > o_d)
    {
-      out << "assign " << _ports_out[o_we].name << " = " << _ports_in[i_start].name << "[0] & (|"
-          << _ports_in[i_in1].name << "[BITSIZE_" << _ports_in[i_in1].name << "*0+:BITSIZE_" << _ports_in[i_in1].name
-          << "]);\n";
+      out << "assign " << _ports_out[o_we].name << " = " << request << " & (|" << _ports_in[i_in1].name << "[BITSIZE_"
+          << _ports_in[i_in1].name << "*0+:BITSIZE_" << _ports_in[i_in1].name << "]);\n";
       out << "assign " << _ports_out[o_d].name << " = " << _ports_in[i_in3].name << "[BITSIZE_" << _ports_in[i_in3].name
           << "*0+:BITSIZE_" << _ports_in[i_in3].name << "];\n";
    }

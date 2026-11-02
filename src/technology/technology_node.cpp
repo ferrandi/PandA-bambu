@@ -421,6 +421,78 @@ technology_nodeRef functional_unit::get_operation(const std::string& op_name) co
    return i->second;
 }
 
+bool functional_unit::is_stallable(const functional_unit* template_fu) const
+{
+   const auto attribute_it = attributes.find("Stallable");
+   if(attribute_it == attributes.end())
+   {
+      return template_fu && template_fu != this ? template_fu->is_stallable() : false;
+   }
+
+   const auto& stallable = attribute_it->second;
+   if(stallable->get_value_type() != attribute::BOOLEAN)
+   {
+      THROW_ERROR("Invalid Stallable property for functional unit " + functional_unit_name +
+                  ": expected a boolean attribute");
+   }
+
+   const auto& value = stallable->get_content_str();
+   if(value == "1" || value == "true")
+   {
+      return true;
+   }
+   if(value == "0" || value == "false")
+   {
+      return false;
+   }
+   THROW_ERROR("Invalid Stallable property for functional unit " + functional_unit_name +
+               ": expected true, false, 1, or 0");
+   return false;
+}
+
+void functional_unit::remove_metadata_only_placeholder_operation()
+{
+   THROW_ASSERT(XML_description, "Cannot validate metadata-only FU without its source XML: " + functional_unit_name);
+   const auto* fu_xml = GetPointer<const xml_element>(XML_description);
+   THROW_ASSERT(fu_xml, "Source XML for metadata-only FU is not an element: " + functional_unit_name);
+
+   for(const auto& child : fu_xml->get_children())
+   {
+      const auto* element = GetPointer<const xml_element>(child);
+      if(element && element->get_name() == "operation")
+      {
+         THROW_ERROR("Metadata-only FU " + functional_unit_name + " explicitly declares an operation");
+      }
+      if(element && element->get_name() == "template")
+      {
+         THROW_ERROR("Metadata-only FU " + functional_unit_name + " explicitly declares a template");
+      }
+   }
+   if(!fu_template_name.empty())
+   {
+      THROW_ERROR("Metadata-only FU " + functional_unit_name + " explicitly declares a template");
+   }
+   if(list_of_operation.size() != 1)
+   {
+      THROW_ERROR("Metadata-only FU " + functional_unit_name +
+                  " has operations other than xload's synthetic default operation");
+   }
+
+   const auto* placeholder = GetPointer<const operation>(list_of_operation.front());
+   const bool is_default_placeholder = placeholder && placeholder->get_name() == functional_unit_name &&
+                                       !placeholder->time_m && !placeholder->commutative && placeholder->bounded &&
+                                       !placeholder->primary_inputs_registered &&
+                                       placeholder->supported_types.empty() && placeholder->pipe_parameters.empty() &&
+                                       placeholder->portsize_parameters.empty();
+   if(!is_default_placeholder)
+   {
+      THROW_ERROR("Metadata-only FU " + functional_unit_name +
+                  " has operations other than xload's synthetic default operation");
+   }
+   list_of_operation.clear();
+   op_name_to_op.clear();
+}
+
 void functional_unit::xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param)
 {
 #ifndef NDEBUG
@@ -607,6 +679,18 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
 #endif
       else if(EnodeC->get_name() == "attribute")
       {
+         const auto* attribute_name = EnodeC->get_attribute("name");
+         if(attribute_name && attribute_name->get_value() == "Stallable")
+         {
+            if(!EnodeC->get_attribute("value_type"))
+            {
+               THROW_ERROR("Stallable property is missing its value_type");
+            }
+            if(!EnodeC->get_child_text())
+            {
+               THROW_ERROR("Stallable property is missing its boolean value");
+            }
+         }
          attribute::xload(EnodeC, ordered_attributes, attributes);
          if(attributes.find("clock_period") != attributes.end())
          {
@@ -622,6 +706,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
          THROW_ERROR("functional_unit - not yet supported: " + EnodeC->get_name());
       }
    }
+
+   is_stallable();
 
    for(const auto& iter_int : list_int)
    {

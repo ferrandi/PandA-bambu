@@ -713,6 +713,25 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index, unsig
    return GetPointerS<operation>(op_node)->is_bounded();
 }
 
+bool AllocationInformation::is_stallable(unsigned int fu_name) const
+{
+   const auto* fu = GetPointerS<const functional_unit>(get_fu(fu_name));
+   const functional_unit* template_fu = nullptr;
+   if(!fu->fu_template_name.empty())
+   {
+      const auto TM = HLS_D->get_technology_manager();
+      const auto library = TM->get_library(fu->fu_template_name);
+      const auto template_node = TM->get_fu(fu->fu_template_name, library);
+      THROW_ASSERT(template_node, "Missing template " + fu->fu_template_name + " for " + fu->functional_unit_name);
+      const auto* fu_template = GetPointer<const functional_unit_template>(template_node);
+      THROW_ASSERT(fu_template && fu_template->FU,
+                   "Malformed functional unit template " + fu->fu_template_name + " for " + fu->functional_unit_name);
+      template_fu = GetPointer<const functional_unit>(fu_template->FU);
+      THROW_ASSERT(template_fu, "Template backing node is not a functional unit: " + fu->fu_template_name);
+   }
+   return fu->is_stallable(template_fu);
+}
+
 bool AllocationInformation::is_operation_PI_registered(const OpGraph& g, OpGraph::vertex_descriptor op,
                                                        unsigned int fu_type) const
 {

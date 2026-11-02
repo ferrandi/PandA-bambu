@@ -2042,7 +2042,8 @@ DesignFlowStep_Status allocation::InternalExec()
                         {
                            break;
                         }
-                        if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME && port_name != START_PORT_NAME)
+                        if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME &&
+                           port_name != START_PORT_NAME && port_name != STALL_PORT_NAME)
                         {
                            ++firstIndexToSpecialize;
                         }

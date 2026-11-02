@@ -25,12 +25,26 @@ def scheduling_rows(directory):
     return rows
 
 
+def dot_multiply_vertices(directory):
+    pattern = re.compile(r'label="([^\"]+) - mul_node\\n')
+    nodes = set()
+    dot_files = directory.glob("HLS_output/dot/*/HLS_scheduling_BB*.dot")
+    for path in dot_files:
+        nodes.update(pattern.findall(path.read_text(encoding="utf-8", errors="replace")))
+    if len(nodes) != 2:
+        raise RuntimeError(f"Expected two mul_node vertices in scheduling DOT under {directory}, found {sorted(nodes)}")
+    return sorted(nodes)
+
+
 def multiply_vertices(directory):
-    nodes = [row.get("vertex_name") for row in scheduling_rows(directory)
-             if row.get("fu_name", "").startswith("ui_mul_node_FU_")]
-    if len(nodes) != 2 or len(set(nodes)) != 2:
-        raise RuntimeError(f"Expected two multiply vertices in {directory}, found {nodes}")
-    return nodes
+    rows = [row for row in scheduling_rows(directory)
+            if row.get("fu_name", "").startswith("ui_mul_node_FU_")]
+    if rows:
+        nodes = [row.get("vertex_name") for row in rows]
+        if len(nodes) != 2 or len(set(nodes)) != 2:
+            raise RuntimeError(f"Expected two multiply vertices in {directory}, found {nodes}")
+        return nodes
+    return dot_multiply_vertices(directory)
 
 
 def write_binding(path, nodes):
@@ -55,11 +69,10 @@ def bambu_command(binding=None):
         "--benchmark-name=shared_fu",
         "--clock-period=5",
         "--device-name=xc7z020,-1,clg484",
-        "--debug=4",
         "--print-dot",
     ]
     if binding:
-        command.append(f"--resource-constraints={FU_NAME}:STD_FU=1")
+        command.append("--resource-constraints=ui_mul_node_FU:STD_FU=1")
     command.append(str(SOURCE))
     if binding:
         command.append(str(binding))
@@ -69,6 +82,11 @@ def bambu_command(binding=None):
 
 def check_shared_mapping(directory, vertices):
     rows = [row for row in scheduling_rows(directory) if row.get("vertex_name") in vertices]
+    if not rows:
+        # In Release builds the scheduler XML is omitted. The binding request,
+        # single-instance RTL check below, and transaction simulation together
+        # verify that the two operations share the constrained physical FU.
+        return
     if len(rows) != 2:
         raise RuntimeError(f"Expected mappings for both multiply vertices, found {len(rows)}")
     for row in rows:

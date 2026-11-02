@@ -86,6 +86,20 @@ namespace
       target_module->set_multi_unit_multiplicity(multiplicity);
    }
 
+   void copy_stallable_attribute(const functional_unit* source_fu, functional_unit* target_fu)
+   {
+      const auto stallable = source_fu->attributes.find("Stallable");
+      if(stallable != source_fu->attributes.end())
+      {
+         target_fu->attributes["Stallable"] = stallable->second;
+         if(std::find(target_fu->ordered_attributes.begin(), target_fu->ordered_attributes.end(), "Stallable") ==
+            target_fu->ordered_attributes.end())
+         {
+            target_fu->ordered_attributes.push_back("Stallable");
+         }
+      }
+   }
+
    structural_objectRef create_generated_port(const structural_managerRef& CM, const structural_objectRef& top,
                                               const structural_objectRef& source_port,
                                               const port_o::port_direction direction, const unsigned int multiplicity,
@@ -250,7 +264,8 @@ technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name
    {
       const auto curr_port = fu_module->get_in_port(i);
       const auto port_name = curr_port->get_id();
-      if(port_name == CLOCK_PORT_NAME || port_name == RESET_PORT_NAME || port_name == START_PORT_NAME)
+      if(port_name == CLOCK_PORT_NAME || port_name == RESET_PORT_NAME || port_name == START_PORT_NAME ||
+         port_name == STALL_PORT_NAME)
       {
          ++toSkip;
       }
@@ -372,6 +387,7 @@ technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name
       }
       fu->functional_unit_name = new_fu_name;
       fu->CM = CM;
+      copy_stallable_attribute(GetPointerS<const functional_unit>(techNode_obj), fu);
       const auto op_vec = GetPointerS<const functional_unit>(techNode_obj)->get_operations();
       for(const auto& techNode_fu : op_vec)
       {
@@ -411,6 +427,7 @@ technology_nodeRef HDLGeneratorManager::create_generic_module(const std::string&
       const auto fu = GetPointerS<functional_unit>(new_techNode_obj);
       fu->area_m = std::make_shared<area_info>();
       fu->area_m->resources[area_info::AREA] = 0;
+      copy_stallable_attribute(GetPointerS<const functional_unit>(techNode_obj), fu);
       const auto& op_vec = GetPointerS<functional_unit>(techNode_obj)->get_operations();
       for(const auto& techNode_fu : op_vec)
       {

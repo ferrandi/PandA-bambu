@@ -210,20 +210,23 @@ generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir
    return selectors[dir][std::make_pair(elem, op)];
 }
 
-generic_objRef conn_binding::bind_timed_capture(gc_vertex_descriptor op, unsigned int latency, unsigned int bitsize,
-                                                const std::string& operation_name)
+generic_objRef conn_binding::bind_timed_capture(gc_vertex_descriptor op, unsigned int latency, unsigned int capacity,
+                                                unsigned int bitsize, const std::string& operation_name)
 {
+   THROW_ASSERT(latency > 0 && capacity > latency, "Timed capture requires capacity greater than its scheduled delay");
    const auto existing = timed_captures.find(op);
    if(existing != timed_captures.end())
    {
-      THROW_ASSERT(timed_capture_parameters.at(op) == std::make_pair(latency, bitsize),
+      THROW_ASSERT(timed_capture_parameters.at(op).latency == latency &&
+                       timed_capture_parameters.at(op).capacity == capacity &&
+                       timed_capture_parameters.at(op).bitsize == bitsize,
                    "Timed capture metadata changed between FSM start states");
       return existing->second;
    }
    const auto adapter =
        generic_objRef(new generic_obj(generic_obj::CONNECTION_ELEMENT, "timed_capture_" + operation_name));
    timed_captures[op] = adapter;
-   timed_capture_parameters[op] = std::make_pair(latency, bitsize);
+   timed_capture_parameters[op] = {latency, capacity, bitsize};
    return adapter;
 }
 
@@ -238,6 +241,26 @@ void conn_binding::bind_input_hold_group(const generic_objRef selector, const ge
    THROW_ASSERT(selector, "Input hold group requires a launch selector");
    THROW_ASSERT(fu_unit, "Input hold group requires a functional unit");
    input_hold_groups.push_back({selector, fu_unit, {}});
+}
+
+generic_objRef conn_binding::bind_stallable_fu_input(const generic_objRef fu_unit)
+{
+   THROW_ASSERT(fu_unit, "Stallable FU binding requires a unit");
+   if(!stallable_selector)
+   {
+      const auto group = generic_objRef(new generic_obj(generic_obj::CONNECTION_ELEMENT, "stallable_fus"));
+      stallable_selector = bind_selector_port(IN, commandport_obj::SELECTOR, group, 0);
+   }
+   if(std::find(stallable_fu_units.begin(), stallable_fu_units.end(), fu_unit) == stallable_fu_units.end())
+   {
+      stallable_fu_units.push_back(fu_unit);
+   }
+   return stallable_selector;
+}
+
+bool conn_binding::is_stallable_fu_bound(const generic_objRef fu_unit) const
+{
+   return std::find(stallable_fu_units.begin(), stallable_fu_units.end(), fu_unit) != stallable_fu_units.end();
 }
 
 structural_objectRef conn_binding::get_input_hold_input(const structural_objectRef fu_input) const
@@ -284,6 +307,7 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
    /// add command ports
    add_command_ports(HLSMgr, HLS, SM);
    connect_input_hold_launches(SM);
+   connect_stallable_fu_inputs(SM);
 
    /// add result capture adapters for co-started pipelined operations
    add_timed_captures(HLSMgr, HLS, SM);
@@ -405,19 +429,20 @@ void conn_binding::add_timed_captures(const HLS_managerRef, const hlsRef HLS, co
    for(const auto& capture : timed_captures)
    {
       const auto op = capture.first;
-      const auto latency = timed_capture_parameters.at(op).first;
-      const auto bitsize = timed_capture_parameters.at(op).second;
+      const auto& params = timed_capture_parameters.at(op);
       const auto module = SM->add_module_from_technology_library(capture.second->get_string(), "TIMED_CAPTURE",
                                                                  LIBRARY_STD, circuit, TM);
-      module->SetParameter("LATENCY", STR(latency));
+      module->SetParameter("LATENCY", STR(params.latency));
+      module->SetParameter("CAPACITY", STR(params.capacity));
       SM->add_connection(clock, module->find_member(CLOCK_PORT_NAME, port_o_K, module));
       SM->add_connection(reset, module->find_member(RESET_PORT_NAME, port_o_K, module));
       auto launch = module->find_member("launch", port_o_K, module);
+      auto consume = module->find_member("consume", port_o_K, module);
       auto data_in = module->find_member("in1", port_o_K, module);
       auto data_out = module->find_member("out1", port_o_K, module);
-      THROW_ASSERT(launch && data_in && data_out, "Malformed timed capture cell");
-      data_in->type_resize(bitsize);
-      data_out->type_resize(bitsize);
+      THROW_ASSERT(launch && consume && data_in && data_out, "Malformed timed capture cell");
+      data_in->type_resize(params.bitsize);
+      data_out->type_resize(params.bitsize);
       capture.second->set_structural_obj(module);
    }
 }
@@ -444,8 +469,8 @@ void conn_binding::add_input_holds(const hlsRef HLS, const structural_managerRef
          auto fu_input = fu_module->get_in_port(i);
          const auto port_id = fu_input->get_id();
          if(port_id == CLOCK_PORT_NAME || port_id == RESET_PORT_NAME || port_id == START_PORT_NAME ||
-            GetPointer<port_o>(fu_input)->get_is_memory() || GetPointer<port_o>(fu_input)->get_is_global() ||
-            GetPointer<port_o>(fu_input)->get_is_extern())
+            port_id == STALL_PORT_NAME || GetPointer<port_o>(fu_input)->get_is_memory() ||
+            GetPointer<port_o>(fu_input)->get_is_global() || GetPointer<port_o>(fu_input)->get_is_extern())
          {
             continue;
          }
@@ -492,6 +517,38 @@ void conn_binding::connect_input_hold_launches(const structural_managerRef SM)
       {
          SM->add_connection(launch, selector);
       }
+   }
+}
+
+void conn_binding::connect_stallable_fu_inputs(const structural_managerRef SM)
+{
+   if(stallable_fu_units.empty())
+   {
+      return;
+   }
+   THROW_ASSERT(stallable_selector, "Stallable FU inputs have no shared selector");
+   const auto selector = stallable_selector->get_structural_obj();
+   THROW_ASSERT(selector, "Stallable FU selector was not materialized");
+   for(const auto& fu_unit : stallable_fu_units)
+   {
+      const auto fu_module_ref = fu_unit->get_structural_obj();
+      const auto fu_module = GetPointer<module_o>(fu_module_ref);
+      if(!fu_module)
+      {
+         THROW_ERROR("Stallable functional unit " + fu_unit->get_string() + " must expose a scalar one-bit BOOL " +
+                     "input named " + STALL_PORT_NAME);
+      }
+      const auto stall_input = fu_module->find_member(STALL_PORT_NAME, port_o_K, fu_module_ref);
+      const auto stall_port = GetPointer<port_o>(stall_input);
+      const auto stall_type = stall_port ? stall_port->get_typeRef() : structural_type_descriptorRef{};
+      if(!stall_port || !stall_type || stall_port->get_port_direction() != port_o::IN ||
+         stall_type->type != structural_type_descriptor::BOOL || stall_type->size != 1U ||
+         stall_type->vector_size != 0U)
+      {
+         THROW_ERROR("Stallable functional unit " + fu_unit->get_string() + " must expose a scalar one-bit BOOL " +
+                     "input named " + STALL_PORT_NAME);
+      }
+      SM->add_connection(stall_input, selector);
    }
 }
 
@@ -562,7 +619,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          {
             auto curr_port = tgt_obj->get_in_port(ind);
             if(curr_port->get_id() == CLOCK_PORT_NAME || curr_port->get_id() == RESET_PORT_NAME ||
-               curr_port->get_id() == START_PORT_NAME)
+               curr_port->get_id() == START_PORT_NAME || curr_port->get_id() == STALL_PORT_NAME)
             {
                continue;
             }
@@ -1263,9 +1320,12 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             case generic_obj::CONNECTION_ELEMENT:
             {
                THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
+               const auto selector_name = "selector_" + elem->get_string() + (oper == 0 ? "" : "_" + STR(oper));
+               THROW_ASSERT(!structural_manager::check_object(selector_name, circuit, port_o_K),
+                            "Duplicate selector port " + selector_name);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                               "---Adding selector_" + elem->get_string() + " " + STR(elem->get_type()));
-               auto sel_obj = SM->add_port("selector_" + elem->get_string(), port_o::IN, circuit, boolean_port_type);
+               auto sel_obj = SM->add_port(selector_name, port_o::IN, circuit, boolean_port_type);
                (j->second)->set_structural_obj(sel_obj);
 
                if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::UNBOUNDED)

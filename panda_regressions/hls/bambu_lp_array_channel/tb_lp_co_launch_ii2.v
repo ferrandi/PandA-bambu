@@ -37,84 +37,100 @@ module tb_lp_co_launch;
 
    integer cycle = 0, fu_cycle = 0, count = 0, errors = 0, stalls = 0, started = 0, start_cycle = 0;
    integer fu_launches = 0, fu_hold_checks = 0, fu_stability_errors = 0, fu_operand_changes = 0;
-   integer fu_previous_launch = -1, fu_min_spacing = 999999, fu_spacing_errors = 0;
+   integer fu_previous_launch = -1, last_fu_launch_cycle = -1, fu_min_spacing = 999999, fu_spacing_errors = 0;
    integer fu_stalled_hold_checks = 0;
    integer bp2_stall_start_cycle = -1;
    integer bp2_stalled_ub_logged = 0, bp2_delayed_ub_logged = 0;
-   integer ub_co_launches = 0, ub_done_same_cycle = 0, ub_done_later = 0, ub_pending = 0;
-   integer ub_pending_age = 0, ub_handshake_errors = 0;
+   integer ub_launches = 0, inflight_launches = 0, done_same_cycle = 0, done_later = 0;
+   integer done_before_ii = 0, ub_pending = 0, ub_handshake_errors = 0;
+   integer ub_pending_fu_cycle = -1, ub_pending_inflight = 0, accepted_writes = 0;
    reg fu_hold_valid = 0;
    reg [31:0] fu_sample_a, fu_sample_b;
+`define DUT_CONTROLLER dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0
+`define DUT_DATAPATH `DUT_CONTROLLER.Datapath_i
+`define FU_LAUNCH `DUT_CONTROLLER.`LP_MUL_LAUNCH
+`define FU_INPUT_A `DUT_DATAPATH.`LP_MUL_INSTANCE.`LP_MUL_PORT_A
+`define FU_INPUT_B `DUT_DATAPATH.`LP_MUL_INSTANCE.`LP_MUL_PORT_B
+   wire fu_launch = `FU_LAUNCH;
+   wire unbounded_launch = `DUT_CONTROLLER.`LP_UNBOUNDED_LAUNCH;
+   wire unbounded_done = `DUT_CONTROLLER.`LP_UNBOUNDED_DONE;
 
    always @(posedge clock) begin
       fu_cycle = fu_cycle + 1;
       if(reset && ub_pending) begin
-         ub_pending_age = ub_pending_age + 1;
-         if(dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.OUT_UNBOUNDED_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_429010 === 1'b1) begin
+         if(unbounded_done === 1'b1) begin
             if(!(out_write && out_full_n)) ub_handshake_errors = ub_handshake_errors + 1;
-            ub_done_later = ub_done_later + 1;
+            done_later = done_later + 1;
+            if(ub_pending_inflight && fu_cycle - ub_pending_fu_cycle < 2)
+               done_before_ii = done_before_ii + 1;
             if(BP_MODE == 2 && !bp2_delayed_ub_logged) begin
                bp2_delayed_ub_logged = 1;
                $display("BP2_UB_RELEASED cycle=%0d ready=%0d out_write=%0d", cycle, out_full_n, out_write);
             end
             ub_pending = 0;
+            ub_pending_inflight = 0;
          end
       end
-      if(reset && dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.selector_timed_capture_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912 === 1'b1) begin
+      if(reset && fu_launch === 1'b1) begin
          if(fu_previous_launch >= 0) begin
             if(fu_cycle - fu_previous_launch < 2) fu_spacing_errors = fu_spacing_errors + 1;
             if(fu_cycle - fu_previous_launch < fu_min_spacing)
                fu_min_spacing = fu_cycle - fu_previous_launch;
          end
          fu_previous_launch = fu_cycle;
+         last_fu_launch_cycle = fu_cycle;
          fu_launches = fu_launches + 1;
          if(BP_MODE == 2 && fu_launches == 1)
             $display("BP2_FIRST_FU cycle=%0d ready=%0d", cycle, out_full_n);
          if(fu_hold_valid &&
-            (dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.lhs !== fu_sample_a ||
-             dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.rhs !== fu_sample_b))
+            (`FU_INPUT_A !== fu_sample_a ||
+             `FU_INPUT_B !== fu_sample_b))
             fu_operand_changes = fu_operand_changes + 1;
-         fu_sample_a = dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.lhs;
-         fu_sample_b = dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.rhs;
+         fu_sample_a = `FU_INPUT_A;
+         fu_sample_b = `FU_INPUT_B;
          fu_hold_valid = 1;
-         if(dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.selector_IN_UNBOUNDED_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_429010 === 1'b1) begin
-            ub_co_launches = ub_co_launches + 1;
-            if(BP_MODE == 2 && ub_co_launches == 1)
-               $display("BP2_FIRST_UB cycle=%0d ready=%0d out_write=%0d done_now=%0d", cycle, out_full_n,
-                        out_write, dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.OUT_UNBOUNDED_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_429010);
-            if(BP_MODE == 2 && !out_full_n && !bp2_stalled_ub_logged) begin
-               bp2_stalled_ub_logged = 1;
-               $display("BP2_STALLED_UB cycle=%0d ready=%0d out_write=%0d done_now=%0d", cycle, out_full_n,
-                        out_write, dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.OUT_UNBOUNDED_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_429010);
-            end
-            if(dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.OUT_UNBOUNDED_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_429010 === 1'b1) begin
-               if(!(out_write && out_full_n)) ub_handshake_errors = ub_handshake_errors + 1;
-               ub_done_same_cycle = ub_done_same_cycle + 1;
-            end
-            else begin
-               ub_pending = 1;
-               ub_pending_age = 0;
-            end
-         end
       end
       else if(reset && fu_hold_valid) begin
          fu_hold_checks = fu_hold_checks + 1;
          if(!out_full_n) fu_stalled_hold_checks = fu_stalled_hold_checks + 1;
-         if(dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.lhs !== fu_sample_a ||
-            dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.rhs !== fu_sample_b) begin
+         if(`FU_INPUT_A !== fu_sample_a ||
+            `FU_INPUT_B !== fu_sample_b) begin
             fu_stability_errors = fu_stability_errors + 1;
             $display("FU_INPUT_CHANGED launch=%0d old=(%0d,%0d) now=(%0d,%0d)", fu_launches, fu_sample_a, fu_sample_b,
-                     dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.lhs,
-                     dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.rhs);
+                     `FU_INPUT_A,
+                     `FU_INPUT_B);
+         end
+      end
+      if(reset && unbounded_launch === 1'b1) begin
+         if(ub_pending) ub_handshake_errors = ub_handshake_errors + 1;
+         ub_launches = ub_launches + 1;
+         ub_pending_fu_cycle = last_fu_launch_cycle;
+         ub_pending_inflight = last_fu_launch_cycle >= 0 && fu_cycle > last_fu_launch_cycle &&
+                               fu_cycle - last_fu_launch_cycle < 2;
+         if(ub_pending_inflight) inflight_launches = inflight_launches + 1;
+         if(BP_MODE == 2 && !out_full_n && !bp2_stalled_ub_logged) begin
+            bp2_stalled_ub_logged = 1;
+            $display("BP2_STALLED_UB cycle=%0d ready=%0d out_write=%0d done_now=%0d", cycle, out_full_n,
+                     out_write, unbounded_done);
+         end
+         if(unbounded_done === 1'b1) begin
+            if(!(out_write && out_full_n)) ub_handshake_errors = ub_handshake_errors + 1;
+            done_same_cycle = done_same_cycle + 1;
+            if(ub_pending_inflight && fu_cycle - ub_pending_fu_cycle < 2)
+               done_before_ii = done_before_ii + 1;
+            ub_pending_inflight = 0;
+         end
+         else begin
+            ub_pending = 1;
          end
       end
    end
 
    always @(negedge clock) begin
       #1;
-      if(reset && fu_hold_valid && dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.selector_timed_capture_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912 !== 1'b1) begin
-         if(dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.lhs !== fu_sample_a ||
-            dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.rhs !== fu_sample_b) begin
+      if(reset && fu_hold_valid && `FU_LAUNCH !== 1'b1) begin
+         if(`FU_INPUT_A !== fu_sample_a ||
+            `FU_INPUT_B !== fu_sample_b) begin
             fu_stability_errors = fu_stability_errors + 1;
             $display("FU_INPUT_CHANGED_BETWEEN_EDGES launch=%0d", fu_launches);
          end
@@ -123,11 +139,11 @@ module tb_lp_co_launch;
 
 `ifdef HOLD_MUT
    initial begin
-      wait(reset && dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.selector_timed_capture_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912 === 1'b1);
+      wait(reset && `FU_LAUNCH === 1'b1);
       @(posedge clock);
       @(negedge clock);
-      #0.1 force dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.lhs = 32'hdeadbeef;
-      #1.2 release dut.PBI_Z9co_launchRA16_iS0_R10ac_channelIiE_i0.Datapath_i.fu_Z9co_launchRA16_iS0_R10ac_channelIiE_428891_428912.lhs;
+      #0.1 force `FU_INPUT_A = 32'hdeadbeef;
+      #1.2 release `FU_INPUT_A;
    end
 `endif
 
@@ -147,7 +163,7 @@ module tb_lp_co_launch;
          out_full_n = 0;
       else begin
          if(bp2_stall_start_cycle >= 0 && cycle - bp2_stall_start_cycle == 120)
-            $display("BP2_STALL_END cycle=%0d ub_done_later=%0d", cycle, ub_done_later);
+            $display("BP2_STALL_END cycle=%0d done_later=%0d", cycle, done_later);
          out_full_n = 1;
       end
    end
@@ -157,6 +173,7 @@ module tb_lp_co_launch;
          $display("BP2_START cycle=%0d start_port=%0d ready=%0d", cycle, start_port, out_full_n);
       if(reset && started && !out_full_n && !done_port) stalls = stalls + 1;
       if(reset && started && out_write && out_full_n) begin
+         accepted_writes = accepted_writes + 1;
          if(count >= 16 || out_din !== count) begin
             errors = errors + 1;
             $display("MISMATCH index=%0d got=%0d expected=%0d", count, out_din, count);
@@ -172,11 +189,13 @@ module tb_lp_co_launch;
       start_port <= 1; @(posedge clock); start_port <= 0;
       started = 1; start_cycle = cycle;
       while(!done_port && cycle - start_cycle < MAX_CYCLE) @(posedge clock);
-      if(!done_port || count != 16 || return_port !== 32'd4280 || fu_launches < 2 || fu_hold_checks == 0 ||
+      if(!done_port || count != 16 || accepted_writes != ub_launches || ub_launches != 16 ||
+         return_port !== 32'd4280 || fu_launches < 2 || fu_hold_checks == 0 ||
          fu_stability_errors || fu_operand_changes == 0 || fu_spacing_errors || fu_min_spacing < 2 ||
-         ub_co_launches == 0 || ub_pending ||
-         ub_handshake_errors || (BP_MODE == 0 && ub_done_same_cycle != ub_co_launches) ||
-         (BP_MODE != 0 && (!stalls || !ub_done_later || !fu_stalled_hold_checks))) errors = errors + 1;
+         inflight_launches == 0 || (BP_MODE == 0 && done_before_ii == 0) || ub_pending ||
+         ub_handshake_errors || done_same_cycle + done_later != ub_launches ||
+         (BP_MODE == 0 && done_later != 0) ||
+         (BP_MODE != 0 && (!stalls || !done_later || !fu_stalled_hold_checks))) errors = errors + 1;
 `ifdef HOLD_MUT
       if(fu_stability_errors && count == 16 && return_port === 32'd4280)
          $display("HOLD_MUT_DETECTED return=%0d", return_port);
@@ -188,8 +207,9 @@ module tb_lp_co_launch;
       $display("FU_II2_MONITOR launches=%0d hold_checks=%0d stable_errors=%0d operand_changes=%0d spacing_min=%0d spacing_errors=%0d stalled_hold_checks=%0d",
                fu_launches, fu_hold_checks, fu_stability_errors, fu_operand_changes, fu_min_spacing, fu_spacing_errors,
                fu_stalled_hold_checks);
-      $display("UNBOUNDED_HANDSHAKE co_launches=%0d done_same_cycle=%0d done_later=%0d pending=%0d handshake_errors=%0d",
-               ub_co_launches, ub_done_same_cycle, ub_done_later, ub_pending, ub_handshake_errors);
+      $display("UNBOUNDED_HANDSHAKE launches=%0d inflight_launches=%0d done_same_cycle=%0d done_later=%0d done_before_ii=%0d pending=%0d handshake_errors=%0d accepted_writes=%0d",
+               ub_launches, inflight_launches, done_same_cycle, done_later, done_before_ii, ub_pending,
+               ub_handshake_errors, accepted_writes);
       $finish;
    end
    initial begin #(MAX_CYCLE * 20); $display("FAIL [BP=%0d] watchdog", BP_MODE); $finish; end

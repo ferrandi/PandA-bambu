@@ -39,6 +39,8 @@
 #include "math_function.hpp"
 #include "structural_objects.hpp"
 
+#include <algorithm>
+
 enum in_port
 {
    i_clock = 0,
@@ -85,10 +87,15 @@ void ReadWriteDPArrayHDLGenerator::InternalExec(std::ostream& out, structural_ob
    const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_fname);
    THROW_ASSERT(func_arch, "Expected function architecture for function " + top_fname);
    const auto isAlignedPowerOfTwo = _ports_in[i_in4].alignment == ceil_pow2(_ports_in[i_in4].alignment);
+   const auto stall_port =
+       std::find_if(_ports_in.begin(), _ports_in.end(), [](const auto& port) { return port.name == STALL_PORT_NAME; });
+   const auto stall_term = stall_port == _ports_in.end() ? "" : " & ~" + stall_port->name;
+   const auto request0 = _ports_in[i_start].name + "[0]" + stall_term;
+   const auto request1 = _ports_in[i_start].name + "[1]" + stall_term;
 
    out << "//" << (isAlignedPowerOfTwo ? "T" : "F") << "\n";
-   out << "assign " << _ports_out[o_ce0].name << " = " << _ports_in[i_start].name << "[0];\n";
-   out << "assign " << _ports_out[o_ce1].name << " = " << _ports_in[i_start].name << "[1];\n";
+   out << "assign " << _ports_out[o_ce0].name << " = " << request0 << ";\n";
+   out << "assign " << _ports_out[o_ce1].name << " = " << request1 << ";\n";
 
    if(isAlignedPowerOfTwo)
    {
@@ -119,14 +126,12 @@ void ReadWriteDPArrayHDLGenerator::InternalExec(std::ostream& out, structural_ob
 
    if(_ports_out.size() > o_d1)
    {
-      out << "assign " << _ports_out[o_we0].name << " = " << _ports_in[i_start].name << "[0] & (|"
-          << _ports_in[i_in1].name << "[BITSIZE_" << _ports_in[i_in1].name << "*0+:BITSIZE_" << _ports_in[i_in1].name
-          << "]);\n";
+      out << "assign " << _ports_out[o_we0].name << " = " << request0 << " & (|" << _ports_in[i_in1].name << "[BITSIZE_"
+          << _ports_in[i_in1].name << "*0+:BITSIZE_" << _ports_in[i_in1].name << "]);\n";
       out << "assign " << _ports_out[o_d0].name << " = " << _ports_in[i_in3].name << "[BITSIZE_"
           << _ports_in[i_in3].name << "*0+:BITSIZE_" << _ports_in[i_in3].name << "];\n";
-      out << "assign " << _ports_out[o_we1].name << " = " << _ports_in[i_start].name << "[1] & (|"
-          << _ports_in[i_in1].name << "[BITSIZE_" << _ports_in[i_in1].name << "*1+:BITSIZE_" << _ports_in[i_in1].name
-          << "]);\n";
+      out << "assign " << _ports_out[o_we1].name << " = " << request1 << " & (|" << _ports_in[i_in1].name << "[BITSIZE_"
+          << _ports_in[i_in1].name << "*1+:BITSIZE_" << _ports_in[i_in1].name << "]);\n";
       out << "assign " << _ports_out[o_d1].name << " = " << _ports_in[i_in3].name << "[BITSIZE_"
           << _ports_in[i_in3].name << "*1+:BITSIZE_" << _ports_in[i_in3].name << "];\n";
    }

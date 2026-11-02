@@ -416,6 +416,7 @@ endgenerate"/>
     </template>
     <template>
       <name>vec_mul_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <operation operation_name="mul_node" supported_types="VECTOR_INT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
       <circuit>
         <module_o id="vec_mul_node_FU">
@@ -434,14 +435,17 @@ endgenerate"/>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="vec_mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
-    mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));
+    mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .stall_port(stall_port), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));
   end
 endgenerate"/>
         </module_o>
@@ -449,6 +453,7 @@ endgenerate"/>
     </template>
     <template>
       <name>ui_vec_mul_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <operation operation_name="mul_node" supported_types="VECTOR_UINT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
       <circuit>
         <module_o id="ui_vec_mul_node_FU">
@@ -467,14 +472,17 @@ endgenerate"/>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_vec_mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
-    ui_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));
+    ui_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .stall_port(stall_port), .in1(in1[o1*BITSIZE_in1+BITSIZE_in1-1:o1*BITSIZE_in1]), .in2(in2[o1*BITSIZE_in2+BITSIZE_in2-1:o1*BITSIZE_in2]));
   end
 endgenerate"/>
         </module_o>
@@ -482,6 +490,7 @@ endgenerate"/>
     </template>
     <template>
       <name>vec_widen_mult_hi_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <operation operation_name="widen_mult_hi_node" supported_types="VECTOR_INT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
       <circuit>
         <module_o id="vec_widen_mult_hi_node_FU">
@@ -500,14 +509,17 @@ endgenerate"/>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_widen_mult_hi_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="vec_widen_mult_hi_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
-    widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
+    widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .stall_port(stall_port), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
   end
 endgenerate"/>
         </module_o>
@@ -515,6 +527,7 @@ endgenerate"/>
     </template>
     <template>
       <name>ui_vec_widen_mult_hi_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <operation operation_name="widen_mult_hi_node" supported_types="VECTOR_UINT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
       <circuit>
         <module_o id="ui_vec_widen_mult_hi_node_FU">
@@ -533,14 +546,17 @@ endgenerate"/>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_widen_mult_hi_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_vec_widen_mult_hi_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
-    ui_widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
+    ui_widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .stall_port(stall_port), .in1(in1[(o1+NUM_ELEM_out1)*BITSIZE_in1+BITSIZE_in1-1:(o1+NUM_ELEM_out1)*BITSIZE_in1]), .in2(in2[(o1+NUM_ELEM_out1)*BITSIZE_in2+BITSIZE_in2-1:(o1+NUM_ELEM_out1)*BITSIZE_in2]));
   end
 endgenerate"/>
         </module_o>
@@ -548,6 +564,7 @@ endgenerate"/>
     </template>
     <template>
       <name>vec_widen_mult_lo_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <operation operation_name="widen_mult_lo_node" supported_types="VECTOR_INT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
       <circuit>
         <module_o id="vec_widen_mult_lo_node_FU">
@@ -566,14 +583,17 @@ endgenerate"/>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_widen_mult_lo_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="vec_widen_mult_lo_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
-    widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));
+    widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .stall_port(stall_port), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));
   end
 endgenerate"/>
         </module_o>
@@ -581,6 +601,7 @@ endgenerate"/>
     </template>
     <template>
       <name>ui_vec_widen_mult_lo_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <operation operation_name="widen_mult_lo_node" supported_types="VECTOR_UINT:*" pipe_parameters="*:0,1,2,3,4,5,6" commutative="1"/>
       <circuit>
         <module_o id="ui_vec_widen_mult_lo_node_FU">
@@ -599,14 +620,17 @@ endgenerate"/>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_widen_mult_lo_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_vec_widen_mult_lo_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
-    ui_widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));
+    ui_widen_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1[o1*BITSIZE_out1+BITSIZE_out1-1:o1*BITSIZE_out1]), .clock(clock), .stall_port(stall_port), .in1(in1[(o1)*BITSIZE_in1+BITSIZE_in1-1:(o1)*BITSIZE_in1]), .in2(in2[(o1)*BITSIZE_in2+BITSIZE_in2-1:(o1)*BITSIZE_in2]));
   end
 endgenerate"/>
         </module_o>

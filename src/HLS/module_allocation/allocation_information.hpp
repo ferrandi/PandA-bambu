@@ -520,6 +520,9 @@ class AllocationInformation
     */
    bool is_operation_bounded(const unsigned int index, unsigned int fu_type) const;
 
+   /// Return whether a functional unit or its selected template supports stalling.
+   bool is_stallable(unsigned int fu_name) const;
+
    /**
     * Checks if the given operation has a bounded execution time or not
     * if the operation is assigned to a functional unit, check if execution time on it is bounded or not

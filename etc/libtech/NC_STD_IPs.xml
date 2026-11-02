@@ -83,12 +83,13 @@ assign out1 = merge(in1);"/>
       <name>TIMED_CAPTURE</name>
       <circuit>
         <module_o id="TIMED_CAPTURE">
-          <description>Latency-aligned result capture for co-started operations</description>
+          <description>Latency-aligned result capture; optional ordered buffering until consume</description>
           <copyright>Copyright (C) 2026 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>MIT</license>
           <structural_type_descriptor id_type="TIMED_CAPTURE"/>
           <parameter name="LATENCY">0</parameter>
+          <parameter name="CAPACITY">1</parameter>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -98,48 +99,129 @@ assign out1 = merge(in1);"/>
           <port_o id="launch" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="consume" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="TIMED_CAPTURE LATENCY in1 out1" VERILOG_PROVIDED="
-reg [BITSIZE_out1-1:0] captured 1INIT_ZERO_VALUE;
+          <NP_functionality LIBRARY="TIMED_CAPTURE LATENCY CAPACITY in1 consume out1" VERILOG_PROVIDED="
 wire capture_due;
+wire capture_valid;
+wire launch_valid;
+localparam integer EPOCH_BITS = (LATENCY &gt; 1) ? $clog2(LATENCY + 1) : 1;
+reg [EPOCH_BITS-1:0] current_epoch 1INIT_ZERO_VALUE;
+always @(posedge clock)
+  if (1RESET_VALUE)
+    current_epoch &lt;= (current_epoch == LATENCY) ? {EPOCH_BITS{1&apos;b0}} : current_epoch + 1&apos;b1;
+assign launch_valid = launch &amp;&amp; !(1RESET_VALUE);
 generate
   if (LATENCY == 0) begin: zero_latency
     assign capture_due = 1&apos;b0;
+    assign capture_valid = launch_valid;
   end else if (LATENCY == 1) begin: one_cycle_delay
     reg launch_delay 1INIT_ZERO_VALUE;
-    always @(posedge clock)
-      launch_delay &lt;= launch &amp;&amp; !(1RESET_VALUE);
+    reg [EPOCH_BITS-1:0] launch_epoch 1INIT_ZERO_VALUE;
+    always @(posedge clock) begin
+      launch_delay &lt;= launch_valid;
+      launch_epoch &lt;= current_epoch;
+    end
     assign capture_due = launch_delay;
+    assign capture_valid = capture_due &amp;&amp; launch_epoch == current_epoch &amp;&amp; !(1RESET_VALUE);
   end else begin: srl_delay
     (* SRL_STYLE = &quot;srl&quot; *) reg [LATENCY-1:0] launch_delay 1INIT_ZERO_VALUE;
-    always @(posedge clock)
-      launch_delay &lt;= (launch_delay &lt;&lt; 1) | (launch &amp;&amp; !(1RESET_VALUE));
+    reg [LATENCY*EPOCH_BITS-1:0] launch_epoch 1INIT_ZERO_VALUE;
+    always @(posedge clock) begin
+      launch_delay &lt;= (launch_delay &lt;&lt; 1) | launch_valid;
+      launch_epoch &lt;= (launch_epoch &lt;&lt; EPOCH_BITS) | current_epoch;
+    end
     assign capture_due = launch_delay[LATENCY-1];
+    assign capture_valid = capture_due &amp;&amp;
+                           launch_epoch[LATENCY*EPOCH_BITS-1 -: EPOCH_BITS] == current_epoch &amp;&amp;
+                           !(1RESET_VALUE);
   end
 endgenerate
-assign out1 = capture_due ? in1 : captured;
-always @(posedge clock)
-  if (1RESET_VALUE)
-    captured &lt;= {BITSIZE_out1{1&apos;b0}};
-  else if (LATENCY == 0 &amp;&amp; launch)
-    captured &lt;= in1;
-  else if (capture_due)
-    captured &lt;= in1;"
+generate
+  if (CAPACITY == 1) begin: single_entry
+    reg [BITSIZE_out1-1:0] captured 1INIT_ZERO_VALUE;
+    assign out1 = (LATENCY != 0 &amp;&amp; capture_due) ? in1 : captured;
+    always @(posedge clock)
+      if (1RESET_VALUE)
+        captured &lt;= {BITSIZE_out1{1&apos;b0}};
+      else if (capture_valid)
+        captured &lt;= in1;
+  end else begin: result_queue
+    localparam integer PTR_BITS = (CAPACITY &gt; 1) ? $clog2(CAPACITY) : 1;
+    localparam integer COUNT_BITS = (CAPACITY &gt; 1) ? $clog2(CAPACITY + 1) : 1;
+    reg [BITSIZE_out1-1:0] captured [0:CAPACITY-1];
+    reg [PTR_BITS-1:0] read_ptr 1INIT_ZERO_VALUE, write_ptr 1INIT_ZERO_VALUE;
+    reg [COUNT_BITS-1:0] count 1INIT_ZERO_VALUE;
+    wire pop = consume &amp;&amp; (count != 0);
+    wire bypass = capture_due &amp;&amp; (count == 0);
+    wire push = capture_valid &amp;&amp; !(count == 0 &amp;&amp; consume);
+    integer i;
+    function [PTR_BITS-1:0] next_ptr;
+      input [PTR_BITS-1:0] ptr;
+      begin next_ptr = (ptr == CAPACITY-1) ? {PTR_BITS{1&apos;b0}} : ptr + 1&apos;b1; end
+    endfunction
+    assign out1 = bypass ? in1 : captured[read_ptr];
+    always @(posedge clock) begin
+      if (1RESET_VALUE) begin
+        read_ptr &lt;= {PTR_BITS{1&apos;b0}};
+        write_ptr &lt;= {PTR_BITS{1&apos;b0}};
+        count &lt;= {COUNT_BITS{1&apos;b0}};
+        for (i=0; i&lt;CAPACITY; i=i+1) captured[i] &lt;= {BITSIZE_out1{1&apos;b0}};
+      end else begin
+        if (push &amp;&amp; (count &lt; CAPACITY || pop)) begin
+          captured[write_ptr] &lt;= in1;
+          write_ptr &lt;= next_ptr(write_ptr);
+        end
+        if (pop) read_ptr &lt;= next_ptr(read_ptr);
+        if (push &amp;&amp; !pop &amp;&amp; count &lt; CAPACITY) count &lt;= count + 1&apos;b1;
+        else if (pop &amp;&amp; !push) count &lt;= count - 1&apos;b1;
+`ifndef SYNTHESIS
+        if (push &amp;&amp; count == CAPACITY &amp;&amp; !pop) $error(&quot;TIMED_CAPTURE result queue overflow&quot;);
+`endif
+      end
+    end
+  end
+endgenerate"
             VHDL_PROVIDED="
-signal captured : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
 signal capture_due : std_logic;
 signal launch_valid : std_logic;
+signal capture_valid : std_logic;
+type epoch_array_t is array (natural range &lt;&gt;) of natural range 0 to LATENCY;
+function max_nat(a, b : natural) return natural is
+begin
+  if a &gt; b then return a; else return b; end if;
+end function;
+constant EPOCH_STAGES : natural := max_nat(1, LATENCY);
+signal current_epoch : natural range 0 to LATENCY := 0;
+signal launch_epoch : epoch_array_t(0 to EPOCH_STAGES-1) := (others =&gt; 0);
 begin
   launch_valid &lt;= launch when not (1RESET_VALUE) else &apos;0&apos;;
-  out1 &lt;= in1 when capture_due = &apos;1&apos; else captured;
+  process(clock)
+  begin
+    if(clock&apos;event and clock = &apos;1&apos;) then
+      if(1RESET_VALUE) then
+        if current_epoch = LATENCY then current_epoch &lt;= 0;
+        else current_epoch &lt;= current_epoch + 1; end if;
+      end if;
+      launch_epoch(0) &lt;= current_epoch;
+      if LATENCY &gt; 1 then
+        for i in 1 to LATENCY-1 loop
+          launch_epoch(i) &lt;= launch_epoch(i-1);
+        end loop;
+      end if;
+    end if;
+  end process;
 
   zero_latency: if LATENCY = 0 generate
     capture_due &lt;= &apos;0&apos;;
+    capture_valid &lt;= launch_valid;
   end generate;
 
   one_cycle_delay: if LATENCY = 1 generate
@@ -152,6 +234,7 @@ begin
       end if;
     end process;
     capture_due &lt;= launch_delay;
+    capture_valid &lt;= launch_delay when launch_epoch(0) = current_epoch and not (1RESET_VALUE) else &apos;0&apos;;
   end generate;
 
   srl_delay: if LATENCY &gt; 1 generate
@@ -166,20 +249,57 @@ begin
       end if;
     end process;
     capture_due &lt;= launch_delay(LATENCY-1);
+    capture_valid &lt;= launch_delay(LATENCY-1)
+      when launch_epoch(LATENCY-1) = current_epoch and not (1RESET_VALUE) else &apos;0&apos;;
   end generate;
 
-  process(clock)
+  single_entry: if CAPACITY = 1 generate
+    signal captured : std_logic_vector(BITSIZE_out1-1 downto 0) 1INIT_ZERO_VALUE;
   begin
-    if(clock&apos;event and clock = &apos;1&apos;) then
-      if(1RESET_VALUE) then
-        captured &lt;= (others =&gt; &apos;0&apos;);
-      elsif(LATENCY = 0 and launch = &apos;1&apos;) then
-        captured &lt;= in1;
-      elsif(capture_due = &apos;1&apos;) then
-        captured &lt;= in1;
+    out1 &lt;= in1 when LATENCY /= 0 and capture_due = &apos;1&apos; else captured;
+    process(clock)
+    begin
+      if(clock&apos;event and clock = &apos;1&apos;) then
+        if(1RESET_VALUE) then captured &lt;= (others =&gt; &apos;0&apos;);
+        elsif(capture_valid = &apos;1&apos;) then captured &lt;= in1; end if;
       end if;
-    end if;
-  end process;
+    end process;
+  end generate;
+
+  result_queue: if CAPACITY &gt; 1 generate
+    type captured_array_t is array (natural range &lt;&gt;) of std_logic_vector(BITSIZE_out1-1 downto 0);
+    signal captured : captured_array_t(0 to CAPACITY-1);
+    signal read_ptr, write_ptr : natural range 0 to CAPACITY-1 := 0;
+    signal count : natural range 0 to CAPACITY := 0;
+    function next_ptr(ptr : natural) return natural is
+    begin
+      if ptr = CAPACITY-1 then return 0; else return ptr+1; end if;
+    end function;
+  begin
+    out1 &lt;= in1 when capture_due = &apos;1&apos; and count = 0 else captured(read_ptr);
+    process(clock)
+      variable push, pop : boolean;
+    begin
+      if(clock&apos;event and clock = &apos;1&apos;) then
+        if(1RESET_VALUE) then
+          read_ptr &lt;= 0; write_ptr &lt;= 0; count &lt;= 0;
+          for i in 0 to CAPACITY-1 loop captured(i) &lt;= (others =&gt; &apos;0&apos;); end loop;
+        else
+          pop := consume = &apos;1&apos; and count &gt; 0;
+          push := capture_valid = &apos;1&apos; and not (count = 0 and consume = &apos;1&apos;);
+          if push and (count &lt; CAPACITY or pop) then
+            captured(write_ptr) &lt;= in1;
+            write_ptr &lt;= next_ptr(write_ptr);
+          end if;
+          if pop then read_ptr &lt;= next_ptr(read_ptr); end if;
+          if push and not pop and count &lt; CAPACITY then count &lt;= count+1;
+          elsif pop and not push then count &lt;= count-1; end if;
+          assert not (push and count = CAPACITY and not pop)
+            report &quot;TIMED_CAPTURE result queue overflow&quot; severity failure;
+        end if;
+      end if;
+    end process;
+  end generate;
 "/>
         </module_o>
       </circuit>

@@ -68,6 +68,8 @@
 #include "technology_node.hpp"
 #include "utility.hpp"
 
+#include <set>
+
 #define USE_ALIGNMENT_INFO 1
 
 namespace
@@ -826,6 +828,40 @@ void mux_connection_binding::create_connections()
    const auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
    HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, BH, parameters));
 
+   // FRP advances pipeline stages outside the dummy-state FSM selector.
+   const bool fsm_stall_supported = !FB->is_function_pipelined() || FB->is_stp();
+   generic_objRef stall_selector;
+   if(fsm_stall_supported)
+   {
+      for(const auto fu_type : HLS->Rfu->get_allocation_list())
+      {
+         if(!HLS->allocation_information->is_stallable(fu_type))
+         {
+            continue;
+         }
+         for(unsigned int fu_num = 0; fu_num < HLS->Rfu->get_number(fu_type); ++fu_num)
+         {
+            const auto fu_unit = HLS->Rfu->get(fu_type, fu_num);
+            const auto fu_stall_selector = HLS->Rconn->bind_stallable_fu_input(fu_unit);
+            THROW_ASSERT(!stall_selector || stall_selector == fu_stall_selector,
+                         "Stallable functional units must share one pipeline-stall selector");
+            stall_selector = fu_stall_selector;
+         }
+      }
+      if(stall_selector)
+      {
+         for(const auto state : HLS->fsm_info->vertices())
+         {
+            if(HLS->fsm_info->getState(state).isDummy)
+            {
+               GetPointer<commandport_obj>(stall_selector)
+                   ->add_activation(commandport_obj::transition(
+                       state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+            }
+         }
+      }
+   }
+
    std::vector<generic_objRef> input_hold_units;
    for(const auto op : data.vertices())
    {
@@ -843,8 +879,7 @@ void mux_connection_binding::create_connections()
 
    for(const auto& fu_unit : input_hold_units)
    {
-      const auto* fu_instance = GetPointer<funit_obj>(fu_unit);
-      THROW_ASSERT(fu_instance, "Pipelined resource assignment is not a functional unit instance");
+      THROW_ASSERT(GetPointer<funit_obj>(fu_unit), "Pipelined resource assignment is not a functional unit instance");
       const auto group_name = "input_hold_" + fu_unit->get_string();
       const auto group = generic_objRef(new generic_obj(generic_obj::CONNECTION_ELEMENT, group_name));
       HLS->Rconn->bind_input_hold_group(group, fu_unit);
@@ -870,8 +905,18 @@ void mux_connection_binding::create_connections()
       }
    }
 
-   // Capture the output of a pipelined value-producing operation that shares its launch state with an
-   // unbounded operation.  Its result can otherwise be lost while the FSM waits for the latter.
+   // Buffer every pipelined result in a loop BB that can wait on an unbounded command.
+   std::set<unsigned int> pipelined_wait_bbs;
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      if(state_info.isDummy && state_info.isPipelinedState && HLS->Rsch->IsLoopPipelined(state_info.bbId))
+      {
+         pipelined_wait_bbs.insert(state_info.bbId);
+      }
+   }
+
+   // Preserve capture for any bounded result launched alongside an unbounded operation, including outside LP loops.
    const auto is_unbounded_command = [&](const auto op) {
       const auto fu_type = HLS->Rfu->get_assign(op);
       const auto fu = GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu_type));
@@ -883,18 +928,26 @@ void mux_connection_binding::create_connections()
    for(const auto state : HLS->fsm_info->vertices())
    {
       const auto& state_info = HLS->fsm_info->getState(state);
-      const bool co_starts_unbounded =
-          std::any_of(state_info.startingOperations.begin(), state_info.startingOperations.end(), is_unbounded_command);
-      if(!co_starts_unbounded || state_info.isDummy)
+      if(state_info.isDummy)
       {
          continue;
       }
+      const bool co_starts_unbounded =
+          std::any_of(state_info.startingOperations.begin(), state_info.startingOperations.end(), is_unbounded_command);
       for(const auto op : state_info.startingOperations)
       {
+         if(!co_starts_unbounded && pipelined_wait_bbs.find(data.CGetNodeInfo(op).bb_index) == pipelined_wait_bbs.end())
+         {
+            continue;
+         }
          const auto fu_type = HLS->Rfu->get_assign(op);
          const auto latency = HLS->Rsch->get_cstep_end(op).second - HLS->Rsch->get_cstep(op).second;
          const auto initiation_interval = HLS->allocation_information->get_initiation_time(fu_type, op);
          const auto var_written = HLSMgr->get_produced_value(HLS->functionId, op);
+         if(HLS->Rconn->is_stallable_fu_bound(HLS->Rfu->get(op)))
+         {
+            continue;
+         }
          if(!HLS->allocation_information->is_operation_bounded(data, op, fu_type) || initiation_interval == 0 ||
             latency == 0 || var_written == 0)
          {
@@ -902,20 +955,26 @@ void mux_connection_binding::create_connections()
          }
          const auto bitsize =
              static_cast<unsigned int>(object_bitsize(IRM, HLS_manager::io_binding_type(var_written, 0)));
+         // At most one result per scheduled cycle can complete after the FSM enters its wait state.
+         const auto capacity = latency + 1U;
          const bool new_adapter = !HLS->Rconn->get_timed_capture(op);
-         const auto adapter = HLS->Rconn->bind_timed_capture(op, latency, bitsize, data.CGetNodeInfo(op).vertex_name);
+         const auto adapter =
+             HLS->Rconn->bind_timed_capture(op, latency, capacity, bitsize, data.CGetNodeInfo(op).vertex_name);
          const auto selector = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 0);
          if(new_adapter)
          {
             HLS->Rconn->add_data_transfer(selector, adapter, 0, 0,
                                           data_transfer(0, 1, state, FSMInfo::invalidState, OpGraph::null_vertex()));
-            HLS->Rconn->add_data_transfer(HLS->Rfu->get(op), adapter, 1, 0,
+            const auto consume_selector =
+                HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 1);
+            HLS->Rconn->add_data_transfer(consume_selector, adapter, 1, 0,
+                                          data_transfer(0, 1, state, FSMInfo::invalidState, OpGraph::null_vertex()));
+            HLS->Rconn->add_data_transfer(HLS->Rfu->get(op), adapter, 2, 0,
                                           data_transfer(var_written, bitsize, state, FSMInfo::invalidState, op));
          }
       }
    }
-   // The adapter is used for every source of this static operation, including its LP prolog and
-   // other normal starts that do not co-start the unbounded command.
+   // The adapter is used at every normal start and completion state of this static operation.
    for(const auto state : HLS->fsm_info->vertices())
    {
       const auto& state_info = HLS->fsm_info->getState(state);
@@ -932,6 +991,17 @@ void mux_connection_binding::create_connections()
          }
          const auto selector = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 0);
          GetPointer<commandport_obj>(selector)->add_activation(commandport_obj::transition(
+             state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+      }
+      for(const auto op : state_info.endingOperations)
+      {
+         const auto adapter = HLS->Rconn->get_timed_capture(op);
+         if(!adapter)
+         {
+            continue;
+         }
+         const auto consume = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 1);
+         GetPointer<commandport_obj>(consume)->add_activation(commandport_obj::transition(
              state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
       }
    }
