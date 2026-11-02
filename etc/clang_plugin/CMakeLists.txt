@@ -225,6 +225,7 @@ function(_panda_add_clang_plugins ver)
    set(_hardekopf_src "${_src_base}/HardekopfLin_AA.cpp")
    set(_customsroa_sources
       "${_src_base}/ArrPart.cpp"
+      "${_src_base}/DFConstArgPass.cpp"
       "${_src_base}/loopUnrollArrPartPass.cpp"
       "${_src_base}/ScalarizeArrayOfFifo.cpp"
       "${_src_base}/ScalarizeSingletonBanks.cpp"

@@ -41,6 +41,7 @@
 #endif
 // #undef NDEBUG
 #include "ArrPart.hpp"
+#include "DFConstArgPass.hpp"
 #include "ScalarizeArrayOfFifo.hpp"
 #include "PointerResolutionPass.hpp"
 #include "ScalarizeSingletonBanks.hpp"
@@ -2784,8 +2785,11 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM_Early)));
 
                  // Constant globals passed as parameters (hls4ml weights/biases) must be folded into the
-                 // callee and the now unused parameters dropped, otherwise they reach CSROA as bare
-                 // non-partitioned pointers.
+                 // callee, otherwise they reach CSROA as bare non-partitioned pointers. IPSCCP does it for the
+                 // internal functions, DFConstArgPass for the dataflow modules, which topfname keeps
+                 // external: there the folding happens inside the module, the parameter stays in the signature
+                 // and the call sites pass null, which DeadArgumentElimination then replaces with poison.
+                 MPM.addPass(llvm::DFConstArgPass(topFunctionName_CSROA, pandaTempPath));
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::PromotePass()));
@@ -2868,6 +2872,7 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  // MPM.addPass(llvm::PrintModulePass());
 
                  // Fold again what inlining exposed at module scope.
+                 MPM.addPass(llvm::DFConstArgPass(topFunctionName_CSROA, pandaTempPath));
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
                  MPM.addPass(llvm::DeadArgumentEliminationPass());
