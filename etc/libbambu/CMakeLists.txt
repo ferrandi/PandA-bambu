@@ -192,6 +192,9 @@ endfunction()
 
 function(_panda_archive lib_path objects)
    add_custom_command(OUTPUT "${lib_path}"
+      # qc appends members: rebuilding an existing archive would retain stale
+      # duplicate objects, which can overwrite current IR during extraction.
+      COMMAND "${CMAKE_COMMAND}" -E rm -f "${lib_path}"
       COMMAND "${CMAKE_AR}" qc "${lib_path}" ${objects}
       COMMAND "${CMAKE_RANLIB}" "${lib_path}"
       DEPENDS ${objects}

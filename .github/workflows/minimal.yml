@@ -37,8 +37,6 @@ env:
   storage-url: "${{secrets.CI_STORAGE_URL}}"
   storage-user: "${{secrets.CI_STORAGE_USER}}"
   storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
-  host_jobs: $J
-  host_threads: $OMP_NUM_THREADS
   dist-dir: panda_dist
   CI_COMPILERS: clang-4.0,clang-6.0,clang-7,clang-11,clang-13,clang-16,clang-19
 
@@ -78,8 +76,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
-          echo "threads=${{env.host_threads}}" >> $GITHUB_OUTPUT
+          echo "jobs=${J:-1}" >> $GITHUB_OUTPUT
+          echo "threads=${OMP_NUM_THREADS:-1}" >> $GITHUB_OUTPUT
           cat > docker_exec.sh << EOF
           #!/bin/bash -e
           # Remove generated sources from compilation database
@@ -92,7 +90,7 @@ jobs:
       - name: Run CPPCheck
         uses: ./.github/actions/codechecks-runner
         with:
-          command: ./docker_exec.sh -j${{env.host_jobs}}
+          command: ./docker_exec.sh -j${{steps.host.outputs.jobs}}
           jobs: ${{steps.host.outputs.jobs}}
           threads: ${{steps.host.outputs.threads}}
       - name: Upload CPPCheck HTML report
@@ -105,6 +103,15 @@ jobs:
         id: error
         shell: bash
         run: |
+          python3 - "${{env.cppcheck-dir}}/cppcheck.xml" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          for error in ET.parse(sys.argv[1]).findall('.//error'):
+              if error.get('severity') == 'error':
+                  location = error.find('location')
+                  where = f"{location.get('file')}:{location.get('line')}" if location is not None else 'cppcheck'
+                  print(f"{where}: {error.get('id')}: {error.get('msg')}")
+          PY
           echo "count=$(grep -o -i severity=\"error\" ${{env.cppcheck-dir}}/cppcheck.xml | wc -l)" >> $GITHUB_OUTPUT
       - name: CPPCheck found some errors
         uses: actions/github-script@v8
@@ -669,8 +676,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
-          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
+          echo "jobs=${J:-1}" >> "$GITHUB_OUTPUT"
+          echo "threads=${OMP_NUM_THREADS:-1}" >> "$GITHUB_OUTPUT"
       - name: Verify SoftFloat implementation
         uses: ./.github/actions/base-runner
         with:
@@ -745,8 +752,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
-          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
+          echo "jobs=${J:-1}" >> "$GITHUB_OUTPUT"
+          echo "threads=${OMP_NUM_THREADS:-1}" >> "$GITHUB_OUTPUT"
       - name: Verify LibM functions implementation
         uses: ./.github/actions/base-runner
         with:
@@ -1597,3 +1604,12 @@ jobs:
       - name: Check 'PandA benchmarks for OpenROAD 2' status
         if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
         run: exit 1
+
+  OpenMP-task-support:
+    needs: [build]
+    uses: ./.github/workflows/reusable-openmp-task.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      no-clean: ${{inputs.no-clean || false}}
+      runner-labels: '["self-hosted", "mentor"]'
+    secrets: inherit

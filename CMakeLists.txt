@@ -45,7 +45,7 @@ option(PANDA_ENABLE_OPT "Enable aggressive optimization flags" ON)
 option(PANDA_ENABLE_WERROR "Enable warnings-as-errors set" ON)
 option(PANDA_ENABLE_DEBUG "Enable debug symbols" OFF)
 option(PANDA_ENABLE_UNORDERED "Enable unordered data structure support" OFF)
-option(PANDA_SYNC_PARAMETER_METADATA "Rewrite documentation/bambu_parameters_metadata.json during registry generation" ON)
+option(PANDA_SYNC_PARAMETER_METADATA "Rewrite documentation/bambu_parameters_metadata.json during registry generation" OFF)
 set(PANDA_APPIMAGE_NAME "" CACHE STRING "Name for AppImage package (empty to disable)")
 set(PANDA_APPIMAGE_ROOT "" CACHE PATH "AppImage staging root (used when PANDA_APPIMAGE_NAME is set)")
 set(PANDA_APPIMAGE_PARALLEL "" CACHE STRING "Parallel jobs for the AppImage build/install step (empty uses the backend default)")
@@ -500,3 +500,21 @@ add_custom_target(package
 )
 
 message(STATUS "PandA CMake configuration initialized (bambu, eucalyptus, bambu-cc enabled).")
+
+find_program(PANDA_TEST_VERILATOR verilator)
+if(BUILD_TESTING AND PANDA_TEST_VERILATOR)
+   add_test(NAME priority_encoders
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/verilog/priority_encoder/test_priority_encoders.py"
+              --verilator "${PANDA_TEST_VERILATOR}")
+   set_tests_properties(priority_encoders PROPERTIES LABELS "rtl;technology" TIMEOUT 900)
+elseif(BUILD_TESTING)
+   message(STATUS "Priority encoder regression unavailable: Verilator was not found")
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp_task AND TARGET clang_plugin_19_opt_deduplicate_load_inst)
+   add_test(NAME openmp_task_passes
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_task/test_task_passes.py"
+              --opt "${PANDA_CLANG19_LLVMOPT}" --clang "${PANDA_CLANG19_EXE}" --cxx "${CMAKE_CXX_COMPILER}"
+              --plugin-dir "$<TARGET_FILE_DIR:clang_plugin_19_opt_openmp_task>")
+   set_tests_properties(openmp_task_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 120)
+endif()

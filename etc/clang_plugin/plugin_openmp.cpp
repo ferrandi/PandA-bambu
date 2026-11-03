@@ -110,6 +110,10 @@
 
 namespace llvm
 {
+   cl::opt<bool> OpenMPTaskGraphInput("panda-openmp-task-graph",
+                                      cl::desc("Input contains an extracted OpenMP task graph"), cl::init(false),
+                                      cl::Hidden);
+
    struct openmpBambu;
    static bool remove_openmp_lifetime(llvm::Function& function)
    {
@@ -1694,7 +1698,7 @@ namespace llvm
 #endif
    {
       static char ID;
-
+      static const std::string openMpTaskEntryPointName;
       openmpBambu() : ModulePass(ID)
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
@@ -1732,6 +1736,33 @@ namespace llvm
       bool exec(Module& M)
       {
          bool changed = false;
+         const auto isTaskGraph = OpenMPTaskGraphInput.getValue();
+         if(isTaskGraph)
+         {
+#if PANDA_LLVM_CLANG_MAJOR == 19
+            LLVM_DEBUG(llvm::dbgs() << "Task graph application. Skipping OpenMP parallel for plugin\n");
+            return changed;
+#else
+            assert(false && "OpenMP task are supported with clang19 frontend");
+#endif
+         }
+
+         for(const auto& F : M)
+         {
+            for(const auto& BB : F)
+            {
+               for(const auto& I : BB)
+               {
+                  const auto* call = dyn_cast<CallInst>(&I);
+                  const auto* target = call ? call->getCalledFunction() : nullptr;
+                  if(target && target->getName() == "__kmpc_omp_task_alloc")
+                  {
+                     llvm::report_fatal_error("OpenMP tasks require the LLVM19 frontend (--compiler=I386_CLANG19)");
+                  }
+               }
+            }
+         }
+
          auto default_nt = llvm::ConstantInt::get(M.getContext(), llvm::APInt(32, dflt_nthreads));
          std::set<Function*> ompOutlinedList;
          std::map<Function*, std::set<uint64_t>> argToPromote;
@@ -1799,6 +1830,7 @@ namespace llvm
    };
 
    char openmpBambu::ID = 0;
+   const std::string openmpBambu::openMpTaskEntryPointName = "task_graph";
 
 } // namespace llvm
 

@@ -72,6 +72,7 @@
 #include <filesystem>
 #include <getopt.h>
 #include <iosfwd>
+#include <limits>
 #include <list>
 #include <regex>
 #include <string>
@@ -143,7 +144,9 @@
 #define OPT_NUM_ACCELERATORS (1 + OPT_NO_MIXED_DESIGN)
 #define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_ACCELERATORS)
 #define OPT_PERIOD_CLOCK (1 + OPT_PARALLEL_CONTROLLER)
-#define OPT_CLOCK_NAME (1 + OPT_PERIOD_CLOCK)
+#define OPT_PRIORITY_ENCODER (1 + OPT_PERIOD_CLOCK)
+#define OPT_TASK_RESOURCE_DUPLICATION (1 + OPT_PRIORITY_ENCODER)
+#define OPT_CLOCK_NAME (1 + OPT_TASK_RESOURCE_DUPLICATION)
 #define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
 #define OPT_START_NAME (1 + OPT_RESET_NAME)
 #define OPT_DONE_NAME (1 + OPT_START_NAME)
@@ -504,6 +507,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Specify the done signal name of the top interface (default = done_port).\n\n"
       << "    --idle-name=id\n"
       << "        Specify the idle signal name of the top interface (default = idle_port).\n\n"
+      << "    --task-resource-duplication=N\n"
+      << "        Instances of each OpenMP task resource (positive integer, default=1).\n"
+      << "        Task graphs are detected automatically with the LLVM19 OpenMP frontend.\n\n"
+      << "    --priority-encoder=hierarchical|tree|gates\n"
+      << "        Select combinatorial priority encoders (default = hierarchical).\n\n"
       << "    --clock-period=value\n"
       << "        Specify the period of the clock signal (default = 10ns).\n\n"
       << "    --backend-script-extensions=file\n"
@@ -912,6 +920,8 @@ int BambuParameter::Exec()
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
+      {"priority-encoder", required_argument, nullptr, OPT_PRIORITY_ENCODER},
+      {"task-resource-duplication", required_argument, nullptr, OPT_TASK_RESOURCE_DUPLICATION},
       {"clock-name", required_argument, nullptr, OPT_CLOCK_NAME},
       {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
       {"start-name", required_argument, nullptr, OPT_START_NAME},
@@ -1278,6 +1288,38 @@ int BambuParameter::Exec()
                                  "'. Expected either a single token (<device_string>) or exactly three comma-separated "
                                  "fields (<name>,<speed>,<package>). "
                                  "Examples: --device-name=xc7z020-1clg484 or --device-name=xc7z020,1,clg484.");
+            }
+            break;
+         }
+         case OPT_PRIORITY_ENCODER:
+         {
+            const std::string encoder = optarg;
+            if(encoder != "hierarchical" && encoder != "tree" && encoder != "gates")
+            {
+               THROW_ERROR("--priority-encoder must be hierarchical, tree or gates");
+            }
+            setOption(OPT_priority_encoder, encoder);
+            break;
+         }
+         case OPT_TASK_RESOURCE_DUPLICATION:
+         {
+            const std::string value(optarg);
+            if(value.empty() || value.find_first_not_of("0123456789") != std::string::npos)
+            {
+               THROW_ERROR_USAGE("--task-resource-duplication requires a positive integer");
+            }
+            try
+            {
+               const auto number = std::stoull(value);
+               if(number == 0 || number > std::numeric_limits<unsigned>::max())
+               {
+                  THROW_ERROR_USAGE("--task-resource-duplication is outside the supported positive integer range");
+               }
+               setOption(OPT_task_resource_duplication, static_cast<unsigned>(number));
+            }
+            catch(const std::exception&)
+            {
+               THROW_ERROR_USAGE("--task-resource-duplication requires a positive integer in range");
             }
             break;
          }
@@ -2296,6 +2338,16 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
+   for(const auto* name : {"enable-task", "priority-encoder", "task-resource-duplication"})
+   {
+      if(IsParameter(name))
+      {
+         const auto message = std::string(name) == "enable-task" ?
+                                  "remove this setting; OpenMP tasks are detected automatically" :
+                                  "use --" + std::string(name) + "=<value> instead";
+         THROW_ERROR_USAGE(std::string("--bambu-parameter=") + name + " is no longer supported; " + message);
+      }
+   }
 
    setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/bambu_time_simulation.txt");
    setOption(OPT_profiling_output, getOption<std::string>(OPT_output_directory) + "/bambu_profiling_simulation.txt");
@@ -3359,6 +3411,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_storage_value_insertion_algorithm, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION);
    setOption(OPT_reset_type, "no");
    setOption(OPT_reset_level, false);
+   setOption(OPT_priority_encoder, "hierarchical");
+   setOption(OPT_task_resource_duplication, 1U);
    setOption(OPT_reg_init_value, true);
 
    setOption(OPT_shared_input_registers, false);
