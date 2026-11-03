@@ -142,6 +142,52 @@ if ! grep -Fxq 'GENERATED_KERNEL_ALL_CASES PASS' "$positive_log.normalized"; the
 fi
 cat "$positive_log.normalized" | tee -a "$OUT/aggregate.log"
 
+# Reinvoke the same generated reader five times without resetting the DUT.
+# The testbench branch is selected only by this runtime plusarg; no additional
+# generation or compilation is needed, and it uses the same serialized library.
+reinvoke_log="$OUT/reinvoke-no-reset.log"
+status=0
+modelsim_run "$BUILD" tb_generated_kernel "$reinvoke_log" 180 -- +REINVOKE_NO_RESET || status=$?
+modelsim_normalize_log "$reinvoke_log" "$reinvoke_log.normalized"
+if (( status != 0 )) || grep -Eqi '^\*\* (Error|Fatal):|Segmentation fault|stack smashing|AddressSanitizer|Aborted' "$reinvoke_log.normalized"; then
+  cat "$reinvoke_log" >&2
+  echo "generated kernel no-reset reinvocation simulation failed (status=$status)" >&2
+  exit 1
+fi
+python3 - "$reinvoke_log.normalized" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+lines = Path(sys.argv[1]).read_text().splitlines()
+expected_cases = [
+    "GENERATED_KERNEL_REINVOKE_CASE index=1 n=17 base=01000000 mode=1 ar=2 r=17 consumed=17 done=1",
+    "GENERATED_KERNEL_REINVOKE_CASE index=2 n=0 base=01004000 mode=0 ar=0 r=0 consumed=0 done=1",
+    "GENERATED_KERNEL_REINVOKE_CASE index=3 n=38 base=01000ff0 mode=2 ar=4 r=38 consumed=38 done=1",
+    "GENERATED_KERNEL_REINVOKE_CASE index=4 n=1 base=01002000 mode=1 ar=1 r=1 consumed=1 done=1",
+    "GENERATED_KERNEL_REINVOKE_CASE index=5 n=1 base=01002000 mode=1 ar=1 r=1 consumed=1 done=1",
+]
+expected_final = (
+    "GENERATED_KERNEL_REINVOKE_NO_RESET PASS invocations=5 ar=8 r=57 "
+    "consumed=57 done=5 reset_between=0 cache_reset=0"
+)
+observed_cases = [line for line in lines if "GENERATED_KERNEL_REINVOKE_CASE" in line]
+observed_final = [line for line in lines if "GENERATED_KERNEL_REINVOKE_NO_RESET" in line]
+observed_protocol = [line for line in lines if "GENERATED_KERNEL_REINVOKE_" in line]
+if (observed_cases != expected_cases or observed_final != [expected_final]
+        or observed_protocol != expected_cases + [expected_final]):
+    raise SystemExit(
+        "no-reset reinvocation log did not match the exact ordered case and aggregate contract; "
+        f"cases={observed_cases!r}, final={observed_final!r}"
+    )
+if any(re.search(r"^(?:\*\* (?:Error|Fatal):|GENERATED_KERNEL_FAIL:)|"
+                 r"(?:AXI_BURST_FAULT|REINVOKE_NO_RESET_UNEXPECTED|"
+                 r"GENERATED_KERNEL_REINVOKE_(?:RESET|FAIL))", line)
+       for line in lines):
+    raise SystemExit("no-reset reinvocation emitted an unexpected reset, diagnostic, or failure")
+PY
+cat "$reinvoke_log.normalized" | tee -a "$OUT/aggregate.log"
+
 negative_log="$OUT/negative-sensitivity.log"
 status=0
 modelsim_run "$BUILD" tb_generated_kernel "$negative_log" 60 -- +NEGATIVE_SENSITIVITY || status=$?

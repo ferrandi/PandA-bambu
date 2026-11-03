@@ -86,6 +86,12 @@ if name == "vlog":
 if name == "vsim":
     top = next((arg.split(".", 1)[1] for arg in args if arg.startswith("work.")), "")
     negative = "+NEGATIVE_SENSITIVITY" in args
+    reinvoke = "+REINVOKE_NO_RESET" in args
+    if top == "tb_generated_kernel":
+        calls_file = os.environ.get("FAKE_VSIM_CALLS")
+        if calls_file:
+            with open(calls_file, "a") as stream:
+                stream.write(" ".join(args) + "\n")
     if mode == "timeout":
         print("fake timeout requested", file=sys.stderr)
         raise SystemExit(124)
@@ -96,6 +102,33 @@ if name == "vsim":
         print("** Fatal: injected fatal with zero simulator exit")
         raise SystemExit(0)
     if top == "tb_generated_kernel":
+        if reinvoke:
+            cases = [
+                "GENERATED_KERNEL_REINVOKE_CASE index=1 n=17 base=01000000 mode=1 ar=2 r=17 consumed=17 done=1",
+                "GENERATED_KERNEL_REINVOKE_CASE index=2 n=0 base=01004000 mode=0 ar=0 r=0 consumed=0 done=1",
+                "GENERATED_KERNEL_REINVOKE_CASE index=3 n=38 base=01000ff0 mode=2 ar=4 r=38 consumed=38 done=1",
+                "GENERATED_KERNEL_REINVOKE_CASE index=4 n=1 base=01002000 mode=1 ar=1 r=1 consumed=1 done=1",
+                "GENERATED_KERNEL_REINVOKE_CASE index=5 n=1 base=01002000 mode=1 ar=1 r=1 consumed=1 done=1",
+            ]
+            if mode == "reinvoke-missing":
+                cases.pop()
+            elif mode == "reinvoke-duplicate":
+                cases.append(cases[-1])
+            elif mode == "reinvoke-order":
+                cases[1], cases[2] = cases[2], cases[1]
+            elif mode == "reinvoke-wrong-count":
+                cases[2] = cases[2].replace("ar=4", "ar=2")
+            elif mode == "reinvoke-reset":
+                print("GENERATED_KERNEL_REINVOKE_RESET between=2")
+            elif mode == "reinvoke-diagnostic":
+                print("AXI_BURST_FAULT engine=read reason=unexpected")
+            elif mode == "reinvoke-failure":
+                print("GENERATED_KERNEL_REINVOKE_FAIL invocation=3")
+            for case in cases:
+                print(case)
+            if mode != "reinvoke-missing-final":
+                print("GENERATED_KERNEL_REINVOKE_NO_RESET PASS invocations=5 ar=8 r=57 consumed=57 done=5 reset_between=0 cache_reset=0")
+            raise SystemExit(0)
         if negative:
             print("** Fatal: AXI response data order/value mismatch")
             raise SystemExit(1)
@@ -147,6 +180,7 @@ os.execv("{real_timeout}", ["{real_timeout}", *args])
         env = os.environ.copy()
         env["PATH"] = f"{self.tools}:{self.prefix / 'bin'}:{env['PATH']}"
         env["FAKE_MODELSIM_MODE"] = mode
+        env["FAKE_VSIM_CALLS"] = str(self.base / "vsim-kernel-calls.log")
         for key in ("TMPDIR", "TMP", "TEMP", "BURST_TEST_TMPDIR"):
             if key != "BURST_TEST_TMPDIR":
                 env[key] = str(self.base / "tmp")
@@ -178,6 +212,22 @@ os.execv("{real_timeout}", ["{real_timeout}", *args])
         for count in (0, 1, 15, 16, 17, 38, 1024, 2048, 4096):
             self.assertEqual(aggregate.count(f"KERNEL_CASE PASS n={count} "), 1)
         self.assertIn("GENERATED_KERNEL_NEGATIVE_SENSITIVITY PASS", result.stdout)
+        calls = (self.base / "vsim-kernel-calls.log").read_text().splitlines()
+        self.assertEqual(len(calls), 3, calls)
+        self.assertIn("+REINVOKE_NO_RESET", calls[1])
+        self.assertNotIn("+NEGATIVE_SENSITIVITY", calls[1])
+        self.assertIn("+NEGATIVE_SENSITIVITY", calls[2])
+        self.assertNotIn("+REINVOKE_NO_RESET", calls[0])
+        self._assert_no_verilator()
+
+    def test_kernel_reinvocation_oracle_rejects_bad_records(self) -> None:
+        for mode in ("reinvoke-missing", "reinvoke-missing-final", "reinvoke-duplicate",
+                     "reinvoke-order", "reinvoke-wrong-count", "reinvoke-reset",
+                     "reinvoke-diagnostic", "reinvoke-failure"):
+            with self.subTest(mode=mode):
+                result = self._run_kernel(f"kernel-{mode}", mode)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("no-reset reinvocation", result.stdout + result.stderr)
         self._assert_no_verilator()
 
     def test_kernel_rejects_missing_marker_compile_fatal_timeout_and_crash(self) -> None:
