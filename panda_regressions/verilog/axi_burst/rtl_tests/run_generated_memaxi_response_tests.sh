@@ -12,6 +12,12 @@ fi
     echo "refusing generated ModelSim qualification without BURST_MODELSIM_OUTSIDE_SANDBOX=1" >&2
     exit 2
 }
+SIM_JOBS=${SIM_JOBS:-1}
+[[ $SIM_JOBS =~ ^[0-9]+$ ]] || { echo "SIM_JOBS must be a positive integer (got '$SIM_JOBS')" >&2; exit 2; }
+while [[ $SIM_JOBS == 0* && ${#SIM_JOBS} -gt 1 ]]; do SIM_JOBS=${SIM_JOBS#0}; done
+[[ $SIM_JOBS != 0 ]] || { echo "SIM_JOBS must be a positive integer (got '$SIM_JOBS')" >&2; exit 2; }
+if ((${#SIM_JOBS} > 6)); then SIM_JOBS=6; else SIM_JOBS=$((10#$SIM_JOBS)); fi
+(( SIM_JOBS <= 6 )) || SIM_JOBS=6
 
 BAMBU_ARG=$1
 if [[ $BAMBU_ARG == */* ]]; then
@@ -98,81 +104,53 @@ generate_kernel() {
     fi
     local rtl="$gen/$top.v" lib="$gen/panda_libtech.v"
     [[ -s $rtl && -s $lib ]] || { echo "generated RTL/library missing for $name" >&2; return 1; }
-    if [[ $name == read ]]; then
-        grep -Eq 'Configured read burst regions for bundle src \(B=16\)' "$gen/bambu.stderr.log" || {
+    if [[ $name == read* ]]; then
+        local expected_max=16
+        [[ $name != read_b1_o3 ]] || expected_max=1
+        grep -Eq "Configured read burst regions for bundle src \\(B=$expected_max\\)" "$gen/bambu.stderr.log" || {
             echo "read kernel did not enable its requested burst path" >&2; return 1;
         }
+        if [[ $name == read_b1_o3 ]]; then
+            grep -Eq 'AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=INCREMENTAL\(device\) read_max=1\(explicit\) read_outstanding=3\(explicit\) read_fifo=8\(explicit\)' \
+                "$gen/bambu.stderr.log" || { echo "B1/O3 read profile missing from effective log" >&2; return 1; }
+        fi
         grep -q 'MinimalAXI4MasterPipelined' "$rtl" || { echo "read engine missing from generated RTL" >&2; return 1; }
     else
-        grep -Eq 'Configured write burst region for bundle output \(B=16\)' "$gen/bambu.stderr.log" || {
+        local expected_max=16
+        [[ $name != write_b1_o3 ]] || expected_max=1
+        grep -Eq "Configured write burst region for bundle output \\(B=$expected_max\\)" "$gen/bambu.stderr.log" || {
             echo "write kernel did not enable its requested burst path" >&2; return 1;
         }
+        if [[ $name == write_b1_o3 ]]; then
+            grep -Eq 'AXI_BURST_PROFILE root=write_count_seed_single_beat bundle=output enabled=1 burst_type=INCREMENTAL\(device\).*write_max=1\(explicit\) write_outstanding=3\(explicit\) write_fifo=8\(explicit\)' \
+                "$gen/bambu.stderr.log" || { echo "B1/O3 write profile missing from effective log" >&2; return 1; }
+        fi
         grep -q 'MinimalAXI4MasterPipelinedWrite' "$rtl" || { echo "write engine missing from generated RTL" >&2; return 1; }
     fi
-    sha256sum "$rtl" "$lib" >>"$OUT/provenance.txt"
+    sha256sum "$rtl" "$lib" >>"$OUT/$name/provenance.txt"
 }
 
-generate_kernel read "$READ_SOURCE" kernel
-generate_kernel write "$WRITE_SOURCE" write_count_seed
-
 check_log() {
-    local log=$1 mode=$2 reason=$3 engine=$4
-    local normalized="$log.normalized"
-    modelsim_normalize_log "$log" "$normalized"
-    [[ -s $log.raw-status && -s $log.status ]] || { echo "missing raw/effective statuses: $log" >&2; return 1; }
-    if [[ $mode == control ]]; then
-        if [[ $(<"$log.raw-status") != 0 || $(<"$log.status") != 0 ]] ||
-           grep -Eqi '(Error|Warning|Fatal):|segmentation fault|stack smashing|addresssanitizer|aborted|watchdog|timed out|^AXI_BURST_' "$normalized"; then
-            cat "$log" >&2; echo "generated $engine OKAY control failed" >&2; return 1
-        fi
-        grep -Fq "GENERATED_MEMAXI_RESPONSE_CONTROL mode=$engine done=1" "$normalized" || {
-            cat "$log" >&2; echo "generated $engine control marker missing" >&2; return 1;
-        }
-        return 0
-    fi
-
-    if [[ $(<"$log.raw-status") != 0 || $(<"$log.status") != 0 ]] ||
-       grep -Eqi '(Error|Warning|Fatal):|segmentation fault|stack smashing|addresssanitizer|aborted|watchdog|timed out' "$normalized"; then
-        cat "$log" >&2; echo "generated $engine response-fault containment failed" >&2; return 1
-    fi
-    grep -Fqx "GENERATED_MEMAXI_RESPONSE_CONTAINED mode=$engine response=SLVERR handshakes=1 done=0" "$normalized" || {
-        cat "$log" >&2; echo "generated $engine containment marker missing" >&2; return 1;
-    }
-    if [[ $engine == read ]]; then
-        grep -Eq '^GENERATED_MEMAXI_RESPONSE_RECOVERY mode=read reset=1 reinvocation=1 handshakes=1 result=00000000$' "$normalized" || {
-            cat "$log" >&2; echo "generated read wrapper reset/reinvocation recovery marker missing" >&2; return 1;
-        }
-    else
-        grep -Eq '^GENERATED_MEMAXI_RESPONSE_RECOVERY mode=write reset=1 reinvocation=1 handshakes=1 commits=1$' "$normalized" || {
-            cat "$log" >&2; echo "generated write wrapper reset/reinvocation recovery marker missing" >&2; return 1;
-        }
-    fi
-    python3 - "$normalized" "$engine" "$reason" <<'PY'
-from pathlib import Path
-import re
-import sys
-
-log, engine, reason = Path(sys.argv[1]).read_text(errors="replace"), sys.argv[2], sys.argv[3]
-address = "00001000" if engine == "read" else "00002000"
-records = [line for line in log.splitlines() if line.startswith("AXI_BURST_")]
-if len(records) != 1:
-    raise SystemExit(f"expected one generated-wrapper diagnostic, saw {len(records)}")
-pattern = (rf"^AXI_BURST_FAULT engine={engine} reason={reason} "
-           rf"instance=tb_generated_memaxi_response\.dut\..*\.burst_engine\.report_axi_{engine}_diagnostic "
-           rf"opcode=-1 size=0 address={address} count=1 "
-           + (r"payload=00000000 " if engine == "write" else "")
-           + r"resp=10 id=0 "
-           + (r"descriptors=1 remaining=0$" if engine == "write" else r"last=1 descriptors=1 remaining=1$"))
-if not re.fullmatch(pattern, records[0]):
-    raise SystemExit(f"unexpected generated-wrapper response diagnostic: {records[0]}")
-PY
+    local log=$1 mode=$2 engine=$3
+    python3 -B "$TESTS/test_generated_memaxi_response_runner.py" --check-log "$log" "$mode" "$engine"
 }
 
 run_case() {
     local name=$1 define=$2
+    local engine
     local gen="$OUT/$name/generated" sim="$OUT/$name/modelsim" top=tb_generated_memaxi_response
+    local rtl_top
+    case $name in
+        read|read_multi|read_b1_o3) engine=read; rtl_top=kernel ;;
+        write_multi) engine=write; rtl_top=write_count_seed_three ;;
+        write_b1_o3) engine=write; rtl_top=write_count_seed_single_beat ;;
+        write) engine=write; rtl_top=write_count_seed ;;
+        *) echo "unknown generated MEMAXI case: $name" >&2; return 2 ;;
+    esac
     local -a vlog_defines=("+define+$define")
-    modelsim_compile "$sim" "$top" "$gen/$([[ $name == read ]] && echo kernel || echo write_count_seed).v" \
+    [[ $name != write_multi ]] || vlog_defines+=("+define+RESPONSE_WRITE_MULTI")
+    [[ $name != write_b1_o3 ]] || vlog_defines+=("+define+RESPONSE_WRITE_B1O3")
+    modelsim_compile "$sim" "$top" "$gen/$rtl_top.v" \
         "$gen/panda_libtech.v" "$OUT/common/TestbenchMEMAXI.sv" "$BACKEND" "$TB" -- "${vlog_defines[@]}" || {
         echo "ModelSim compile failed for generated $name wrapper; see $sim/compile.log" >&2
         return 1
@@ -182,12 +160,20 @@ run_case() {
         echo "ModelSim compilation emitted errors or warnings for generated $name wrapper" >&2
         return 1
     fi
-    sha256sum "$sim/compile.log" >>"$OUT/provenance.txt"
+    sha256sum "$sim/compile.log" >>"$OUT/$name/provenance.txt"
     local case_mode log
-    for case_mode in control fault; do
+    local -a case_modes=(control fault)
+    if [[ $name == *_multi ]]; then
+        case_modes=(multi)
+    elif [[ $name == *_b1_o3 ]]; then
+        case_modes=(b1_o3)
+    fi
+    for case_mode in "${case_modes[@]}"; do
         log="$OUT/$name/$case_mode.log"
         local -a runtime_args=()
-        [[ $case_mode != fault ]] || runtime_args+=(+FAULT +AXI_BURST_EXPECT_FAULT)
+        [[ $case_mode != fault && $case_mode != multi ]] || runtime_args+=(+FAULT +AXI_BURST_EXPECT_FAULT)
+        [[ $case_mode != multi ]] || runtime_args+=(+MULTI)
+        [[ $case_mode != b1_o3 ]] || runtime_args+=(+B1O3)
         local status=0
         modelsim_run "$sim" "$top" "$log" 120 -- "${runtime_args[@]}" || status=$?
         if ((status != 0)); then
@@ -196,16 +182,60 @@ run_case() {
             return 1
         fi
         if [[ $case_mode == control ]]; then
-            check_log "$log" control "" "$name" || return $?
+            check_log "$log" control "$engine" || return $?
+        elif [[ $case_mode == multi ]]; then
+            check_log "$log" drain "$engine" || return $?
+        elif [[ $case_mode == b1_o3 ]]; then
+            check_log "$log" b1o3 "$engine" || return $?
         else
-            if [[ $name == read ]]; then reason=RRESP; else reason=BRESP; fi
-            check_log "$log" fault "$reason" "$name" || return $?
+            check_log "$log" fault "$engine" || return $?
         fi
-        cat "$log.normalized" >>"$OUT/aggregate.log"
+        modelsim_normalize_log "$log" "$log.normalized"
     done
 }
 
+run_case_job() {
+    local name=$1 source top define
+    local -a extra_args=()
+    mkdir -p "$OUT/$name/tmp"
+    export TMPDIR="$OUT/$name/tmp" TMP="$OUT/$name/tmp" TEMP="$OUT/$name/tmp"
+    : >"$OUT/$name/provenance.txt"
+    case $name in
+        read) source=$READ_SOURCE; top=kernel; define=RESPONSE_READ ;;
+        read_multi) source=$READ_SOURCE; top=kernel; define=RESPONSE_READ; extra_args=(--extra-cc-options=-DBAMBU_AXI_SUM_O5) ;;
+        read_b1_o3) source=$READ_SOURCE; top=kernel; define=RESPONSE_READ; extra_args=(--extra-cc-options=-DBAMBU_AXI_SUM_B1_O3) ;;
+        write) source=$WRITE_SOURCE; top=write_count_seed; define=RESPONSE_WRITE ;;
+        write_multi) source=$WRITE_SOURCE; top=write_count_seed_three; define=RESPONSE_WRITE ;;
+        write_b1_o3) source=$WRITE_SOURCE; top=write_count_seed_single_beat; define=RESPONSE_WRITE ;;
+        *) echo "unknown generated MEMAXI case: $name" >&2; return 2 ;;
+    esac
+    generate_kernel "$name" "$source" "$top" "${extra_args[@]}" || return $?
+    if [[ $name == write_multi ]] && ! grep -Fq 'write_max=16(explicit) write_outstanding=3(explicit)' \
+        "$OUT/write_multi/generated/bambu.stderr.log"; then
+        echo "multi-write kernel did not resolve the required B16/O3 profile" >&2
+        return 1
+    fi
+    run_case "$name" "$define"
+}
+
+source "$ROOT/panda_regressions/hls/bambu_axi_burst/parallel_helpers.sh"
+BURST_JOB_LOG_DIR="$OUT/jobs"
+mkdir -p "$BURST_JOB_LOG_DIR"
+if ! run_bounded_jobs "$SIM_JOBS" run_case_job read read_multi read_b1_o3 write write_multi write_b1_o3; then
+    echo "generated MEMAXI cases failed; case logs retained under $OUT/jobs" >&2
+    exit 1
+fi
+
 : >"$OUT/aggregate.log"
-run_case read RESPONSE_READ
-run_case write RESPONSE_WRITE
+for name in read read_multi read_b1_o3 write write_multi write_b1_o3; do
+    cat "$OUT/$name/provenance.txt" >>"$OUT/provenance.txt"
+    case $name in
+        read|write) case_modes=(control fault) ;;
+        *_multi) case_modes=(multi) ;;
+        *_b1_o3) case_modes=(b1_o3) ;;
+    esac
+    for case_mode in "${case_modes[@]}"; do
+        cat "$OUT/$name/$case_mode.log.normalized" >>"$OUT/aggregate.log"
+    done
+done
 echo "GENERATED_MEMAXI_RESPONSE_TESTS PASS: $OUT" | tee -a "$OUT/aggregate.log"

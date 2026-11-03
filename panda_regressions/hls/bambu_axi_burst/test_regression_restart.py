@@ -142,10 +142,17 @@ case $script in
         "${BURST_DUPLEX_DEFAULT_SIM_OUTSIDE_SANDBOX:-unset}" >>"${FAKE_JOB_ARGS_FILE:?}"
     fi
     if [[ $name == run_write_burst_engine.sh || $name == run_vector_payload_tests.sh || \
-          $name == run_generated_memaxi_response_tests.sh || $name == run_copy_comparison_tests.sh ]]; then
-      printf '%s|%s|%s|%s|%s\n' "$name" "${BURST_WRITER_GROUP_JOBS:-unset}" \
-        "${SIM_JOBS:-unset}" "${COPY_COMPARISON_JOBS:-unset}" \
+          $name == run_generated_memaxi_response_tests.sh || $name == run_copy_comparison_tests.sh || \
+          $name == run_generated_duplex_tests.sh || $name == run_generated_duplex_kernel_tests.sh || \
+          $name == run_duplex_alias_tests.sh || $name == run_duplex_fallback_tests.sh || \
+          $name == run_duplex_independent_tests.sh || $name == run_mdpi_extent_tests.sh ]]; then
+      printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' "$name" \
+        "${BURST_WRITER_GROUP_JOBS:-unset}" "${SIM_JOBS:-unset}" \
+        "${COPY_COMPARISON_JOBS:-unset}" \
         "${BURST_COPY_COMPARISON_OUTSIDE_SANDBOX:-${BURST_MODELSIM_OUTSIDE_SANDBOX:-unset}}" \
+        "${DUPLEX_G2_JOBS:-unset}" "${DUPLEX_ALIAS_JOBS:-unset}" \
+        "${DUPLEX_FALLBACK_JOBS:-unset}" "${DUPLEX_INDEPENDENT_JOBS:-unset}" \
+        "${MDPI_EXTENT_JOBS:-unset}" \
         >>"${FAKE_JOB_ARGS_FILE:?}"
     fi
     destination=${!#}
@@ -316,15 +323,15 @@ esac
         self.assertEqual(guard, "1")
         self.assertTrue(Path(destination).is_dir())
 
-    def test_functional_dispatch_caps_modelsims_and_keeps_nested_jobs_serial(self) -> None:
+    def test_functional_dispatch_honors_j20_within_weighted_helper_budget(self) -> None:
         output = self.root / "out_functional_concurrency"
         result = self.run_regression(
-            "--group=functional", "--no-clean", "-j4", "-o", str(output),
+            "--group=functional", "--no-clean", "-j20", "-o", str(output),
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         mantis_args = self.mantis_args_file.read_text(encoding="utf-8")
-        self.assertIn("--parallel=2", mantis_args)
-        self.assertNotIn("--parallel=4", mantis_args)
+        self.assertIn("--parallel=20", mantis_args)
+        self.assertRegex(result.stdout, r"Starting \d+ burst helper jobs \(parallel limit 20\)")
         calls = (self.root / "job-calls").read_text(encoding="utf-8")
         for runner in (
             "run_vector_payload_tests.sh", "run_generated_memaxi_response_tests.sh",
@@ -336,11 +343,42 @@ esac
         self.assertTrue((output / "rtl-copy-comparison").is_dir())
         rows = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
         settings = {row.split("|", 1)[0]: row.split("|") for row in rows}
+        self.assertEqual(settings["run_write_burst_engine.sh"][1], "20")
+        self.assertEqual(settings["run_generated_duplex_tests.sh"][2], "2")
+        self.assertEqual(settings["run_generated_duplex_kernel_tests.sh"][2], "6")
+        self.assertEqual(settings["run_generated_duplex_kernel_tests.sh"][5], "6")
+        self.assertEqual(settings["run_duplex_alias_tests.sh"][6], "12")
+        self.assertEqual(settings["run_duplex_fallback_tests.sh"][7], "4")
+        self.assertEqual(settings["run_duplex_independent_tests.sh"][8], "2")
+        self.assertEqual(settings["run_mdpi_extent_tests.sh"][9], "13")
+        self.assertEqual(settings["run_generated_memaxi_response_tests.sh"][2], "6")
+        self.assertEqual(settings["run_copy_comparison_tests.sh"][3], "2")
+        self.assertEqual(settings["run_copy_comparison_tests.sh"][4], "1")
+
+    def test_functional_dispatch_caps_every_nested_pool_at_j1(self) -> None:
+        output = self.root / "out_functional_j1_budget"
+        result = self.run_regression(
+            "--group=functional", "--no-clean", "-j1", "-o", str(output),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        rows = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
+        settings = {row.split("|", 1)[0]: row.split("|") for row in rows}
         self.assertEqual(settings["run_write_burst_engine.sh"][1], "1")
-        self.assertEqual(settings["run_vector_payload_tests.sh"][4], "1")
+        self.assertEqual(settings["run_generated_duplex_tests.sh"][2], "1")
+        self.assertEqual(settings["run_generated_duplex_kernel_tests.sh"][5], "1")
+        self.assertEqual(settings["run_duplex_alias_tests.sh"][6], "1")
+        self.assertEqual(settings["run_duplex_fallback_tests.sh"][7], "1")
+        self.assertEqual(settings["run_duplex_independent_tests.sh"][8], "1")
+        self.assertEqual(settings["run_mdpi_extent_tests.sh"][9], "1")
         self.assertEqual(settings["run_generated_memaxi_response_tests.sh"][2], "1")
         self.assertEqual(settings["run_copy_comparison_tests.sh"][3], "1")
-        self.assertEqual(settings["run_copy_comparison_tests.sh"][4], "1")
+
+    def test_all_dispatch_honors_j20(self) -> None:
+        output = self.root / "out_all_concurrency"
+        result = self.run_regression("--group=all", "--no-clean", "-j20", "-o", str(output))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("--parallel=20", self.mantis_args_file.read_text(encoding="utf-8"))
+        self.assertRegex(result.stdout, r"Starting \d+ burst helper jobs \(parallel limit 20\)")
 
     def test_functional_dispatch_cleans_new_runner_outputs_by_default(self) -> None:
         output = self.root / "out_functional_cleanup"

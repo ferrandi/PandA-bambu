@@ -496,6 +496,11 @@ class CheckerTests(unittest.TestCase):
     def test_invalid_profiles_are_isolated_from_shared_fixture(self):
         cases = pathlib.Path(__file__).parent / "write_compiler_cases"
         ordinary = (cases / "write_cases.cpp").read_text()
+        b1_signature = 'extern "C" void write_count_seed_single_beat'
+        self.assertEqual(ordinary.count(b1_signature), 1)
+        b1_block = b1_signature + ordinary.split(b1_signature, 1)[1].split('extern "C"', 1)[0]
+        self.assertIn("write_fifo_depth=8", b1_block)
+        ordinary = ordinary.replace(b1_block, "", 1)
         for invalid_value in ("max_write_burst_length=0", "write_burst_outstanding=17",
                               "write_fifo_depth=48", "write_fifo_depth=8"):
             self.assertNotIn(invalid_value, ordinary)
