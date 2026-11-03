@@ -131,24 +131,26 @@ generate_kernel() {
 }
 
 check_log() {
-    local log=$1 mode=$2 engine=$3
-    python3 -B "$TESTS/test_generated_memaxi_response_runner.py" --check-log "$log" "$mode" "$engine"
+    local log=$1 mode=$2 engine=$3 reset_type=${4:-} reset_level=${5:-}
+    local -a args=(--check-log "$log" "$mode" "$engine")
+    [[ $mode != reset_pending ]] || args+=("$reset_type" "$reset_level")
+    python3 -B "$TESTS/test_generated_memaxi_response_runner.py" "${args[@]}"
 }
 
 run_case() {
-    local name=$1 define=$2
+    local name=$1 define=$2 reset_type=${3:-} reset_level=${4:-}
     local engine
     local gen="$OUT/$name/generated" sim="$OUT/$name/modelsim" top=tb_generated_memaxi_response
     local rtl_top
     case $name in
-        read|read_multi|read_b1_o3) engine=read; rtl_top=kernel ;;
-        write_multi) engine=write; rtl_top=write_count_seed_three ;;
+        read|read_multi|read_b1_o3|read_reset_*) engine=read; rtl_top=kernel ;;
+        write_multi|write_reset_*) engine=write; rtl_top=write_count_seed_three ;;
         write_b1_o3) engine=write; rtl_top=write_count_seed_single_beat ;;
         write) engine=write; rtl_top=write_count_seed ;;
         *) echo "unknown generated MEMAXI case: $name" >&2; return 2 ;;
     esac
     local -a vlog_defines=("+define+$define")
-    [[ $name != write_multi ]] || vlog_defines+=("+define+RESPONSE_WRITE_MULTI")
+    [[ $name != write_multi && $name != write_reset_* ]] || vlog_defines+=("+define+RESPONSE_WRITE_MULTI")
     [[ $name != write_b1_o3 ]] || vlog_defines+=("+define+RESPONSE_WRITE_B1O3")
     modelsim_compile "$sim" "$top" "$gen/$rtl_top.v" \
         "$gen/panda_libtech.v" "$OUT/common/TestbenchMEMAXI.sv" "$BACKEND" "$TB" -- "${vlog_defines[@]}" || {
@@ -163,7 +165,9 @@ run_case() {
     sha256sum "$sim/compile.log" >>"$OUT/$name/provenance.txt"
     local case_mode log
     local -a case_modes=(control fault)
-    if [[ $name == *_multi ]]; then
+    if [[ $name == *_reset_* ]]; then
+        case_modes=(reset_pending)
+    elif [[ $name == *_multi ]]; then
         case_modes=(multi)
     elif [[ $name == *_b1_o3 ]]; then
         case_modes=(b1_o3)
@@ -174,6 +178,11 @@ run_case() {
         [[ $case_mode != fault && $case_mode != multi ]] || runtime_args+=(+FAULT +AXI_BURST_EXPECT_FAULT)
         [[ $case_mode != multi ]] || runtime_args+=(+MULTI)
         [[ $case_mode != b1_o3 ]] || runtime_args+=(+B1O3)
+        if [[ $case_mode == reset_pending ]]; then
+            runtime_args+=(+RESET_PENDING)
+            [[ $reset_level != high ]] || runtime_args+=(+RESET_ACTIVE_HIGH)
+            [[ $reset_type != async ]] || runtime_args+=(+RESET_ASYNC)
+        fi
         local status=0
         modelsim_run "$sim" "$top" "$log" 120 -- "${runtime_args[@]}" || status=$?
         if ((status != 0)); then
@@ -187,6 +196,8 @@ run_case() {
             check_log "$log" drain "$engine" || return $?
         elif [[ $case_mode == b1_o3 ]]; then
             check_log "$log" b1o3 "$engine" || return $?
+        elif [[ $case_mode == reset_pending ]]; then
+            check_log "$log" reset_pending "$engine" "$reset_type" "$reset_level" || return $?
         else
             check_log "$log" fault "$engine" || return $?
         fi
@@ -200,39 +211,53 @@ run_case_job() {
     mkdir -p "$OUT/$name/tmp"
     export TMPDIR="$OUT/$name/tmp" TMP="$OUT/$name/tmp" TEMP="$OUT/$name/tmp"
     : >"$OUT/$name/provenance.txt"
+    local reset_type= reset_level=
     case $name in
         read) source=$READ_SOURCE; top=kernel; define=RESPONSE_READ ;;
         read_multi) source=$READ_SOURCE; top=kernel; define=RESPONSE_READ; extra_args=(--extra-cc-options=-DBAMBU_AXI_SUM_O5) ;;
         read_b1_o3) source=$READ_SOURCE; top=kernel; define=RESPONSE_READ; extra_args=(--extra-cc-options=-DBAMBU_AXI_SUM_B1_O3) ;;
+        read_reset_*) source=$READ_SOURCE; top=kernel; define=RESPONSE_READ; extra_args=(--extra-cc-options=-DBAMBU_AXI_SUM_O5)
+            reset_type=${name#read_reset_}; reset_level=${reset_type#*_}; reset_type=${reset_type%%_*} ;;
         write) source=$WRITE_SOURCE; top=write_count_seed; define=RESPONSE_WRITE ;;
         write_multi) source=$WRITE_SOURCE; top=write_count_seed_three; define=RESPONSE_WRITE ;;
         write_b1_o3) source=$WRITE_SOURCE; top=write_count_seed_single_beat; define=RESPONSE_WRITE ;;
+        write_reset_*) source=$WRITE_SOURCE; top=write_count_seed_three; define=RESPONSE_WRITE; reset_type=${name#write_reset_}; reset_level=${reset_type#*_}; reset_type=${reset_type%%_*} ;;
         *) echo "unknown generated MEMAXI case: $name" >&2; return 2 ;;
     esac
+    if [[ -n $reset_type ]]; then extra_args+=("--reset-type=$reset_type" "--reset-level=$reset_level"); fi
     generate_kernel "$name" "$source" "$top" "${extra_args[@]}" || return $?
     if [[ $name == write_multi ]] && ! grep -Fq 'write_max=16(explicit) write_outstanding=3(explicit)' \
         "$OUT/write_multi/generated/bambu.stderr.log"; then
         echo "multi-write kernel did not resolve the required B16/O3 profile" >&2
         return 1
     fi
-    run_case "$name" "$define"
+    if [[ -n $reset_type ]]; then
+        run_case "$name" "$define" "$reset_type" "$reset_level"
+    else
+        run_case "$name" "$define"
+    fi
 }
 
 source "$ROOT/panda_regressions/hls/bambu_axi_burst/parallel_helpers.sh"
 BURST_JOB_LOG_DIR="$OUT/jobs"
 mkdir -p "$BURST_JOB_LOG_DIR"
-if ! run_bounded_jobs "$SIM_JOBS" run_case_job read read_multi read_b1_o3 write write_multi write_b1_o3; then
+if ! run_bounded_jobs "$SIM_JOBS" run_case_job read read_multi read_b1_o3 write write_multi write_b1_o3 \
+    read_reset_sync_low read_reset_sync_high read_reset_async_low read_reset_async_high \
+    write_reset_sync_low write_reset_sync_high write_reset_async_low write_reset_async_high; then
     echo "generated MEMAXI cases failed; case logs retained under $OUT/jobs" >&2
     exit 1
 fi
 
 : >"$OUT/aggregate.log"
-for name in read read_multi read_b1_o3 write write_multi write_b1_o3; do
+for name in read read_multi read_b1_o3 write write_multi write_b1_o3 \
+    read_reset_sync_low read_reset_sync_high read_reset_async_low read_reset_async_high \
+    write_reset_sync_low write_reset_sync_high write_reset_async_low write_reset_async_high; do
     cat "$OUT/$name/provenance.txt" >>"$OUT/provenance.txt"
     case $name in
         read|write) case_modes=(control fault) ;;
         *_multi) case_modes=(multi) ;;
         *_b1_o3) case_modes=(b1_o3) ;;
+        *_reset_*) case_modes=(reset_pending) ;;
     esac
     for case_mode in "${case_modes[@]}"; do
         cat "$OUT/$name/$case_mode.log.normalized" >>"$OUT/aggregate.log"

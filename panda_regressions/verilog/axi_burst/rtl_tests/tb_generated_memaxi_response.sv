@@ -3,6 +3,12 @@ module tb_generated_memaxi_response;
   always #5 clock = ~clock;
 
   logic reset = 1'b0;
+  bit reset_active_high = 1'b0;
+  bit reset_async_mode = 1'b0;
+  bit reset_pending_mode = 1'b0;
+  string reset_type_name = "sync";
+  string reset_level_name = "low";
+  wire dut_reset = reset_active_high ? ~reset : reset;
   logic start_port = 1'b0;
   logic [31:0] n = 1;
   logic [31:0] src = 32'h0000_1000;
@@ -89,7 +95,7 @@ module tb_generated_memaxi_response;
 
 `ifdef RESPONSE_READ
   kernel dut (
-    .clock(clock), .reset(reset), .start_port(start_port), .src(src), .n(n),
+    .clock(clock), .reset(dut_reset), .start_port(start_port), .src(src), .n(n),
     .cache_reset(cache_reset),
     .m_axi_src_awready(awready), .m_axi_src_wready(wready), .m_axi_src_bid(bid),
     .m_axi_src_bresp(bresp), .m_axi_src_buser(1'b0), .m_axi_src_bvalid(bvalid),
@@ -117,7 +123,7 @@ module tb_generated_memaxi_response;
   write_count_seed
 `endif
   dut (
-    .clock(clock), .reset(reset), .start_port(start_port), .dst(dst), .n(n), .seed(seed),
+    .clock(clock), .reset(dut_reset), .start_port(start_port), .dst(dst), .n(n), .seed(seed),
     .cache_reset(cache_reset),
     .m_axi_output_awready(awready), .m_axi_output_wready(wready),
     .m_axi_output_bid(bid), .m_axi_output_bresp(bresp), .m_axi_output_buser(1'b0),
@@ -232,6 +238,11 @@ module tb_generated_memaxi_response;
     bit fault_mode;
     bit multi_mode;
     bit b1_o3_mode;
+    reset_pending_mode = $test$plusargs("RESET_PENDING");
+    reset_active_high = $test$plusargs("RESET_ACTIVE_HIGH");
+    reset_async_mode = $test$plusargs("RESET_ASYNC");
+    reset_type_name = reset_async_mode ? "async" : "sync";
+    reset_level_name = reset_active_high ? "high" : "low";
     fault_mode = $test$plusargs("FAULT");
     multi_mode = $test$plusargs("MULTI");
     b1_o3_mode = $test$plusargs("B1O3");
@@ -240,6 +251,14 @@ module tb_generated_memaxi_response;
     repeat (2) @(negedge clock);
 
 `ifdef RESPONSE_READ
+    if (reset_pending_mode)
+    begin
+      n = 48;
+      src = 32'h0000_3000;
+      response_gate = 1'b0;
+      for (i = 0; i < 48; i = i + 1)
+        model.m_utils.set_word(src + i*4, i + 1);
+    end
     if (b1_o3_mode)
     begin
       n = 17;
@@ -257,7 +276,86 @@ module tb_generated_memaxi_response;
     start_port = 1'b1;
     @(negedge clock);
     start_port = 1'b0;
-    if (b1_o3_mode)
+    if (reset_pending_mode)
+    begin
+      cycles = 0;
+      while ((ar_handshakes < 3 || !model_rvalid) && cycles < 1000)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (ar_handshakes != 3 || r_handshakes != 0 || !model_rvalid || !rready || done_port || done_pulses != 0)
+        $fatal(1, "pending-reset read did not reach three queued requests: ar=%0d r=%0d model_rvalid=%b rready=%b done=%b",
+               ar_handshakes, r_handshakes, model_rvalid, rready, done_port);
+      for (i = 0; i < 3; i = i + 1)
+        if (observed_araddr[i] !== src + i*64 || observed_arlen[i] !== 8'd15 ||
+            observed_arsize[i] !== 3'd2 || observed_arburst[i] !== 2'b01)
+          $fatal(1, "pending-reset read descriptor mismatch index=%0d addr=%h len=%0d size=%0d burst=%b",
+                 i, observed_araddr[i], observed_arlen[i], observed_arsize[i], observed_arburst[i]);
+      $display("GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=read reset_type=%s reset_level=%s ar=%0d r=%0d model_pending=1 done=0",
+               reset_type_name, reset_level_name, ar_handshakes, r_handshakes);
+      reset = 1'b0;
+      start_port = 1'b0;
+      if (reset_async_mode)
+      begin
+        #1;
+        if (!idle_port || done_port || rready)
+          $fatal(1, "async pending-reset read did not clear controller/engine before the next active edge: idle=%b rready=%b done=%b",
+                 idle_port, rready, done_port);
+      end
+      else
+      begin
+        #1;
+        if (!rready)
+          $fatal(1, "sync pending-reset read cleared engine before the next active edge");
+      end
+      @(posedge clock);
+      #1;
+      if (rready)
+        $fatal(1, "pending-reset read engine did not clear on the reset clock edge");
+      repeat (2) @(negedge clock);
+      if (done_port || !idle_port || model_rvalid)
+        $fatal(1, "pending-reset read did not clear DUT/model state: idle=%b done=%b model_rvalid=%b",
+               idle_port, done_port, model_rvalid);
+      model.m_utils.reset_counters();
+      src = 32'h0000_4000;
+      n = 17;
+      for (i = 0; i < 17; i = i + 1)
+        model.m_utils.set_word(src + i*4, i + 1);
+      response_gate = 1'b1;
+      reset = 1'b1;
+      repeat (2) @(negedge clock);
+      start_port = 1'b1;
+      @(negedge clock);
+      start_port = 1'b0;
+      cycles = 0;
+      while (!done_port && cycles < 1000)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!done_port)
+        $fatal(1, "pending-reset read recovery did not complete within the cycle limit");
+      @(posedge clock);
+      @(negedge clock);
+      if (return_port !== 32'd153 || ar_handshakes != 2 ||
+          r_handshakes != 17 || rlast_handshakes != 2 || model.m_utils.read_calls != 17 || done_pulses != 1)
+        $fatal(1, "pending-reset read recovery mismatch done=%b result=%0d ar=%0d r=%0d last=%0d reads=%0d pulses=%0d",
+               done_port, return_port, ar_handshakes, r_handshakes, rlast_handshakes,
+               model.m_utils.read_calls, done_pulses);
+      for (i = 0; i < 17; i = i + 1)
+        if (model.m_utils.read_addr[i] !== src + i*4 || model.m_utils.read_data[i] !== i + 1)
+          $fatal(1, "pending-reset read recovery data mismatch index=%0d addr=%h data=%0d",
+                 i, model.m_utils.read_addr[i], model.m_utils.read_data[i]);
+      repeat (8) @(negedge clock);
+      if (ar_handshakes != 2 || r_handshakes != 17 || done_pulses != 1)
+        $fatal(1, "pending-reset read recovery had extra work: ar=%0d r=%0d done=%0d",
+               ar_handshakes, r_handshakes, done_pulses);
+      $display("GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=read reset_type=%s reset_level=%s reinvocation=1 ar=%0d r=%0d rlast=%0d sum=%0d backend=%0d done=1",
+               reset_type_name, reset_level_name, ar_handshakes, r_handshakes,
+               rlast_handshakes, return_port, model.m_utils.read_calls);
+    end
+    else if (b1_o3_mode)
     begin
       cycles = 0;
       while (ar_handshakes < 3 && cycles < 500)
@@ -396,6 +494,13 @@ module tb_generated_memaxi_response;
       $display("GENERATED_MEMAXI_RESPONSE_CONTROL mode=read done=1 result=%08x", return_port);
     end
 `else
+    if (reset_pending_mode)
+    begin
+      n = 48;
+      dst = 32'h0000_3000;
+      seed = 0;
+      response_gate = 1'b0;
+    end
     if (b1_o3_mode)
     begin
       n = 17;
@@ -412,7 +517,98 @@ module tb_generated_memaxi_response;
     start_port = 1'b1;
     @(negedge clock);
     start_port = 1'b0;
-    if (b1_o3_mode)
+    if (reset_pending_mode)
+    begin
+      cycles = 0;
+      while ((aw_handshakes < 3 || w_handshakes < 48 || !model_bvalid) && cycles < 1500)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (aw_handshakes != 3 || w_handshakes != 48 || observed_wlast != 3 ||
+          model.m_utils.write_calls != 48 || b_handshakes != 0 || !model_bvalid || !bready || done_port || done_pulses != 0)
+        $fatal(1, "pending-reset write did not reach three queued responses: aw=%0d w=%0d wlast=%0d commits=%0d b=%0d model_bvalid=%b bready=%b done=%b",
+               aw_handshakes, w_handshakes, observed_wlast, model.m_utils.write_calls,
+               b_handshakes, model_bvalid, bready, done_port);
+      for (i = 0; i < 3; i = i + 1)
+        if (observed_awaddr[i] !== dst + i*64 || observed_awlen[i] !== 8'd15 ||
+            observed_awsize[i] !== 3'd2 || observed_awburst[i] !== 2'b01)
+          $fatal(1, "pending-reset write descriptor mismatch index=%0d addr=%h len=%0d size=%0d burst=%b",
+                 i, observed_awaddr[i], observed_awlen[i], observed_awsize[i], observed_awburst[i]);
+      for (i = 0; i < 48; i = i + 1)
+        if (model.m_utils.write_addr[i] !== dst + i*4 || model.m_utils.write_data[i] !== seed + i ||
+            model.m_utils.write_mask[i] !== 4'hf)
+          $fatal(1, "pending-reset write commit mismatch index=%0d addr=%h data=%h strobe=%h",
+                 i, model.m_utils.write_addr[i], model.m_utils.write_data[i], model.m_utils.write_mask[i]);
+      $display("GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=write reset_type=%s reset_level=%s aw=%0d w=%0d wlast=%0d backend=%0d b=%0d model_pending=1 done=0",
+               reset_type_name, reset_level_name, aw_handshakes, w_handshakes,
+               observed_wlast, model.m_utils.write_calls, b_handshakes);
+      reset = 1'b0;
+      start_port = 1'b0;
+      if (reset_async_mode)
+      begin
+        #1;
+        if (!idle_port || done_port || bready)
+          $fatal(1, "async pending-reset write did not clear controller/engine before the next active edge: idle=%b bready=%b done=%b",
+                 idle_port, bready, done_port);
+      end
+      else
+      begin
+        #1;
+        if (!bready)
+          $fatal(1, "sync pending-reset write cleared engine before the next active edge");
+      end
+      @(posedge clock);
+      #1;
+      if (bready)
+        $fatal(1, "pending-reset write engine did not clear on the reset clock edge");
+      repeat (2) @(negedge clock);
+      if (done_port || !idle_port || model_bvalid)
+        $fatal(1, "pending-reset write did not clear DUT/model state: idle=%b done=%b model_bvalid=%b",
+               idle_port, done_port, model_bvalid);
+      model.m_utils.reset_counters();
+      dst = 32'h0000_4000;
+      n = 17;
+      seed = 100;
+      response_gate = 1'b1;
+      reset = 1'b1;
+      repeat (2) @(negedge clock);
+      start_port = 1'b1;
+      @(negedge clock);
+      start_port = 1'b0;
+      cycles = 0;
+      while (!done_port && cycles < 1000)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!done_port)
+        $fatal(1, "pending-reset write recovery did not complete within the cycle limit");
+      @(posedge clock);
+      @(negedge clock);
+      if (aw_handshakes != 2 || w_handshakes != 17 || observed_wlast != 2 ||
+          b_handshakes != 2 || model.m_utils.write_calls != 17 || done_pulses != 1)
+        $fatal(1, "pending-reset write recovery mismatch done=%b aw=%0d w=%0d wlast=%0d b=%0d commits=%0d pulses=%0d",
+               done_port, aw_handshakes, w_handshakes, observed_wlast, b_handshakes,
+               model.m_utils.write_calls, done_pulses);
+      for (i = 0; i < 17; i = i + 1)
+        if (model.m_utils.write_addr[i] !== dst + i*4 || model.m_utils.write_data[i] !== seed + i ||
+            model.m_utils.write_mask[i] !== 4'hf)
+          $fatal(1, "pending-reset write recovery mismatch index=%0d addr=%h data=%h strobe=%h",
+                 i, model.m_utils.write_addr[i], model.m_utils.write_data[i], model.m_utils.write_mask[i]);
+      if (observed_awaddr[0] !== dst || observed_awlen[0] !== 8'd15 ||
+          observed_awaddr[1] !== dst + 64 || observed_awlen[1] !== 0)
+        $fatal(1, "pending-reset write recovery descriptor mismatch aw0=%h/%0d aw1=%h/%0d",
+               observed_awaddr[0], observed_awlen[0], observed_awaddr[1], observed_awlen[1]);
+      repeat (8) @(negedge clock);
+      if (aw_handshakes != 2 || w_handshakes != 17 || b_handshakes != 2 || done_pulses != 1)
+        $fatal(1, "pending-reset write recovery had extra work: aw=%0d w=%0d b=%0d done=%0d",
+               aw_handshakes, w_handshakes, b_handshakes, done_pulses);
+      $display("GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=write reset_type=%s reset_level=%s reinvocation=1 aw=%0d w=%0d wlast=%0d b=%0d backend=%0d strobes=ffff done=1",
+               reset_type_name, reset_level_name, aw_handshakes, w_handshakes,
+               observed_wlast, b_handshakes, model.m_utils.write_calls);
+    end
+    else if (b1_o3_mode)
     begin
       cycles = 0;
       while ((aw_handshakes < 3 || w_handshakes < 3) && cycles < 500)
