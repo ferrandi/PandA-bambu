@@ -22,7 +22,7 @@ TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", ROOT / "documentation/tmp"))
 
 
 def validate_transcript(transcript: str, raw_status: str, status: str, mode: str, engine: str,
-                        reset_type: str = "", reset_level: str = "") -> None:
+                        reset_type: str = "", reset_level: str = "", channel: str = "") -> None:
     normalized = "\n".join(line[2:] if line.startswith("# ") else line for line in transcript.splitlines())
     if raw_status.strip() != "0" or status.strip() != "0":
         raise ValueError(f"nonzero ModelSim status: raw={raw_status.strip()} effective={status.strip()}")
@@ -63,6 +63,30 @@ def validate_transcript(transcript: str, raw_status: str, status: str, mode: str
                     f"reset_level={reset_level} reinvocation=1 aw=2 w=17 wlast=2 b=2 backend=17 strobes=ffff done=1")
         if markers != [pending, recovery] or records:
             raise ValueError(f"wrong pending-reset markers/diagnostics: markers={markers}, diagnostics={records}")
+        return
+
+    if mode in ("reset_ar", "reset_aw", "reset_w"):
+        expected_channel = mode.removeprefix("reset_").upper()
+        channel = channel.upper()
+        if (reset_type not in ("sync", "async") or reset_level not in ("low", "high") or
+                channel != expected_channel):
+            raise ValueError(f"invalid stalled-reset profile: {engine}/{reset_type}/{reset_level}/{channel}")
+        if (engine, channel) not in (("read", "AR"), ("write", "AW"), ("write", "W")):
+            raise ValueError(f"invalid stalled-reset engine/channel: {engine}/{channel}")
+        profile = f"engine={engine} channel={channel} reset_type={reset_type} reset_level={reset_level}"
+        pending_counts = {
+            "AR": "ar=0 r=0 backend=0 done=0",
+            "AW": "aw=0 w=0 b=0 backend=0 done=0",
+            "W": "aw=1 w=0 b=0 backend=0 done=0",
+        }[channel]
+        recovery_counts = ("ar=2 r=17 rlast=2 sum=153 backend=17 done=1" if channel == "AR" else
+                           "aw=2 w=17 wlast=2 b=2 backend=17 strobes=ffff done=1")
+        expected_markers = [
+            f"GENERATED_MEMAXI_RESPONSE_RESET_STALLED {profile} {pending_counts}",
+            f"GENERATED_MEMAXI_RESPONSE_RESET_STALLED_RECOVERY {profile} reinvocation=1 {recovery_counts}",
+        ]
+        if markers != expected_markers or records:
+            raise ValueError(f"wrong stalled-reset markers/diagnostics: markers={markers}, diagnostics={records}")
         return
 
     if mode == "fault":
@@ -107,13 +131,14 @@ def validate_transcript(transcript: str, raw_status: str, status: str, mode: str
         raise ValueError(f"unexpected generated-wrapper response diagnostic: {records[0]}")
 
 
-def check_log(path: Path, mode: str, engine: str, reset_type: str = "", reset_level: str = "") -> None:
+def check_log(path: Path, mode: str, engine: str, reset_type: str = "", reset_level: str = "",
+              channel: str = "") -> None:
     raw = path.with_suffix(path.suffix + ".raw-status")
     effective = path.with_suffix(path.suffix + ".status")
     if not path.is_file() or not raw.is_file() or not effective.is_file():
         raise ValueError(f"missing transcript or raw/effective status: {path}")
     validate_transcript(path.read_text(errors="replace"), raw.read_text(), effective.read_text(),
-                        mode, engine, reset_type, reset_level)
+                        mode, engine, reset_type, reset_level, channel)
 
 
 class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
@@ -155,9 +180,10 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
         return "\n".join(lines)
 
     def check(self, engine: str, mode: str, transcript: str | None = None,
-              raw: str = "0", effective: str = "0", reset_type: str = "", reset_level: str = "") -> None:
+              raw: str = "0", effective: str = "0", reset_type: str = "", reset_level: str = "",
+              channel: str = "") -> None:
         validate_transcript(transcript if transcript is not None else self.transcript(engine, mode),
-                             raw, effective, mode, engine, reset_type, reset_level)
+                             raw, effective, mode, engine, reset_type, reset_level, channel)
 
     def test_accepts_all_six_scenario_contracts(self) -> None:
         for engine in ("read", "write"):
@@ -245,6 +271,41 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
             with self.subTest(transcript=changed):
                 with self.assertRaises(ValueError):
                     self.check("read", "reset_pending", changed, reset_type="sync", reset_level="low")
+
+    @staticmethod
+    def stalled_reset_transcript(engine: str, channel: str, reset_type: str, reset_level: str) -> str:
+        profile = f"engine={engine} channel={channel} reset_type={reset_type} reset_level={reset_level}"
+        pending_counts = {"AR": "ar=0 r=0 backend=0 done=0",
+                          "AW": "aw=0 w=0 b=0 backend=0 done=0",
+                          "W": "aw=1 w=0 b=0 backend=0 done=0"}[channel]
+        recovery_counts = ("ar=2 r=17 rlast=2 sum=153 backend=17 done=1" if channel == "AR" else
+                           "aw=2 w=17 wlast=2 b=2 backend=17 strobes=ffff done=1")
+        return (f"GENERATED_MEMAXI_RESPONSE_RESET_STALLED {profile} {pending_counts}\n"
+                f"GENERATED_MEMAXI_RESPONSE_RESET_STALLED_RECOVERY {profile} reinvocation=1 {recovery_counts}")
+
+    def test_accepts_all_stalled_request_reset_profiles(self) -> None:
+        for engine, channel in (("read", "AR"), ("write", "AW"), ("write", "W")):
+            for reset_type in ("sync", "async"):
+                for reset_level in ("low", "high"):
+                    with self.subTest(engine=engine, channel=channel, reset_type=reset_type, reset_level=reset_level):
+                        self.check(engine, f"reset_{channel.lower()}",
+                                   self.stalled_reset_transcript(engine, channel, reset_type, reset_level),
+                                   reset_type=reset_type, reset_level=reset_level, channel=channel)
+
+    def test_rejects_stalled_reset_wrong_profile_counts_channel_and_diagnostics(self) -> None:
+        good = self.stalled_reset_transcript("read", "AR", "async", "low")
+        variants = (good.replace(" ar=0", " ar=1"),
+                    good.replace(" reset_level=low", " reset_level=high"),
+                    good.replace(" channel=AR", " channel=AW"),
+                    good.replace("GENERATED_MEMAXI_RESPONSE_RESET_STALLED_RECOVERY", "REMOVED"),
+                    good + "\n" + good.splitlines()[0],
+                    good + "\nAXI_BURST_FAULT unexpected")
+        for changed in variants:
+            with self.subTest(transcript=changed):
+                with self.assertRaises(ValueError):
+                    self.check("read", "reset_ar", changed, reset_type="async", reset_level="low", channel="AR")
+        with self.assertRaises(ValueError):
+            self.check("read", "reset_aw", good, reset_type="async", reset_level="low", channel="AW")
 
     def test_rejects_nonzero_status_crash_and_timeout_even_with_pass_markers(self) -> None:
         transcript = self.transcript("write", "control")
@@ -361,10 +422,23 @@ elif tool == "vsim":
     b1 = "+B1O3" in args
     reset_pending = "+RESET_PENDING" in args
     fault = "+FAULT" in args
+    stall_channel = next((arg.split("=", 1)[1] for arg in args if arg.startswith("+RESET_STALL_CHANNEL=")), "")
     reset_type, reset_level = case.removeprefix("read_reset_").removeprefix("write_reset_").split("_") if reset_pending else ("", "")
+    with (Path.cwd() / "runtime-plusargs.log").open("a", encoding="utf-8") as plusarg_log:
+        plusarg_log.write(" ".join(arg for arg in args if arg.startswith("+")) + "\n")
     activity(True)
     time.sleep(0.12)
-    if reset_pending:
+    if reset_pending and stall_channel:
+        profile = "engine=%s channel=%s reset_type=%s reset_level=%s" % (engine, stall_channel, reset_type, reset_level)
+        pending_counts = {"AR": "ar=0 r=0 backend=0 done=0",
+                          "AW": "aw=0 w=0 b=0 backend=0 done=0",
+                          "W": "aw=1 w=0 b=0 backend=0 done=0"}[stall_channel]
+        recovery_counts = ("ar=2 r=17 rlast=2 sum=153 backend=17 done=1" if stall_channel == "AR" else
+                           "aw=2 w=17 wlast=2 b=2 backend=17 strobes=ffff done=1")
+        print("GENERATED_MEMAXI_RESPONSE_RESET_STALLED %s %s" % (profile, pending_counts))
+        print("GENERATED_MEMAXI_RESPONSE_RESET_STALLED_RECOVERY %s reinvocation=1 %s" %
+              (profile, recovery_counts))
+    elif reset_pending:
         print("GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=read reset_type=%s reset_level=%s ar=3 r=0 model_pending=1 done=0" %
               (reset_type, reset_level) if read else
               "GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=write reset_type=%s reset_level=%s aw=3 w=48 wlast=3 backend=48 b=0 model_pending=1 done=0" %
@@ -439,6 +513,20 @@ elif tool == "vsim":
                     self.assertIn(f"--reset-type={reset_type}", command)
                     self.assertIn(f"--reset-level={reset_level}", command)
                     self.assertIn(f"RESET_PENDING engine={engine} reset_type={reset_type} reset_level={reset_level}", aggregate)
+                    runtime = (output / name / "modelsim/runtime-plusargs.log").read_text().splitlines()
+                    reset_flags = {"+RESET_PENDING"}
+                    if reset_type == "async":
+                        reset_flags.add("+RESET_ASYNC")
+                    if reset_level == "high":
+                        reset_flags.add("+RESET_ACTIVE_HIGH")
+                    channels = ("AR",) if engine == "read" else ("AW", "W")
+                    expected_runtime = [reset_flags, *(
+                        reset_flags | {f"+RESET_STALL_CHANNEL={channel}"} for channel in channels
+                    )]
+                    self.assertEqual([set(line.split()) for line in runtime], expected_runtime)
+                    for channel in channels:
+                        self.assertIn(f"RESET_STALLED engine={engine} channel={channel} reset_type={reset_type} "
+                                      f"reset_level={reset_level}", aggregate)
 
     def test_failure_does_not_emit_aggregate_pass(self) -> None:
         output = self.scratch / "failed"
@@ -480,12 +568,14 @@ elif tool == "vsim":
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--check-log":
-        if len(sys.argv) not in (5, 7):
-            raise SystemExit("usage: test_generated_memaxi_response_runner.py --check-log LOG MODE ENGINE [RESET_TYPE RESET_LEVEL]")
+        if len(sys.argv) not in (5, 7, 8):
+            raise SystemExit("usage: test_generated_memaxi_response_runner.py --check-log LOG MODE ENGINE "
+                             "[RESET_TYPE RESET_LEVEL [CHANNEL]]")
         try:
             check_log(Path(sys.argv[2]), sys.argv[3], sys.argv[4],
-                      sys.argv[5] if len(sys.argv) == 7 else "",
-                      sys.argv[6] if len(sys.argv) == 7 else "")
+                      sys.argv[5] if len(sys.argv) >= 7 else "",
+                      sys.argv[6] if len(sys.argv) >= 7 else "",
+                      sys.argv[7] if len(sys.argv) == 8 else "")
         except (OSError, ValueError) as exc:
             raise SystemExit(f"generated MEMAXI transcript check failed: {exc}") from exc
         raise SystemExit(0)

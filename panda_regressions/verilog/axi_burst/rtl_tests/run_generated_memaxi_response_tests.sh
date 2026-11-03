@@ -133,7 +133,11 @@ generate_kernel() {
 check_log() {
     local log=$1 mode=$2 engine=$3 reset_type=${4:-} reset_level=${5:-}
     local -a args=(--check-log "$log" "$mode" "$engine")
-    [[ $mode != reset_pending ]] || args+=("$reset_type" "$reset_level")
+    if [[ $mode == reset_pending ]]; then
+        args+=("$reset_type" "$reset_level")
+    elif [[ $mode == reset_* ]]; then
+        args+=("$reset_type" "$reset_level" "${mode#reset_}")
+    fi
     python3 -B "$TESTS/test_generated_memaxi_response_runner.py" "${args[@]}"
 }
 
@@ -166,7 +170,11 @@ run_case() {
     local case_mode log
     local -a case_modes=(control fault)
     if [[ $name == *_reset_* ]]; then
-        case_modes=(reset_pending)
+        if [[ $engine == read ]]; then
+            case_modes=(reset_pending reset_ar)
+        else
+            case_modes=(reset_pending reset_aw reset_w)
+        fi
     elif [[ $name == *_multi ]]; then
         case_modes=(multi)
     elif [[ $name == *_b1_o3 ]]; then
@@ -178,11 +186,17 @@ run_case() {
         [[ $case_mode != fault && $case_mode != multi ]] || runtime_args+=(+FAULT +AXI_BURST_EXPECT_FAULT)
         [[ $case_mode != multi ]] || runtime_args+=(+MULTI)
         [[ $case_mode != b1_o3 ]] || runtime_args+=(+B1O3)
-        if [[ $case_mode == reset_pending ]]; then
+        if [[ $case_mode == reset_pending || $case_mode == reset_ar ||
+              $case_mode == reset_aw || $case_mode == reset_w ]]; then
             runtime_args+=(+RESET_PENDING)
             [[ $reset_level != high ]] || runtime_args+=(+RESET_ACTIVE_HIGH)
             [[ $reset_type != async ]] || runtime_args+=(+RESET_ASYNC)
         fi
+        case $case_mode in
+            reset_ar) runtime_args+=(+RESET_STALL_CHANNEL=AR) ;;
+            reset_aw) runtime_args+=(+RESET_STALL_CHANNEL=AW) ;;
+            reset_w) runtime_args+=(+RESET_STALL_CHANNEL=W) ;;
+        esac
         local status=0
         modelsim_run "$sim" "$top" "$log" 120 -- "${runtime_args[@]}" || status=$?
         if ((status != 0)); then
@@ -198,6 +212,8 @@ run_case() {
             check_log "$log" b1o3 "$engine" || return $?
         elif [[ $case_mode == reset_pending ]]; then
             check_log "$log" reset_pending "$engine" "$reset_type" "$reset_level" || return $?
+        elif [[ $case_mode == reset_* ]]; then
+            check_log "$log" "$case_mode" "$engine" "$reset_type" "$reset_level" || return $?
         else
             check_log "$log" fault "$engine" || return $?
         fi
@@ -257,7 +273,8 @@ for name in read read_multi read_b1_o3 write write_multi write_b1_o3 \
         read|write) case_modes=(control fault) ;;
         *_multi) case_modes=(multi) ;;
         *_b1_o3) case_modes=(b1_o3) ;;
-        *_reset_*) case_modes=(reset_pending) ;;
+        read_reset_*) case_modes=(reset_pending reset_ar) ;;
+        write_reset_*) case_modes=(reset_pending reset_aw reset_w) ;;
     esac
     for case_mode in "${case_modes[@]}"; do
         cat "$OUT/$name/$case_mode.log.normalized" >>"$OUT/aggregate.log"

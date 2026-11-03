@@ -6,6 +6,7 @@ module tb_generated_memaxi_response;
   bit reset_active_high = 1'b0;
   bit reset_async_mode = 1'b0;
   bit reset_pending_mode = 1'b0;
+  string reset_stall_channel = "";
   string reset_type_name = "sync";
   string reset_level_name = "low";
   wire dut_reset = reset_active_high ? ~reset : reset;
@@ -32,6 +33,7 @@ module tb_generated_memaxi_response;
   wire aruser;
   wire arvalid;
   wire arready;
+  wire model_arready;
   wire model_rvalid;
   wire [5:0] rid;
   wire model_rid;
@@ -54,12 +56,14 @@ module tb_generated_memaxi_response;
   wire awuser;
   wire awvalid;
   wire awready;
+  wire model_awready;
   wire [31:0] wdata;
   wire [3:0] wstrb;
   wire wlast;
   wire wuser;
   wire wvalid;
   wire wready;
+  wire model_wready;
   wire [5:0] bid;
   wire model_bid;
   wire [1:0] bresp;
@@ -67,6 +71,9 @@ module tb_generated_memaxi_response;
   wire bready;
 
   logic response_gate = 1'b1;
+  logic allow_ar = 1'b1;
+  logic allow_aw = 1'b1;
+  logic allow_w = 1'b1;
   integer ar_handshakes = 0;
   integer aw_handshakes = 0;
   integer w_handshakes = 0;
@@ -92,6 +99,9 @@ module tb_generated_memaxi_response;
   assign bid = {5'b0, model_bid};
   assign rvalid = model_rvalid && response_gate;
   assign bvalid = model_bvalid && response_gate;
+  assign arready = model_arready && allow_ar;
+  assign awready = model_awready && allow_aw;
+  assign wready = model_wready && allow_w;
 
 `ifdef RESPONSE_READ
   kernel dut (
@@ -150,13 +160,13 @@ module tb_generated_memaxi_response;
     .clock(clock), .reset(reset),
     .arid(arid[0]), .araddr(araddr), .arlen(arlen), .arsize(arsize), .arburst(arburst),
     .arlock(arlock), .arcache(arcache), .arprot(arprot), .arqos(arqos),
-    .arregion(arregion), .aruser(aruser), .arvalid(arvalid), .arready(arready),
+    .arregion(arregion), .aruser(aruser), .arvalid(arvalid && allow_ar), .arready(model_arready),
     .rid(model_rid), .rdata(rdata), .rresp(rresp), .ruser(), .rlast(rlast),
     .rvalid(model_rvalid), .rready(rready && response_gate),
     .awid(awid[0]), .awaddr(awaddr), .awlen(awlen), .awsize(awsize), .awburst(awburst),
     .awlock(awlock), .awcache(awcache), .awprot(awprot), .awqos(awqos),
-    .awregion(awregion), .awuser(awuser), .awvalid(awvalid), .awready(awready),
-    .wdata(wdata), .wstrb(wstrb), .wlast(wlast), .wvalid(wvalid), .wready(wready),
+    .awregion(awregion), .awuser(awuser), .awvalid(awvalid && allow_aw), .awready(model_awready),
+    .wdata(wdata), .wstrb(wstrb), .wlast(wlast), .wvalid(wvalid && allow_w), .wready(model_wready),
     .wuser(wuser), .bid(model_bid), .bresp(bresp), .buser(), .bvalid(model_bvalid), .bready(bready && response_gate)
   );
 
@@ -238,11 +248,40 @@ module tb_generated_memaxi_response;
     bit fault_mode;
     bit multi_mode;
     bit b1_o3_mode;
+    reg [31:0] saved_payload;
+    reg [31:0] saved_address;
+    reg [7:0] saved_length;
+    reg [2:0] saved_size;
+    reg [1:0] saved_burst;
+    reg [3:0] saved_strobe;
+    reg saved_last;
     reset_pending_mode = $test$plusargs("RESET_PENDING");
     reset_active_high = $test$plusargs("RESET_ACTIVE_HIGH");
     reset_async_mode = $test$plusargs("RESET_ASYNC");
     reset_type_name = reset_async_mode ? "async" : "sync";
     reset_level_name = reset_active_high ? "high" : "low";
+    if ($value$plusargs("RESET_STALL_CHANNEL=%s", reset_stall_channel))
+    begin
+      if (!reset_pending_mode)
+        $fatal(1, "RESET_STALL_CHANNEL requires RESET_PENDING");
+`ifdef RESPONSE_READ
+      if (reset_stall_channel != "AR")
+        $fatal(1, "read reset stall channel must be AR, got %s", reset_stall_channel);
+      allow_ar = 1'b0;
+`else
+      if (reset_stall_channel == "AW")
+      begin
+        allow_aw = 1'b0;
+        allow_w = 1'b0;
+      end
+      else if (reset_stall_channel == "W")
+      begin
+        allow_w = 1'b0;
+      end
+      else
+        $fatal(1, "write reset stall channel must be AW or W, got %s", reset_stall_channel);
+`endif
+    end
     fault_mode = $test$plusargs("FAULT");
     multi_mode = $test$plusargs("MULTI");
     b1_o3_mode = $test$plusargs("B1O3");
@@ -251,13 +290,20 @@ module tb_generated_memaxi_response;
     repeat (2) @(negedge clock);
 
 `ifdef RESPONSE_READ
-    if (reset_pending_mode)
+    if (reset_pending_mode && reset_stall_channel == "")
     begin
       n = 48;
       src = 32'h0000_3000;
       response_gate = 1'b0;
       for (i = 0; i < 48; i = i + 1)
         model.m_utils.set_word(src + i*4, i + 1);
+    end
+    else if (reset_pending_mode)
+    begin
+      n = 1;
+      src = 32'h0000_3000;
+      response_gate = 1'b1;
+      model.m_utils.set_word(src, 32'd77);
     end
     if (b1_o3_mode)
     begin
@@ -276,7 +322,92 @@ module tb_generated_memaxi_response;
     start_port = 1'b1;
     @(negedge clock);
     start_port = 1'b0;
-    if (reset_pending_mode)
+    if (reset_pending_mode && reset_stall_channel == "AR")
+    begin
+      cycles = 0;
+      while (!arvalid && cycles < 500)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!arvalid || arready || ar_handshakes != 0 || r_handshakes != 0 ||
+          model.m_utils.read_calls != 0 || done_port || done_pulses != 0)
+        $fatal(1, "stalled AR request did not reach its pending state: arvalid=%b arready=%b ar=%0d r=%0d reads=%0d done=%b",
+               arvalid, arready, ar_handshakes, r_handshakes, model.m_utils.read_calls, done_port);
+      saved_address = araddr;
+      saved_length = arlen;
+      saved_size = arsize;
+      saved_burst = arburst;
+      if (saved_address !== src || saved_length !== 0 || saved_size !== 3'd2 || saved_burst !== 2'b01)
+        $fatal(1, "stalled AR payload mismatch: addr=%h len=%0d size=%0d burst=%b",
+               saved_address, saved_length, saved_size, saved_burst);
+      for (i = 0; i < 3; i = i + 1)
+      begin
+        @(negedge clock);
+        if (!arvalid || arready || araddr !== saved_address || arlen !== saved_length ||
+            arsize !== saved_size || arburst !== saved_burst || ar_handshakes != 0 ||
+            model.m_utils.read_calls != 0 || done_port)
+          $fatal(1, "stalled AR request changed before reset: addr=%h len=%0d size=%0d burst=%b",
+                 araddr, arlen, arsize, arburst);
+      end
+      $display("GENERATED_MEMAXI_RESPONSE_RESET_STALLED engine=read channel=AR reset_type=%s reset_level=%s ar=%0d r=%0d backend=%0d done=0",
+               reset_type_name, reset_level_name, ar_handshakes, r_handshakes, model.m_utils.read_calls);
+      reset = 1'b0;
+      start_port = 1'b0;
+      #1;
+      if (reset_async_mode)
+      begin
+        if (arvalid)
+          $fatal(1, "async reset did not clear stalled AR before the next active edge");
+      end
+      else if (!arvalid || araddr !== saved_address || arlen !== saved_length ||
+               arsize !== saved_size || arburst !== saved_burst)
+        $fatal(1, "sync reset cleared or changed stalled AR before the next active edge");
+      @(posedge clock);
+      #1;
+      if (arvalid || rready || bready || awvalid || wvalid)
+        $fatal(1, "stalled AR state remained after reset clock edge");
+      repeat (2) @(negedge clock);
+      if (!idle_port || done_port || model_rvalid || model_bvalid)
+        $fatal(1, "stalled AR reset did not clear model/controller state");
+      model.m_utils.reset_counters();
+      src = 32'h0000_4000;
+      n = 17;
+      for (i = 0; i < 17; i = i + 1)
+        model.m_utils.set_word(src + i*4, i + 1);
+      allow_ar = 1'b1;
+      response_gate = 1'b1;
+      reset = 1'b1;
+      repeat (2) @(negedge clock);
+      start_port = 1'b1;
+      @(negedge clock);
+      start_port = 1'b0;
+      cycles = 0;
+      while (!done_port && cycles < 1000)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!done_port)
+        $fatal(1, "stalled AR recovery did not complete within the cycle limit");
+      @(posedge clock);
+      @(negedge clock);
+      if (return_port !== 32'd153 || ar_handshakes != 2 || r_handshakes != 17 ||
+          rlast_handshakes != 2 || model.m_utils.read_calls != 17 || done_pulses != 1)
+        $fatal(1, "stalled AR recovery mismatch: result=%0d ar=%0d r=%0d last=%0d reads=%0d done=%0d",
+               return_port, ar_handshakes, r_handshakes, rlast_handshakes,
+               model.m_utils.read_calls, done_pulses);
+      for (i = 0; i < 17; i = i + 1)
+        if (model.m_utils.read_addr[i] !== src + i*4 || model.m_utils.read_data[i] !== i + 1)
+          $fatal(1, "stalled AR recovery data mismatch index=%0d", i);
+      repeat (8) @(negedge clock);
+      if (ar_handshakes != 2 || r_handshakes != 17 || done_pulses != 1)
+        $fatal(1, "stalled AR recovery had extra work");
+      $display("GENERATED_MEMAXI_RESPONSE_RESET_STALLED_RECOVERY engine=read channel=AR reset_type=%s reset_level=%s reinvocation=1 ar=%0d r=%0d rlast=%0d sum=%0d backend=%0d done=1",
+               reset_type_name, reset_level_name, ar_handshakes, r_handshakes,
+               rlast_handshakes, return_port, model.m_utils.read_calls);
+    end
+    else if (reset_pending_mode)
     begin
       cycles = 0;
       while ((ar_handshakes < 3 || !model_rvalid) && cycles < 1000)
@@ -494,12 +625,19 @@ module tb_generated_memaxi_response;
       $display("GENERATED_MEMAXI_RESPONSE_CONTROL mode=read done=1 result=%08x", return_port);
     end
 `else
-    if (reset_pending_mode)
+    if (reset_pending_mode && reset_stall_channel == "")
     begin
       n = 48;
       dst = 32'h0000_3000;
       seed = 0;
       response_gate = 1'b0;
+    end
+    else if (reset_pending_mode)
+    begin
+      n = 1;
+      dst = 32'h0000_3000;
+      seed = 0;
+      response_gate = 1'b1;
     end
     if (b1_o3_mode)
     begin
@@ -517,7 +655,138 @@ module tb_generated_memaxi_response;
     start_port = 1'b1;
     @(negedge clock);
     start_port = 1'b0;
-    if (reset_pending_mode)
+    if (reset_pending_mode && reset_stall_channel != "")
+    begin
+      if (reset_stall_channel == "AW")
+      begin
+        cycles = 0;
+        while (!awvalid && cycles < 500)
+        begin
+          @(negedge clock);
+          cycles = cycles + 1;
+        end
+        if (!awvalid || awready || wready || aw_handshakes != 0 || w_handshakes != 0 ||
+            b_handshakes != 0 || model.m_utils.write_calls != 0 || done_port || done_pulses != 0)
+          $fatal(1, "stalled AW request did not reach its pending state: awvalid=%b awready=%b aw=%0d w=%0d writes=%0d done=%b",
+                 awvalid, awready, aw_handshakes, w_handshakes, model.m_utils.write_calls, done_port);
+        saved_address = awaddr;
+        saved_length = awlen;
+        saved_size = awsize;
+        saved_burst = awburst;
+        if (saved_address !== dst || saved_length !== 0 || saved_size !== 3'd2 || saved_burst !== 2'b01)
+          $fatal(1, "stalled AW payload mismatch: addr=%h len=%0d size=%0d burst=%b",
+                 saved_address, saved_length, saved_size, saved_burst);
+        for (i = 0; i < 3; i = i + 1)
+        begin
+          @(negedge clock);
+          if (!awvalid || awready || wready || awaddr !== saved_address || awlen !== saved_length ||
+              awsize !== saved_size || awburst !== saved_burst || aw_handshakes != 0 ||
+              w_handshakes != 0 || model.m_utils.write_calls != 0 || done_port)
+            $fatal(1, "stalled AW request changed before reset: addr=%h len=%0d size=%0d burst=%b",
+                   awaddr, awlen, awsize, awburst);
+        end
+        $display("GENERATED_MEMAXI_RESPONSE_RESET_STALLED engine=write channel=AW reset_type=%s reset_level=%s aw=%0d w=%0d b=%0d backend=%0d done=0",
+                 reset_type_name, reset_level_name, aw_handshakes, w_handshakes,
+                 b_handshakes, model.m_utils.write_calls);
+      end
+      else if (reset_stall_channel == "W")
+      begin
+        cycles = 0;
+        while ((aw_handshakes < 1 || !wvalid) && cycles < 500)
+        begin
+          @(negedge clock);
+          cycles = cycles + 1;
+        end
+        if (aw_handshakes != 1 || !wvalid || wready || aw_handshakes != 1 ||
+            w_handshakes != 0 || b_handshakes != 0 || model.m_utils.write_calls != 0 ||
+            done_port || done_pulses != 0)
+          $fatal(1, "stalled W request did not reach its pending state: aw=%0d wvalid=%b wready=%b w=%0d writes=%0d done=%b",
+                 aw_handshakes, wvalid, wready, w_handshakes, model.m_utils.write_calls, done_port);
+        if (observed_awaddr[0] !== dst || observed_awlen[0] !== 0 || observed_awsize[0] !== 3'd2 ||
+            observed_awburst[0] !== 2'b01)
+          $fatal(1, "stalled W precondition AW descriptor mismatch");
+        saved_payload = wdata;
+        saved_strobe = wstrb;
+        saved_last = wlast;
+        if (saved_payload !== 32'd0 || saved_strobe !== 4'hf || !saved_last)
+          $fatal(1, "stalled W payload mismatch: data=%h strobe=%h last=%b", saved_payload, saved_strobe, saved_last);
+        for (i = 0; i < 3; i = i + 1)
+        begin
+          @(negedge clock);
+          if (!wvalid || wready || wdata !== saved_payload || wstrb !== saved_strobe ||
+              wlast !== saved_last || w_handshakes != 0 || model.m_utils.write_calls != 0 || done_port)
+            $fatal(1, "stalled W request changed before reset: data=%h strobe=%h last=%b", wdata, wstrb, wlast);
+        end
+        $display("GENERATED_MEMAXI_RESPONSE_RESET_STALLED engine=write channel=W reset_type=%s reset_level=%s aw=%0d w=%0d b=%0d backend=%0d done=0",
+                 reset_type_name, reset_level_name, aw_handshakes, w_handshakes,
+                 b_handshakes, model.m_utils.write_calls);
+      end
+      else
+        $fatal(1, "unsupported write reset stall channel %s", reset_stall_channel);
+
+      reset = 1'b0;
+      start_port = 1'b0;
+      #1;
+      if (reset_async_mode)
+      begin
+        if ((reset_stall_channel == "AW" && awvalid) || (reset_stall_channel == "W" && wvalid))
+          $fatal(1, "async reset did not clear stalled %s before the next active edge", reset_stall_channel);
+      end
+      else if ((reset_stall_channel == "AW" &&
+                (!awvalid || awaddr !== saved_address || awlen !== saved_length ||
+                 awsize !== saved_size || awburst !== saved_burst)) ||
+               (reset_stall_channel == "W" &&
+                (!wvalid || wdata !== saved_payload || wstrb !== saved_strobe || wlast !== saved_last)))
+        $fatal(1, "sync reset cleared or changed stalled %s before the next active edge", reset_stall_channel);
+      @(posedge clock);
+      #1;
+      if (arvalid || rready || awvalid || wvalid || bready)
+        $fatal(1, "stalled %s state remained after reset clock edge", reset_stall_channel);
+      repeat (2) @(negedge clock);
+      if (!idle_port || done_port || model_rvalid || model_bvalid)
+        $fatal(1, "stalled %s reset did not clear model/controller state", reset_stall_channel);
+      model.m_utils.reset_counters();
+      dst = 32'h0000_4000;
+      n = 17;
+      seed = 100;
+      allow_aw = 1'b1;
+      allow_w = 1'b1;
+      response_gate = 1'b1;
+      reset = 1'b1;
+      repeat (2) @(negedge clock);
+      start_port = 1'b1;
+      @(negedge clock);
+      start_port = 1'b0;
+      cycles = 0;
+      while (!done_port && cycles < 1000)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!done_port)
+        $fatal(1, "stalled %s recovery did not complete within the cycle limit", reset_stall_channel);
+      @(posedge clock);
+      @(negedge clock);
+      if (aw_handshakes != 2 || w_handshakes != 17 || observed_wlast != 2 ||
+          b_handshakes != 2 || model.m_utils.write_calls != 17 || done_pulses != 1)
+        $fatal(1, "stalled %s recovery mismatch: aw=%0d w=%0d wlast=%0d b=%0d commits=%0d done=%0d",
+               reset_stall_channel, aw_handshakes, w_handshakes, observed_wlast,
+               b_handshakes, model.m_utils.write_calls, done_pulses);
+      for (i = 0; i < 17; i = i + 1)
+        if (model.m_utils.write_addr[i] !== dst + i*4 || model.m_utils.write_data[i] !== seed + i ||
+            model.m_utils.write_mask[i] !== 4'hf)
+          $fatal(1, "stalled %s recovery data mismatch index=%0d", reset_stall_channel, i);
+      if (observed_awaddr[0] !== dst || observed_awlen[0] !== 8'd15 ||
+          observed_awaddr[1] !== dst + 64 || observed_awlen[1] !== 0)
+        $fatal(1, "stalled %s recovery descriptor mismatch", reset_stall_channel);
+      repeat (8) @(negedge clock);
+      if (aw_handshakes != 2 || w_handshakes != 17 || b_handshakes != 2 || done_pulses != 1)
+        $fatal(1, "stalled %s recovery had extra work", reset_stall_channel);
+      $display("GENERATED_MEMAXI_RESPONSE_RESET_STALLED_RECOVERY engine=write channel=%s reset_type=%s reset_level=%s reinvocation=1 aw=%0d w=%0d wlast=%0d b=%0d backend=%0d strobes=ffff done=1",
+               reset_stall_channel, reset_type_name, reset_level_name,
+               aw_handshakes, w_handshakes, observed_wlast, b_handshakes, model.m_utils.write_calls);
+    end
+    else if (reset_pending_mode)
     begin
       cycles = 0;
       while ((aw_handshakes < 3 || w_handshakes < 48 || !model_bvalid) && cycles < 1500)
