@@ -10,7 +10,8 @@ contains tests that exercise AXI burst hardware directly:
   ordering, full replacement, empty bypass, clear and collision forwarding.
   `run_generated_memaxi_response_tests.sh` checks generated read/write wrappers,
   including sync/async and active-low/high resets while AXI responses are pending,
-  with cancellation checked at RREADY/BREADY.
+  and while AR/AW/W requests are stalled; checks include payload stability and
+  cancellation at RREADY/BREADY.
 - `t4b_tests/`: extracted-core and matched-slave floor/knee simulations, their
   extractor and offline checks.
 - `run_duplex_iteration_tests.sh` and `check_duplex_iteration_results.py`: generated-kernel iteration mapping and observation checks.
