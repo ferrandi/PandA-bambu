@@ -164,17 +164,9 @@ if [ -n "${LP_EXPECT_CAPTURE_COUNT:-}" ]; then
       fail "expected ${LP_EXPECT_CAPTURE_COUNT} TIMED_CAPTURE instances, found ${capture_count}"
 fi
 
-resolve_bin_dir() {
-   local name="$1" found root
-   found="$(command -v "$name" 2>/dev/null)" && { dirname "$found"; return 0; }
-   IFS=: read -r -a roots <<<"${BAMBU_HLS_BACKEND_PATH:-}"
-   for root in "${roots[@]}"; do
-      found="$(find -L "$root" -type f -path "*/bin/$name" -print -quit 2>/dev/null)"
-      [ -z "$found" ] || { dirname "$found"; return 0; }
-   done
-   return 1
-}
-bindir="$(resolve_bin_dir vsim)" || fail 'ModelSim vsim not found in PATH or BAMBU_HLS_BACKEND_PATH'
+source "$script_dir/../../../etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+bambu_modelsim_resolve || fail 'ModelSim vsim not found in PATH or BAMBU_HLS_BACKEND_PATH'
+bindir="$BAMBU_MODELSIM_BIN"
 export PATH="$bindir:$PATH"
 for tool in vlib vlog vsim; do command -v "$tool" >/dev/null || fail "ModelSim tool missing: $tool"; done
 

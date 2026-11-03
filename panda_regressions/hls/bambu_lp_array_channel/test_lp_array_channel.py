@@ -90,6 +90,37 @@ class MantisSimulationManifestTest(unittest.TestCase):
                 )
 
 
+class ModelSimToolLookupTest(unittest.TestCase):
+    def test_backend_path_resolves_vsim_directory_for_companion_tools(self):
+        lookup = ROOT / "etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            backend = Path(temp_dir)
+            modelsim_bin = backend / "modelsim" / "bin"
+            modelsim_bin.mkdir(parents=True)
+            for name in ("vsim", "vlib", "vlog", "vcom"):
+                tool = modelsim_bin / name
+                tool.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+                tool.chmod(0o755)
+
+            env = os.environ.copy()
+            env["PATH"] = "/usr/bin:/bin"
+            env["BAMBU_HLS_BACKEND_PATH"] = str(backend)
+            result = subprocess.run(
+                ["bash", "-c",
+                  'source "$1"; bambu_modelsim_resolve && export PATH="$BAMBU_MODELSIM_BIN:$PATH" '
+                  '&& printf "%s\\n%s\\n%s\\n" "$BAMBU_MODELSIM_BIN" '
+                  '"$(command -v vlib)" "$(command -v vcom)"',
+                 "modelsim-lookup-test", str(lookup)],
+                 cwd=ROOT, env=env, text=True, stdout=subprocess.PIPE,
+                 stderr=subprocess.PIPE, check=False,
+            )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip().splitlines(), [
+            str(modelsim_bin), str(modelsim_bin / "vlib"), str(modelsim_bin / "vcom"),
+        ])
+
+
 class LPArrayChannelIntegrationTest(unittest.TestCase):
     def setUp(self):
         SCRATCH.mkdir(parents=True, exist_ok=True)
