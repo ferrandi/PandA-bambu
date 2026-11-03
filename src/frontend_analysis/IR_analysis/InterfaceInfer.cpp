@@ -3045,6 +3045,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
+      if(stallable)
+      {
+         CM->add_port(STALL_PORT_NAME, port_o::IN, interface_top, bool_type);
+      }
 
       CM->add_port_vector("in1", port_o::IN, n_resources, interface_top,
                           size1); // when 0 is a read otherwise is a write
@@ -3095,10 +3099,6 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
             const auto inPort_din1 = CM->add_port("_" + bundle_name + "_q1", port_o::IN, interface_top, dataType);
             GetPointerS<port_o>(inPort_din1)->set_port_interface(port_o::port_interface::PI_DIN);
          }
-      }
-      if(stallable)
-      {
-         CM->add_port(STALL_PORT_NAME, port_o::IN, interface_top, bool_type);
       }
       if(!operationsW.empty())
       {
@@ -3264,10 +3264,13 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       if(!operationsW.empty())
       {
          ensure_port("_" + bundle_name + "_we0", port_o::OUT, bool_type, port_o::port_interface::PI_WRITEENABLE);
-         ensure_port("_" + bundle_name + "_d0", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
          if(isDP)
          {
             ensure_port("_" + bundle_name + "_we1", port_o::OUT, bool_type, port_o::port_interface::PI_WRITEENABLE);
+         }
+         ensure_port("_" + bundle_name + "_d0", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
+         if(isDP)
+         {
             ensure_port("_" + bundle_name + "_d1", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
          }
       }

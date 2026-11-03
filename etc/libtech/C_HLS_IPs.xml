@@ -1141,19 +1141,19 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="widen_mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .stall_port(stall_port), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
+          <NP_functionality LIBRARY="widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .stall_port(stall_port), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
   m1 : mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, stall_port =&gt; stall_port, in1 =&gt; in1, in2 =&gt; in2);"
           />
         </module_o>
@@ -1175,19 +1175,19 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
   if (PIPE_PARAMETER==0)
   begin
     assign out1 = in1 * in2;
@@ -1270,19 +1270,19 @@ begin
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_widen_mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="ui_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .stall_port(stall_port), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
+          <NP_functionality LIBRARY="ui_widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="ui_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .stall_port(stall_port), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
   m1 : ui_mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, stall_port =&gt; stall_port, in1 =&gt; in1, in2 =&gt; in2);"/>
         </module_o>
       </circuit>
@@ -1303,19 +1303,19 @@ begin
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
   if (PIPE_PARAMETER==0)
   begin
     assign out1 = in1 * in2;

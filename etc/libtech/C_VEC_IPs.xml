@@ -429,19 +429,19 @@ endgenerate"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="vec_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
@@ -466,19 +466,19 @@ endgenerate"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_mul_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_vec_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
@@ -503,19 +503,19 @@ endgenerate"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_widen_mult_hi_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="vec_widen_mult_hi_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
@@ -540,19 +540,19 @@ endgenerate"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_widen_mult_hi_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_vec_widen_mult_hi_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
@@ -577,19 +577,19 @@ endgenerate"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_INT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="vec_widen_mult_lo_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="vec_widen_mult_lo_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU,widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node
@@ -614,19 +614,19 @@ endgenerate"/>
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
           <port_o id="in2" dir="IN">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="stall_port" dir="IN">
-            <structural_type_descriptor type="BOOL" size="1"/>
-          </port_o>
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="VECTOR_UINT" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_vec_widen_mult_lo_node_FU in1 in2 stall_port out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
+          <NP_functionality LIBRARY="ui_vec_widen_mult_lo_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU,ui_widen_mul_node_FU" VERILOG_PROVIDED="generate
 genvar o1;
   for (o1=0; o1&lt;NUM_ELEM_out1; o1=o1+1)
   begin  : vec_node

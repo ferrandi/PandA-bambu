@@ -61,6 +61,7 @@
 #include "custom_set.hpp"
 #include <algorithm>
 #include <list>
+#include <set>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -529,6 +530,7 @@ void conn_binding::connect_stallable_fu_inputs(const structural_managerRef SM)
    THROW_ASSERT(stallable_selector, "Stallable FU inputs have no shared selector");
    const auto selector = stallable_selector->get_structural_obj();
    THROW_ASSERT(selector, "Stallable FU selector was not materialized");
+   std::set<structural_objectRef> connected_stall_inputs;
    for(const auto& fu_unit : stallable_fu_units)
    {
       const auto fu_module_ref = fu_unit->get_structural_obj();
@@ -548,7 +550,10 @@ void conn_binding::connect_stallable_fu_inputs(const structural_managerRef SM)
          THROW_ERROR("Stallable functional unit " + fu_unit->get_string() + " must expose a scalar one-bit BOOL " +
                      "input named " + STALL_PORT_NAME);
       }
-      SM->add_connection(stall_input, selector);
+      if(connected_stall_inputs.insert(stall_input).second)
+      {
+         SM->add_connection(stall_input, selector);
+      }
    }
 }
 

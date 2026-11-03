@@ -37,11 +37,27 @@ def assert_stallable_contract(template):
     if attribute is None or (attribute.text or "").strip().lower() not in {"1", "true"}:
         raise RuntimeError(f"{name} does not declare Stallable=true")
     module = template.find(".//module_o")
+    module_name = module.get("id") if module is not None else name
+    ports = module.findall("port_o") if module is not None else []
+    port_names = [port.get("id") for port in ports]
     stall = module.find("port_o[@id='stall_port']") if module is not None else None
     type_desc = stall.find("structural_type_descriptor") if stall is not None else None
     if (stall is None or stall.get("dir") != "IN" or type_desc is None or type_desc.get("type") != "BOOL" or
             type_desc.get("size") != "1" or int(type_desc.get("vector_size", "0")) != 0):
         raise RuntimeError(f"{name} must expose a scalar one-bit BOOL input named stall_port")
+
+    controls = [port for port in ("clock", "reset", "start_port") if port in port_names]
+    stall_index = port_names.index("stall_port")
+    if port_names[:stall_index] != controls or any(
+            port not in port_names[stall_index + 1:] for port in ("in1", "in2")):
+        raise RuntimeError(f"{name} must order controls before stall_port and stall_port before in1/in2")
+
+    model = module.find("NP_functionality") if module is not None else None
+    expected_library_tokens = [module_name] + [
+        port for port in port_names if port not in {"clock", "reset", "start_port", "stall_port"}
+    ] + ["PIPE_PARAMETER"]
+    if model is None or model.get("LIBRARY", "").split() != expected_library_tokens:
+        raise RuntimeError(f"{name} LIBRARY model must list only parametrized data ports")
 
 
 LATTICE_DEVICES = (
@@ -60,8 +76,8 @@ def assert_lattice_stallable_contract():
             for template in pair:
                 assert_stallable_contract(template)
                 model = template.find(".//NP_functionality")
-                if model is None or f"{name} in1 in2 stall_port out1 PIPE_PARAMETER" != model.get("LIBRARY"):
-                    raise RuntimeError(f"{device} {name} does not include stall_port in its model input list")
+                if model is None or f"{name} in1 in2 out1 PIPE_PARAMETER" != model.get("LIBRARY"):
+                    raise RuntimeError(f"{device} {name} LIBRARY model must omit non-parameterized stall_port")
                 body = model.get("VERILOG_PROVIDED", "")
                 for ce in range(4):
                     if not re.search(r"\.CE" + str(ce) + r"\(\s*~stall_port\s*\)", body):
@@ -181,9 +197,7 @@ def run_bad_port_probe(template, mutation, root_dir):
         module_name = template.findtext("name")
         rejected_by_stall_check = "Stallable functional unit" in diagnostic and \
             "scalar one-bit BOOL input named stall_port" in diagnostic
-        rejected_by_parametrization = mutation == "missing" and \
-            f"parameter not yet specialized: stall_port for module {module_name}" in diagnostic
-        if result.returncode == 0 or not (rejected_by_stall_check or rejected_by_parametrization):
+        if result.returncode == 0 or not rejected_by_stall_check:
             raise RuntimeError(
                 f"Bambu did not reject the {mutation} stall port with an expected diagnostic "
                 f"(status {result.returncode}):\n{diagnostic}"
@@ -246,7 +260,7 @@ def run_stall_port_order_probe(template, placement, root_dir):
         if len(multipliers) != 1:
             raise RuntimeError(f"{placement} stall layout expected one multiplier instance, found {len(multipliers)}")
         parameters, instance, connections = multipliers[0]
-        for name, width in (("in1", 32), ("in2", 32), ("stall_port", 1)):
+        for name, width in (("in1", 32), ("in2", 32)):
             if not re.search(r"\.BITSIZE_" + name + r"\s*\(\s*" + str(width) + r"\s*\)", parameters):
                 raise RuntimeError(f"{placement} layout has incorrect {name} width in {instance}: {parameters}")
         pins = {}
