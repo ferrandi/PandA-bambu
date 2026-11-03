@@ -44,18 +44,6 @@ if ! normalize_regression_args "${wrapper_args[@]}"; then
   exit 2
 fi
 parallelism=$BURST_PARALLELISM
-# Functional jobs can launch licensed ModelSim processes. Keep both the Mantis
-# phase and helper pool within the two-process session limit.
-if [[ $group != compiler ]] && (( parallelism > 2 )); then
-  parallelism=2
-fi
-if [[ $group != compiler ]]; then
-  for i in "${!BURST_NORMALIZED_ARGS[@]}"; do
-    if [[ ${BURST_NORMALIZED_ARGS[i]} == --parallel=* ]]; then
-      BURST_NORMALIZED_ARGS[i]="--parallel=$parallelism"
-    fi
-  done
-fi
 mantis_args=("${BURST_NORMALIZED_ARGS[@]}")
 out_root=$BURST_OUTPUT
 
@@ -68,8 +56,6 @@ for mantis_arg in "${mantis_args[@]}"; do
     retain_artifacts=1
   fi
 done
-writer_group_jobs=1
-
 # Fail closed before invoking any Bambu executable. -L also catches dangling
 # symlinks, which `-e` alone would miss. With --restart the root must already
 # exist; Mantis validates its own previous execution list.
@@ -201,6 +187,7 @@ python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_extrac
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_write_burst_modelsim_runner.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_read_burst_modelsim_runner.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_generated_read_modelsim_runner.py"
+python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_generated_memaxi_response_runner.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_vlog_portability_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
@@ -218,7 +205,7 @@ run_compiler_suite() {
 }
 
 run_post_mantis_job() {
-  local job=$1
+  local job=$1 job_slots=${2:-1}
   case $job in
     compiler-pragma|compiler-burst-profile|compiler-xml-profile|compiler-latency-metadata|compiler-fallback-matrix|compiler-root-reinvocation|compiler-shared-resource)
       run_compiler_suite "${job#compiler-}"
@@ -248,11 +235,11 @@ run_post_mantis_job() {
         bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_duplex_core_tests.sh" "$scratch/rtl-duplex-core"
       ;;
     rtl-generated-duplex)
-      BURST_DUPLEX_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
+      BURST_DUPLEX_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" \
         bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_duplex_tests.sh" "$bambu" "$scratch/rtl-generated-duplex"
       ;;
     rtl-generated-duplex-kernel)
-      BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 DUPLEX_G2_JOBS=1 \
+      BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" DUPLEX_G2_JOBS="$job_slots" \
         bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_duplex_kernel_tests.sh" "$bambu" "$scratch/rtl-generated-duplex-kernel"
       ;;
     rtl-default-duplex-reduction)
@@ -270,17 +257,17 @@ run_post_mantis_job() {
       done
       ;;
     rtl-duplex-alias)
-      BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX=1 DUPLEX_ALIAS_JOBS=1 DUPLEX_ALIAS_FLOAT_BITS=0 \
+      BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX=1 DUPLEX_ALIAS_JOBS="$job_slots" DUPLEX_ALIAS_FLOAT_BITS=0 \
         bash "$script_dir/bambu_axi_burst/run_duplex_alias_tests.sh" "$bambu" "$scratch/rtl-duplex-alias-integer" || return $?
-      BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX=1 DUPLEX_ALIAS_JOBS=1 DUPLEX_ALIAS_FLOAT_BITS=1 \
+      BURST_DUPLEX_ALIAS_SIM_OUTSIDE_SANDBOX=1 DUPLEX_ALIAS_JOBS="$job_slots" DUPLEX_ALIAS_FLOAT_BITS=1 \
         bash "$script_dir/bambu_axi_burst/run_duplex_alias_tests.sh" "$bambu" "$scratch/rtl-duplex-alias-float32"
       ;;
     rtl-duplex-fallback|rtl-duplex-independent)
       if [[ $job == rtl-duplex-fallback ]]; then
-        BURST_DUPLEX_FALLBACK_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 DUPLEX_FALLBACK_JOBS=1 \
+        BURST_DUPLEX_FALLBACK_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" DUPLEX_FALLBACK_JOBS="$job_slots" \
           bash "$script_dir/bambu_axi_burst/run_duplex_fallback_tests.sh" "$bambu" "$scratch/$job"
       else
-        BURST_DUPLEX_INDEPENDENT_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 DUPLEX_INDEPENDENT_JOBS=1 \
+        BURST_DUPLEX_INDEPENDENT_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" DUPLEX_INDEPENDENT_JOBS="$job_slots" \
           bash "$script_dir/bambu_axi_burst/run_duplex_independent_tests.sh" "$bambu" "$scratch/$job"
       fi
       ;;
@@ -289,7 +276,7 @@ run_post_mantis_job() {
         bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_adapter_size_guard.sh" "$scratch/rtl-adapter-size"
       ;;
     rtl-mdpi-extent)
-      MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX=1 MDPI_EXTENT_JOBS=1 SIM_JOBS=1 \
+      MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX=1 MDPI_EXTENT_JOBS="$job_slots" SIM_JOBS="$job_slots" \
         bash "$script_dir/bambu_axi_burst/run_mdpi_extent_tests.sh" "$bambu" "$scratch/rtl-mdpi-extent"
       ;;
     rtl-testbench-memaxi-qualify)
@@ -301,12 +288,12 @@ run_post_mantis_job() {
         bash "$script_dir/bambu_axi_burst/run_vector_payload_tests.sh" "$bambu" "$scratch/rtl-vector-payload"
       ;;
     rtl-generated-memaxi-response)
-      BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
+      BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" \
         bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_memaxi_response_tests.sh" \
           "$bambu" "$scratch/rtl-generated-memaxi-response"
       ;;
     rtl-copy-comparison)
-      BURST_COPY_COMPARISON_OUTSIDE_SANDBOX=1 COPY_COMPARISON_JOBS=1 \
+      BURST_COPY_COMPARISON_OUTSIDE_SANDBOX=1 COPY_COMPARISON_JOBS="$job_slots" \
         bash "$script_dir/bambu_axi_burst/run_copy_comparison_tests.sh" "$bambu" "$scratch/rtl-copy-comparison"
       ;;
     rtl-modelsim-transactions|rtl-modelsim-credits|rtl-modelsim-bounds|rtl-modelsim-configure)
@@ -316,7 +303,7 @@ run_post_mantis_job() {
       ;;
     rtl-write-engine)
       BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 \
-        BURST_WRITER_GROUP_JOBS="$writer_group_jobs" \
+        BURST_WRITER_GROUP_JOBS="$job_slots" \
         bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh" \
           "$scratch/rtl-write-engine"
       ;;
@@ -337,6 +324,24 @@ run_post_mantis_job() {
       return 2
       ;;
   esac
+}
+
+burst_job_slots() {
+  local capacity
+  case $1 in
+    rtl-write-engine) capacity=45 ;;
+    rtl-generated-duplex) capacity=2 ;;
+    rtl-generated-duplex-kernel) capacity=6 ;;
+    rtl-duplex-alias) capacity=12 ;;
+    rtl-duplex-fallback) capacity=4 ;;
+    rtl-duplex-independent) capacity=2 ;;
+    rtl-mdpi-extent) capacity=13 ;;
+    rtl-copy-comparison) capacity=2 ;;
+    rtl-generated-memaxi-response) capacity=6 ;;
+    *) capacity=1 ;;
+  esac
+  if (( capacity > parallelism )); then capacity=$parallelism; fi
+  echo "$capacity"
 }
 
 # In functional/all modes Mantis is a separate first phase and consumes at most
@@ -360,7 +365,7 @@ case $group in
   functional) jobs=("${functional_jobs[@]}") ;;
   all) jobs=("${compiler_jobs[@]}" "${functional_jobs[@]}") ;;
 esac
-if ! run_bounded_jobs "$parallelism" run_post_mantis_job "${jobs[@]}"; then
+if ! run_bounded_jobs "$parallelism" run_post_mantis_job --slots=burst_job_slots "${jobs[@]}"; then
   echo "AXI burst helper suite failed; scratch outputs retained at $scratch" >&2
   exit 1
 fi

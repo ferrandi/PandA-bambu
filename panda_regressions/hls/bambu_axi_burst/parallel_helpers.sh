@@ -177,10 +177,37 @@ _burst_cancel_job_tree() {
 run_bounded_jobs() {
   local limit=$1 callback=$2
   shift 2
-  local -a pending=("$@") pids=()
-  local -A labels=() log_paths=()
-  local next=0 active=0 failed=0 pid done_pid status label log running_jobs
+  local slots_callback= slots_enabled=0
+  if [[ ${1:-} == --slots=* ]]; then
+    slots_callback=${1#--slots=}
+    shift
+    [[ -n $slots_callback ]] || { echo "empty slot callback" >&2; return 2; }
+    slots_enabled=1
+  fi
+  local -a pending=("$@") pending_slots=() pids=()
+  local -A labels=() log_paths=() pid_slots=()
+  local active=0 used_slots=0 failed=0 pid done_pid status label log running_jobs
   local cancel_status=0 previous_int_trap previous_term_trap
+
+  local job weight
+  for job in "${pending[@]}"; do
+    weight=1
+    if (( slots_enabled )); then
+      weight=$("$slots_callback" "$job") || { echo "slot callback failed for $job" >&2; return 2; }
+      if [[ ! $weight =~ ^[0-9]+$ ]]; then
+        echo "slot callback returned a non-integer for $job: '$weight'" >&2
+        return 2
+      fi
+      while [[ $weight == 0* && ${#weight} -gt 1 ]]; do weight=${weight#0}; done
+      if [[ $weight == 0 || ${#weight} -gt 10 ]] ||
+         { ((${#weight} == 10)) && [[ $weight > 2147483647 ]]; } ||
+         (( weight > limit )); then
+        echo "slot callback returned an invalid weight for $job: '$weight' (limit $limit)" >&2
+        return 2
+      fi
+    fi
+    pending_slots+=("$weight")
+  done
 
   previous_int_trap=$(trap -p INT)
   previous_term_trap=$(trap -p TERM)
@@ -192,17 +219,40 @@ run_bounded_jobs() {
       "${#pending[@]}" "$limit" "$BURST_JOB_LOG_DIR"
   fi
 
-  while (( next < ${#pending[@]} || active > 0 )); do
-    while (( ! failed && ! cancel_status && next < ${#pending[@]} && active < limit )); do
-      label=${pending[next]}
+  while (( ${#pending[@]} > 0 || active > 0 )); do
+    while (( ! failed && ! cancel_status && ${#pending[@]} > 0 )); do
+      local selected=-1 index
+      for ((index=0; index<${#pending[@]}; ++index)); do
+        if (( pending_slots[index] <= limit - used_slots )); then
+          selected=$index
+          break
+        fi
+      done
+      (( selected >= 0 )) || break
+      label=${pending[selected]}
+      weight=${pending_slots[selected]}
       log="$BURST_JOB_LOG_DIR/$label.log"
-      "$callback" "$label" >"$log" 2>&1 &
+      if (( slots_enabled )); then
+        "$callback" "$label" "$weight" >"$log" 2>&1 &
+      else
+        "$callback" "$label" >"$log" 2>&1 &
+      fi
       pid=$!
       pids+=("$pid")
       labels[$pid]=$label
       log_paths[$pid]=$log
-      ((next += 1))
+      pid_slots[$pid]=$weight
+      used_slots=$((used_slots + weight))
       ((active += 1))
+      local -a remaining_jobs=() remaining_slots=()
+      for ((index=0; index<${#pending[@]}; ++index)); do
+        if (( index != selected )); then
+          remaining_jobs+=("${pending[index]}")
+          remaining_slots+=("${pending_slots[index]}")
+        fi
+      done
+      pending=("${remaining_jobs[@]}")
+      pending_slots=("${remaining_slots[@]}")
     done
 
     if (( cancel_status )); then
@@ -252,6 +302,8 @@ run_bounded_jobs() {
       printf 'PASS: burst job %s\n' "$label"
     fi
     unset 'labels[$done_pid]' 'log_paths[$done_pid]'
+    used_slots=$((used_slots - pid_slots[$done_pid]))
+    unset 'pid_slots[$done_pid]'
     local -a remaining=()
     for pid in "${pids[@]}"; do
       [[ $pid == "$done_pid" ]] || remaining+=("$pid")

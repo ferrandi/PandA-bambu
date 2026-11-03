@@ -66,6 +66,11 @@ extern "C" void write_count_seed_three(int *dst, int n, int seed) {
   for (int i = 0; i < n; ++i) dst[i] = seed + i;
 }
 
+extern "C" void write_count_seed_single_beat(int *dst, int n, int seed) {
+#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=1 write_burst_outstanding=3 write_fifo_depth=8
+  for (int i = 0; i < n; ++i) dst[i] = seed + i;
+}
+
 extern "C" void write_with_unused_same_bundle(int *dst, int *unused, int n) {
 #pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=16
 #pragma HLS interface mode=m_axi port=unused offset=direct bundle=output

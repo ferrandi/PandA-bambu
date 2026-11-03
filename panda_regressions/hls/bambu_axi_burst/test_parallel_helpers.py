@@ -262,6 +262,69 @@ printf 'REFILL_WITNESS=PASS\\nSECOND_ACTIVE=%s\\nTHIRD_ACTIVE=%s\\n' \\
         self.assertTrue((state / "second.finished").is_file())
         self.assertTrue((state / "third.started").is_file())
 
+    def test_weighted_pool_obeys_slot_budget_and_skips_unfit_head_job(self) -> None:
+        state = self.scratch / "weighted-state"
+        state.mkdir()
+        result = self.run_bash(
+            f"""
+STATE={str(state)!r}
+slot_weight() {{ case $1 in long|waiting) echo 3 ;; small) echo 2 ;; esac; }}
+worker() {{
+  local name=$1 weight=$2
+  : >"$STATE/$name.started"
+  printf '%s\n' "$weight" >"$STATE/$name.weight"
+  case $name in
+    long)
+      for ((attempt=0; attempt<200; ++attempt)); do
+        [[ -e "$STATE/small.started" ]] && break
+        sleep 0.01
+      done
+      [[ -e "$STATE/small.started" ]] || {{ echo 'small job was blocked behind unfit job' >&2; return 101; }}
+      sleep 0.20
+      : >"$STATE/long.finished"
+      ;;
+    small)
+      [[ -e "$STATE/long.started" ]] || {{ echo 'small did not overlap long' >&2; return 102; }}
+      sleep 0.05
+      : >"$STATE/small.finished"
+      ;;
+    waiting)
+      [[ -e "$STATE/long.finished" ]] || {{ echo 'slot budget was exceeded while long remained active' >&2; return 103; }}
+      ;;
+  esac
+}}
+run_bounded_jobs 5 worker --slots=slot_weight long waiting small
+"""
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for name, weight in (("long", "3"), ("small", "2"), ("waiting", "3")):
+            self.assertTrue((state / f"{name}.started").is_file())
+            self.assertEqual((state / f"{name}.weight").read_text(), f"{weight}\n")
+        self.assertLess(
+            result.stdout.index("PASS: burst job small"),
+            result.stdout.index("PASS: burst job waiting"),
+        )
+
+    def test_weighted_pool_rejects_invalid_weights_before_dispatch(self) -> None:
+        for weight, expected in (("0", "invalid weight"), ("not-a-number", "non-integer"),
+                                 ("3", "invalid weight")):
+            with self.subTest(weight=weight):
+                state = self.scratch / f"invalid-{weight}"
+                state.mkdir()
+                result = self.run_bash(
+                    f"""
+STATE={str(state)!r}
+slot_weight() {{ echo {weight!r}; }}
+worker() {{ : >"$STATE/dispatched"; }}
+if run_bounded_jobs 2 worker --slots=slot_weight bad; then
+  echo 'invalid slot weight was accepted' >&2; exit 90
+fi
+[[ ! -e "$STATE/dispatched" ]] || {{ echo 'job launched before weight validation' >&2; exit 91; }}
+"""
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(expected, result.stderr)
+
     def test_signalled_child_is_reported_with_its_label_and_log(self) -> None:
         result = self.run_bash(
             """

@@ -26,6 +26,7 @@ module tb_generated_memaxi_response;
   wire aruser;
   wire arvalid;
   wire arready;
+  wire model_rvalid;
   wire [5:0] rid;
   wire model_rid;
   wire [31:0] rdata;
@@ -33,6 +34,7 @@ module tb_generated_memaxi_response;
   wire rlast;
   wire rvalid;
   wire rready;
+  wire model_bvalid;
   wire [5:0] awid;
   wire [31:0] awaddr;
   wire [7:0] awlen;
@@ -58,6 +60,23 @@ module tb_generated_memaxi_response;
   wire bvalid;
   wire bready;
 
+  logic response_gate = 1'b1;
+  integer ar_handshakes = 0;
+  integer aw_handshakes = 0;
+  integer w_handshakes = 0;
+  integer r_handshakes = 0;
+  integer rlast_handshakes = 0;
+  integer b_handshakes = 0;
+  reg [31:0] observed_araddr [0:31];
+  reg [7:0] observed_arlen [0:31];
+  reg [2:0] observed_arsize [0:31];
+  reg [1:0] observed_arburst [0:31];
+  reg [31:0] observed_awaddr [0:31];
+  reg [7:0] observed_awlen [0:31];
+  reg [2:0] observed_awsize [0:31];
+  reg [1:0] observed_awburst [0:31];
+  integer observed_wlast = 0;
+
   integer read_fault_handshakes = 0;
   integer write_fault_handshakes = 0;
   integer read_okay_handshakes = 0;
@@ -65,6 +84,8 @@ module tb_generated_memaxi_response;
   integer done_pulses = 0;
   assign rid = {5'b0, model_rid};
   assign bid = {5'b0, model_bid};
+  assign rvalid = model_rvalid && response_gate;
+  assign bvalid = model_bvalid && response_gate;
 
 `ifdef RESPONSE_READ
   kernel dut (
@@ -77,7 +98,7 @@ module tb_generated_memaxi_response;
     .m_axi_src_rvalid(rvalid), .done_port(done_port), .idle_port(idle_port),
     .return_port(return_port), .m_axi_src_awid(awid), .m_axi_src_awaddr(awaddr),
     .m_axi_src_awlen(awlen), .m_axi_src_awsize(awsize), .m_axi_src_awburst(awburst),
-    .m_axi_src_awlock(awlock), .m_axi_src_awcache(arcache), .m_axi_src_awprot(awprot),
+    .m_axi_src_awlock(awlock), .m_axi_src_awcache(awcache), .m_axi_src_awprot(awprot),
     .m_axi_src_awqos(awqos), .m_axi_src_awregion(awregion), .m_axi_src_awuser(awuser),
     .m_axi_src_awvalid(awvalid), .m_axi_src_wdata(wdata), .m_axi_src_wstrb(wstrb),
     .m_axi_src_wlast(wlast), .m_axi_src_wuser(wuser), .m_axi_src_wvalid(wvalid),
@@ -88,7 +109,14 @@ module tb_generated_memaxi_response;
     .m_axi_src_arvalid(arvalid), .m_axi_src_rready(rready)
   );
 `else
-  write_count_seed dut (
+`ifdef RESPONSE_WRITE_MULTI
+  write_count_seed_three
+`elsif RESPONSE_WRITE_B1O3
+  write_count_seed_single_beat
+`else
+  write_count_seed
+`endif
+  dut (
     .clock(clock), .reset(reset), .start_port(start_port), .dst(dst), .n(n), .seed(seed),
     .cache_reset(cache_reset),
     .m_axi_output_awready(awready), .m_axi_output_wready(wready),
@@ -112,18 +140,18 @@ module tb_generated_memaxi_response;
   assign return_port = '0;
 `endif
 
-  TestbenchMEMAXI #(.READ_DELAY(1), .WRITE_DELAY(1)) model (
+  TestbenchMEMAXI #(.QUEUE_SIZE(8), .READ_DELAY(1), .WRITE_DELAY(1)) model (
     .clock(clock), .reset(reset),
     .arid(arid[0]), .araddr(araddr), .arlen(arlen), .arsize(arsize), .arburst(arburst),
     .arlock(arlock), .arcache(arcache), .arprot(arprot), .arqos(arqos),
     .arregion(arregion), .aruser(aruser), .arvalid(arvalid), .arready(arready),
     .rid(model_rid), .rdata(rdata), .rresp(rresp), .ruser(), .rlast(rlast),
-    .rvalid(rvalid), .rready(rready),
+    .rvalid(model_rvalid), .rready(rready && response_gate),
     .awid(awid[0]), .awaddr(awaddr), .awlen(awlen), .awsize(awsize), .awburst(awburst),
     .awlock(awlock), .awcache(awcache), .awprot(awprot), .awqos(awqos),
     .awregion(awregion), .awuser(awuser), .awvalid(awvalid), .awready(awready),
     .wdata(wdata), .wstrb(wstrb), .wlast(wlast), .wvalid(wvalid), .wready(wready),
-    .wuser(wuser), .bid(model_bid), .bresp(bresp), .buser(), .bvalid(bvalid), .bready(bready)
+    .wuser(wuser), .bid(model_bid), .bresp(bresp), .buser(), .bvalid(model_bvalid), .bready(bready && response_gate)
   );
 
   always @(posedge clock)
@@ -135,13 +163,51 @@ module tb_generated_memaxi_response;
       write_fault_handshakes <= 0;
       read_okay_handshakes <= 0;
       write_okay_handshakes <= 0;
+      ar_handshakes <= 0;
+      aw_handshakes <= 0;
+      w_handshakes <= 0;
+      r_handshakes <= 0;
+      rlast_handshakes <= 0;
+      b_handshakes <= 0;
+      observed_wlast <= 0;
     end
     else
     begin
+      if (arvalid && arready)
+      begin
+        if (ar_handshakes < 32)
+        begin
+          observed_araddr[ar_handshakes] <= araddr;
+          observed_arlen[ar_handshakes] <= arlen;
+          observed_arsize[ar_handshakes] <= arsize;
+          observed_arburst[ar_handshakes] <= arburst;
+        end
+        ar_handshakes <= ar_handshakes + 1;
+      end
+      if (awvalid && awready)
+      begin
+        if (aw_handshakes < 32)
+        begin
+          observed_awaddr[aw_handshakes] <= awaddr;
+          observed_awlen[aw_handshakes] <= awlen;
+          observed_awsize[aw_handshakes] <= awsize;
+          observed_awburst[aw_handshakes] <= awburst;
+        end
+        aw_handshakes <= aw_handshakes + 1;
+      end
+      if (wvalid && wready)
+      begin
+        w_handshakes <= w_handshakes + 1;
+        if (wlast)
+          observed_wlast <= observed_wlast + 1;
+      end
       if (done_port)
         done_pulses <= done_pulses + 1;
       if (rvalid && rready)
       begin
+        r_handshakes <= r_handshakes + 1;
+        if (rlast)
+          rlast_handshakes <= rlast_handshakes + 1;
         if (rresp != 0)
           read_fault_handshakes <= read_fault_handshakes + 1;
         else
@@ -149,6 +215,7 @@ module tb_generated_memaxi_response;
       end
       if (bvalid && bready)
       begin
+        b_handshakes <= b_handshakes + 1;
         if (bresp != 0)
           write_fault_handshakes <= write_fault_handshakes + 1;
         else
@@ -161,21 +228,116 @@ module tb_generated_memaxi_response;
   begin : run_case
     integer cycles;
     integer calls_before_recovery;
+    integer i;
     bit fault_mode;
+    bit multi_mode;
+    bit b1_o3_mode;
     fault_mode = $test$plusargs("FAULT");
+    multi_mode = $test$plusargs("MULTI");
+    b1_o3_mode = $test$plusargs("B1O3");
     repeat (4) @(negedge clock);
     reset = 1'b1;
     repeat (2) @(negedge clock);
 
 `ifdef RESPONSE_READ
+    if (b1_o3_mode)
+    begin
+      n = 17;
+      response_gate = 1'b0;
+      for (i = 0; i < 17; i = i + 1)
+        model.m_utils.set_word(src + i*4, i + 1);
+    end
+    if (multi_mode)
+      n = 112;
     if (fault_mode)
       model.inject_next_read_response(2'b10);
+    if (multi_mode)
+      response_gate = 1'b0;
     @(negedge clock);
     start_port = 1'b1;
     @(negedge clock);
     start_port = 1'b0;
-    if (fault_mode)
+    if (b1_o3_mode)
     begin
+      cycles = 0;
+      while (ar_handshakes < 3 && cycles < 500)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (ar_handshakes != 3 || r_handshakes != 0)
+        $fatal(1, "B1/O3 read did not queue three requests before responses: ar=%0d r=%0d",
+               ar_handshakes, r_handshakes);
+      for (i = 0; i < 3; i = i + 1)
+        if (observed_araddr[i] !== src + i*4 || observed_arlen[i] !== 0 ||
+            observed_arsize[i] !== 3'd2 || observed_arburst[i] !== 2'b01)
+          $fatal(1, "B1/O3 read descriptor mismatch index=%0d addr=%h len=%0d size=%0d burst=%b",
+                 i, observed_araddr[i], observed_arlen[i], observed_arsize[i], observed_arburst[i]);
+      response_gate = 1'b1;
+      cycles = 0;
+      while (!done_port && cycles < 1000)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!done_port)
+        $fatal(1, "B1/O3 read did not complete within the cycle limit");
+      @(posedge clock);
+      @(negedge clock);
+      if (return_port !== 32'd153 || ar_handshakes != 17 ||
+          r_handshakes != 17 || rlast_handshakes != 17 || model.m_utils.read_calls != 17 || done_pulses != 1)
+        $fatal(1, "B1/O3 read totals mismatch done=%b result=%0d ar=%0d r=%0d last=%0d reads=%0d done_pulses=%0d",
+               done_port, return_port, ar_handshakes, r_handshakes, rlast_handshakes,
+               model.m_utils.read_calls, done_pulses);
+      for (i = 0; i < 17; i = i + 1)
+        if (observed_araddr[i] !== src + i*4 || observed_arlen[i] !== 0 ||
+            observed_arsize[i] !== 3'd2 || observed_arburst[i] !== 2'b01 ||
+            model.m_utils.read_addr[i] !== src + i*4 || model.m_utils.read_data[i] !== i + 1)
+          $fatal(1, "B1/O3 read transfer mismatch index=%0d araddr=%h backend_addr=%h data=%h",
+                 i, observed_araddr[i], model.m_utils.read_addr[i], model.m_utils.read_data[i]);
+      repeat (8) @(negedge clock);
+      if (ar_handshakes != 17 || r_handshakes != 17 || done_pulses != 1)
+        $fatal(1, "B1/O3 read had extra work after completion: ar=%0d r=%0d done=%0d",
+               ar_handshakes, r_handshakes, done_pulses);
+      $display("GENERATED_MEMAXI_RESPONSE_B1O3 mode=read n=17 outstanding_before_response=3 ar=17 r=17 rlast=17 sum=153 backend=17 done=1");
+    end
+    else if (fault_mode)
+    begin
+      if (multi_mode)
+      begin
+        cycles = 0;
+        while (ar_handshakes < 5 && cycles < 500)
+        begin
+          @(negedge clock);
+          cycles = cycles + 1;
+        end
+        if (ar_handshakes != 5 || r_handshakes != 0)
+          $fatal(1, "multi-read did not queue five descriptors before responses: ar=%0d r=%0d",
+                 ar_handshakes, r_handshakes);
+        for (i = 0; i < 5; i = i + 1)
+          if (observed_araddr[i] !== 32'h0000_1000 + i*64 || observed_arlen[i] !== 8'd15 ||
+              observed_arsize[i] !== 3'd2)
+            $fatal(1, "multi-read descriptor mismatch index=%0d addr=%h len=%0d size=%0d",
+                   i, observed_araddr[i], observed_arlen[i], observed_arsize[i]);
+        response_gate = 1'b1;
+        cycles = 0;
+        while (r_handshakes < 80 && cycles < 1000)
+        begin
+          @(negedge clock);
+          cycles = cycles + 1;
+        end
+        if (r_handshakes != 80 || read_fault_handshakes != 16 || read_okay_handshakes != 64 ||
+            rlast_handshakes != 5 || ar_handshakes != 5 || model.m_utils.read_calls != 80 || done_pulses != 0)
+          $fatal(1, "multi-read drain mismatch ar=%0d r=%0d fault=%0d okay=%0d last=%0d reads=%0d done=%0d",
+                 ar_handshakes, r_handshakes, read_fault_handshakes, read_okay_handshakes,
+                 rlast_handshakes, model.m_utils.read_calls, done_pulses);
+        repeat (8) @(negedge clock);
+        if (ar_handshakes != 5 || done_pulses != 0)
+          $fatal(1, "multi-read issued work or completed after fault: ar=%0d done=%0d", ar_handshakes, done_pulses);
+        $display("GENERATED_MEMAXI_RESPONSE_DRAIN mode=read descriptors=5 beats=80 fault_beats=16 okay_beats=64 rlast=5 done=0");
+      end
+      else
+      begin
       cycles = 0;
       while (read_fault_handshakes == 0 && cycles < 500)
       begin
@@ -189,8 +351,10 @@ module tb_generated_memaxi_response;
       if (done_pulses != 0)
         $fatal(1, "generated read wrapper reported success after injected RRESP");
       $display("GENERATED_MEMAXI_RESPONSE_CONTAINED mode=read response=SLVERR handshakes=1 done=0");
+      end
 
       calls_before_recovery = model.m_utils.read_calls;
+      n = 1;
       reset = 1'b0;
       start_port = 1'b0;
       repeat (3) @(negedge clock);
@@ -232,14 +396,114 @@ module tb_generated_memaxi_response;
       $display("GENERATED_MEMAXI_RESPONSE_CONTROL mode=read done=1 result=%08x", return_port);
     end
 `else
+    if (b1_o3_mode)
+    begin
+      n = 17;
+      seed = 100;
+      response_gate = 1'b0;
+    end
+    if (multi_mode)
+      n = 80;
     if (fault_mode)
       model.inject_next_write_response(2'b10);
+    if (multi_mode)
+      response_gate = 1'b0;
     @(negedge clock);
     start_port = 1'b1;
     @(negedge clock);
     start_port = 1'b0;
-    if (fault_mode)
+    if (b1_o3_mode)
     begin
+      cycles = 0;
+      while ((aw_handshakes < 3 || w_handshakes < 3) && cycles < 500)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (aw_handshakes < 3 || w_handshakes < 3 || b_handshakes != 0)
+        $fatal(1, "B1/O3 write did not queue three requests before responses: aw=%0d w=%0d b=%0d",
+               aw_handshakes, w_handshakes, b_handshakes);
+      for (i = 0; i < 3; i = i + 1)
+        if (observed_awaddr[i] !== dst + i*4 || observed_awlen[i] !== 0 ||
+            observed_awsize[i] !== 3'd2 || observed_awburst[i] !== 2'b01)
+          $fatal(1, "B1/O3 write descriptor mismatch index=%0d addr=%h len=%0d size=%0d burst=%b",
+                 i, observed_awaddr[i], observed_awlen[i], observed_awsize[i], observed_awburst[i]);
+      response_gate = 1'b1;
+      cycles = 0;
+      while (!done_port && cycles < 1000)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!done_port)
+        $fatal(1, "B1/O3 write did not complete within the cycle limit");
+      @(posedge clock);
+      @(negedge clock);
+      if (aw_handshakes != 17 || w_handshakes != 17 || observed_wlast != 17 ||
+          b_handshakes != 17 || model.m_utils.write_calls != 17 || done_pulses != 1)
+        $fatal(1, "B1/O3 write totals mismatch done=%b aw=%0d w=%0d wlast=%0d b=%0d commits=%0d done_pulses=%0d",
+               done_port, aw_handshakes, w_handshakes, observed_wlast, b_handshakes,
+               model.m_utils.write_calls, done_pulses);
+      for (i = 0; i < 17; i = i + 1)
+        if (observed_awaddr[i] !== dst + i*4 || observed_awlen[i] !== 0 ||
+            observed_awsize[i] !== 3'd2 || observed_awburst[i] !== 2'b01 ||
+            model.m_utils.write_addr[i] !== dst + i*4 || model.m_utils.write_data[i] !== seed + i ||
+            model.m_utils.write_mask[i] !== 4'hf)
+          $fatal(1, "B1/O3 write transfer mismatch index=%0d awaddr=%h addr=%h data=%h strobe=%h",
+                 i, observed_awaddr[i], model.m_utils.write_addr[i], model.m_utils.write_data[i],
+                 model.m_utils.write_mask[i]);
+      repeat (8) @(negedge clock);
+      if (aw_handshakes != 17 || w_handshakes != 17 || b_handshakes != 17 || done_pulses != 1)
+        $fatal(1, "B1/O3 write had extra work after completion: aw=%0d w=%0d b=%0d done=%0d",
+               aw_handshakes, w_handshakes, b_handshakes, done_pulses);
+      $display("GENERATED_MEMAXI_RESPONSE_B1O3 mode=write n=17 outstanding_before_response=3 aw=17 w=17 b=17 wlast=17 backend=17 done=1");
+    end
+    else if (fault_mode)
+    begin
+      if (multi_mode)
+      begin
+        cycles = 0;
+        while ((aw_handshakes < 3 || w_handshakes < 48) && cycles < 1000)
+        begin
+          @(negedge clock);
+          cycles = cycles + 1;
+        end
+        if (aw_handshakes != 3 || w_handshakes != 48 || observed_wlast != 3 || b_handshakes != 0)
+          $fatal(1, "multi-write did not queue three complete descriptors before responses: aw=%0d w=%0d wlast=%0d b=%0d",
+                 aw_handshakes, w_handshakes, observed_wlast, b_handshakes);
+        for (i = 0; i < 3; i = i + 1)
+          if (observed_awaddr[i] !== 32'h0000_2000 + i*64 || observed_awlen[i] !== 8'd15 ||
+              observed_awsize[i] !== 3'd2)
+            $fatal(1, "multi-write descriptor mismatch index=%0d addr=%h len=%0d size=%0d",
+                   i, observed_awaddr[i], observed_awlen[i], observed_awsize[i]);
+        if (model.m_utils.write_calls != 48)
+          $fatal(1, "multi-write backend did not commit all exposed data before B: commits=%0d",
+                 model.m_utils.write_calls);
+        for (i = 0; i < 48; i = i + 1)
+          if (model.m_utils.write_addr[i] !== 32'h0000_2000 + i*4 ||
+              model.m_utils.write_data[i] !== seed + i || model.m_utils.write_mask[i] !== 4'hf)
+            $fatal(1, "multi-write backend commit mismatch index=%0d addr=%h data=%h strobe=%h",
+                   i, model.m_utils.write_addr[i], model.m_utils.write_data[i], model.m_utils.write_mask[i]);
+        response_gate = 1'b1;
+        cycles = 0;
+        while (b_handshakes < 3 && cycles < 500)
+        begin
+          @(negedge clock);
+          cycles = cycles + 1;
+        end
+        if (b_handshakes != 3 || write_fault_handshakes != 1 || write_okay_handshakes != 2 ||
+            aw_handshakes != 3 || w_handshakes != 48 || model.m_utils.write_calls != 48 || done_pulses != 0)
+          $fatal(1, "multi-write drain mismatch aw=%0d w=%0d b=%0d fault=%0d okay=%0d commits=%0d done=%0d",
+                 aw_handshakes, w_handshakes, b_handshakes, write_fault_handshakes,
+                 write_okay_handshakes, model.m_utils.write_calls, done_pulses);
+        repeat (8) @(negedge clock);
+        if (aw_handshakes != 3 || w_handshakes != 48 || done_pulses != 0)
+          $fatal(1, "multi-write issued work or completed after fault: aw=%0d w=%0d done=%0d",
+                 aw_handshakes, w_handshakes, done_pulses);
+        $display("GENERATED_MEMAXI_RESPONSE_DRAIN mode=write descriptors=3 beats=48 fault_responses=1 okay_responses=2 commits=48 done=0");
+      end
+      else
+      begin
       cycles = 0;
       while (write_fault_handshakes == 0 && cycles < 500)
       begin
@@ -253,8 +517,10 @@ module tb_generated_memaxi_response;
       if (done_pulses != 0)
         $fatal(1, "generated write wrapper reported success after injected BRESP");
       $display("GENERATED_MEMAXI_RESPONSE_CONTAINED mode=write response=SLVERR handshakes=1 done=0");
+      end
 
       calls_before_recovery = model.m_utils.write_calls;
+      n = 1;
       reset = 1'b0;
       start_port = 1'b0;
       repeat (3) @(negedge clock);

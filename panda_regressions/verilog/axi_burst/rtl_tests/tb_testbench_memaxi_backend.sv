@@ -5,6 +5,7 @@ module if_utils #(parameter integer ID = 0, BITSIZE_data = 32) ();
     localparam integer MAX_CALLS = 4096;
     reg [BITSIZE_data-1:0] words [0:WORDS-1];
     reg [31:0] read_addr [0:MAX_CALLS-1];
+    reg [BITSIZE_data-1:0] read_data [0:MAX_CALLS-1];
     reg [31:0] write_addr [0:MAX_CALLS-1];
     time write_time [0:MAX_CALLS-1];
     reg [BITSIZE_data-1:0] write_data [0:MAX_CALLS-1];
@@ -26,7 +27,11 @@ module if_utils #(parameter integer ID = 0, BITSIZE_data = 32) ();
         integer slot;
         begin
             slot = word_index(addr);
-            if (read_calls < MAX_CALLS) read_addr[read_calls] = addr;
+            if (read_calls < MAX_CALLS)
+            begin
+                read_addr[read_calls] = addr;
+                read_data[read_calls] = words[slot];
+            end
             read_calls = read_calls + 1;
             read_a = words[slot];
         end
