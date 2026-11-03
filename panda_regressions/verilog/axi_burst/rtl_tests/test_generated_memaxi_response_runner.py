@@ -21,7 +21,8 @@ TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", ROOT / "documentation/tmp"))
 )
 
 
-def validate_transcript(transcript: str, raw_status: str, status: str, mode: str, engine: str) -> None:
+def validate_transcript(transcript: str, raw_status: str, status: str, mode: str, engine: str,
+                        reset_type: str = "", reset_level: str = "") -> None:
     normalized = "\n".join(line[2:] if line.startswith("# ") else line for line in transcript.splitlines())
     if raw_status.strip() != "0" or status.strip() != "0":
         raise ValueError(f"nonzero ModelSim status: raw={raw_status.strip()} effective={status.strip()}")
@@ -46,6 +47,22 @@ def validate_transcript(transcript: str, raw_status: str, status: str, mode: str
                     "aw=17 w=17 b=17 wlast=17 backend=17 done=1")
         if markers != [expected] or records:
             raise ValueError(f"wrong B1/O3 marker/diagnostics: markers={markers}, diagnostics={records}")
+        return
+
+    if mode == "reset_pending":
+        if reset_type not in ("sync", "async") or reset_level not in ("low", "high"):
+            raise ValueError(f"invalid reset profile: {reset_type}/{reset_level}")
+        pending = (f"GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=read reset_type={reset_type} "
+                   f"reset_level={reset_level} ar=3 r=0 model_pending=1 done=0" if engine == "read" else
+                   f"GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=write reset_type={reset_type} "
+                   f"reset_level={reset_level} aw=3 w=48 wlast=3 backend=48 b=0 model_pending=1 done=0")
+        recovery = (f"GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=read reset_type={reset_type} "
+                    f"reset_level={reset_level} reinvocation=1 ar=2 r=17 rlast=2 sum=153 backend=17 done=1"
+                    if engine == "read" else
+                    f"GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=write reset_type={reset_type} "
+                    f"reset_level={reset_level} reinvocation=1 aw=2 w=17 wlast=2 b=2 backend=17 strobes=ffff done=1")
+        if markers != [pending, recovery] or records:
+            raise ValueError(f"wrong pending-reset markers/diagnostics: markers={markers}, diagnostics={records}")
         return
 
     if mode == "fault":
@@ -90,12 +107,13 @@ def validate_transcript(transcript: str, raw_status: str, status: str, mode: str
         raise ValueError(f"unexpected generated-wrapper response diagnostic: {records[0]}")
 
 
-def check_log(path: Path, mode: str, engine: str) -> None:
+def check_log(path: Path, mode: str, engine: str, reset_type: str = "", reset_level: str = "") -> None:
     raw = path.with_suffix(path.suffix + ".raw-status")
     effective = path.with_suffix(path.suffix + ".status")
     if not path.is_file() or not raw.is_file() or not effective.is_file():
         raise ValueError(f"missing transcript or raw/effective status: {path}")
-    validate_transcript(path.read_text(errors="replace"), raw.read_text(), effective.read_text(), mode, engine)
+    validate_transcript(path.read_text(errors="replace"), raw.read_text(), effective.read_text(),
+                        mode, engine, reset_type, reset_level)
 
 
 class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
@@ -137,9 +155,9 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
         return "\n".join(lines)
 
     def check(self, engine: str, mode: str, transcript: str | None = None,
-              raw: str = "0", effective: str = "0") -> None:
+              raw: str = "0", effective: str = "0", reset_type: str = "", reset_level: str = "") -> None:
         validate_transcript(transcript if transcript is not None else self.transcript(engine, mode),
-                             raw, effective, mode, engine)
+                             raw, effective, mode, engine, reset_type, reset_level)
 
     def test_accepts_all_six_scenario_contracts(self) -> None:
         for engine in ("read", "write"):
@@ -195,6 +213,38 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
         recovery = "GENERATED_MEMAXI_RESPONSE_RECOVERY mode=write reset=1 reinvocation=1 handshakes=1 commits=1"
         with self.assertRaises(ValueError):
             self.check("write", "drain", good.replace(recovery + "\n", ""))
+
+    def test_accepts_all_eight_pending_reset_profiles(self) -> None:
+        for engine in ("read", "write"):
+            for reset_type in ("sync", "async"):
+                for reset_level in ("low", "high"):
+                    with self.subTest(engine=engine, reset_type=reset_type, reset_level=reset_level):
+                        self.check(engine, "reset_pending", self.reset_transcript(engine, reset_type, reset_level),
+                                   reset_type=reset_type, reset_level=reset_level)
+
+    @staticmethod
+    def reset_transcript(engine: str, reset_type: str, reset_level: str) -> str:
+        if engine == "read":
+            return (f"GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=read reset_type={reset_type} "
+                    f"reset_level={reset_level} ar=3 r=0 model_pending=1 done=0\n"
+                    f"GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=read reset_type={reset_type} "
+                    f"reset_level={reset_level} reinvocation=1 ar=2 r=17 rlast=2 sum=153 backend=17 done=1")
+        return (f"GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=write reset_type={reset_type} "
+                f"reset_level={reset_level} aw=3 w=48 wlast=3 backend=48 b=0 model_pending=1 done=0\n"
+                f"GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=write reset_type={reset_type} "
+                f"reset_level={reset_level} reinvocation=1 aw=2 w=17 wlast=2 b=2 backend=17 strobes=ffff done=1")
+
+    def test_rejects_pending_reset_contract_errors(self) -> None:
+        good = self.reset_transcript("read", "sync", "low")
+        variants = (good.replace(" ar=3", " ar=2"),
+                    good.replace(" reset_level=low", " reset_level=high"),
+                    good.replace("GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY", "REMOVED"),
+                    good + "\nAXI_BURST_FAULT unexpected",
+                    good + "\n" + good.splitlines()[0])
+        for changed in variants:
+            with self.subTest(transcript=changed):
+                with self.assertRaises(ValueError):
+                    self.check("read", "reset_pending", changed, reset_type="sync", reset_level="low")
 
     def test_rejects_nonzero_status_crash_and_timeout_even_with_pass_markers(self) -> None:
         transcript = self.transcript("write", "control")
@@ -309,10 +359,21 @@ elif tool == "vsim":
     engine = "read" if read else "write"
     multi = "+MULTI" in args
     b1 = "+B1O3" in args
+    reset_pending = "+RESET_PENDING" in args
     fault = "+FAULT" in args
+    reset_type, reset_level = case.removeprefix("read_reset_").removeprefix("write_reset_").split("_") if reset_pending else ("", "")
     activity(True)
     time.sleep(0.12)
-    if b1:
+    if reset_pending:
+        print("GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=read reset_type=%s reset_level=%s ar=3 r=0 model_pending=1 done=0" %
+              (reset_type, reset_level) if read else
+              "GENERATED_MEMAXI_RESPONSE_RESET_PENDING engine=write reset_type=%s reset_level=%s aw=3 w=48 wlast=3 backend=48 b=0 model_pending=1 done=0" %
+              (reset_type, reset_level))
+        print("GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=read reset_type=%s reset_level=%s reinvocation=1 ar=2 r=17 rlast=2 sum=153 backend=17 done=1" %
+              (reset_type, reset_level) if read else
+              "GENERATED_MEMAXI_RESPONSE_RESET_RECOVERY engine=write reset_type=%s reset_level=%s reinvocation=1 aw=2 w=17 wlast=2 b=2 backend=17 strobes=ffff done=1" %
+              (reset_type, reset_level))
+    elif b1:
         marker = ("GENERATED_MEMAXI_RESPONSE_B1O3 mode=read n=17 outstanding_before_response=3 ar=17 r=17 rlast=17 sum=153 backend=17 done=1" if read else
                   "GENERATED_MEMAXI_RESPONSE_B1O3 mode=write n=17 outstanding_before_response=3 aw=17 w=17 b=17 wlast=17 backend=17 done=1")
         print(marker)
@@ -359,7 +420,9 @@ elif tool == "vsim":
         maximum = int((self.trace / "maximum").read_text())
         self.assertGreater(maximum, 1)
         self.assertLessEqual(maximum, 3)
-        expected_cases = ["read", "read_multi", "read_b1_o3", "write", "write_multi", "write_b1_o3"]
+        expected_cases = ["read", "read_multi", "read_b1_o3", "write", "write_multi", "write_b1_o3",
+                          "read_reset_sync_low", "read_reset_sync_high", "read_reset_async_low", "read_reset_async_high",
+                          "write_reset_sync_low", "write_reset_sync_high", "write_reset_async_low", "write_reset_async_high"]
         aggregate = (output / "aggregate.log").read_text()
         starts = [aggregate.index("GENERATED_MEMAXI_RESPONSE_" + token) for token in
                   ("CONTROL mode=read", "CONTAINED mode=read", "DRAIN mode=read", "B1O3 mode=read",
@@ -368,6 +431,14 @@ elif tool == "vsim":
         for name in expected_cases:
             self.assertTrue((output / name / "modelsim/modelsim.ini").is_file())
             self.assertTrue((output / name / "provenance.txt").is_file())
+        for reset_type in ("sync", "async"):
+            for reset_level in ("low", "high"):
+                for engine in ("read", "write"):
+                    name = f"{engine}_reset_{reset_type}_{reset_level}"
+                    command = (output / name / "generation.command").read_text()
+                    self.assertIn(f"--reset-type={reset_type}", command)
+                    self.assertIn(f"--reset-level={reset_level}", command)
+                    self.assertIn(f"RESET_PENDING engine={engine} reset_type={reset_type} reset_level={reset_level}", aggregate)
 
     def test_failure_does_not_emit_aggregate_pass(self) -> None:
         output = self.scratch / "failed"
@@ -409,10 +480,12 @@ elif tool == "vsim":
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--check-log":
-        if len(sys.argv) != 5:
-            raise SystemExit("usage: test_generated_memaxi_response_runner.py --check-log LOG MODE ENGINE")
+        if len(sys.argv) not in (5, 7):
+            raise SystemExit("usage: test_generated_memaxi_response_runner.py --check-log LOG MODE ENGINE [RESET_TYPE RESET_LEVEL]")
         try:
-            check_log(Path(sys.argv[2]), sys.argv[3], sys.argv[4])
+            check_log(Path(sys.argv[2]), sys.argv[3], sys.argv[4],
+                      sys.argv[5] if len(sys.argv) == 7 else "",
+                      sys.argv[6] if len(sys.argv) == 7 else "")
         except (OSError, ValueError) as exc:
             raise SystemExit(f"generated MEMAXI transcript check failed: {exc}") from exc
         raise SystemExit(0)

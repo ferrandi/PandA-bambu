@@ -8,6 +8,9 @@ contains tests that exercise AXI burst hardware directly:
   Verilog testbenches.
   `run_std_fifo.sh` checks the complete shared FIFO across depths and data widths, including
   ordering, full replacement, empty bypass, clear and collision forwarding.
+  `run_generated_memaxi_response_tests.sh` checks generated read/write wrappers,
+  including sync/async and active-low/high resets while AXI responses are pending,
+  with cancellation checked at RREADY/BREADY.
 - `t4b_tests/`: extracted-core and matched-slave floor/knee simulations, their
   extractor and offline checks.
 - `run_duplex_iteration_tests.sh` and `check_duplex_iteration_results.py`: generated-kernel iteration mapping and observation checks.
@@ -23,13 +26,20 @@ Python and standard shell tools. They do not require Bambu, Vivado, ABC or Yosys
 Examples, from the repository root (use fresh output directories):
 
 ```bash
-bash panda_regressions/verilog/axi_burst.sh /tmp/axi-components
+mkdir -p documentation/tmp
+bash panda_regressions/verilog/axi_burst.sh documentation/tmp/axi-components
 python3 -m unittest discover -s panda_regressions/verilog/axi_burst/rtl_tests
 python3 -m unittest discover -s panda_regressions/verilog/axi_burst/t4b_tests
 python3 -m unittest discover -s panda_regressions/verilog/axi_burst -p 'test_*.py'
-bash panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh /tmp/axi-read all
-BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 bash panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh /tmp/axi-write
+bash panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh documentation/tmp/axi-read all
+BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 bash panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh documentation/tmp/axi-write
+source install-CI/settings.sh
+BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=6 bash panda_regressions/verilog/axi_burst/rtl_tests/run_generated_memaxi_response_tests.sh \
+  "$PWD/install-CI/bin/bambu" "$PWD/documentation/tmp/axi-generated-memaxi-reset"
 ```
+
+The generated MEMAXI runner requires an installed Bambu and ModelSim/Questa;
+it creates a fresh output directory and never uses Verilator.
 
 Set `BURST_TEST_TMPDIR` to place offline-test artifacts in a selected directory.
 Existing simulator guard variables and parameter checks are unchanged.
