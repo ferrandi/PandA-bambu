@@ -8,6 +8,10 @@ contains tests that exercise AXI burst hardware directly:
   Verilog testbenches.
   `run_std_fifo.sh` checks the complete shared FIFO across depths and data widths, including
   ordering, full replacement, empty bypass, clear and collision forwarding.
+  `run_generated_kernel_tests.sh` also checks five normal reader invocations on
+  one generated DUT after a single reset, including a zero-trip call and
+  repeated parameters, with edge-counted completion/FIFO totals and quiet
+  cycles that reject unexpected read, write, completion or FIFO activity.
   `run_generated_memaxi_response_tests.sh` checks generated read/write wrappers,
   including sync/async and active-low/high resets while AXI responses are pending,
   and while AR/AW/W requests are stalled; checks include payload stability and

@@ -53,6 +53,45 @@ module tb_generated_kernel;
   wire arvalid;
   wire rready;
 
+  bit reinvoke_no_reset;
+  bit reinvoke_reset_guard;
+  bit reinvoke_quiet_check;
+  bit reinvoke_previous_done;
+  integer reinvoke_observed_done;
+  integer reinvoke_observed_fifo_pops;
+  integer last_ar_count;
+  integer last_r_count;
+  integer last_consumed_count;
+  integer last_done_count;
+  integer reinvoke_invocations;
+  integer reinvoke_total_ar;
+  integer reinvoke_total_r;
+  integer reinvoke_total_consumed;
+  integer reinvoke_total_done;
+
+  always @(posedge clock)
+  begin
+    if (reinvoke_reset_guard)
+    begin
+      if (reset !== 1'b1)
+        fail("REINVOKE_NO_RESET_UNEXPECTED_RESET");
+      if (cache_reset !== 1'b0)
+        fail("REINVOKE_NO_RESET_UNEXPECTED_CACHE_RESET");
+      if (done_port === 1'b1 && !reinvoke_previous_done)
+        reinvoke_observed_done = reinvoke_observed_done + 1;
+      reinvoke_previous_done = done_port === 1'b1;
+      if (dut.PBI_kernel_i0.Datapath_i.src_bambu_artificial_ParmMgr_modgen_16_i0.burst_engine.fifo_load_pop === 1'b1)
+      begin
+        reinvoke_observed_fifo_pops = reinvoke_observed_fifo_pops + 1;
+        if (reinvoke_quiet_check)
+          fail("REINVOKE_NO_RESET_UNEXPECTED_FIFO_POP");
+      end
+      if (reinvoke_quiet_check &&
+          (done_port || arvalid || rvalid || rready || awvalid || wvalid))
+        fail("REINVOKE_NO_RESET_UNEXPECTED_ACTIVITY_DURING_QUIET");
+    end
+  end
+
   kernel dut (
     .clock(clock), .reset(reset), .start_port(start_port),
     .src(src), .n(n), .cache_reset(cache_reset),
@@ -115,7 +154,9 @@ module tb_generated_kernel;
   task automatic run_case(input logic [31:0] count,
                           input logic [31:0] base,
                           input integer stall_mode,
-                          input bit perturb_slave_data);
+                          input bit perturb_slave_data,
+                          input bit reset_before,
+                          input bit continuous_mode);
     integer cycle;
     integer ar_count;
     integer r_count;
@@ -127,6 +168,8 @@ module tb_generated_kernel;
     integer response_left;
     integer consume_index;
     integer timeout;
+    integer done_count_start;
+    integer fifo_pop_count_start;
     logic [31:0] issued_beats;
     logic [31:0] response_addr;
     logic response_active;
@@ -136,8 +179,12 @@ module tb_generated_kernel;
     logic [63:0] last_byte;
     bit finished;
     bit early_done;
+    bit done_seen;
     begin
-      reset = 1'b0;
+      done_count_start = reinvoke_observed_done;
+      fifo_pop_count_start = reinvoke_observed_fifo_pops;
+      if (reset_before)
+        reset = 1'b0;
       start_port = 1'b0;
       src = base;
       n = count;
@@ -156,10 +203,16 @@ module tb_generated_kernel;
       r_hs = 1'b0;
       finished = 1'b0;
       early_done = 1'b0;
-      repeat (3) @(posedge clock);
-      @(negedge clock);
-      reset = 1'b1;
-      repeat (2) @(negedge clock);
+      done_seen = 1'b0;
+      if (reset_before)
+      begin
+        repeat (3) @(posedge clock);
+        @(negedge clock);
+        reset = 1'b1;
+        repeat (2) @(negedge clock);
+      end
+      if (continuous_mode)
+        reinvoke_reset_guard = 1'b1;
       if (!idle_port)
         fail("generated kernel did not enter idle after reset");
       expected_result = expected_sum(count);
@@ -179,6 +232,7 @@ module tb_generated_kernel;
           fail("early done did not represent a drained zero-length no-op");
         $display("KERNEL_CASE PASS n=0 base=%08x bursts=0 beats=0 consumed=0 cycles=1 mode=%0d", base, stall_mode);
         finished = 1'b1;
+        done_seen = 1'b1;
       end
 
       while (timeout < 200000 && !finished)
@@ -320,45 +374,120 @@ module tb_generated_kernel;
           $display("KERNEL_CASE PASS n=%0d base=%08x bursts=%0d beats=%0d consumed=%0d cycles=%0d mode=%0d",
                    count, base, ar_count, r_count, consumed_count, timeout, stall_mode);
           finished = 1'b1;
+          done_seen = 1'b1;
         end
       end
       if (!finished)
         fail("watchdog expired waiting for exact burst drain and top-level done");
+      if (continuous_mode)
+      begin
+        @(negedge clock);
+        if (!idle_port || response_active || rvalid || arvalid || rready ||
+            awvalid || wvalid || start_port)
+          fail("reinvoked generated kernel did not drain to idle");
+        reinvoke_quiet_check = 1'b1;
+        repeat (3)
+        begin
+          @(posedge clock);
+          #1;
+          if (!idle_port || done_port || response_active || rvalid || arvalid || rready ||
+              awvalid || wvalid ||
+              dut.PBI_kernel_i0.Datapath_i.src_bambu_artificial_ParmMgr_modgen_16_i0.burst_engine.fifo_load_pop ||
+              start_port)
+            fail("reinvoked generated kernel did not remain quiet between calls");
+        end
+        reinvoke_quiet_check = 1'b0;
+      end
+      last_ar_count = ar_count;
+      last_r_count = r_count;
+      last_consumed_count = continuous_mode ?
+          reinvoke_observed_fifo_pops - fifo_pop_count_start : consumed_count;
+      last_done_count = continuous_mode ?
+          reinvoke_observed_done - done_count_start : (done_seen ? 1 : 0);
+    end
+  endtask
+
+  task automatic run_reinvoke_case(input integer index,
+                                  input logic [31:0] count,
+                                  input logic [31:0] base,
+                                  input integer stall_mode,
+                                  input integer expected_ar,
+                                  input integer expected_r,
+                                  input integer expected_consumed,
+                                  input bit reset_before);
+    begin
+      run_case(count, base, stall_mode, 1'b0, reset_before, 1'b1);
+      if (last_ar_count != expected_ar || last_r_count != expected_r ||
+          last_consumed_count != expected_consumed || last_done_count != 1)
+        fail("reinvoked call transfer/completion totals differed from the independent expectation");
+      reinvoke_invocations = reinvoke_invocations + 1;
+      reinvoke_total_ar = reinvoke_total_ar + last_ar_count;
+      reinvoke_total_r = reinvoke_total_r + last_r_count;
+      reinvoke_total_consumed = reinvoke_total_consumed + last_consumed_count;
+      reinvoke_total_done = reinvoke_total_done + last_done_count;
+      $display("GENERATED_KERNEL_REINVOKE_CASE index=%0d n=%0d base=%08x mode=%0d ar=%0d r=%0d consumed=%0d done=%0d",
+               index, count, base, stall_mode, last_ar_count, last_r_count,
+               last_consumed_count, last_done_count);
     end
   endtask
 
   initial
   begin
     bit negative_sensitivity;
+    reinvoke_no_reset = $test$plusargs("REINVOKE_NO_RESET");
+    reinvoke_reset_guard = 1'b0;
+    reinvoke_quiet_check = 1'b0;
+    reinvoke_previous_done = 1'b0;
+    reinvoke_observed_done = 0;
+    reinvoke_observed_fifo_pops = 0;
+    reinvoke_invocations = 0;
+    reinvoke_total_ar = 0;
+    reinvoke_total_r = 0;
+    reinvoke_total_consumed = 0;
+    reinvoke_total_done = 0;
+    if (reinvoke_no_reset)
+    begin
+      run_reinvoke_case(1, 32'd17, 32'h0100_0000, 1, 2, 17, 17, 1'b1);
+      run_reinvoke_case(2, 32'd0, 32'h0100_4000, 0, 0, 0, 0, 1'b0);
+      run_reinvoke_case(3, 32'd38, 32'h0100_0ff0, 2, 4, 38, 38, 1'b0);
+      run_reinvoke_case(4, 32'd1, 32'h0100_2000, 1, 1, 1, 1, 1'b0);
+      run_reinvoke_case(5, 32'd1, 32'h0100_2000, 1, 1, 1, 1, 1'b0);
+      if (reinvoke_invocations != 5 || reinvoke_total_ar != 8 ||
+          reinvoke_total_r != 57 || reinvoke_total_consumed != 57 || reinvoke_total_done != 5)
+        fail("REINVOKE_NO_RESET aggregate totals did not match the required five calls");
+      $display("GENERATED_KERNEL_REINVOKE_NO_RESET PASS invocations=5 ar=8 r=57 consumed=57 done=5 reset_between=0 cache_reset=0");
+      $finish;
+    end
+
     negative_sensitivity = $test$plusargs("NEGATIVE_SENSITIVITY");
     if (negative_sensitivity)
     begin
-      run_case(32'd1, 32'h1000_0000, 0, 1'b1);
+      run_case(32'd1, 32'h1000_0000, 0, 1'b1, 1'b1, 1'b0);
       fail("negative sensitivity case unexpectedly passed");
     end
 
     if ($test$plusargs("ONLY_ONE"))
     begin
-      run_case(32'd1, 32'h1000_0000, 1, 1'b0);
+      run_case(32'd1, 32'h1000_0000, 1, 1'b0, 1'b1, 1'b0);
       $display("GENERATED_KERNEL_ONLY_ONE PASS");
       $finish;
     end
     if ($test$plusargs("ONLY_ZERO"))
     begin
-      run_case(32'd0, 32'h1000_0000, 0, 1'b0);
+      run_case(32'd0, 32'h1000_0000, 0, 1'b0, 1'b1, 1'b0);
       $display("GENERATED_KERNEL_ONLY_ZERO PASS");
       $finish;
     end
 
-    run_case(32'd0,    32'h1000_0000, 0, 1'b0);
-    run_case(32'd1,    32'h1000_0000, 1, 1'b0);
-    run_case(32'd15,   32'h1000_0000, 2, 1'b0);
-    run_case(32'd16,   32'h1000_0000, 1, 1'b0);
-    run_case(32'd17,   32'h1000_0000, 2, 1'b0);
-    run_case(32'd38,   32'h1000_0ff0, 1, 1'b0);
-    run_case(32'd1024, 32'h1000_0000, 2, 1'b0);
-    run_case(32'd2048, 32'h1000_0000, 1, 1'b0);
-    run_case(32'd4096, 32'h1000_0000, 2, 1'b0);
+    run_case(32'd0,    32'h1000_0000, 0, 1'b0, 1'b1, 1'b0);
+    run_case(32'd1,    32'h1000_0000, 1, 1'b0, 1'b1, 1'b0);
+    run_case(32'd15,   32'h1000_0000, 2, 1'b0, 1'b1, 1'b0);
+    run_case(32'd16,   32'h1000_0000, 1, 1'b0, 1'b1, 1'b0);
+    run_case(32'd17,   32'h1000_0000, 2, 1'b0, 1'b1, 1'b0);
+    run_case(32'd38,   32'h1000_0ff0, 1, 1'b0, 1'b1, 1'b0);
+    run_case(32'd1024, 32'h1000_0000, 2, 1'b0, 1'b1, 1'b0);
+    run_case(32'd2048, 32'h1000_0000, 1, 1'b0, 1'b1, 1'b0);
+    run_case(32'd4096, 32'h1000_0000, 2, 1'b0, 1'b1, 1'b0);
     $display("GENERATED_KERNEL_ALL_CASES PASS");
     $finish;
   end
