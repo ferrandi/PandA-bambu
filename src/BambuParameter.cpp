@@ -2297,10 +2297,6 @@ void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
 
-   if(IsParameter("experimental-m-axi-burst"))
-   {
-      THROW_ERROR_USAGE("Parameter 'experimental-m-axi-burst' has been renamed to 'm-axi-burst'.");
-   }
    const auto m_axi_burst = GetParameter<std::string>("m-axi-burst");
    if(m_axi_burst != "0" && m_axi_burst != "1")
    {

@@ -25,7 +25,6 @@ BOOST_AUTO_TEST_CASE(m_axi_burst_parameter_is_enabled_by_default_and_overridable
    char* argv[] = {program_name};
    BambuParameter parameters(program_name, 1, argv);
    BOOST_CHECK_EQUAL(parameters.GetParameter<std::string>("m-axi-burst"), "1");
-   BOOST_CHECK(!parameters.IsParameter("experimental-m-axi-burst"));
 
    parameters.SetPandaParameterFromCli("m-axi-burst", "0");
    BOOST_CHECK_EQUAL(parameters.GetParameter<std::string>("m-axi-burst"), "0");
