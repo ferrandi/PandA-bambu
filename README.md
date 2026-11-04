@@ -1,5 +1,5 @@
 # PandA Bambu HLS Framework
-![](style/img/panda.png.in)
+<img src="documentation/style/bambuhls.logo.png" width="500">
 
 [![License: Apache 2.0 WITH LLVM-exception](https://img.shields.io/badge/License-Apache%202.0%20WITH%20LLVM--Exception-blue.svg)](LICENSE)
 
@@ -15,8 +15,7 @@ of embedded software applications and on dynamic reconfigurable devices.
 
 PandA is free software released under the Apache License v2.0 with LLVM Exceptions and is being developed at Politecnico di Milano (Italy).
 
-The source files currently distributed mainly cover the high-level synthesis 
-of C/C++ based descriptions. In particular, the tool Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design.
+The source files currently distributed mainly cover the high-level synthesis of C/C++ based descriptions. In particular, the tool Bambu provides a research environment to experiment with new ideas across HLS, high-level verification and debugging, FPGA/ASIC design, design flow space exploration, and parallel hardware accelerator design.
 Bambu accepts as input standard C/C++ specifications and compiler intermediate representations coming from the well-known Clang/LLVM and GCC compilers.
 The broad spectrum and flexibility of input formats allow the electronic design automation research community to explore and integrate new transformations and optimizations.
 
@@ -168,6 +167,8 @@ European Union projects:
  - Grant agreement ID 287804 Faster – Facilitating Analysis and Synthesis Technologies for Effective Reconfiguration
  - Grant agreement ID 101004203 HERMES – qualification of High pErformance pRogrammable Microprocessor and dEvelopment of Software ecosystem
  - Grant agreement ID 957269 EVEREST – dEsign enVironmEnt foR Extreme-Scale big data analytics on heterogeneous platforms
+ - Grant agreement ID 101252715 ODE4EC-DIG - Open Design Environment for European Chips – Digital SoC Design
+ - Grant agreement ID 101252356 ODE4EC-PIV - Open Design Environment for European Chips – Productivity, Interoperability, Verification
 
 European Space Agency contracts:
  - ESA/ESTEC/Contract N. 4000100797 – Development of methodologies and tools for predictable, real-time LEON-DSP-based embedded systems.
