@@ -52,8 +52,8 @@ kept under `<out_root>/rtl-default-duplex-reduction` when artifacts are retained
 
 ## `m_axi` burst contract
 
-Burst analysis is enabled by default. `m-axi-burst=0` disables it, while the
-old `experimental-m-axi-burst` parameter is rejected with a rename diagnostic.
+Burst analysis is enabled by default. `m-axi-burst=0` disables it; the
+parameter accepts only `0` or `1`.
 An interface declared with `mode=m_axi` is analyzed automatically; no
 `max_read_burst_length` or `max_write_burst_length` attribute is required to
 activate the analysis. If no maximum burst length or outstanding count is

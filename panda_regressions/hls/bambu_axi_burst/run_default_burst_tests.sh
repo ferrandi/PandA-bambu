@@ -63,11 +63,11 @@ run_case() {
   fi
   if [[ "$expected" == reject ]]; then
     [[ $rc -ne 0 ]] || { echo "$tag was accepted; expected rejection" >&2; return 1; }
-    grep -Fq "Parameter 'experimental-m-axi-burst' has been renamed to 'm-axi-burst'." \
+    grep -Fq "$reason" \
       "$case_dir/stdout.log" "$case_dir/stderr.log" || {
-      echo "$tag failed without the expected parameter rename diagnostic; see $case_dir" >&2; return 1;
+      echo "$tag failed without the expected parameter validation diagnostic; see $case_dir" >&2; return 1;
     }
-    echo "DEFAULT BURST RENAME PASS: $tag"
+    echo "DEFAULT BURST INVALID-VALUE PASS: $tag"
     return
   fi
   [[ $rc -eq 0 ]] || { echo "$tag failed with Bambu status $rc; see $case_dir" >&2; return 1; }
@@ -113,7 +113,7 @@ run_case fallback-cache cached_read AXI_DEFAULT_CASE_CACHE fallback data \
 run_case fallback-nested nested_read AXI_DEFAULT_CASE_NESTED fallback data \
   'read-burst CFG/SSA recognition failed or bundle is not exclusive'
 run_case unused-m-axi-pointer no_access AXI_DEFAULT_CASE_NO_ACCESS no-access data
-run_case old-parameter-name read_only AXI_DEFAULT_CASE_READ reject data \
-  '' --bambu-parameter=experimental-m-axi-burst=1
+run_case invalid-burst-value read_only AXI_DEFAULT_CASE_READ reject data \
+  'm-axi-burst must be exactly 0 or 1' --bambu-parameter=m-axi-burst=2
 
-echo "DEFAULT AXI BURST PROFILE PASS: default read/write/duplex, opt-out, explicit profiles, FIXED and fallback diagnostics, no-access and renamed parameter"
+echo "DEFAULT AXI BURST PROFILE PASS: default read/write/duplex, opt-out, explicit profiles, FIXED and fallback diagnostics, no-access and invalid-value check"
