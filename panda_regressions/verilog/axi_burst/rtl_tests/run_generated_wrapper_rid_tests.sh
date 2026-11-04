@@ -159,6 +159,61 @@ if [[ $(grep -Fxc 'GENERATED_WRAPPER_RID PASS' "$TASK_OUT/positive/run.log.norma
   exit 1
 fi
 
+run_rlast_containment() {
+  local name=$1 plusarg=$2 expected_fault=$3 expected_case=$4 expected_pass=$5
+  local log="$TASK_OUT/$name/run.log"
+  mkdir -p "$TASK_OUT/$name"
+  local status=0
+  modelsim_run "$TASK_OUT/positive/modelsim" tb_generated_wrapper_rid "$log" 60 -- \
+    "$plusarg" +AXI_BURST_EXPECT_FAULT || status=$?
+  modelsim_normalize_log "$log" "$log.normalized"
+  if ((status != 0)) || grep -Eqi '^\*\* (Error|Fatal):|Segmentation fault|stack smashing|AddressSanitizer|Aborted' "$log.normalized"; then
+    cat "$log" >&2
+    echo "ModelSim wrapper RLAST continuation failed for $name (status=$status)" >&2
+    exit 1
+  fi
+  modelsim_expect_fault_log "$log" continue "$name" "$expected_fault"
+  python3 - "$log.normalized" "$expected_case" "$expected_pass" <<'PY'
+from pathlib import Path
+import sys
+
+lines = Path(sys.argv[1]).read_text().splitlines()
+expected = [sys.argv[2], "RID_CASE PASS rid=0 completion=1", sys.argv[3]]
+observed = [line for line in lines if line.startswith(("RLAST_CASE PASS", "RID_CASE PASS", "GENERATED_WRAPPER_RLAST PASS"))]
+if observed != expected:
+    raise SystemExit(f"wrapper RLAST recovery markers were missing, duplicated, or out of order: {observed!r}")
+PY
+  cat "$log.normalized" | tee -a "$TASK_OUT/aggregate.log"
+}
+
+early_fault='AXI_BURST_FAULT engine=read reason=RLAST_MISMATCH instance=tb_generated_wrapper_rid.dut.burst_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00001000 count=2 resp=00 id=0 last=1 descriptors=1 remaining=2'
+missing_fault='AXI_BURST_FAULT engine=read reason=RLAST_MISMATCH instance=tb_generated_wrapper_rid.dut.burst_engine.report_axi_read_diagnostic opcode=-1 size=0 address=00001000 count=1 resp=00 id=0 last=0 descriptors=1 remaining=1'
+run_rlast_containment early-rlast +RLAST_EARLY "$early_fault" \
+  'RLAST_CASE PASS kind=early requested=2 ar=1 r=1 observed_last=1 remaining=2 completion=0 fifo_pops=0 fault=1' \
+  'GENERATED_WRAPPER_RLAST PASS kind=early recovery=1'
+run_rlast_containment missing-rlast +RLAST_MISSING "$missing_fault" \
+  'RLAST_CASE PASS kind=missing requested=1 ar=1 r=1 observed_last=0 remaining=1 completion=0 fifo_pops=0 fault=1' \
+  'GENERATED_WRAPPER_RLAST PASS kind=missing recovery=1'
+
+mkdir -p "$TASK_OUT/early-rlast-fail-fast"
+fail_fast_log="$TASK_OUT/early-rlast-fail-fast/run.log"
+status=0
+modelsim_run "$TASK_OUT/positive/modelsim" tb_generated_wrapper_rid "$fail_fast_log" 60 -- +RLAST_EARLY || status=$?
+if ((status != 1)); then
+  cat "$fail_fast_log" >&2
+  echo "fail-fast RLAST run did not return effective status 1 (status=$status)" >&2
+  exit 1
+fi
+modelsim_expect_fault_log "$fail_fast_log" fatal early-rlast-fail-fast "$early_fault"
+modelsim_normalize_log "$fail_fast_log" "$fail_fast_log.normalized"
+if grep -Eq '^(RLAST_CASE PASS|RID_CASE PASS|GENERATED_WRAPPER_RLAST PASS|GENERATED_WRAPPER_RID PASS)' \
+    "$fail_fast_log.normalized"; then
+  cat "$fail_fast_log" >&2
+  echo "fail-fast RLAST case emitted a success marker" >&2
+  exit 1
+fi
+cat "$fail_fast_log.normalized" | tee -a "$TASK_OUT/aggregate.log"
+
 # A deliberately broken bit-0-only reduction is made only in a scratch copy
 # of the generated file. Unlike the positive scoreboard, this run must finish:
 # it demonstrates that both RID 2 and RID 32 are incorrectly accepted.

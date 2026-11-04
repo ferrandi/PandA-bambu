@@ -22,6 +22,20 @@ module tb_generated_wrapper_rid;
   logic [7:0] arlen;
   logic arvalid;
   logic rready;
+  logic awvalid;
+  logic wvalid;
+
+  bit rlast_monitor_active = 1'b0;
+  bit rlast_count_load_done = 1'b0;
+  bit rlast_previous_done = 1'b0;
+  integer rlast_ar_handshakes = 0;
+  integer rlast_r_handshakes = 0;
+  integer rlast_fifo_pops = 0;
+  integer rlast_load_completions = 0;
+  logic [7:0] rlast_observed_arlen;
+  logic [5:0] rlast_observed_arid;
+  logic [31:0] rlast_observed_araddr;
+  logic rlast_observed_last;
 
   src_bambu_artificial_ParmMgr_modgen dut (
     .clock(clock), .reset(reset), .start_port(start_port),
@@ -36,8 +50,35 @@ module tb_generated_wrapper_rid;
     .done_port(done_port), .out1(out1),
     .p_m_axi_src_arid(arid), .p_m_axi_src_araddr(araddr),
     .p_m_axi_src_arlen(arlen), .p_m_axi_src_arvalid(arvalid),
-    .p_m_axi_src_rready(rready)
+    .p_m_axi_src_rready(rready),
+    .p_m_axi_src_awvalid(awvalid), .p_m_axi_src_wvalid(wvalid)
   );
+
+  always @(posedge clock)
+  begin
+    if (rlast_monitor_active)
+    begin
+      if (arvalid && arready)
+      begin
+        rlast_ar_handshakes = rlast_ar_handshakes + 1;
+        rlast_observed_arlen = arlen;
+        rlast_observed_arid = arid;
+        rlast_observed_araddr = araddr;
+      end
+      if (rvalid && rready)
+      begin
+        rlast_r_handshakes = rlast_r_handshakes + 1;
+        rlast_observed_last = rlast;
+      end
+      if (dut.burst_engine.fifo_load_pop)
+        rlast_fifo_pops = rlast_fifo_pops + 1;
+      if (done_port && !rlast_previous_done && rlast_count_load_done)
+        rlast_load_completions = rlast_load_completions + 1;
+      rlast_previous_done = done_port;
+      if (awvalid || wvalid)
+        $fatal(1, "generated read wrapper emitted AXI write traffic during RLAST test");
+    end
+  end
 
   task automatic pulse_command(input logic [1:0] opcode,
                                input logic [31:0] size_bits,
@@ -144,9 +185,121 @@ module tb_generated_wrapper_rid;
     end
   endtask
 
+  task automatic run_rlast_case(input bit missing_last,
+                                input logic expected_r_last,
+                                input logic [7:0] expected_arlen,
+                                input integer expected_remaining);
+    integer cycles;
+    logic [31:0] count;
+    string kind_name;
+    begin
+      count = missing_last ? 32'd1 : 32'd2;
+      kind_name = missing_last ? "missing" : "early";
+      @(negedge clock);
+      reset = 1'b0;
+      start_port = 1'b0;
+      rvalid = 1'b0;
+      rid = 0;
+      rresp = 0;
+      rlast = 1'b1;
+      repeat (2) @(negedge clock);
+      reset = 1'b1;
+      repeat (2) @(negedge clock);
+
+      rlast_ar_handshakes = 0;
+      rlast_r_handshakes = 0;
+      rlast_fifo_pops = 0;
+      rlast_load_completions = 0;
+      rlast_previous_done = done_port;
+      rlast_count_load_done = 1'b0;
+      rlast_monitor_active = 1'b1;
+
+      pulse_command(2'd2, 32'd32, 32'h0000_1000, count);
+      cycles = 0;
+      while (rlast_ar_handshakes != 1 && cycles < 40)
+      begin
+        @(posedge clock);
+        #1;
+        cycles = cycles + 1;
+      end
+      if (rlast_ar_handshakes != 1 || rlast_observed_arlen !== expected_arlen ||
+          rlast_observed_arid !== 6'b0 || rlast_observed_araddr !== 32'h0000_1000)
+        $fatal(1, "generated wrapper emitted the wrong RLAST test AR descriptor");
+
+      @(negedge clock);
+      cycles = 0;
+      while (!rready && cycles < 40)
+      begin
+        @(negedge clock);
+        cycles = cycles + 1;
+      end
+      if (!rready)
+        $fatal(1, "watchdog waiting for RREADY in generated wrapper RLAST test");
+      rid = 0;
+      rresp = 0;
+      rlast = expected_r_last;
+      rvalid = 1'b1;
+      @(posedge clock);
+      #1;
+      if (rlast_r_handshakes != 1 || rlast_observed_last !== expected_r_last)
+        $fatal(1, "generated wrapper did not accept the malformed RLAST beat");
+      if (dut.burst_engine.fault_reg !== 1'b1)
+        $fatal(1, "GENERATED_WRAPPER_RLAST_FAULT_NOT_OBSERVED");
+      if (done_port || dut.burst_engine.descriptor_count_reg != 1 ||
+          dut.burst_engine.descriptor_remaining_reg[dut.burst_engine.descriptor_rd_ptr_reg] != expected_remaining ||
+          rlast_fifo_pops != 0)
+        $fatal(1, "generated wrapper did not contain the malformed RLAST response");
+
+      @(negedge clock);
+      rvalid = 1'b0;
+      rlast = 1'b1;
+      repeat (2) @(negedge clock);
+      if (done_port)
+        $fatal(1, "configure completion remained asserted before the RLAST recovery probe");
+
+      rlast_count_load_done = 1'b1;
+      pulse_command(2'd0, 32'd32, 32'h0000_1000, 32'd0);
+      repeat (8)
+      begin
+        @(posedge clock);
+        #1;
+        if (done_port || arvalid || awvalid || wvalid || dut.burst_engine.fifo_load_pop)
+          $fatal(1, "malformed RLAST response completed a LOAD or produced bus/FIFO activity");
+      end
+      rlast_count_load_done = 1'b0;
+      rlast_monitor_active = 1'b0;
+      if (rlast_ar_handshakes != 1 || rlast_r_handshakes != 1 ||
+          rlast_load_completions != 0 || rlast_fifo_pops != 0 ||
+          dut.burst_engine.fault_reg !== 1'b1)
+        $fatal(1, "generated wrapper RLAST observation counts did not match the fault contract");
+
+      $display("RLAST_CASE PASS kind=%s requested=%0d ar=%0d r=%0d observed_last=%0d remaining=%0d completion=%0d fifo_pops=%0d fault=1",
+               kind_name, count,
+               rlast_ar_handshakes, rlast_r_handshakes, rlast_observed_last,
+               expected_remaining, rlast_load_completions, rlast_fifo_pops);
+    end
+  endtask
+
   initial
   begin
     bit negative_sensitivity;
+    if ($test$plusargs("RLAST_EARLY"))
+    begin
+      run_rlast_case(1'b0, 1'b1, 8'd1, 2);
+      if ($test$plusargs("AXI_BURST_EXPECT_FAULT"))
+      begin
+        run_rid_case(6'd0, 1'b1);
+        $display("GENERATED_WRAPPER_RLAST PASS kind=early recovery=1");
+      end
+      $finish;
+    end
+    if ($test$plusargs("RLAST_MISSING"))
+    begin
+      run_rlast_case(1'b1, 1'b0, 8'd0, 1);
+      run_rid_case(6'd0, 1'b1);
+      $display("GENERATED_WRAPPER_RLAST PASS kind=missing recovery=1");
+      $finish;
+    end
     negative_sensitivity = $test$plusargs("NEGATIVE_SENSITIVITY");
     if (negative_sensitivity)
     begin

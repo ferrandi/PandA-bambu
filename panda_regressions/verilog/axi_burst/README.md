@@ -12,6 +12,10 @@ contains tests that exercise AXI burst hardware directly:
   one generated DUT after a single reset, including a zero-trip call and
   repeated parameters, with edge-counted completion/FIFO totals and quiet
   cycles that reject unexpected read, write, completion or FIFO activity.
+  `run_generated_wrapper_rid_tests.sh` also checks early and missing RLAST on
+  the generated reader wrapper, verifies fault containment and reset recovery,
+  while separate scratch mapping mutations confirmed sensitivity to the
+  wrapper's RLAST connection.
   `run_generated_memaxi_response_tests.sh` checks generated read/write wrappers,
   including sync/async and active-low/high resets while AXI responses are pending,
   and while AR/AW/W requests are stalled; checks include payload stability and

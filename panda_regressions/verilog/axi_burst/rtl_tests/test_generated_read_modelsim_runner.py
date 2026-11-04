@@ -138,6 +138,48 @@ if name == "vsim":
             print("GENERATED_KERNEL_ALL_CASES PASS")
         raise SystemExit(0)
     if top == "tb_generated_wrapper_rid":
+        calls_file = os.environ.get("FAKE_VSIM_CALLS")
+        if calls_file:
+            with open(calls_file, "a") as stream:
+                stream.write(" ".join(args) + "\n")
+        early_rlast = "+RLAST_EARLY" in args
+        missing_rlast = "+RLAST_MISSING" in args
+        if early_rlast or missing_rlast:
+            kind = "early" if early_rlast else "missing"
+            count, last, remaining = (2, 1, 2) if early_rlast else (1, 0, 1)
+            fault = (
+                "AXI_BURST_FAULT engine=read reason=RLAST_MISMATCH "
+                "instance=tb_generated_wrapper_rid.dut.burst_engine.report_axi_read_diagnostic "
+                f"opcode=-1 size=0 address=00001000 count={count} resp=00 id=0 "
+                f"last={last} descriptors=1 remaining={remaining}"
+            )
+            if "+AXI_BURST_EXPECT_FAULT" not in args:
+                print(f"** Fatal: {fault}")
+                raise SystemExit(1)
+            if mode == "rlast-continuation-fatal-zero":
+                print("** Fatal: injected continuation fatal with zero simulator exit")
+                raise SystemExit(0)
+            if mode not in ("rlast-missing-diagnostic",):
+                if mode == "rlast-wrong-diagnostic":
+                    fault = fault.replace("remaining=" + str(remaining), "remaining=99")
+                print(fault)
+                if mode == "rlast-duplicate-diagnostic":
+                    print(fault)
+            case = (
+                f"RLAST_CASE PASS kind={kind} requested={count} ar=1 r=1 "
+                f"observed_last={last} remaining={remaining} completion=0 fifo_pops=0 fault=1"
+            )
+            recovered = f"GENERATED_WRAPPER_RLAST PASS kind={kind} recovery=1"
+            markers = [case, "RID_CASE PASS rid=0 completion=1", recovered]
+            if mode == "rlast-missing-marker":
+                markers.pop(0)
+            elif mode == "rlast-wrong-marker":
+                markers[0] = markers[0].replace("completion=0", "completion=1")
+            elif mode == "rlast-duplicate-marker":
+                markers.append(recovered)
+            for marker in markers:
+                print(marker)
+            raise SystemExit(0)
         if negative:
             print("RID_CASE PASS rid=2 completion=1")
             print("RID_CASE PASS rid=32 completion=1")
@@ -247,6 +289,17 @@ os.execv("{real_timeout}", ["{real_timeout}", *args])
     def test_wrapper_rid_positive_and_mutated_rid_are_both_witnessed(self) -> None:
         result = self._run_wrapper("wrapper-pass")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        calls = (self.base / "vsim-kernel-calls.log").read_text().splitlines()
+        self.assertEqual(len(calls), 5, calls)
+        self.assertIn("+AXI_BURST_EXPECT_FAULT", calls[0])
+        self.assertNotIn("+RLAST_EARLY", calls[0])
+        self.assertIn("+RLAST_EARLY", calls[1])
+        self.assertIn("+AXI_BURST_EXPECT_FAULT", calls[1])
+        self.assertIn("+RLAST_MISSING", calls[2])
+        self.assertIn("+AXI_BURST_EXPECT_FAULT", calls[2])
+        self.assertIn("+RLAST_EARLY", calls[3])
+        self.assertNotIn("+AXI_BURST_EXPECT_FAULT", calls[3])
+        self.assertIn("+NEGATIVE_SENSITIVITY", calls[4])
         positive = (self.base / "wrapper-pass/positive/run.log.normalized").read_text()
         self.assertEqual(positive.count(WRAPPER_RID_FAULT), 4)
         for rid, completion in ((0, 1), (1, 0), (2, 0), (32, 0), (63, 0)):
@@ -256,6 +309,12 @@ os.execv("{real_timeout}", ["{real_timeout}", *args])
         self.assertEqual(negative.count("RID_CASE PASS rid=2 completion=1"), 1)
         self.assertEqual(negative.count("RID_CASE PASS rid=32 completion=1"), 1)
         self.assertEqual(negative.count("RID_NEGATIVE_SENSITIVITY PASS (bit-0-only reduction accepted 2 and 32)"), 1)
+        for kind in ("early", "missing"):
+            log = (self.base / f"wrapper-pass/{kind}-rlast/run.log.normalized").read_text()
+            self.assertIn(f"GENERATED_WRAPPER_RLAST PASS kind={kind} recovery=1", log)
+        fail_fast = (self.base / "wrapper-pass/early-rlast-fail-fast/run.log.normalized").read_text()
+        self.assertIn("** Fatal: " + "AXI_BURST_FAULT engine=read reason=RLAST_MISMATCH", fail_fast)
+        self.assertNotIn("GENERATED_WRAPPER_RLAST PASS", fail_fast)
         self._assert_no_verilator()
 
     def test_wrapper_rid_requires_exact_containment_diagnostic_set(self) -> None:
@@ -264,6 +323,16 @@ os.execv("{real_timeout}", ["{real_timeout}", *args])
                 result = self._run_wrapper(f"wrapper-{mode}", mode)
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("diagnostic", result.stdout + result.stderr)
+        self._assert_no_verilator()
+
+    def test_wrapper_rlast_rejects_missing_wrong_duplicate_and_status_zero_fatal(self) -> None:
+        for mode in ("rlast-missing-diagnostic", "rlast-wrong-diagnostic", "rlast-duplicate-diagnostic",
+                     "rlast-missing-marker", "rlast-wrong-marker", "rlast-duplicate-marker",
+                     "rlast-continuation-fatal-zero"):
+            with self.subTest(mode=mode):
+                result = self._run_wrapper(f"wrapper-{mode}", mode)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("rlast", result.stdout.lower() + result.stderr.lower())
         self._assert_no_verilator()
 
     def test_wrapper_rejects_missing_marker_compile_fatal_timeout_and_crash(self) -> None:

@@ -161,6 +161,9 @@ case $script in
       printf 'failure marker\n' >"$destination/failure-marker.txt"
       exit 9
     fi
+    if [[ -n ${FAKE_WRITE_OUTPUT_SENTINELS:-} ]]; then
+      printf '%s\n' "$name" >"$destination/workflow-retention-sentinel.txt"
+    fi
     exit 0
     ;;
   *)
@@ -322,6 +325,79 @@ esac
         self.assertEqual(destination, str((output / "rtl-default-duplex-reduction").resolve()))
         self.assertEqual(guard, "1")
         self.assertTrue(Path(destination).is_dir())
+
+    def test_functional_workflow_keeps_evidence_under_uploaded_report_dir(self) -> None:
+        workflow = (ROOT / ".github/workflows/minimal.yml").read_text(encoding="utf-8")
+        job_start = workflow.index("\n  bambu-axi-burst:\n")
+        next_job = workflow.index("\n  AXI4-verification:\n", job_start)
+        job = workflow[job_start:next_job]
+        step_start = job.index("      - name: Launch AXI burst regression\n")
+        run_start = job.index("        run: |\n", step_start) + len("        run: |\n")
+        run_end = job.index("      - name: Collect post-mortem data\n", run_start)
+        run_block = "\n".join(
+            line[10:] if line.startswith("          ") else line
+            for line in job[run_start:run_end].splitlines()
+        )
+
+        invocation = next(line for line in run_block.splitlines() if "--group=functional" in line)
+        self.assertEqual(invocation.count("--output="), 1)
+        self.assertIn("--no-clean", invocation)
+        self.assertIn("--returnfail", invocation)
+        self.assertIn("--junitdir=", invocation)
+        self.assertIn("--summary=", invocation)
+        self.assertIn("-c=--simulator=MODELSIM", invocation)
+        self.assertNotRegex(invocation, r"(?:--parallel(?:=|\s)|(?:^|\s)-j\d*)")
+        output_assignment = next(line for line in run_block.splitlines() if line.startswith("output="))
+        self.assertIn("GITHUB_RUN_ID", output_assignment)
+        self.assertIn("GITHUB_RUN_ATTEMPT", output_assignment)
+        self.assertIn("path: ${{env.report-dir}}", job)
+
+        report_dir = self.root / "uploaded-reports"
+        report_dir.mkdir()
+        substitutions = {
+            "${{env.dist-dir}}": str(self.install),
+            "${{env.report-dir}}": str(report_dir),
+        }
+        for expression, value in substitutions.items():
+            run_block = run_block.replace(expression, shlex.quote(value))
+        run_block = run_block.replace(
+            "${{env.script}}", "/bin/bash ./panda_regressions/hls/bambu_axi_burst.sh"
+        )
+        syntax = subprocess.run(
+            ["/bin/bash", "-n"], input=run_block, text=True, capture_output=True, check=False
+        )
+        self.assertEqual(syntax.returncode, 0, syntax.stderr)
+
+        env = os.environ.copy()
+        env.update(
+            {
+                "PATH": f"{self.fake_bin}:{self.root / 'modelsim/bin'}:{self.install / 'bin'}:{os.environ['PATH']}",
+                "TMPDIR": str(self.root), "TMP": str(self.root), "TEMP": str(self.root),
+                "FAKE_MANTIS_ARGS_FILE": str(self.mantis_args_file),
+                "FAKE_MANTIS_ARGV_FILE": str(self.mantis_argv_file),
+                "FAKE_JOB_LOG_FILE": str(self.root / "job-calls"),
+                "FAKE_JOB_ARGS_FILE": str(self.root / "job-args"),
+                "FAKE_WRITE_OUTPUT_SENTINELS": "1",
+                "GITHUB_RUN_ID": "regression-restart-test",
+                "GITHUB_RUN_ATTEMPT": "3",
+                "BAMBU_HLS_BACKEND_PATH": "",
+            }
+        )
+        result = subprocess.run(
+            ["/bin/bash", "-e", "-o", "pipefail", "-c", run_block],
+            cwd=self.repo, env=env, text=True, capture_output=True, check=False, timeout=90,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+        retained = report_dir / "axi-burst-functional-regression-restart-test-3"
+        self.assertTrue((retained / "jobs/rtl-adapter-size.log").is_file())
+        sentinels = list(retained.rglob("workflow-retention-sentinel.txt"))
+        self.assertTrue(sentinels)
+        self.assertTrue(all(self.is_within(path, report_dir) for path in sentinels))
+        self.assertTrue(self.is_within(retained / "jobs/rtl-adapter-size.log", report_dir))
+        self.assertTrue((retained / "mantis/AXI-BURST").is_dir())
+        self.assertTrue(self.is_within(retained, report_dir))
+        self.assertIn("--no-clean", self.mantis_args_file.read_text(encoding="utf-8"))
 
     def test_functional_dispatch_honors_j20_within_weighted_helper_budget(self) -> None:
         output = self.root / "out_functional_concurrency"

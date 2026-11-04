@@ -510,7 +510,7 @@ jobs:
           export PATH="$BAMBU_MODELSIM_BIN${PATH:+:$PATH}"
           printf 'ModelSim lookup source: %s\n' "$BAMBU_MODELSIM_SOURCE"
           printf 'ModelSim selected bin: %s\n' "$BAMBU_MODELSIM_BIN"
-          mkdir -p ${{env.report-dir}}
+          mkdir -p "${{env.report-dir}}"
           for tool in vsim vlib vmap vlog; do
             tool_path="$BAMBU_MODELSIM_BIN/$tool"
             if [[ ! -x "$tool_path" ]]; then
@@ -519,7 +519,8 @@ jobs:
             fi
             printf 'ModelSim tool %s: %s\n' "$tool" "$tool_path"
           done
-          ${{env.script}} --group=functional --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" -c=--simulator=MODELSIM
+          output="${{env.report-dir}}/axi-burst-functional-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ${{env.script}} --group=functional --no-clean --output="$output" --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" -c=--simulator=MODELSIM
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
