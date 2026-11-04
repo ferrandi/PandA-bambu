@@ -1,3 +1,16 @@
+=========== PANDA 2026.11 ===========
+Nineteenth release of PandA framework.
+
+New features introduced:
+- Extended ac_channel support, including non-blocking aggregate payloads and improved LLVM dependency analysis
+- Improved vector operation allocation and bitcast handling
+- Improved pipelined AXI and OpenMP designs, including AXI tag handling and memory arbitration
+- Added dataflow support for read-only memories, idle output ports, peek operations, and ding-dong buffers
+- Improved cache support for structs and objects of different sizes
+- Improved banked-memory mapping and pipelined FSM generation
+- Fixed issues in VHDL and C backend code generation
+- Improved build and logging reliability, compiler and CI coverage, and regression result collection
+
 =========== PANDA 2026.06 ===========
 Eighteenth private release of PandA framework.
 
