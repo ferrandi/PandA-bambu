@@ -17,7 +17,8 @@ Run the suite through `../bambu_axi_burst.sh` with `--group=compiler`,
 CI runs the Verilog component suite, compiler-only checks, and functional
 ModelSim gates as three separate jobs. The compiler job does not require the
 Mentor runner; both functional jobs use ModelSim/Questa. Verilator is not used
-for this qualification.
+for this qualification. The Release functional job retains its per-run output
+under `report-dir` for artifact upload.
 
 The AXI-burst Mantis cases use a 1,000,000-cycle generated-testbench watchdog and
 a 30-minute per-command timeout. The cycle bound is about 15 times the measured
