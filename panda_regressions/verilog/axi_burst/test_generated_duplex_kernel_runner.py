@@ -179,15 +179,23 @@ fi
 [[ $tool == vsim ]] || exit 2
 build=
 top=
+observer_cu_root=0
 scenario=
 for ((i=1; i<=$#; i++)); do
   arg=${!i}
   case $arg in
     -modelsimini) next=$((i + 1)); build=$(dirname "${!next}") ;;
-    work.*) top=${arg#work.} ;;
+    work.*)
+      if [[ -z $top ]]; then top=${arg#work.}
+      elif [[ ${arg#work.} == duplex_load_observer_cu ]]; then observer_cu_root=1
+      fi ;;
     +CASE=*) scenario=${arg#+CASE=} ;;
   esac
 done
+if [[ $top == tb_generated_duplex_kernel && $observer_cu_root != 1 ]]; then
+  echo 'generated kernel elaboration omitted work.duplex_load_observer_cu' >&2
+  exit 42
+fi
 if [[ $top == tb_duplex_load_observer ]]; then
   printf '%q ' "$@" >>"$SIM_UNIT_FILE"; printf '\n' >>"$SIM_UNIT_FILE"
   echo 'DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2'
@@ -443,6 +451,8 @@ exec {real_sha} \"$@\"
         checker_output = Path((self.scratch / "checker-invocations").read_text().strip())
         self.assertEqual(checker_output.resolve(), output.resolve())
         self.assertEqual(len((self.scratch / "scenario-args").read_text().splitlines()), 48)
+        scenario_args = (self.scratch / "scenario-args").read_text().splitlines()
+        self.assertTrue(all("work.duplex_load_observer_cu" in line for line in scenario_args))
         g3_args = [line for line in (self.scratch / "scenario-args").read_text().splitlines()
                    if "COPY_PARALLELISM_256" in line]
         self.assertEqual(len(g3_args), 2)
@@ -480,7 +490,7 @@ exec {real_sha} \"$@\"
             self.assertTrue(self._contains_canonical_path(f"{profile}|{args}", self.rtl_tests / OBSERVER.name))
             self.assertIn("tb_generated_duplex_kernel.sv", args)
             self.assertIn("-mfcu", args)
-            self.assertIn("-cuname duplex_load_observer_unit_cu", args)
+            self.assertIn("-cuname duplex_load_observer_cu", args)
         self.assertEqual(sum("+define+COPY_MODE" in line for line in build_args), 2)
         self.assertEqual(sum("+define+PREFIX_MODE" in line for line in build_args), 2)
         self.assertEqual(sum("+define+COPY_MODE" not in line and "+define+PREFIX_MODE" not in line for line in build_args), 3)
