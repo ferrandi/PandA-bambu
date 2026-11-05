@@ -22,6 +22,7 @@ def check_vcd(path: Path) -> tuple[int, int]:
 
     declarations: dict[tuple[str, ...], dict[str, dict[int | None, str]]] = {}
     widths: dict[tuple[tuple[str, ...], str], int] = {}
+    packed_offsets: dict[tuple[tuple[str, ...], str], dict[int, int]] = {}
     clock_declarations: dict[tuple[str, ...], list[tuple[str, int, int | None]]] = {}
     scope_stack: list[str] = []
     for line in text.splitlines():
@@ -43,12 +44,29 @@ def check_vcd(path: Path) -> tuple[int, int]:
         identifier, name = fields[3], fields[4]
         scope = tuple(scope_stack)
         bit = None
-        if len(fields) >= 7 and re.fullmatch(r"\[\d+\]", fields[5]):
-            bit = int(fields[5][1:-1])
+        packed_range = None
+        if len(fields) >= 7:
+            scalar_bit = re.fullmatch(r"\[(\d+)\]", fields[5])
+            vector_range = re.fullmatch(r"\[(\d+):(\d+)\]", fields[5])
+            if scalar_bit:
+                bit = int(scalar_bit.group(1))
+            elif vector_range:
+                packed_range = (int(vector_range.group(1)), int(vector_range.group(2)))
         if name == "clock":
             clock_declarations.setdefault(scope, []).append((identifier, width, bit))
         if name.startswith("sig_m_axi_"):
-            declarations.setdefault(scope, {}).setdefault(name, {})[bit] = identifier
+            parts = declarations.setdefault(scope, {}).setdefault(name, {})
+            if packed_range is not None:
+                msb, lsb = packed_range
+                if width != abs(msb - lsb) + 1:
+                    raise CheckError(f"wrong packed width for {name}")
+                step = -1 if msb > lsb else 1
+                offsets = {index: offset for offset, index in enumerate(range(msb, lsb + step, step))}
+                packed_offsets[(scope, name)] = offsets
+                for index in offsets:
+                    parts[index] = identifier
+            else:
+                parts[bit] = identifier
             widths[(scope, name)] = width
 
     suffixes = ("arvalid", "arready", "arsize", "awvalid", "awready", "awsize")
@@ -59,15 +77,23 @@ def check_vcd(path: Path) -> tuple[int, int]:
             names = {suffix: prefix + suffix for suffix in suffixes}
             if not all(name in scoped_declarations for name in names.values()):
                 continue
-            size_bits_valid = all(set(scoped_declarations[names[size]].keys()) == {0, 1, 2} and
-                                  widths[(scope, names[size])] == 1 for size in ("arsize", "awsize"))
+
+            def valid_size_signal(signal: str) -> bool:
+                parts = scoped_declarations[signal]
+                identifiers = set(parts.values())
+                width = widths[(scope, signal)]
+                return set(parts) == {0, 1, 2} and (
+                    (width == 1 and len(identifiers) == 3) or
+                    (width == 3 and len(identifiers) == 1 and (scope, signal) in packed_offsets))
+
+            size_bits_valid = all(valid_size_signal(names[size]) for size in ("arsize", "awsize"))
             scalar_controls = all(widths[(scope, names[name])] == 1 and
                                   scoped_declarations[names[name]].keys() == {None}
                                   for name in ("arvalid", "arready", "awvalid", "awready"))
             if size_bits_valid and scalar_controls:
                 candidates.append((scope, names))
     if len(candidates) != 1:
-        raise CheckError(f"expected one complete scalarized AXI master, found {len(candidates)}")
+        raise CheckError(f"expected one complete AXI master (scalarized or packed), found {len(candidates)}")
     scope, signals = candidates[0]
     clocks = clock_declarations.get(scope, [])
     if len(clocks) != 1 or clocks[0][1:] != (1, None):
@@ -86,10 +112,17 @@ def check_vcd(path: Path) -> tuple[int, int]:
     counts = {"ar": 0, "aw": 0}
 
     def sample() -> None:
+        def size_bit(signal: str, bit: int) -> str:
+            identifier = scoped_declarations[signal][bit]
+            value = values[identifier]
+            if widths_by_id[identifier] == 1:
+                return value
+            return value[packed_offsets[(scope, signal)][bit]]
+
         for channel in ("ar", "aw"):
             if values[scoped_declarations[signals[channel + "valid"]][None]] != "1":
                 continue
-            bits = "".join(values[scoped_declarations[signals[channel + "size"]][bit]] for bit in (2, 1, 0))
+            bits = "".join(size_bit(signals[channel + "size"], bit) for bit in (2, 1, 0))
             if any(bit not in "01" for bit in bits):
                 raise CheckError(f"{channel.upper()}SIZE contains X/Z while VALID is high at a rising clock edge")
             if bits != "000":
@@ -146,9 +179,11 @@ def check_vcd(path: Path) -> tuple[int, int]:
         vector = re.fullmatch(r"[bB]([01xXzZ]+)\s+([^\s]+)", line)
         if vector and vector.group(2) in selected_ids:
             identifier = vector.group(2)
-            if widths_by_id[identifier] != len(vector.group(1)):
+            value = vector.group(1).lower()
+            if len(value) > widths_by_id[identifier]:
                 raise CheckError("wrong vector width for an AXI master signal")
-            record_value(identifier, vector.group(1).lower())
+            padding = value[0] if value[0] in "xz" else "0"
+            record_value(identifier, value.rjust(widths_by_id[identifier], padding))
     if timestamp is not None:
         finish_timestamp()
     if counts["ar"] < 1 or counts["aw"] < 1:
