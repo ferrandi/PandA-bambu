@@ -41,7 +41,9 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <string>
 #include <utility>
+#include <vector>
 
 class funit_obj;
 class memory;
@@ -161,6 +163,21 @@ class fu_binding
                                         std::map<std::string, unsigned int>& reverse_function_units,
                                         std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel,
                                         const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
+
+   struct duplex_endpoint_instance
+   {
+      structural_objectRef module;
+      std::map<std::string, std::string> metadata;
+   };
+   struct duplex_bundle_instances
+   {
+      std::vector<duplex_endpoint_instance> readers;
+      std::vector<duplex_endpoint_instance> writers;
+   };
+   void connect_duplex_bundles(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef clock_port,
+                               structural_objectRef reset_port,
+                               const std::map<std::string, duplex_bundle_instances>& duplex_bundles,
+                               unsigned int& unique_id);
 
  public:
    /// The value used to identified unknown functional unit

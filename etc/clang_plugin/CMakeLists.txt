@@ -32,6 +32,7 @@ set(_panda_plugin_common_includes
    "${_panda_plugin_sources_dir}"
    "${CMAKE_SOURCE_DIR}/etc/libopenmp"
    "${CMAKE_SOURCE_DIR}/src/IR"
+   "${CMAKE_SOURCE_DIR}/src/utility"
 )
 
 set(_panda_plugin_buddy_lib "")
@@ -337,6 +338,11 @@ function(_panda_add_clang_plugins ver)
    endif()
 
    if(_all_plugins)
+      set(_plugin_outputs)
+      foreach(_plugin IN LISTS _all_plugins)
+         get_target_property(_plugin_output ${_plugin} PLUGIN_OUTPUT)
+         list(APPEND _plugin_outputs "${_plugin_output}")
+      endforeach()
       install(TARGETS ${_all_plugins}
               LIBRARY DESTINATION "${PANDA_LIB_INSTALLDIR_REL}/${_plugin_dir}")
       # Strip installed plugin shared objects to reduce size.
@@ -355,6 +361,7 @@ function(_panda_add_clang_plugins ver)
       ")
    endif()
    add_custom_target(panda_clang_plugins_${ver} ALL DEPENDS ${_all_plugins})
+   set_target_properties(panda_clang_plugins_${ver} PROPERTIES PLUGIN_OUTPUTS "${_plugin_outputs}")
 endfunction()
 
 # Aggregate target to ensure all detected plugin variants build by default.

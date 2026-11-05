@@ -329,6 +329,8 @@ target_link_libraries(panda_hdl_generators PRIVATE panda_core)
 # Panda unit test executable (mirrors automake check target)
 set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/main_tests.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/OrdinaryMemoryAccess.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/AXIBurstProfiles.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/VectorAllocationCharacterization.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/VectorMaskType.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/algorithms/BasicBlockReachability.cpp"
@@ -337,6 +339,7 @@ set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/algorithms/SdcSolver.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/APInt.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/AreaEstimation.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/BoundedDecimal.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/ConstDivMagic.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/KcmConstMul.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/Range.cpp"
@@ -399,11 +402,6 @@ if(PANDA_BUILD_BAMBU)
    )
    # Generated Bambu scripts require the copier.
    add_dependencies(bambu record_output)
-   install(CODE "
-      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu\")
-         execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu)
-      endif()
-   " )
    install(TARGETS bambu
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
@@ -424,11 +422,6 @@ if(PANDA_BUILD_EUCALYPTUS)
    set_target_properties(eucalyptus PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
-   install(CODE "
-      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/eucalyptus\")
-         execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target eucalyptus)
-      endif()
-   " )
    install(TARGETS eucalyptus
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
@@ -449,11 +442,6 @@ if(PANDA_BUILD_CC)
    set_target_properties(bambu-cc PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
-   install(CODE "
-      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu-cc\")
-         execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu-cc)
-      endif()
-   " )
    install(TARGETS bambu-cc
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )

@@ -2755,21 +2755,23 @@ endgenerate
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
-`ifndef CLOG2
-`define CLOG2(x) \
-  (x &lt;= 2) ? 1 : \
-  (x &lt;= 4) ? 2 : \
-  (x &lt;= 8) ? 3 : \
-  (x &lt;= 16) ? 4 : \
-  (x &lt;= 32) ? 5 : \
-  (x &lt;= 64) ? 6 : \
-  (x &lt;= 128) ? 7 : \
-  (x &lt;= 256) ? 8 : \
-  (x &lt;= 512) ? 9 : \
-  -1
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
 `endif
 
-localparam BITSIZE_counter = `CLOG2(BITSIZE_in1);
+`ifdef _SIM_HAVE_CLOG2
+  localparam BITSIZE_counter = $clog2(BITSIZE_in1);
+`else
+  localparam BITSIZE_counter = log2(BITSIZE_in1);
+`endif
 
 reg [BITSIZE_in1-1:0] last_mask;
 wire [BITSIZE_in1-1:0] upper_in, next_mask;

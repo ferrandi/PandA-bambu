@@ -27,6 +27,7 @@
  * @author Claudio Barone <claudio.barone@polimi.it>
  */
 #include "InterfaceInfer.hpp"
+#include "InterfaceInfer_internal.hpp"
 
 #include "CompilerWrapper.hpp"
 #include "IR/function_ordered_instructions.hpp"
@@ -61,58 +62,50 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "time_info.hpp"
+#include "token_interface.hpp"
 #include "var_pp_functor.hpp"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <tuple>
 
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
 #define EPSILON 0.000000001
-#define ENCODE_FDNAME(arg_name, MODE, interface_type) \
-   ((arg_name) + STR_CST_interface_parameter_keyword + (MODE) + (interface_type))
+
+using InterfaceInferInternal::BundleBurstDecision;
+using InterfaceInferInternal::CollectOriginalMemoryAccesses;
+using InterfaceInferInternal::createInterfaceCast;
+using InterfaceInferInternal::FrozenDuplexContribution;
+using InterfaceInferInternal::get_decl_name;
+using InterfaceInferInternal::GetDuplexContribution;
+using InterfaceInferInternal::hasBlockPath;
+using InterfaceInferInternal::hasOnlyOrdinaryMemoryEffects;
+using InterfaceInferInternal::hasOnlyOrdinaryReadEffects;
+using InterfaceInferInternal::isConstantValue;
+using InterfaceInferInternal::IsDataflowArchitecture;
+using InterfaceInferInternal::isUnsigned32Type;
+using InterfaceInferInternal::LowerReadBurstRegions;
+using InterfaceInferInternal::lowerRuntimeGuardedDuplex;
+using InterfaceInferInternal::LowerWriteBurstRegion;
+using InterfaceInferInternal::OriginalMemoryAccess;
+using InterfaceInferInternal::PreanalyzeBursts;
+using InterfaceInferInternal::preserveBlockingInterfaceAccess;
+using InterfaceInferInternal::ReadBurstRegion;
+using InterfaceInferInternal::recognizeReadBurstRegion;
+using InterfaceInferInternal::RecognizeSameBaseDuplex;
+using InterfaceInferInternal::recognizeWriteBurstRegion;
+using InterfaceInferInternal::SameBaseDuplexProof;
+using InterfaceInferInternal::serializeInterfaceAccess;
+using InterfaceInferInternal::WriteBurstRegion;
 
 namespace
 {
    using OrderedInstructionsCache = std::map<unsigned int, std::unique_ptr<FunctionOrderedInstructions>>;
-
-   /// Interfaces carry integer bits. Resize integers separately from reinterpreting
-   /// floating-point or vector values: bitcasts require equal operand/result widths.
-   /// `context` names the interface parameter, to make a rejected cast diagnosable.
-   ir_nodeRef createInterfaceCast(ir_nodeRef value, const ir_nodeConstRef& target_type,
-                                  const ir_manipulationRef& ir_man, unsigned scope,
-                                  std::vector<ir_nodeRef>& intermediate_stmts, const std::string& context)
-   {
-      const auto source_type = ir_helper::CGetType(value);
-      const auto source_is_bits = ir_helper::IsRealType(source_type) || ir_helper::IsVectorType(source_type);
-      const auto target_is_bits = ir_helper::IsRealType(target_type) || ir_helper::IsVectorType(target_type);
-      auto cast_kind = source_is_bits || target_is_bits ? bitcast_node_K : nop_node_K;
-      if(cast_kind == bitcast_node_K && ir_helper::Size(source_type) != ir_helper::Size(target_type))
-      {
-         // The intermediate is unsigned: the padding bits of a reinterpreted value
-         // carry no sign, so widening it must never fill the upper bits with ones.
-         const auto integer_type =
-             ir_man->GetCustomIntegerType(ir_helper::Size(source_is_bits ? source_type : target_type), true);
-         const auto intermediate_expr = ir_man->create_unary_operation(integer_type, value, BUILTIN_LOCINFO,
-                                                                       source_is_bits ? bitcast_node_K : nop_node_K);
-         const auto intermediate_stmt =
-             ir_man->CreateAssignStmt(integer_type, nullptr, nullptr, intermediate_expr, scope, BUILTIN_LOCINFO);
-         intermediate_stmts.push_back(intermediate_stmt);
-         value = GetPointerS<const assign_stmt>(intermediate_stmt)->op0;
-         cast_kind = target_is_bits ? bitcast_node_K : nop_node_K;
-      }
-      if(cast_kind == bitcast_node_K && ir_helper::Size(value) != ir_helper::Size(target_type))
-      {
-         const auto value_type = ir_helper::CGetType(value);
-         THROW_ERROR("Interface bitcast width mismatch on interface '" + context + "': " + STR(value_type) + " (" +
-                     STR(ir_helper::Size(value_type)) + " bits) -> " + STR(target_type) + " (" +
-                     STR(ir_helper::Size(target_type)) + " bits)");
-      }
-      return ir_man->create_unary_operation(target_type, value, BUILTIN_LOCINFO, cast_kind);
-   }
 
    bool isPointerDerivation(const ir_nodeRef& stmt, const ir_nodeRef& pointer)
    {
@@ -324,96 +317,6 @@ namespace
       return token;
    }
 
-   void addVirtualUseToStatement(const ir_nodeRef& stmt, const ir_nodeRef& vssa)
-   {
-      if(!vssa)
-      {
-         return;
-      }
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      if(stmt_node->AddVuse(vssa))
-      {
-         GetPointerS<ssa_node>(vssa)->AddUseStmt(stmt);
-      }
-   }
-
-   void addVirtualOverToStatement(const ir_nodeRef& stmt, const ir_nodeRef& vssa)
-   {
-      if(!vssa)
-      {
-         return;
-      }
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      if(stmt_node->AddVover(vssa))
-      {
-         GetPointerS<ssa_node>(vssa)->AddUseStmt(stmt);
-      }
-   }
-
-   void serializeInterfaceAccess(const ir_nodeRef& stmt, const std::string& interface_fname,
-                                 std::map<std::string, ir_nodeRef>& last_interface_vdefs,
-                                 const ir_manipulationRef& ir_man)
-   {
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      THROW_ASSERT(stmt_node, "Expected statement for interface serialization");
-      const auto last_vdef = last_interface_vdefs.find(interface_fname);
-      if(last_vdef != last_interface_vdefs.end())
-      {
-         addVirtualUseToStatement(stmt, last_vdef->second);
-      }
-      const auto new_vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()),
-                                                    ir_nodeRef(), ir_nodeRef(), true);
-      stmt_node->SetVdef(new_vdef);
-      GetPointerS<ssa_node>(new_vdef)->SetDefStmt(stmt);
-      last_interface_vdefs[interface_fname] = new_vdef;
-   }
-
-   void preserveBlockingInterfaceAccess(const ir_nodeRef& stmt, const ir_nodeRef& original_stmt,
-                                        const std::string& interface_fname,
-                                        std::map<std::string, ir_nodeRef>& last_interface_vdefs,
-                                        const ir_manipulationRef& ir_man)
-   {
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      const auto original_stmt_node = GetPointerS<node_stmt>(original_stmt);
-      THROW_ASSERT(stmt_node, "Expected statement for blocking interface serialization");
-      THROW_ASSERT(original_stmt_node, "Expected original statement for blocking interface serialization");
-
-      if(original_stmt_node->memdef && !stmt_node->memdef)
-      {
-         stmt_node->memdef = original_stmt_node->memdef;
-         GetPointerS<ssa_node>(stmt_node->memdef)->SetDefStmt(stmt);
-      }
-      if(original_stmt_node->memuse && !stmt_node->memuse)
-      {
-         stmt_node->memuse = original_stmt_node->memuse;
-         GetPointerS<ssa_node>(stmt_node->memuse)->AddUseStmt(stmt);
-      }
-      for(const auto& vuse : original_stmt_node->vuses)
-      {
-         addVirtualUseToStatement(stmt, vuse);
-      }
-      for(const auto& vover : original_stmt_node->vovers)
-      {
-         addVirtualOverToStatement(stmt, vover);
-      }
-
-      const auto last_vdef = last_interface_vdefs.find(interface_fname);
-      if(last_vdef != last_interface_vdefs.end())
-      {
-         addVirtualUseToStatement(stmt, last_vdef->second);
-      }
-
-      ir_nodeRef stmt_vdef = stmt_node->vdef;
-      if(!stmt_vdef)
-      {
-         stmt_vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()), ir_nodeRef(),
-                                             ir_nodeRef(), true);
-         stmt_node->SetVdef(stmt_vdef);
-         GetPointerS<ssa_node>(stmt_vdef)->SetDefStmt(stmt);
-      }
-      last_interface_vdefs[interface_fname] = stmt_vdef;
-   }
-
    bool isSimpleStreamInterface(const application_managerRef& AppM, unsigned int function_id,
                                 const std::string& bundle_name)
    {
@@ -588,14 +491,6 @@ struct InterfaceInfer::interface_info
 
 static const std::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&\\/]*\\s*)");
 
-static std::string get_decl_name(ir_nodeRef tn)
-{
-   const auto dn = GetPointer<const decl_node>(tn);
-   THROW_ASSERT(dn, "Expected decl_node.");
-   THROW_ASSERT(dn->name, "Expected declaration name.");
-   return GetPointer<const identifier_node>(dn->name)->strg;
-}
-
 static std::vector<unsigned int> GetSortedRoots(const CallGraphManager& CGM)
 {
    std::vector<unsigned int> sorted_roots;
@@ -733,6 +628,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    const auto TM = AppM->get_ir_manager();
    const auto& CGM = AppM->CGetCallGraphManager();
    const auto sorted_roots = GetSortedRoots(CGM);
+   const bool burst_feature_enabled = parameters->GetParameter<std::string>("m-axi-burst") == "1";
 
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const ir_nodeRef& tn) {
@@ -760,6 +656,265 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       }
    }
 
+   unsigned int effective_burst_type = parameters->isOption(OPT_axi_burst_type) ?
+                                                               parameters->getOption<unsigned int>(OPT_axi_burst_type) :
+                                       burst_feature_enabled ? 1U :
+                                                               0U;
+   std::string burst_type_origin = parameters->isOption(OPT_axi_burst_type) ? "command-line" :
+                                   burst_feature_enabled                    ? "m-axi-burst default" :
+                                                                              "legacy default";
+   unsigned int device_burst_type = 0U;
+   if(HLSMgr->TryGetParameterFromParameterOrDevice<unsigned int>("axi_burst_type", HLSMgr->get_HLS_device(),
+                                                                 device_burst_type))
+   {
+      effective_burst_type = device_burst_type;
+      burst_type_origin = "device";
+   }
+
+   // Phase 1: materialize m_axi burst defaults and record their provenance before
+   // taking the app-wide duplex snapshot.
+   std::map<std::pair<std::string, std::string>, InterfaceInferInternal::AXIBurstProfileOrigins> burst_profile_origins;
+   const auto apply_burst_profile_defaults = [&]() {
+      for(auto architecture_it = HLSMgr->module_arch->cbegin(); architecture_it != HLSMgr->module_arch->cend();
+          ++architecture_it)
+      {
+         const auto& function_symbol = architecture_it->first;
+         const auto& arch = architecture_it->second;
+         for(auto& iface : arch->ifaces)
+         {
+            auto& attrs = iface.second;
+            const auto mode = attrs.find(FunctionArchitecture::iface_mode);
+            if(mode == attrs.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            if(!burst_feature_enabled)
+            {
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                              "AXI_BURST_ANALYSIS root=" + function_symbol + " bundle=" + iface.first +
+                                  " enabled=0 reason=m-axi-burst=0");
+               continue;
+            }
+            const auto bundle_has_bound_parameter =
+                std::any_of(arch->parms.begin(), arch->parms.end(), [&](const auto& parameter) {
+                   const auto bundle = parameter.second.find(FunctionArchitecture::parm_bundle);
+                   return bundle != parameter.second.end() && bundle->second == iface.first;
+                });
+            if(!bundle_has_bound_parameter)
+            {
+               // XML may describe a profile for a bundle that has no live parameter. Keep explicit
+               // profile validation in PreanalyzeBursts, but do not materialize defaults: doing so
+               // turns inert metadata into a burst resource and leaves required port attributes absent.
+               const auto read_profile = ParseAXIReadBurstProfile(attrs, iface.first);
+               const auto write_profile = ParseAXIWriteBurstProfile(attrs, iface.first);
+               const auto attribute_origin = [&](const FunctionArchitecture::iface_attr attribute,
+                                                 const char* missing_origin) {
+                  return attrs.find(attribute) == attrs.end() ? std::string(missing_origin) : std::string("explicit");
+               };
+               const auto read_max = attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+               INDENT_OUT_MEX(
+                   OUTPUT_LEVEL_MINIMUM, output_level,
+                   "AXI_BURST_ANALYSIS root=" + function_symbol + " bundle=" + iface.first +
+                       " enabled=1 profile=not-inferred reason=unbound read_max=" +
+                       (read_max == attrs.end() ? std::string("16(default)") : read_max->second + "(explicit)") +
+                       " read_outstanding=" + std::to_string(read_profile.max_outstanding) + "(" +
+                       attribute_origin(FunctionArchitecture::iface_num_read_outstanding, "default") +
+                       ") read_fifo=" + std::to_string(read_profile.fifo_depth) + "(" +
+                       attribute_origin(FunctionArchitecture::iface_read_fifo_depth, "derived") +
+                       ") write_max=" + std::to_string(write_profile.max_burst_length) + "(" +
+                       attribute_origin(FunctionArchitecture::iface_max_write_burst_length, "default") +
+                       ") write_outstanding=" + std::to_string(write_profile.max_outstanding) + "(" +
+                       attribute_origin(FunctionArchitecture::iface_write_burst_outstanding, "default") +
+                       ") write_fifo=" + std::to_string(write_profile.fifo_depth) + "(" +
+                       attribute_origin(FunctionArchitecture::iface_write_fifo_depth, "derived") + ")");
+               continue;
+            }
+            auto& origins = burst_profile_origins[{function_symbol, iface.first}];
+            origins.read_burst_default = attrs.find(FunctionArchitecture::iface_max_read_burst_length) == attrs.end();
+            origins.read_outstanding_default =
+                attrs.find(FunctionArchitecture::iface_num_read_outstanding) == attrs.end();
+            origins.write_burst_default = attrs.find(FunctionArchitecture::iface_max_write_burst_length) == attrs.end();
+            origins.write_outstanding_default =
+                attrs.find(FunctionArchitecture::iface_write_burst_outstanding) == attrs.end();
+
+            if(origins.read_burst_default)
+            {
+               attrs.emplace(FunctionArchitecture::iface_max_read_burst_length, "16");
+            }
+            if(origins.write_burst_default)
+            {
+               attrs.emplace(FunctionArchitecture::iface_max_write_burst_length, "16");
+            }
+            const auto read_profile = ParseAXIReadBurstProfile(attrs, iface.first);
+            const auto write_profile = ParseAXIWriteBurstProfile(attrs, iface.first);
+            const auto type_name = effective_burst_type == 1U ? "INCREMENTAL" :
+                                   effective_burst_type == 0U ? "FIXED" :
+                                                                "unsupported";
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "AXI_BURST_PROFILE root=" + function_symbol + " bundle=" + iface.first +
+                               " enabled=1 burst_type=" + type_name + "(" + burst_type_origin +
+                               ") read_max=" + attrs.at(FunctionArchitecture::iface_max_read_burst_length) +
+                               (origins.read_burst_default ? "(default)" : "(explicit)") +
+                               " read_outstanding=" + std::to_string(read_profile.max_outstanding) +
+                               (origins.read_outstanding_default ? "(default)" : "(explicit)") +
+                               " read_fifo=" + std::to_string(read_profile.fifo_depth) +
+                               (attrs.find(FunctionArchitecture::iface_read_fifo_depth) == attrs.end() ? "(derived)" :
+                                                                                                         "(explicit)") +
+                               " write_max=" + std::to_string(write_profile.max_burst_length) +
+                               (origins.write_burst_default ? "(default)" : "(explicit)") +
+                               " write_outstanding=" + std::to_string(write_profile.max_outstanding) +
+                               (origins.write_outstanding_default ? "(default)" : "(explicit)") +
+                               " write_fifo=" + std::to_string(write_profile.fifo_depth) +
+                               (attrs.find(FunctionArchitecture::iface_write_fifo_depth) == attrs.end() ?
+                                    "(derived)" :
+                                    "(explicit)"));
+         }
+      }
+   };
+   apply_burst_profile_defaults();
+
+   // Phase 2: collect all eligible root contributions, then freeze compatible
+   // same-name bundles app-wide before any per-root DATAFLOW remapping or rewrite.
+   const auto analyze_and_freeze_duplex = [&]() {
+      std::map<unsigned int, std::map<std::string, FrozenDuplexContribution>> candidate_duplex_by_root;
+      std::set<std::string> candidate_duplex_bundles;
+      if(burst_feature_enabled)
+      {
+         for(const auto root_id : sorted_roots)
+         {
+            const auto fnode = TM->GetIRNode(root_id);
+            const auto fsymbol = ir_helper::GetFunctionName(fnode);
+            const auto arch = HLSMgr->module_arch->GetArchitecture(fsymbol);
+            if(!arch || IsDataflowArchitecture(arch))
+            {
+               continue;
+            }
+            for(const auto& iface : arch->ifaces)
+            {
+               const auto mode = iface.second.find(FunctionArchitecture::iface_mode);
+               const auto read = iface.second.find(FunctionArchitecture::iface_max_read_burst_length);
+               const auto write = iface.second.find(FunctionArchitecture::iface_max_write_burst_length);
+               if(mode == iface.second.end() || mode->second != "m_axi" || read == iface.second.end() ||
+                  write == iface.second.end())
+               {
+                  continue;
+               }
+               FrozenDuplexContribution contribution{};
+               std::string reason;
+               if(GetDuplexContribution(root_id, arch, iface.first, burst_feature_enabled, effective_burst_type,
+                                        HLSMgr->get_address_bitsize(), AppM, TM, CGM, contribution, reason))
+               {
+                  candidate_duplex_bundles.insert(iface.first);
+                  candidate_duplex_by_root[root_id].emplace(iface.first, std::move(contribution));
+               }
+            }
+         }
+      }
+
+      std::map<std::string, FrozenDuplexContribution> frozen_duplex_by_bundle;
+      std::map<unsigned int, std::map<std::string, FrozenDuplexContribution>> frozen_duplex_by_root;
+      std::map<std::string, std::string> duplex_bundle_vetoes;
+      for(const auto& candidate_bundle : candidate_duplex_bundles)
+      {
+         std::vector<FrozenDuplexContribution> contributions;
+         std::string veto_reason;
+         for(auto arch_it = HLSMgr->module_arch->cbegin(); arch_it != HLSMgr->module_arch->cend(); ++arch_it)
+         {
+            const auto arch = arch_it->second;
+            const auto iface = arch->ifaces.find(candidate_bundle);
+            if(iface == arch->ifaces.end())
+            {
+               continue;
+            }
+            const auto mode = iface->second.find(FunctionArchitecture::iface_mode);
+            if(mode == iface->second.end() || mode->second != "m_axi")
+            {
+               continue;
+            }
+            const auto symbol = arch->attrs.find(FunctionArchitecture::func_symbol);
+            if(symbol == arch->attrs.end())
+            {
+               veto_reason = "same-name architecture contribution has no resolved function owner";
+               break;
+            }
+            const auto function = TM->GetFunction(symbol->second);
+            if(!function)
+            {
+               veto_reason = "same-name architecture contribution has no resolved function owner";
+               break;
+            }
+            const auto root_id = function->index;
+            const auto existing_candidate = candidate_duplex_by_root.find(root_id);
+            if(existing_candidate == candidate_duplex_by_root.end() ||
+               existing_candidate->second.find(candidate_bundle) == existing_candidate->second.end())
+            {
+               FrozenDuplexContribution contribution{};
+               std::string reason;
+               if(!GetDuplexContribution(root_id, arch, candidate_bundle, burst_feature_enabled, effective_burst_type,
+                                         HLSMgr->get_address_bitsize(), AppM, TM, CGM, contribution, reason))
+               {
+                  veto_reason = reason.empty() ? "same-name architecture contribution is not eligible" : reason;
+                  break;
+               }
+               contributions.push_back(std::move(contribution));
+            }
+            else
+            {
+               contributions.push_back(existing_candidate->second.at(candidate_bundle));
+            }
+         }
+         if(!veto_reason.empty() || contributions.empty())
+         {
+            duplex_bundle_vetoes[candidate_bundle] =
+                veto_reason.empty() ? "same-name architecture contribution is not eligible" : veto_reason;
+            continue;
+         }
+         const auto& reference = contributions.front();
+         const auto incompatible =
+             std::find_if(std::next(contributions.begin()), contributions.end(), [&](const auto& c) {
+                return c.read_max_burst_length != reference.read_max_burst_length ||
+                       c.read_profile.max_outstanding != reference.read_profile.max_outstanding ||
+                       c.read_profile.fifo_depth != reference.read_profile.fifo_depth ||
+                       c.write_profile.max_burst_length != reference.write_profile.max_burst_length ||
+                       c.write_profile.max_outstanding != reference.write_profile.max_outstanding ||
+                       c.write_profile.fifo_depth != reference.write_profile.fifo_depth ||
+                       c.latency != reference.latency || c.address_bitsize != reference.address_bitsize ||
+                       c.data_bitsize != reference.data_bitsize;
+             });
+         if(incompatible != contributions.end())
+         {
+            THROW_ERROR_USAGE("Incompatible duplex m_axi profiles or latency for bundle '" + candidate_bundle +
+                              "' across root functions; use distinct bundle names.");
+         }
+         frozen_duplex_by_bundle.emplace(candidate_bundle, reference);
+         for(auto& contribution : contributions)
+         {
+            frozen_duplex_by_root[contribution.root_id].emplace(candidate_bundle, std::move(contribution));
+         }
+      }
+      std::set<std::string> duplex_bundle_force_legacy;
+      for(const auto& candidate_bundle : candidate_duplex_bundles)
+      {
+         if(frozen_duplex_by_bundle.count(candidate_bundle) == 0)
+         {
+            duplex_bundle_force_legacy.insert(candidate_bundle);
+         }
+      }
+
+      if(!frozen_duplex_by_bundle.empty())
+      {
+         const auto TechMan = HLSMgr->get_HLS_device()->get_technology_manager();
+         InterfaceInferInternal::RegisterFrozenDuplexResources(TechMan, parameters, frozen_duplex_by_bundle,
+                                                               HLSMgr->global_resource_constraints);
+      }
+      return std::make_tuple(std::move(frozen_duplex_by_root), std::move(duplex_bundle_vetoes),
+                             std::move(duplex_bundle_force_legacy));
+   };
+   auto [frozen_duplex_by_root, duplex_bundle_vetoes, duplex_bundle_force_legacy] = analyze_and_freeze_duplex();
+
+   // Phase 3: per-root DATAFLOW remapping runs before recheck/preanalysis and
+   // mutation. Keep this inside the established root loop to preserve legacy
+   // interface interleaving and UpdateBBVersion behavior.
    for(const auto root_id : sorted_roots)
    {
       const auto fnode = TM->GetIRNode(root_id);
@@ -829,10 +984,37 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
 
+      const bool has_read_burst_pragma =
+          std::any_of(func_arch->ifaces.begin(), func_arch->ifaces.end(), [](const auto& iface) {
+             return iface.second.find(FunctionArchitecture::iface_max_read_burst_length) != iface.second.end();
+          });
+      // InterfaceInfer runs before FunctionBehavior memory classification is guaranteed
+      // to exist. Use only immutable source-IR evidence here, before per-parameter rewrites.
+      const CustomOrderedSet<unsigned int> no_function_memory_info;
+      const bool has_only_read_effects =
+          hasOnlyOrdinaryReadEffects(GetPointerS<const statement_list_node>(fd->body), no_function_memory_info);
+      const auto original_statement_list = GetPointerS<const statement_list_node>(fd->body);
+      const bool original_ordinary_effects = hasOnlyOrdinaryMemoryEffects(original_statement_list);
+      bool all_original_memory_accesses_classified = true;
+      auto original_memory_accesses =
+          CollectOriginalMemoryAccesses(fd, root_id, func_arch, AppM, TM, all_original_memory_accesses_classified);
+      const bool original_memory_effects_safe = original_ordinary_effects && all_original_memory_accesses_classified;
+      const bool function_effects_safe =
+          !burst_feature_enabled || !has_read_burst_pragma ||
+          ((has_only_read_effects && original_ordinary_effects) || original_memory_effects_safe);
+
+      std::map<std::string, BundleBurstDecision> burst_decisions;
+      std::vector<OriginalMemoryAccess> burst_memory_accesses = original_memory_accesses;
+      std::map<unsigned int, std::string> dataflow_bundle_by_argument;
       const ir_manipulationRef ir_man(new ir_manipulation(TM, parameters, AppM));
       const auto is_dataflow_module =
           func_arch->attrs.find(FunctionArchitecture::func_dataflow_module) != func_arch->attrs.end() &&
           (func_arch->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1");
+      const auto is_forced_legacy_duplex_bundle = [&](const std::string& bundle_name) {
+         return duplex_bundle_force_legacy.count(bundle_name) != 0;
+      };
+      // Rebind DATAFLOW bundle identities before running the per-root burst
+      // proof against the frozen app-wide plan.
       if(is_dataflow_module)
       {
          const auto [caller_id, call_id] = GetCallStmt(CGM, root_id);
@@ -852,10 +1034,18 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   return it.second.at(FunctionArchitecture::parm_index) == std::to_string(idx);
                });
                THROW_ASSERT(parm_attr != func_arch->parms.end(), "Expected parameter index " + std::to_string(idx));
+               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
                auto& current_bundle = parm_attr->second.at(FunctionArchitecture::parm_bundle);
+               const auto original_bundle = current_bundle;
+               const auto argument_index = fd->list_of_args.at(idx)->index;
                std::string bundle_name;
                if(base_var->get_kind() == argument_val_node_K)
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
@@ -865,6 +1055,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(ir_helper::IsConstant(base_var))
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
                                      " is constant at this call point");
@@ -902,7 +1097,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                func_arch->ifaces[bundle_name].at(FunctionArchitecture::iface_name) = bundle_name;
                func_arch->ifaces.erase(current_bundle);
                current_bundle = bundle_name;
-               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
+               if(is_forced_legacy_duplex_bundle(original_bundle))
+               {
+                  duplex_bundle_force_legacy.insert(current_bundle);
+               }
+               dataflow_bundle_by_argument[argument_index] = current_bundle;
                auto pd = GetPointerS<argument_val_node>(fd->list_of_args.at(idx));
                pd->name = ir_man->create_identifier_node(bundle_name);
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
@@ -915,6 +1114,70 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             ++idx;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+
+      for(auto& access : burst_memory_accesses)
+      {
+         const auto mapped_bundle = dataflow_bundle_by_argument.find(access.owner_argument_index);
+         if(access.classified && mapped_bundle != dataflow_bundle_by_argument.end())
+         {
+            access.bundle = mapped_bundle->second;
+         }
+      }
+
+      // Phase 4: recheck this root against the frozen plan after DATAFLOW
+      // remapping. Mutation remains in the following legacy/burst interleaving.
+      PreanalyzeBursts(burst_feature_enabled, effective_burst_type, root_id, fd, func_arch, original_memory_accesses,
+                       burst_memory_accesses, function_effects_safe, original_memory_effects_safe,
+                       frozen_duplex_by_root, duplex_bundle_vetoes, AppM, TM, burst_decisions, debug_level);
+
+      if(burst_feature_enabled)
+      {
+         for(const auto& bundle_decision : burst_decisions)
+         {
+            const auto& bundle = bundle_decision.first;
+            const auto& decision = bundle_decision.second;
+            const auto origins = burst_profile_origins.find({fsymbol, bundle});
+            const auto read_source =
+                origins != burst_profile_origins.end() && origins->second.read_burst_default ? "default" : "explicit";
+            const auto write_source =
+                origins != burst_profile_origins.end() && origins->second.write_burst_default ? "default" : "explicit";
+            const auto read_outstanding_source =
+                origins != burst_profile_origins.end() && origins->second.read_outstanding_default ? "default" :
+                                                                                                     "explicit";
+            const auto write_outstanding_source =
+                origins != burst_profile_origins.end() && origins->second.write_outstanding_default ? "default" :
+                                                                                                      "explicit";
+            const auto read_outcome = !decision.bundle_has_memory_read ? "not-applicable-no-read-access" :
+                                      decision.read_recognized         ? "recognized" :
+                                                                         "legacy-fallback";
+            const auto write_outcome = !decision.bundle_has_memory_write ? "not-applicable-no-write-access" :
+                                       decision.write_recognized         ? "recognized" :
+                                                                           "legacy-fallback";
+            const auto read_reason =
+                !decision.bundle_has_memory_read       ? "no read access" :
+                !decision.read_fallback_reason.empty() ? decision.read_fallback_reason :
+                decision.read_recognized ? "preanalysis recognized; rewrite outcome is reported at lowering" :
+                                           "read-burst recognition unavailable";
+            const auto write_reason =
+                !decision.bundle_has_memory_write       ? "no write access" :
+                !decision.write_fallback_reason.empty() ? decision.write_fallback_reason :
+                decision.write_recognized ? "preanalysis recognized; rewrite outcome is reported at lowering" :
+                                            "write-burst recognition unavailable";
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "AXI_BURST_DECISION root=" + fsymbol + " bundle=" + bundle + " read=" + read_outcome +
+                               "(B=" + std::to_string(decision.read_max_burst_length) + "/" + read_source +
+                               ",O=" + std::to_string(decision.read_profile.max_outstanding) + "/" +
+                               read_outstanding_source + ",D=" + std::to_string(decision.read_profile.fifo_depth) +
+                               "; stage=preanalysis; reason=" + read_reason + "; rewrite=reported-at-lowering) write=" +
+                               write_outcome + "(B=" + std::to_string(decision.write_profile.max_burst_length) + "/" +
+                               write_source + ",O=" + std::to_string(decision.write_profile.max_outstanding) + "/" +
+                               write_outstanding_source + ",D=" + std::to_string(decision.write_profile.fifo_depth) +
+                               "; stage=preanalysis; reason=" + write_reason +
+                               "; rewrite=reported-at-lowering) duplex=" +
+                               (decision.same_base_duplex_candidate ? "preanalysis-candidate" : "not-candidate") + "(" +
+                               decision.same_base_duplex_reason + ")");
+         }
       }
 
       std::map<std::string, IRNodeSet> bundle_vdefs;
@@ -974,6 +1237,23 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                           func_arch->ifaces.end(),
                       "Missing parameter bundle: " + parm_attrs.at(FunctionArchitecture::parm_bundle));
          auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+         if(ir_helper::IsPointerType(arg_type) && iface_attrs.at(FunctionArchitecture::iface_mode) == "m_axi")
+         {
+            const auto arg_ssa_id = AppM->getSSAFromParm(root_id, arg_id);
+            const auto arg_ssa = TM->GetIRNode(arg_ssa_id);
+            const bool has_no_uses = arg_ssa && arg_ssa->get_kind() == ssa_node_K &&
+                                     GetPointerS<const ssa_node>(arg_ssa)->CGetUseStmts().empty();
+            const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+            const bool another_parameter_owns_bundle_access =
+                std::any_of(burst_memory_accesses.begin(), burst_memory_accesses.end(), [&](const auto& access) {
+                   return access.classified && access.owner_argument_index != arg_id && access.bundle == bundle_name;
+                });
+            if(has_no_uses && another_parameter_owns_bundle_access)
+            {
+               THROW_WARNING("Parameter '" + arg_name + "' is unused by any statement");
+               continue;
+            }
+         }
          iface_attrs[FunctionArchitecture::iface_direction] = port_o::GetString(port_o::IN);
          const auto is_pointer_type = ir_helper::IsPointerType(arg_type);
          const auto raw_interface_type = iface_attrs.at(FunctionArchitecture::iface_mode);
@@ -1039,7 +1319,36 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                std::list<ir_nodeRef> writeStmt;
                std::list<ir_nodeRef> readStmt;
+               const auto early_decision = burst_decisions.find(parm_attrs.at(FunctionArchitecture::parm_bundle));
+               const bool runtime_guard_candidate =
+                   early_decision != burst_decisions.end() && early_decision->second.same_base_duplex_activated &&
+                   early_decision->second.same_base_duplex_proof &&
+                   early_decision->second.same_base_duplex_proof->runtime_range_guard &&
+                   (arg_id == early_decision->second.same_base_duplex_proof->read_owner_argument_index ||
+                    arg_id == early_decision->second.same_base_duplex_proof->write_owner_argument_index);
                ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
+               if(runtime_guard_candidate)
+               {
+                  if(info.bitwidth == 0)
+                  {
+                     const auto& proof = *early_decision->second.same_base_duplex_proof;
+                     info.bitwidth = ir_helper::Size(GetPointerS<const assign_stmt>(proof.load_statement)->op0);
+                  }
+                  writeStmt.clear();
+                  readStmt.clear();
+                  const auto owner = early_decision->second.accesses_by_argument.find(arg_id);
+                  if(owner != early_decision->second.accesses_by_argument.end())
+                  {
+                     for(const auto& access : owner->second.reads)
+                     {
+                        readStmt.push_back(access.statement);
+                     }
+                     for(const auto& access : owner->second.writes)
+                     {
+                        writeStmt.push_back(access.statement);
+                     }
+                  }
+               }
                const auto is_csroa_ac_type = [&]() {
                   const auto type_attr = parm_attrs.find(FunctionArchitecture::parm_original_typename);
                   if(type_attr == parm_attrs.end())
@@ -1069,6 +1378,25 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                const auto isRead = !readStmt.empty();
                const auto isWrite = !writeStmt.empty();
+
+               if(!burst_feature_enabled && interface_type == "m_axi")
+               {
+                  if(isRead && iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length) != iface_attrs.end())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi reads for bundle " +
+                                        parm_attrs.at(FunctionArchitecture::parm_bundle) +
+                                        ": explicit read-burst request ignored because m-axi-burst=0");
+                  }
+                  if(isWrite &&
+                     iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length) != iface_attrs.end())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi writes for bundle " +
+                                        parm_attrs.at(FunctionArchitecture::parm_bundle) +
+                                        ": explicit write-burst request ignored because m-axi-burst=0");
+                  }
+               }
 
                if(!isRead && !isWrite)
                {
@@ -1228,6 +1556,215 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                std::set<std::string> operationsR, operationsW;
                const auto interface_datatype = ir_man->GetCustomIntegerType(info.bitwidth, true);
                const auto& bundle_name = iface_attrs.at(FunctionArchitecture::iface_name);
+               const auto decision_it = burst_decisions.find(bundle_name);
+               const auto* decision = decision_it == burst_decisions.end() ? nullptr : &decision_it->second;
+               const bool burst_enabled = burst_feature_enabled;
+               const bool write_burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
+                                                  decision->write_requested &&
+                                                  !is_forced_legacy_duplex_bundle(bundle_name);
+               const bool burst_requested = burst_enabled && interface_type == "m_axi" && decision &&
+                                            decision->read_requested && !is_forced_legacy_duplex_bundle(bundle_name);
+               const auto same_base_duplex_active =
+                   decision && decision->same_base_duplex_activated && decision->same_base_duplex_proof &&
+                   (decision->same_base_duplex_proof->read_owner_argument_index == arg_id ||
+                    decision->same_base_duplex_proof->write_owner_argument_index == arg_id);
+               const bool runtime_guarded_duplex =
+                   same_base_duplex_active && decision->same_base_duplex_proof->runtime_range_guard;
+               if(same_base_duplex_active)
+               {
+#if HAVE_ASSERTS
+                  const auto& proof = *decision->same_base_duplex_proof;
+                  const auto read_regions = decision->read_regions.find(proof.read_owner_argument_index);
+                  const auto write_region = decision->write_regions.find(proof.write_owner_argument_index);
+                  const auto same_optional_node = [](const ir_nodeRef& lhs, const ir_nodeRef& rhs) {
+                     return (!lhs && !rhs) || (lhs && rhs && lhs->index == rhs->index);
+                  };
+#endif
+                  THROW_ASSERT(
+                      read_regions != decision->read_regions.end() && read_regions->second.size() == 1 &&
+                          write_region != decision->write_regions.end() &&
+                          read_regions->second.front().preheader == proof.read_region.preheader &&
+                          read_regions->second.front().header == proof.read_region.header &&
+                          read_regions->second.front().bound->index == proof.read_region.bound->index &&
+                          read_regions->second.front().loop_trip_bound->index ==
+                              proof.read_region.loop_trip_bound->index &&
+                          same_optional_node(read_regions->second.front().loop_trip_compare,
+                                             proof.read_region.loop_trip_compare) &&
+                          read_regions->second.front().effective_bound->index ==
+                              proof.read_region.effective_bound->index &&
+                          same_optional_node(read_regions->second.front().effective_compare,
+                                             proof.read_region.effective_compare) &&
+                          read_regions->second.front().has_direction_guard == proof.read_region.has_direction_guard &&
+                          read_regions->second.front().access_bb == proof.read_region.access_bb &&
+                          write_region->second.preheader == proof.write_region.preheader &&
+                          write_region->second.header == proof.write_region.header &&
+                          write_region->second.exit == proof.write_region.exit &&
+                          write_region->second.bound->index == proof.write_region.bound->index &&
+                          write_region->second.loop_trip_bound->index == proof.write_region.loop_trip_bound->index &&
+                          same_optional_node(write_region->second.loop_trip_compare,
+                                             proof.write_region.loop_trip_compare) &&
+                          write_region->second.effective_bound->index == proof.write_region.effective_bound->index &&
+                          same_optional_node(write_region->second.effective_compare,
+                                             proof.write_region.effective_compare) &&
+                          write_region->second.has_direction_guard == proof.write_region.has_direction_guard &&
+                          write_region->second.access_bb == proof.write_region.access_bb,
+                      "Both frozen duplex regions must be validated before either direction is rewritten");
+               }
+               bool burst_profile_eligible = true;
+               std::string burst_fallback_reason = burst_requested ? decision->read_fallback_reason : "";
+               if(burst_requested)
+               {
+                  if(burst_fallback_reason.empty() && (info.bitwidth != 32 || info.alignment < 4))
+                  {
+                     burst_fallback_reason = "data width/alignment is not 32-bit/4-byte";
+                  }
+                  else if(burst_fallback_reason.empty() &&
+                          iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                          std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)
+                  {
+                     burst_fallback_reason = "m_axi interface data width is not 32-bit";
+                  }
+                  else if(burst_fallback_reason.empty() && HLSMgr->get_address_bitsize() != 32 &&
+                          HLSMgr->get_address_bitsize() != 64)
+                  {
+                     burst_fallback_reason = "AXI address width is not 32 or 64 bit";
+                  }
+                  else if(burst_fallback_reason.empty() && !decision->read_recognized)
+                  {
+                     burst_fallback_reason = "read-burst CFG/SSA recognition failed or bundle is not exclusive";
+                  }
+                  burst_profile_eligible = burst_fallback_reason.empty();
+                  if(!burst_profile_eligible && isRead)
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi accesses for bundle " + bundle_name + ": " +
+                                        burst_fallback_reason);
+                  }
+               }
+               if(runtime_guarded_duplex && arg_id == decision->same_base_duplex_proof->read_owner_argument_index)
+               {
+                  THROW_ASSERT(burst_profile_eligible && decision->write_recognized,
+                               "Frozen runtime duplex profile failed direction eligibility");
+                  const auto lowered_calls = lowerRuntimeGuardedDuplex(
+                      GetPointerS<const statement_list_node>(fd->body), fd, *decision->same_base_duplex_proof,
+                      bundle_name,
+                      get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->read_owner_argument_index)),
+                      get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->write_owner_argument_index)),
+                      interface_datatype, HLSMgr->get_address_bitsize(), AppM, TM, ir_man, channel_read_vdefs,
+                      channel_write_vdefs, HLSMgr->design_interface_io[fsymbol]);
+                  for(const auto& call : lowered_calls)
+                  {
+                     add_to_modified(call);
+                  }
+                  readStmt.clear();
+                  operationsR.insert(ENCODE_FDNAME(bundle_name, "_configure_read", ""));
+                  operationsR.insert(ENCODE_FDNAME(bundle_name, "_burst_read", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_configure_write", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_store_write", ""));
+                  operationsW.insert(ENCODE_FDNAME(bundle_name, "_drain_write", ""));
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 "---Activated guarded distinct-base duplex for bundle " + bundle_name +
+                                     " (overlap uses serialized scalar transfers)");
+               }
+               else if(!runtime_guarded_duplex && burst_requested && burst_profile_eligible && isRead)
+               {
+                  const auto sl = GetPointerS<const statement_list_node>(fd->body);
+                  const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
+                  const auto expected_base = TM->GetIRNode(expected_base_id);
+                  const auto recognized_regions = decision->read_regions.find(arg_id);
+                  const bool recognized =
+                      decision->read_recognized && recognized_regions != decision->read_regions.end();
+                  if(recognized)
+                  {
+                     const auto& regions = recognized_regions->second;
+                     const auto max_burst = decision->read_max_burst_length;
+                     THROW_ASSERT(max_burst >= 1 && max_burst <= 256, "Invalid parsed max_read_burst_length");
+                     LowerReadBurstRegions(sl, fd, regions, expected_base, bundle_name, arg_name, interface_datatype,
+                                           AppM, TM, ir_man, channel_read_vdefs, HLSMgr->design_interface_io[fsymbol],
+                                           operationsR, modified);
+                     readStmt.clear();
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Configured read burst regions for bundle " + bundle_name +
+                                        " (B=" + std::to_string(max_burst) + ")");
+                  }
+                  else
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi reads for bundle " + bundle_name +
+                                        ": read-burst CFG/SSA recognition failed or bundle is not exclusive");
+                  }
+               }
+               if(runtime_guarded_duplex && arg_id == decision->same_base_duplex_proof->write_owner_argument_index)
+               {
+                  writeStmt.clear();
+               }
+               else if(!runtime_guarded_duplex && write_burst_requested && isWrite)
+               {
+                  std::string write_fallback_reason = decision->write_fallback_reason;
+                  if(write_fallback_reason.empty() &&
+                     (info.bitwidth != 32 || info.alignment < 4 ||
+                      (iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                       std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)))
+                  {
+                     write_fallback_reason = "data width/alignment is not 32-bit/4-byte";
+                  }
+                  else if(write_fallback_reason.empty() && HLSMgr->get_address_bitsize() != 32 &&
+                          HLSMgr->get_address_bitsize() != 64)
+                  {
+                     write_fallback_reason = "AXI address width is not 32 or 64 bit";
+                  }
+                  else if(write_fallback_reason.empty() && !decision->write_recognized)
+                  {
+                     write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
+                  }
+                  const auto sl = GetPointerS<const statement_list_node>(fd->body);
+                  const auto expected_base_id = AppM->getSSAFromParm(root_id, arg_id);
+                  const auto expected_base = TM->GetIRNode(expected_base_id);
+                  const auto recognized_region = decision->write_regions.find(arg_id);
+                  const bool recognized = write_fallback_reason.empty() && decision->write_recognized &&
+                                          recognized_region != decision->write_regions.end();
+                  if(!recognized && write_fallback_reason.empty())
+                  {
+                     write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
+                  }
+                  if(recognized)
+                  {
+                     const auto& region = recognized_region->second;
+                     LowerWriteBurstRegion(sl, fd, region, expected_base, bundle_name, arg_name, interface_datatype,
+                                           AppM, TM, ir_man, channel_write_vdefs, HLSMgr->design_interface_io[fsymbol],
+                                           operationsW, modified);
+                     writeStmt.clear();
+                     if(same_base_duplex_active)
+                     {
+                        INDENT_OUT_MEX(
+                            OUTPUT_LEVEL_MINIMUM, output_level,
+                            std::string(
+                                decision->same_base_duplex_proof->runtime_range_guard ?
+                                    "---Activated distinct-base runtime-range-guarded pointwise duplex m_axi bundle " :
+                                decision->same_base_duplex_proof->distinct_bases ?
+                                    "---Activated distinct-base restricted pointwise duplex m_axi bundle " :
+                                    "---Activated same-base pointwise duplex m_axi bundle ") +
+                                bundle_name + " for root " + fsymbol);
+                        if(decision->same_base_duplex_proof->distinct_bases &&
+                           !decision->same_base_duplex_proof->runtime_range_guard)
+                        {
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                          "WARNING: distinct-base duplex relies on the caller's __restrict contract; "
+                                          "the caller must ensure the accessed regions do not overlap (no runtime "
+                                          "range validation is performed)");
+                        }
+                     }
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Configured write burst region for bundle " + bundle_name +
+                                        " (B=" + std::to_string(decision->write_profile.max_burst_length) + ")");
+                  }
+                  else
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi writes for bundle " + bundle_name + ": " +
+                                        write_fallback_reason);
+                  }
+               }
                const auto require_flush =
                    interface_type == "m_axi" &&
                    iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end();
@@ -1254,7 +1791,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   add_to_modified(stmt);
                   store_vdef(stmt);
                }
-               create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               if(!same_base_duplex_active)
+               {
+                  create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               }
             }
             else if(interface_type == "none")
             {
@@ -3309,15 +3849,63 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
    const auto& parm_attrs = func_arch->parms.at(info.arg_id);
    const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
+   const auto configure_read_name = ENCODE_FDNAME(bundle_name, "_configure_read", "");
+   const auto configure_write_name = ENCODE_FDNAME(bundle_name, "_configure_write", "");
+   const bool configured_read_resource = operationsR.count(configure_read_name) != 0;
+   const bool configured_write_resource = operationsW.count(configure_write_name) != 0;
+   THROW_ASSERT(!(configured_read_resource && configured_write_resource),
+                "A single m_axi resource cannot be configured for both read and write burst modes in F1.");
+   const bool configured_burst_resource = configured_read_resource || configured_write_resource;
+   const std::string requested_burst_mode = configured_read_resource ? "read" : "write";
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
+   if(TechMan->is_library_manager(INTERFACE_LIBRARY))
+   {
+      const auto library_manager = TechMan->get_library_manager(INTERFACE_LIBRARY);
+      for(const auto& suffix : {"_duplex_read_endpoint", "_duplex_write_endpoint", "_duplex_aggregator"})
+      {
+         if(library_manager->is_fu(ENCODE_FDNAME(bundle_name, suffix, "")))
+         {
+            THROW_ERROR_USAGE("Legacy m_axi resource for bundle '" + bundle_name +
+                              "' conflicts with a registered duplex resource.");
+         }
+      }
+   }
+   const bool resource_already_exists = TechMan->is_library_manager(INTERFACE_LIBRARY) &&
+                                        TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName);
+   const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
+   const auto burst_profile_attr = std::string("bambu_max_read_burst_length");
+   const auto outstanding_profile_attr = std::string("bambu_num_read_outstanding");
+   const auto fifo_depth_profile_attr = std::string("bambu_read_fifo_depth");
+   const auto write_burst_profile_attr = std::string("bambu_max_write_burst_length");
+   const auto write_outstanding_profile_attr = std::string("bambu_write_burst_outstanding");
+   const auto write_fifo_depth_profile_attr = std::string("bambu_write_fifo_depth");
+   const auto burst_mode_attr = std::string("bambu_axi_burst_mode");
+   const auto axi_latency_attr = std::string("bambu_axi_latency");
+   unsigned int requested_burst_max = 0;
+   auto requested_read_profile = AXIReadBurstProfile{};
+   auto requested_write_profile = AXIWriteBurstProfile{};
+   const auto requested_axi_latency = ParseAXIInterfaceLatency(iface_attrs, bundle_name);
+   if(configured_read_resource)
+   {
+      const auto max_read_burst = iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length);
+      THROW_ASSERT(max_read_burst != iface_attrs.end(),
+                   "Configured burst-read operation has no max_read_burst_length attribute for bundle '" + bundle_name +
+                       "'.");
+      requested_burst_max = static_cast<unsigned int>(std::stoul(max_read_burst->second));
+      THROW_ASSERT(requested_burst_max >= 1 && requested_burst_max <= 256,
+                   "Configured burst-read maximum must be in [1,256] for bundle '" + bundle_name + "'.");
+      requested_read_profile = ParseAXIReadBurstProfile(iface_attrs, bundle_name);
+   }
+   if(configured_write_resource)
+   {
+      requested_write_profile = ParseAXIWriteBurstProfile(iface_attrs, bundle_name);
+   }
 
-   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
-      !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
+   if(!resource_already_exists)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
-      const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
       const structural_managerRef CM(new structural_manager(parameters));
       const structural_type_descriptorRef module_type(new structural_type_descriptor(ResourceName));
       CM->set_top_info(ResourceName, module_type);
@@ -3328,6 +3916,11 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       GetPointerS<module_o>(interface_top)->set_authors("Component automatically generated by bambu");
       GetPointerS<module_o>(interface_top)->set_license(GENERATED_LICENSE);
       GetPointerS<module_o>(interface_top)->set_multi_unit_multiplicity(1U);
+      if(configured_burst_resource)
+      {
+         GetPointerS<module_o>(interface_top)
+             ->add_attribute(burst_mode_attr, attributeRef(new attribute(attribute::STRING, requested_burst_mode)));
+      }
 
       const auto address_bitsize = HLSMgr->get_address_bitsize();
       const auto interface_bitwidth = iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() ?
@@ -3341,8 +3934,10 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
       const structural_type_descriptorRef address_interface_datatype(
           new structural_type_descriptor("bool", address_bitsize));
-      const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
+      const structural_type_descriptorRef size1(
+          new structural_type_descriptor("bool", configured_burst_resource ? 2 : 1));
+      const structural_type_descriptorRef rwsize(
+          new structural_type_descriptor("bool", configured_burst_resource ? 32 : nbitDataSize));
       const structural_type_descriptorRef rwtypeIn(new structural_type_descriptor("bool", interface_bitwidth));
       const structural_type_descriptorRef rwtypeOut(new structural_type_descriptor("bool", backEndBitsize));
       const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 6));
@@ -3372,6 +3967,17 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
       const auto addrPort = CM->add_port("in4", port_o::IN, interface_top, address_interface_datatype);
       GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
+
+      if(configured_burst_resource)
+      {
+         THROW_ASSERT(info.bitwidth == 32 && interface_bitwidth == 32 && backEndBitsize == 32 &&
+                          (address_bitsize == 32 || address_bitsize == 64),
+                      "Configured AXI burst resource requires 32-bit data/backend widths and a 32 or 64 bit "
+                      "address for bundle '" +
+                          bundle_name + "'.");
+         const structural_type_descriptorRef burst_count_type(new structural_type_descriptor("bool", 32));
+         CM->add_port("in5", port_o::IN, interface_top, burst_count_type);
+      }
 
       const auto cache_reset_port = CM->add_port(CACHE_RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       GetPointerS<port_o>(cache_reset_port)->set_port_interface(port_o::port_interface::CACHE_RESET);
@@ -3588,7 +4194,8 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          GetPointerS<port_o>(s_bresp)->set_port_interface(port_o::port_interface::S_AXIL_BRESP);
       }
 
-      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
+      const auto library_args = configured_burst_resource ? "in1 in2 in3 in4 in5 out1" : "in1 in2 in3 in4 out1";
+      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, library_args);
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                "ReadWrite" + getHDLGeneratorNameToken(info.name) + "HDLGenerator");
 
@@ -3598,6 +4205,37 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
          HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
       }
       const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      if(configured_burst_resource)
+      {
+         fu->ordered_attributes.push_back(burst_mode_attr);
+         fu->attributes[burst_mode_attr] = attributeRef(new attribute(attribute::STRING, requested_burst_mode));
+      }
+      if(configured_read_resource)
+      {
+         fu->ordered_attributes.push_back(burst_profile_attr);
+         fu->attributes[burst_profile_attr] = attributeRef(new attribute(attribute::INT32, STR(requested_burst_max)));
+         fu->ordered_attributes.push_back(outstanding_profile_attr);
+         fu->attributes[outstanding_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_read_profile.max_outstanding)));
+         fu->ordered_attributes.push_back(fifo_depth_profile_attr);
+         fu->attributes[fifo_depth_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_read_profile.fifo_depth)));
+      }
+      if(configured_write_resource)
+      {
+         fu->ordered_attributes.push_back(write_burst_profile_attr);
+         fu->attributes[write_burst_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_write_profile.max_burst_length)));
+         fu->ordered_attributes.push_back(write_outstanding_profile_attr);
+         fu->attributes[write_outstanding_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_write_profile.max_outstanding)));
+         fu->ordered_attributes.push_back(write_fifo_depth_profile_attr);
+         fu->attributes[write_fifo_depth_profile_attr] =
+             attributeRef(new attribute(attribute::INT32, STR(requested_write_profile.fifo_depth)));
+      }
+      fu->ordered_attributes.push_back(axi_latency_attr);
+      fu->attributes[axi_latency_attr] =
+          attributeRef(new attribute(attribute::STRING, std::to_string(requested_axi_latency)));
       fu->area_m = std::make_shared<area_info>();
       fu->area_m->resources[area_info::AREA] = 0;
       if(iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end())
@@ -3614,6 +4252,90 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
    }
 
+   // A bundle is shared globally across roots. Its functional-unit ABI is fixed
+   // by the first root that creates it, so reject an incompatible later root
+   // before adding operations that would otherwise silently bind to that ABI.
+   if(resource_already_exists)
+   {
+      const auto existing_fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      const auto existing_latency = existing_fu->attributes.find(axi_latency_attr);
+      const auto existing_latency_value =
+          existing_latency == existing_fu->attributes.end() || !existing_latency->second ?
+              std::string("0") :
+              existing_latency->second->get_content_str();
+      const auto requested_latency_value = std::to_string(requested_axi_latency);
+      if(existing_latency_value != requested_latency_value)
+      {
+         THROW_ERROR_USAGE("Incompatible AXI latency for bundle '" + bundle_name + "': existing roots use latency=" +
+                           existing_latency_value + " while this root requires latency=" + requested_latency_value +
+                           ". Use distinct bundle names for roots with different AXI latencies.");
+      }
+      const auto existing_mode = existing_fu->attributes.find(burst_mode_attr);
+      const auto existing_mode_value = existing_mode == existing_fu->attributes.end() || !existing_mode->second ?
+                                           std::string("legacy") :
+                                           existing_mode->second->get_content_str();
+      const auto requested_mode_value = configured_burst_resource ? requested_burst_mode : "legacy";
+      if(existing_mode_value != requested_mode_value)
+      {
+         THROW_ERROR_USAGE("Incompatible m_axi resource ABI for bundle '" + bundle_name +
+                           "': existing roots use burst mode '" + existing_mode_value + "' while this root requires '" +
+                           requested_mode_value + "'. Use distinct bundle names for incompatible roots.");
+      }
+      if(configured_read_resource)
+      {
+         const auto profile = existing_fu->attributes.find(burst_profile_attr);
+         if(profile == existing_fu->attributes.end() || !profile->second ||
+            profile->second->get_content<unsigned int>() != requested_burst_max)
+         {
+            const auto existing_max = profile == existing_fu->attributes.end() || !profile->second ?
+                                          std::string("unknown") :
+                                          profile->second->get_content_str();
+            THROW_ERROR_USAGE("Incompatible m_axi burst profile for bundle '" + bundle_name +
+                              "': existing roots use max_read_burst_length=" + existing_max +
+                              " while this root requires max_read_burst_length=" + STR(requested_burst_max) +
+                              ". Use distinct bundle names for roots with different burst maxima.");
+         }
+         const auto existing_outstanding = existing_fu->attributes.find(outstanding_profile_attr);
+         const auto existing_fifo_depth = existing_fu->attributes.find(fifo_depth_profile_attr);
+         const unsigned int existing_o =
+             existing_outstanding == existing_fu->attributes.end() || !existing_outstanding->second ?
+                 1U :
+                 existing_outstanding->second->get_content<unsigned int>();
+         // A root with no explicit depth uses the derived default, which is
+         // exactly the value requested_read_profile already carries.
+         const unsigned int existing_d =
+             existing_fifo_depth == existing_fu->attributes.end() || !existing_fifo_depth->second ?
+                 requested_read_profile.fifo_depth :
+                 existing_fifo_depth->second->get_content<unsigned int>();
+         if(existing_o != requested_read_profile.max_outstanding || existing_d != requested_read_profile.fifo_depth)
+         {
+            THROW_ERROR_USAGE("Incompatible m_axi burst profile for bundle '" + bundle_name +
+                              "': existing roots use num_read_outstanding=" + STR(existing_o) +
+                              ", read_fifo_depth=" + STR(existing_d) +
+                              " while this root requires "
+                              "num_read_outstanding=" +
+                              STR(requested_read_profile.max_outstanding) +
+                              ", read_fifo_depth=" + STR(requested_read_profile.fifo_depth) +
+                              ". Use distinct bundle names for roots with different burst profiles.");
+         }
+      }
+      if(configured_write_resource)
+      {
+         const auto check_write_attribute = [&](const std::string& name, const unsigned int requested) {
+            const auto profile = existing_fu->attributes.find(name);
+            if(profile == existing_fu->attributes.end() || !profile->second ||
+               profile->second->get_content<unsigned int>() != requested)
+            {
+               THROW_ERROR_USAGE("Incompatible m_axi write-burst profile for bundle '" + bundle_name +
+                                 "': attribute '" + name + "' differs across roots. Use distinct bundle names.");
+            }
+         };
+         check_write_attribute(write_burst_profile_attr, requested_write_profile.max_burst_length);
+         check_write_attribute(write_outstanding_profile_attr, requested_write_profile.max_outstanding);
+         check_write_attribute(write_fifo_depth_profile_attr, requested_write_profile.fifo_depth);
+      }
+   }
+
    for(const auto& fdName : operationsR)
    {
       TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
@@ -3625,6 +4347,18 @@ void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operatio
 
    /* Flush Op */
    const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+   if(configured_burst_resource)
+   {
+      THROW_ASSERT(fu->CM && fu->CM->get_circ() &&
+                       fu->CM->get_circ()->find_member("in5", port_o_K, fu->CM->get_circ()) != nullptr,
+                   "Configured m_axi resource for bundle '" + bundle_name + "' is missing its in5 burst-count port.");
+#if HAVE_ASSERTS
+      const auto mode = fu->attributes.find(burst_mode_attr);
+#endif
+      THROW_ASSERT(
+          mode != fu->attributes.end() && mode->second && mode->second->get_content_str() == requested_burst_mode,
+          "Configured m_axi resource for bundle '" + bundle_name + "' is missing its explicit read/write burst mode.");
+   }
 
    for(const auto& fdName : operationsR)
    {

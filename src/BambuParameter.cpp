@@ -2297,6 +2297,12 @@ void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
 
+   const auto m_axi_burst = GetParameter<std::string>("m-axi-burst");
+   if(m_axi_burst != "0" && m_axi_burst != "1")
+   {
+      THROW_ERROR_USAGE("m-axi-burst must be exactly 0 or 1");
+   }
+
    setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/bambu_time_simulation.txt");
    setOption(OPT_profiling_output, getOption<std::string>(OPT_output_directory) + "/bambu_profiling_simulation.txt");
    // TODO: this is a temporary hack. Before starting anything, the directory HLS_output/simulation/ needs to be
@@ -3318,6 +3324,8 @@ void BambuParameter::CheckParameters()
 
 void BambuParameter::SetDefaults()
 {
+   SetPandaParameter("m-axi-burst", "1");
+
    /// Debugging level
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_NONE);
