@@ -15,6 +15,7 @@ COPY_TB="$FAMILY/bambu_axi_burst_duplex_copy_tb.cpp"
 PREFIX_SOURCE="$FAMILY/bambu_axi_burst_duplex_prefix.cpp"
 TB="$TESTS/tb_generated_duplex_kernel.sv"
 OBSERVER="$TESTS/duplex_load_observer.sv"
+OBSERVER_CU=duplex_load_observer_cu
 OBSERVER_UNIT_TB="$TESTS/tb_duplex_load_observer.sv"
 PARALLELISM_CHECKER="$FAMILY/check_duplex_parallelism_results.py"
 RUNNER="$TESTS/run_generated_duplex_kernel_tests.sh"
@@ -202,7 +203,7 @@ build_one() {
   [[ $kind == copy ]] && kind_def=(+define+COPY_MODE)
   [[ $kind == prefix ]] && kind_def=(+define+PREFIX_MODE)
   if ! modelsim_compile "$out/sim" tb_generated_duplex_kernel "$rtl" "$lib" "$TB" "$OBSERVER" -- \
-      -mfcu -cuname duplex_load_observer_unit_cu "${kind_def[@]}"; then
+      -mfcu -cuname "$OBSERVER_CU" "${kind_def[@]}"; then
     echo "ModelSim compile failed for $profile/$kind" >&2; return 1
   fi
   printf 'modelsim_elaboration_args=' >>"$out/compiler_argv.txt"
@@ -254,6 +255,7 @@ run_scenario() {
       -gWRITE_B_MAX=8 -gWRITE_OUTSTANDING=1 -gWRITE_FIFO_DEPTH=16)
   fi
   [[ $scenario == COPY_PARALLELISM_256 ]] && plusargs+=(+G3_METRICS)
+  plusargs=("work.$OBSERVER_CU" "${plusargs[@]}")
   case $scenario in
     RRESP_FAULT_RESET|BRESP_FAULT_RESET) plusargs+=(+AXI_BURST_EXPECT_FAULT) ;;
   esac

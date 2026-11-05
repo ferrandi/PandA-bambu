@@ -26,7 +26,16 @@ def validate_transcript(transcript: str, raw_status: str, status: str, mode: str
     normalized = "\n".join(line[2:] if line.startswith("# ") else line for line in transcript.splitlines())
     if raw_status.strip() != "0" or status.strip() != "0":
         raise ValueError(f"nonzero ModelSim status: raw={raw_status.strip()} effective={status.strip()}")
-    if re.search(r"(\*\* (?:Error|Warning|Fatal):|segmentation fault|stack smashing|addresssanitizer|"
+    lines = normalized.splitlines()
+    proc_warning = re.compile(
+        r'^\*\* Warning: \(vsim-7\) Failed to open process file "/proc/[0-9]+/stat" in read mode\.$')
+    proc_warning_detail = "Operation not permitted. (errno = EPERM)"
+    for index, line in enumerate(lines):
+        if re.search(r"\*\* Warning:", line, re.IGNORECASE) and not (
+                proc_warning.fullmatch(line) and index + 1 < len(lines) and
+                lines[index + 1] == proc_warning_detail):
+            raise ValueError(f"unexpected ModelSim warning: {line}")
+    if re.search(r"(\*\* (?:Error|Fatal):|segmentation fault|stack smashing|addresssanitizer|"
                  r"core dumped|aborted|watchdog|timed out)", normalized, re.IGNORECASE):
         raise ValueError("ModelSim error, crash, watchdog, or timeout")
 
@@ -323,6 +332,33 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
             with self.subTest(diagnostic=diagnostic):
                 with self.assertRaises(ValueError):
                     self.check("write", "control", transcript + "\n" + diagnostic)
+
+    def test_accepts_only_the_exact_proc_permission_warning_pair(self) -> None:
+        transcript = self.transcript("read", "control")
+        warning = '** Warning: (vsim-7) Failed to open process file "/proc/123/stat" in read mode.'
+        detail = "Operation not permitted. (errno = EPERM)"
+        self.check("read", "control", transcript + "\n" + warning + "\n" + detail)
+        self.check("read", "control", transcript + "\n# " + warning + "\n# " + detail)
+        for invalid in (warning.replace("/proc/123/stat", "/proc/self/stat") + "\n" + detail,
+                        warning.replace("** Warning:", "** warning:") + "\n" + detail,
+                        warning + "\nOperation not permitted. (errno = EACCES)",
+                        warning,
+                        warning + "\n" + detail + "\n** Warning: synthetic warning",
+                        "  ** Warning: synthetic warning",
+                        "prefix ** Warning: synthetic warning",
+                        warning + "\n" + detail + "\n  ** Warning: synthetic warning",
+                        warning + "\n" + detail + "\nprefix ** Warning: synthetic warning"):
+            with self.subTest(transcript=invalid):
+                with self.assertRaises(ValueError):
+                    self.check("read", "control", transcript + "\n" + invalid)
+        with self.assertRaises(ValueError):
+            self.check("read", "control", transcript + "\n" + warning + "\n" + detail,
+                       raw="134", effective="134")
+        for diagnostic in ("** Error: synthetic error", "** Fatal: synthetic fatal"):
+            with self.subTest(diagnostic=diagnostic):
+                with self.assertRaises(ValueError):
+                    self.check("read", "control", transcript + "\n" + warning + "\n" + detail +
+                               "\n" + diagnostic)
 
 
 class GeneratedMemaxiResponseParallelRunnerTests(unittest.TestCase):
