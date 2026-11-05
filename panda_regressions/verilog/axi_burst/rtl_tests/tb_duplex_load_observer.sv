@@ -1,20 +1,5 @@
 `timescale 1ns/1ps
 
-module MinimalAXI4MasterPipelined #(
-  parameter integer B_MAX = 16,
-  parameter integer MAX_OUTSTANDING = 1,
-  parameter integer FIFO_DEPTH = 64
-) (
-  input logic clock,
-  input logic reset,
-  input logic start,
-  input logic [1:0] in1,
-  input logic fifo_load_pop,
-  input logic [30:0] consumed_reg,
-  input logic [30:0] region_count_reg
-);
-endmodule
-
 module tb_duplex_load_observer;
   logic clock = 0;
   logic reset = 0;
@@ -26,14 +11,14 @@ module tb_duplex_load_observer;
 
   always #5 clock = !clock;
 
-  MinimalAXI4MasterPipelined dut (
+  duplex_load_observer observer (
     .clock(clock),
     .reset(reset),
     .start(start),
-    .in1(operation),
+    .operation(operation),
     .fifo_load_pop(fifo_load_pop),
-    .consumed_reg(consumed),
-    .region_count_reg(region_count)
+    .consumed(consumed),
+    .region_count(region_count)
   );
 
   task automatic require(input logic condition, input string message);
@@ -51,13 +36,13 @@ module tb_duplex_load_observer;
     consumed = 0;
     @(posedge clock);
     #1;
-    require(dut.duplex_load_observer_instance.event_count == 1,
+    require(observer.event_count == 1,
             "immediate completion event count");
-    require(dut.duplex_load_observer_instance.last_index == 0,
+    require(observer.last_index == 0,
             "immediate completion consumed-before-edge index");
-    require(dut.duplex_load_observer_instance.last_count == 256,
+    require(observer.last_count == 256,
             "immediate completion region count");
-    require(dut.duplex_load_observer_instance.last_cycle == 0,
+    require(observer.last_cycle == 0,
             "immediate completion cycle");
 
     @(negedge clock);
@@ -66,7 +51,7 @@ module tb_duplex_load_observer;
     fifo_load_pop = 0;
     @(posedge clock);
     #1;
-    require(dut.duplex_load_observer_instance.event_count == 0,
+    require(observer.event_count == 0,
             "reset clears event count");
 
     @(negedge clock);
@@ -75,7 +60,7 @@ module tb_duplex_load_observer;
     consumed = 0;
     @(posedge clock);
     #1;
-    require(dut.duplex_load_observer_instance.event_count == 0,
+    require(observer.event_count == 0,
             "pending request does not emit before completion");
     @(negedge clock);
     start = 0;
@@ -86,13 +71,13 @@ module tb_duplex_load_observer;
     fifo_load_pop = 1;
     @(posedge clock);
     #1;
-    require(dut.duplex_load_observer_instance.event_count == 1,
+    require(observer.event_count == 1,
             "pending completion event count");
-    require(dut.duplex_load_observer_instance.last_index == 7,
+    require(observer.last_index == 7,
             "pending completion consumed-before-edge index");
-    require(dut.duplex_load_observer_instance.last_count == 256,
+    require(observer.last_count == 256,
             "pending completion region count");
-    require(dut.duplex_load_observer_instance.last_cycle == 2,
+    require(observer.last_cycle == 2,
             "pending completion positive relative cycle");
     $display("DUPLEX_LOAD_OBSERVER_UNIT PASS IMMEDIATE_COUNT=1 INDEX=0 CYCLE=0 PENDING_COUNT=1 INDEX=7 CYCLE=2");
     $finish;

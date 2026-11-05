@@ -222,7 +222,7 @@ run_bounded_jobs "$SIM_JOBS" build_profile "${profile_jobs[@]}"
 OBSERVER_UNIT_OUT="$OUT/observer-unit"
 mkdir "$OBSERVER_UNIT_OUT" "$OBSERVER_UNIT_OUT/tmp"
 modelsim_compile "$OBSERVER_UNIT_OUT/sim" tb_duplex_load_observer "$OBSERVER_UNIT_TB" "$OBSERVER" -- \
-  -mfcu -cuname duplex_load_observer_unit_cu || {
+  -mfcu -cuname duplex_load_observer_unit_cu +define+DUPLEX_LOAD_OBSERVER_NO_BIND || {
   echo "ModelSim compile failed for duplex load observer unit test" >&2; exit 1;
 }
 if ! modelsim_run "$OBSERVER_UNIT_OUT/sim" tb_duplex_load_observer "$OBSERVER_UNIT_OUT/observer-unit.raw.log" 60 -voptargs=+acc -- +G3_METRICS +CASE=COPY_PARALLELISM_256; then

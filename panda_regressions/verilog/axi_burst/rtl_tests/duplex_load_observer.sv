@@ -71,6 +71,7 @@ module duplex_load_observer #(
   end
 endmodule
 
+`ifndef DUPLEX_LOAD_OBSERVER_NO_BIND
 bind MinimalAXI4MasterPipelined duplex_load_observer #(
   .B_MAX(B_MAX),
   .MAX_OUTSTANDING(MAX_OUTSTANDING),
@@ -84,3 +85,4 @@ bind MinimalAXI4MasterPipelined duplex_load_observer #(
   .consumed(consumed_reg),
   .region_count(region_count_reg)
 );
+`endif
