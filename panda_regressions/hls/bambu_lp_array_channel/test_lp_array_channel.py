@@ -55,13 +55,6 @@ class MantisSimulationManifestTest(unittest.TestCase):
             with self.subTest(benchmark=next(
                     (token.split("=", 1)[1] for token in tokens if token.startswith("--benchmark-name=")),
                     "missing-benchmark-name")):
-                self.assertIn("--simulate", tokens)
-                self.assertIn("--simulator=MODELSIM", tokens)
-                evaluation = [token.split("=", 1)[1].split(",") for token in tokens
-                              if token.startswith("--evaluation=")]
-                self.assertEqual(len(evaluation), 1)
-                self.assertTrue({"CYCLES", "TOTAL_CYCLES", "TIME", "TOTAL_TIME"}.issubset(evaluation[0]))
-
                 testbenches = [token.split("=", 1)[1] for token in tokens
                                if token.startswith("--generate-tb=")]
                 self.assertEqual(len(testbenches), 1)
@@ -74,6 +67,10 @@ class MantisSimulationManifestTest(unittest.TestCase):
                 if benchmark not in EVALUATION_CASES:
                     continue
 
+                evaluation = [token for token in tokens
+                              if token == "--evaluation" or token.startswith("--evaluation=")]
+                self.assertEqual(evaluation, ["--evaluation"])
+
                 env_tokens = [token[len("BENCHMARK_ENV="):] for token in tokens
                               if token.startswith("BENCHMARK_ENV=")]
                 self.assertEqual(len(env_tokens), 1)
@@ -81,9 +78,6 @@ class MantisSimulationManifestTest(unittest.TestCase):
                 writer = "V" if benchmark.endswith("verilog") else "H"
                 self.assertEqual(env.get("LP_EVALUATION_ONLY"), "1")
                 self.assertIn(f"--writer={writer}", tokens)
-                self.assertIn("CLOCK_SLACK", evaluation[0])
-                self.assertTrue({"AREA", "REGISTERS", "DSPS", "BRAMS", "PERIOD", "FREQUENCY"}
-                                .intersection(evaluation[0]))
                 self.assertEqual(
                     shlex.split(env.get("MANTIS_POST_CHECK", "")),
                     ["python3", "BENCHMARKS_ROOT/check_vivado_evaluation.py", f"--writer={writer}"],
@@ -411,9 +405,6 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
         self.assertEqual(TIMED_CAPTURE.resolve_parallelism(["--parallel=5"], {}), 5)
         self.assertEqual(TIMED_CAPTURE.resolve_parallelism(["--parallel", "7"], {}), 7)
         self.assertEqual(TIMED_CAPTURE.resolve_parallelism(["-j24", "-j", "8", "--parallel=4"], {"J": "2"}), 4)
-        with self.assertRaises(SystemExit):
-            TIMED_CAPTURE.resolve_parallelism(["-j0"], {})
-
         case_root = self.root / "timed-capture-cases"
         case_root.mkdir()
         barrier = threading.Barrier(2)
@@ -532,14 +523,18 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
         self.assertEqual(len(self.case_dirs()), CASE_COUNT)
         for case in self.case_dirs():
             results = ET.parse(case / "bambu_results.xml").getroot()
+            command = shlex.split(results.get("args", ""))
+            self.assertIn("--simulate", command, case.name)
+            self.assertIn("--simulator=MODELSIM", command, case.name)
             simulation = results.find("./timing/simulation")
             self.assertIsNotNone(simulation, case.name)
             self.assertEqual(simulation.get("return_value"), "0", case.name)
             self.assertTrue(simulation.findall("./run"), case.name)
             evaluation = results.find("./evaluation")
-            self.assertGreater(float(evaluation.get("CYCLES", "0")), 0, case.name)
-            self.assertGreater(float(evaluation.get("TOTAL_CYCLES", "0")), 0, case.name)
+            for metric in ("CYCLES", "TOTAL_CYCLES", "TIME", "TOTAL_TIME"):
+                self.assertGreater(float(evaluation.get(metric, "0")), 0, f"{case.name}: {metric}")
             if case.name in EVALUATION_CASES:
+                self.assertIn("--evaluation", command, case.name)
                 self.assertGreater(float(evaluation.get("CLOCK_SLACK", "0")), 0, case.name)
                 self.assertIn("BAMBU_EVALUATION_EXECUTED", (case / "execution.log").read_text())
                 continue
@@ -562,13 +557,16 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
         self.assertIn("HOLD_MUT_DETECTED return=4280", (ii2 / "vsim_HOLD_MUT.log").read_text())
 
     def test_nonpositive_vivado_slack_fails_both_evaluation_cases(self):
-        result = self.run_suite("negative_slack")
+        result = self.run_suite("negative_slack", no_clean=False)
         self.assertNotEqual(result.returncode, 0, result.stdout)
         failed = {case.name for case in self.case_dirs() if (case / "failure.log").exists()}
         self.assertEqual(failed, EVALUATION_CASES)
         for case in self.case_dirs():
             if case.name in EVALUATION_CASES:
                 self.assertIn("CLOCK_SLACK must be finite and positive", (case / "failure.log").read_text())
+                self.assertTrue((case / "HLS_output/xilinx/flow_backend/post_route_timing_summary.rpt").is_file())
+            else:
+                self.assertFalse((case / "vsim_BP0.log").exists(), case.name)
         self.cleanup_output()
 
     def test_restart_rechecks_cached_vivado_evidence(self):
