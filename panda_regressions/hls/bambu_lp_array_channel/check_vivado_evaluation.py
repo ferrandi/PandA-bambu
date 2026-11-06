@@ -90,8 +90,9 @@ def main():
    except OSError as error:
       return fail(f"missing post-route evidence: {error}")
 
-   if not re.search(r"(?m)^\s*\|\s*Design State\s*:\s*Routed\s*$", timing_report):
-      return fail("timing summary does not identify a routed design")
+   design_states = re.findall(r"(?m)^\s*\|\s*Design State\s*:\s*(.*?)\s*$", timing_report)
+   if ("Design State" in timing_report and design_states != ["Routed"]) or len(design_states) > 1:
+      return fail(f"timing summary does not identify a routed design: {design_states}")
    setup_slacks = re.findall(
       rf"(?m)^\s*Setup\s*:\s*\d+\s+Failing Endpoints,\s*Worst Slack\s+({NUMBER})ns\b",
       timing_report,
@@ -106,6 +107,13 @@ def main():
       return fail(
          f"CLOCK_SLACK {xml_slack:.12g} ns differs from routed report {route_slack:.12g} ns"
       )
+
+   routable_nets = re.findall(r"(?m)^\s*# of routable nets\.*\s*:\s*(\d+)\s*:", route_status)
+   fully_routed_nets = re.findall(r"(?m)^\s*# of fully routed nets\.*\s*:\s*(\d+)\s*:", route_status)
+   if len(routable_nets) != 1 or len(fully_routed_nets) != 1:
+      return fail("expected one routable-net count and one fully-routed-net count")
+   if int(routable_nets[0]) <= 0 or routable_nets != fully_routed_nets:
+      return fail(f"routing incomplete: routable nets {routable_nets}, fully routed nets {fully_routed_nets}")
 
    routing_errors = re.findall(r"(?m)^\s*# of nets with routing errors\.*\s*:\s*(\d+)\s*:", route_status)
    if len(routing_errors) != 1 or int(routing_errors[0]) != 0:

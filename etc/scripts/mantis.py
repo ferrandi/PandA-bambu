@@ -949,6 +949,7 @@ def main():
                 executor.shutdown(wait=False)
 
     ### Create execution report
+    testsuites.set("failures", str(sum(int(suite.get("failures")) for suite in testsuites)))
     ET.indent(testsuites)
     ET.ElementTree(testsuites).write(junit_report_filename, encoding="utf-8")
 

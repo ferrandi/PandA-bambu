@@ -138,8 +138,10 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
                                  args_writer=None, simulation_return="0", include_simulation=True,
                                  include_run=True, cycles="23", total_cycles="23", include_slack=True,
                                  include_library=True, include_timing=True, design_state="Routed",
-                                 include_status=True, routing_errors=0, malformed_xml=False,
-                                 evaluation_count=1):
+                                 include_status=True, routing_errors=0, routable_nets=10,
+                                 fully_routed_nets=10, include_routable=True,
+                                 include_fully_routed=True, duplicate_routable=False,
+                                 malformed_xml=False, evaluation_count=1):
         case = self.root / name
         flow = case / "HLS_output/xilinx/flow_backend"
         flow.mkdir(parents=True)
@@ -173,9 +175,15 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
                 encoding="utf-8",
             )
         if include_status:
-            (flow / "post_route_status.rpt").write_text(
-                f"# of nets with routing errors.......... : {routing_errors} :\n", encoding="utf-8"
-            )
+            route_lines = []
+            if include_routable:
+                route_lines.append(f"# of routable nets..................... : {routable_nets} :\n")
+                if duplicate_routable:
+                    route_lines.append(f"# of routable nets..................... : {routable_nets} :\n")
+            if include_fully_routed:
+                route_lines.append(f"# of fully routed nets................. : {fully_routed_nets} :\n")
+            route_lines.append(f"# of nets with routing errors.......... : {routing_errors} :\n")
+            (flow / "post_route_status.rpt").write_text("".join(route_lines), encoding="utf-8")
         return case
 
     def run_evaluation_checker(self, case, writer="V"):
@@ -192,6 +200,11 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
             result = self.run_evaluation_checker(case, writer)
             self.assertEqual(result.returncode, 0, result.stdout)
             self.assertIn("routed setup slack 0.250 ns", result.stdout)
+            case = self.write_evaluation_fixture(
+                "checker-valid-no-state-" + writer, writer=writer, design_state=""
+            )
+            result = self.run_evaluation_checker(case, writer)
+            self.assertEqual(result.returncode, 0, result.stdout)
 
         invalid_cases = (
             ("zero_xml_slack", {"xml_slack": "0"}, "CLOCK_SLACK"),
@@ -211,12 +224,19 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
             ("missing_library", {"include_library": False}, "expected generated"),
             ("missing_timing_report", {"include_timing": False}, "missing post-route evidence"),
             ("unrouted_design", {"design_state": "Synthesized"}, "does not identify a routed design"),
+            ("compound_design_state", {"design_state": "Routed Partially"}, "does not identify a routed design"),
+            ("duplicate_design_state", {"design_state": "Routed\n| Design State : Routed"}, "does not identify a routed design"),
             ("zero_routed_slack", {"report_slack": "0"}, "routed setup Worst Slack"),
             ("negative_routed_slack", {"report_slack": "-0.1"}, "routed setup Worst Slack"),
             ("nan_routed_slack", {"report_slack": "NaN"}, "expected one routed setup Worst Slack value"),
             ("infinite_routed_slack", {"report_slack": "inf"}, "expected one routed setup Worst Slack value"),
             ("slack_mismatch", {"report_slack": "0.500"}, "differs from routed report"),
             ("missing_route_status", {"include_status": False}, "missing post-route evidence"),
+            ("missing_routable_count", {"include_routable": False}, "one routable-net count"),
+            ("missing_fully_routed_count", {"include_fully_routed": False}, "one routable-net count"),
+            ("duplicate_routable_count", {"duplicate_routable": True}, "one routable-net count"),
+            ("zero_routable_count", {"routable_nets": 0}, "routing incomplete"),
+            ("incomplete_routing", {"fully_routed_nets": 9}, "routing incomplete"),
             ("routing_error", {"routing_errors": 1}, "zero routing errors"),
         )
         for name, mutations, diagnostic in invalid_cases:
@@ -267,7 +287,7 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
             "   evaluation_values.update({'CLOCK_SLACK':slack,'AREA':'1000','REGISTERS':'145','DSPS':'3','BRAMS':'0','PERIOD':'4.75','FREQUENCY':'210.5'})\n"
             "   flow=os.path.join('HLS_output','xilinx','flow_backend'); os.makedirs(flow,exist_ok=True)\n"
             "   open(os.path.join(flow,'post_route_timing_summary.rpt'),'w').write('| Design State : Routed\\nSetup : 0 Failing Endpoints, Worst Slack '+slack+'ns, Total Violation 0.000ns\\n')\n"
-            "   open(os.path.join(flow,'post_route_status.rpt'),'w').write('# of nets with routing errors.......... : 0 :\\n')\n"
+            "   open(os.path.join(flow,'post_route_status.rpt'),'w').write('# of routable nets..................... : 10 :\\n# of fully routed nets................. : 10 :\\n# of nets with routing errors.......... : 0 :\\n')\n"
             "  ET.SubElement(app,'evaluation',evaluation_values)\n"
             "  ET.ElementTree(app).write('bambu_results.xml',encoding='unicode')\n"
             "if eval_only: sys.exit(0)\n"
