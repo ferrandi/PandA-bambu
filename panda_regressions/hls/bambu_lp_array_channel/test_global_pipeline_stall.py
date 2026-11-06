@@ -19,7 +19,7 @@ from test_timed_capture import resolve_parallelism
 ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / "panda_regressions/hls/bambu_lp_array_channel/lp_mul_array.cpp"
 DATAFLOW_SOURCE = ROOT / "panda_regressions/hls/bambu_specific_test4/pipe_dataflow_stream.cpp"
-SCRATCH = ROOT / "documentation/tmp"
+SCRATCH = Path(tempfile.gettempdir())
 RESOURCE_NAMES = ("a_bambu_artificial_ParmMgr", "b_bambu_artificial_ParmMgr")
 
 

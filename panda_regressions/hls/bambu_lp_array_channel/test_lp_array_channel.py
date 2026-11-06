@@ -23,7 +23,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[3]
 LAUNCHER = ROOT / "panda_regressions/hls/bambu_lp_array_channel.sh"
 SUITE = ROOT / "panda_regressions/hls/bambu_lp_array_channel"
-SCRATCH = ROOT / "documentation/tmp"
+SCRATCH = Path(os.environ.get("TMPDIR") or tempfile.gettempdir())
 MANIFEST = ROOT / "panda_regressions/hls/bambu_lp_array_channel_list"
 EVALUATION_CASES = {"lp_mul_array_vivado_verilog", "lp_mul_array_vivado_vhdl"}
 CASE_COUNT = 15
@@ -448,8 +448,10 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
                 return ""
             top = command[5]
             language = "Verilog" if top.startswith("verilog_") else "VHDL"
-            match = re.search(r"_l(\d+)_c(\d+)", top)
+            match = re.search(r"_l(\d+)_c(\d+)_i(\d+)", top)
             marker = f"PASS {language} LATENCY={match.group(1)} CAPACITY={match.group(2)}"
+            if match.group(3) != "1":
+                marker += f" II={match.group(3)}"
             with lock:
                 active -= 1
             if marker == "PASS VHDL LATENCY=3 CAPACITY=3":
@@ -461,24 +463,35 @@ class LPArrayChannelIntegrationTest(unittest.TestCase):
         with patch.object(TIMED_CAPTURE, "run", side_effect=mock_run):
             results = TIMED_CAPTURE.run_timed_capture_cases(2, "/mock/modelsim/bin", case_root)
 
-        self.assertEqual(len(results), 12)
+        self.assertEqual(len(results), len(TIMED_CAPTURE.timed_capture_cases()))
         self.assertEqual(maximum_active, 2)
-        self.assertEqual(len(directories), 12)
+        self.assertEqual(len(directories), len(TIMED_CAPTURE.timed_capture_cases()))
         self.assertTrue(all(not directory.exists() for directory in directories))
         failures = [(case, error) for case, marker, error in results if error is not None]
         self.assertEqual(len(failures), 2)
-        self.assertEqual(failures[0][0], ("Verilog", 15, 1))
+        self.assertEqual(failures[0][0], ("Verilog", 15, 1, 1))
         self.assertEqual(failures[0][1], "RuntimeError: ")
-        self.assertEqual(failures[1][0], ("VHDL", 3, 3))
+        self.assertEqual(failures[1][0], ("VHDL", 3, 3, 1))
         self.assertIn("injected simulator failure", failures[1][1])
-        self.assertEqual(sum(marker is not None for _, marker, _ in results), 10)
+        self.assertEqual(sum(marker is not None for _, marker, _ in results), len(results) - 2)
 
-        failed_case = (("Verilog", 0, 1), None, "")
+        failed_case = (("Verilog", 0, 1, 1), None, "")
         with patch.object(TIMED_CAPTURE, "resolve_modelsim_bin", return_value="/mock/modelsim/bin"), \
                 patch.object(TIMED_CAPTURE.shutil, "which", return_value="/mock/modelsim/bin/tool"), \
                 patch.object(TIMED_CAPTURE, "run_timed_capture_cases", return_value=[failed_case]), \
+                patch.object(TIMED_CAPTURE, "run_capacity_mutation_cases", return_value=[]), \
                 redirect_stderr(StringIO()):
             self.assertEqual(TIMED_CAPTURE.main(["-j1"]), 1)
+
+        mutation_failure = (("Verilog", 2, 0), None, "RuntimeError: injected mutation failure")
+        mutation_stderr = StringIO()
+        with patch.object(TIMED_CAPTURE, "resolve_modelsim_bin", return_value="/mock/modelsim/bin"), \
+                patch.object(TIMED_CAPTURE.shutil, "which", return_value="/mock/modelsim/bin/tool"), \
+                patch.object(TIMED_CAPTURE, "run_timed_capture_cases", return_value=[]), \
+                patch.object(TIMED_CAPTURE, "run_capacity_mutation_cases", return_value=[mutation_failure]), \
+                redirect_stderr(mutation_stderr):
+            self.assertEqual(TIMED_CAPTURE.main(["-j1"]), 1)
+        self.assertIn("FAIL Verilog CAPACITY=2 mutation phase=0", mutation_stderr.getvalue())
 
     def test_remaining_preflight_parallelism_and_failure_reporting(self):
         for name, preflight in (

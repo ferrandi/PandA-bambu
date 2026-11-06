@@ -702,6 +702,13 @@ bool AllocationInformation::is_operation_bounded(const OpGraph& g, OpGraph::vert
    return GetPointerS<operation>(op_node)->is_bounded();
 }
 
+bool AllocationInformation::is_capture_protected_result(const OpGraph& g, OpGraph::vertex_descriptor op,
+                                                         unsigned int fu_type) const
+{
+   return is_operation_bounded(g, op, fu_type) && get_initiation_time(fu_type, op) != 0U &&
+          hls_manager->get_produced_value(hls->functionId, op) != 0U && GetCycleLatency(op) > 0U;
+}
+
 bool AllocationInformation::is_operation_bounded(const unsigned int index, unsigned int fu_type) const
 {
    const technology_nodeRef node = get_fu(fu_type);

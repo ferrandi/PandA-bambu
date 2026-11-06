@@ -904,12 +904,9 @@ def main(argv=None):
     for name in model_names:
         assert_stallable_contract(c_hls[name])
 
-    parent = ROOT / "documentation/tmp/pr436-stallable/release-port-probe"
-    parent_created = not parent.exists()
-    parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     bin_dir = resolve_modelsim_bin(env)
-    with tempfile.TemporaryDirectory(prefix="run-", dir=parent) as temp:
+    with tempfile.TemporaryDirectory(prefix="pr436-stallable-release-port-probe-") as temp:
         work_root = Path(temp)
         model_cases = []
         for name, is_signed in (("mul_node_FU", True), ("ui_mul_node_FU", False)):
@@ -969,8 +966,6 @@ def main(argv=None):
         ])
         report_case_results(run_parallel_cases(bambu_cases, jobs, work_root))
 
-    if parent_created and not any(parent.iterdir()):
-        parent.rmdir()
     print("stallable multiplier tests passed: signed/unsigned Verilog and VHDL P=0/1/2/3/7; "
           "wrappers compile; mutations detected; malformed Stallable ports and metadata rejected; "
           "stall port ordering passed; FRP capture retained; C argument stall preserved; "

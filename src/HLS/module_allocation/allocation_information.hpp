@@ -513,6 +513,18 @@ class AllocationInformation
    bool is_operation_bounded(const OpGraph& g, OpGraph::vertex_descriptor op, unsigned int fu_type) const;
 
    /**
+    * Checks whether a bounded, pipelined operation produces a delayed result that must be protected from stalls.
+    * The scheduler may let this result remain in flight across a pipelined wait only when binding stalls the FU
+    * or inserts a TIMED_CAPTURE for the result.
+    * @param g is the graph of the vertex
+    * @param op is the operation to check
+    * @param fu_type is the identifier of the functional unit
+    * @return true when the operation is bounded, has a nonzero initiation interval, produces a value, and has
+    *         positive cycle latency
+    */
+   bool is_capture_protected_result(const OpGraph& g, OpGraph::vertex_descriptor op, unsigned int fu_type) const;
+
+   /**
     * Checks if the given operation has a bounded execution time or not
     * @param index is the index of the statement
     * @param fu_type is the identifier of the function unit

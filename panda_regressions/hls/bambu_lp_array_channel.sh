@@ -5,8 +5,6 @@
 set -u
 script_dir="$(dirname "$(readlink -e "$0")")"
 repo_root="$(readlink -e "$script_dir/../..")"
-mkdir -p "$repo_root/documentation/tmp"
-export TMPDIR="$repo_root/documentation/tmp" TMP="$repo_root/documentation/tmp" TEMP="$repo_root/documentation/tmp"
 
 if [ -z "${LP_MOCK_MODE:-}" ]; then
    source "$repo_root/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"

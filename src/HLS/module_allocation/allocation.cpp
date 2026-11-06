@@ -1902,7 +1902,7 @@ DesignFlowStep_Status allocation::InternalExec()
 
          const auto structManager_obj = GetPointer<functional_unit>(current_fu)->CM;
 
-         /// check for generated module and bambu/flopoco resources
+         /// check for generated module and bambu resources
          if(check_generated_bambu(structManager_obj, bambu_provided_resource, current_fu))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of generated module");

@@ -1103,11 +1103,10 @@ bool parametric_list_based::exec(
          const auto II = HLS->allocation_information->get_initiation_time(fu_name, *live_vertex_it);
          const bool result_pending = ending_time.find(*live_vertex_it)->second > current_cycle_ending_time;
          bool capture_protected_result = false;
-         if(result_pending && LPBB_predicate && II != 0U &&
-            HLS->allocation_information->is_operation_bounded(flow_graph, *live_vertex_it, fu_name))
+         if(result_pending && LPBB_predicate &&
+            HLS->allocation_information->is_capture_protected_result(flow_graph, *live_vertex_it, fu_name))
          {
-            capture_protected_result = HLS->allocation_information->GetCycleLatency(*live_vertex_it) > 0U &&
-                                       HLSMgr->get_produced_value(HLS->functionId, *live_vertex_it) != 0;
+            capture_protected_result = true;
          }
          if(result_pending && !capture_protected_result)
          {
@@ -1529,10 +1528,8 @@ bool parametric_list_based::exec(
                const auto current_vertex_II = HLS->allocation_information->get_initiation_time(fu_type, current_vertex);
                auto local_unbounded = unbounded;
                auto local_unbounded_RW = unbounded_RW;
-               const bool has_current_result = HLSMgr->get_produced_value(HLS->functionId, current_vertex) != 0;
-               const bool capture_protected_result = LPBB_predicate && is_current_vertex_bounded &&
-                                                     current_vertex_II != 0U && has_current_result &&
-                                                     HLS->allocation_information->GetCycleLatency(current_vertex) > 0U;
+               const bool capture_protected_result = LPBB_predicate &&
+                  HLS->allocation_information->is_capture_protected_result(flow_graph, current_vertex, fu_type);
                if(LPBB_predicate && n_cycles > 1 && !capture_protected_result)
                {
                   for(auto it_current_cycle = current_cycle; it_current_cycle < current_cycle + n_cycles;

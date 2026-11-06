@@ -942,14 +942,12 @@ void mux_connection_binding::create_connections()
          }
          const auto fu_type = HLS->Rfu->get_assign(op);
          const auto latency = HLS->Rsch->get_cstep_end(op).second - HLS->Rsch->get_cstep(op).second;
-         const auto initiation_interval = HLS->allocation_information->get_initiation_time(fu_type, op);
          const auto var_written = HLSMgr->get_produced_value(HLS->functionId, op);
          if(HLS->Rconn->is_stallable_fu_bound(HLS->Rfu->get(op)))
          {
             continue;
          }
-         if(!HLS->allocation_information->is_operation_bounded(data, op, fu_type) || initiation_interval == 0 ||
-            latency == 0 || var_written == 0)
+         if(!HLS->allocation_information->is_capture_protected_result(data, op, fu_type) || latency == 0)
          {
             continue;
          }
@@ -972,6 +970,33 @@ void mux_connection_binding::create_connections()
             HLS->Rconn->add_data_transfer(HLS->Rfu->get(op), adapter, 2, 0,
                                           data_transfer(var_written, bitsize, state, FSMInfo::invalidState, op));
          }
+      }
+   }
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      if(state_info.isDummy)
+      {
+         continue;
+      }
+      const bool co_starts_unbounded =
+          std::any_of(state_info.startingOperations.begin(), state_info.startingOperations.end(), is_unbounded_command);
+      for(const auto op : state_info.startingOperations)
+      {
+         const auto bb_id = data.CGetNodeInfo(op).bb_index;
+         if(!co_starts_unbounded && pipelined_wait_bbs.find(bb_id) == pipelined_wait_bbs.end())
+         {
+            continue;
+         }
+         const auto fu_type = HLS->Rfu->get_assign(op);
+         const auto delay = HLS->Rsch->get_cstep_end(op).second - HLS->Rsch->get_cstep(op).second;
+         if(delay == 0 || !HLS->allocation_information->is_capture_protected_result(data, op, fu_type) ||
+            HLS->Rconn->is_stallable_fu_bound(HLS->Rfu->get(op)) || HLS->Rconn->get_timed_capture(op))
+         {
+            continue;
+         }
+         THROW_ERROR("Pipelined result has neither stall nor capture: " + data.CGetNodeInfo(op).vertex_name +
+                     " on " + HLS->allocation_information->get_fu_name(fu_type).first + " in BB" + STR(bb_id));
       }
    }
    // The adapter is used at every normal start and completion state of this static operation.

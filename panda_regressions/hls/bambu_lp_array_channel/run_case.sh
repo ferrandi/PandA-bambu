@@ -4,8 +4,11 @@ set -u
 script_dir="$(dirname "$(readlink -e "$0")")"
 regression_dir="$script_dir"
 case_dir="$PWD"
-mkdir -p "${TMPDIR:-$script_dir/../../../documentation/tmp}"
-export TMPDIR="${TMPDIR:-$script_dir/../../../documentation/tmp}" TMP="${TMP:-$TMPDIR}" TEMP="${TEMP:-$TMPDIR}"
+TMPDIR="${TMPDIR:-$case_dir}"
+TMP="${TMP:-$TMPDIR}"
+TEMP="${TEMP:-$TMPDIR}"
+export TMPDIR TMP TEMP
+mkdir -p "$TMPDIR"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 timeout 900 bambu "$@" >bambu.log 2>&1
