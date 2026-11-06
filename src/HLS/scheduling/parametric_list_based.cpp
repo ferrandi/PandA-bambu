@@ -2302,7 +2302,8 @@ unsigned parametric_list_based::computeLatestStep(
                {
                   number_fu = HLS->allocation_information->get_number_fu(fu_id);
                }
-               if(number_fu == INFINITE_UINT)
+               if(number_fu == INFINITE_UINT &&
+                  HLS->allocation_information->is_operation_bounded(opDFG, target, HLS->Rfu->get_assign(target)))
                {
                   auto currentCSTarget = schedule.get_cstep(target).second;
                   auto latestCSTarget =
