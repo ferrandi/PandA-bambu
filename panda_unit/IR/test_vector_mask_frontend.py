@@ -28,10 +28,9 @@ def main():
     spec = importlib.util.spec_from_file_location("checker", fixtures / "check_vector_mask_ir.py")
     checker = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(checker)
-    scratch = root / "documentation/tmp"
+    scratch = pathlib.Path(tempfile.gettempdir())
     scratch.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, TMPDIR=str(scratch), TMP=str(scratch), TEMP=str(scratch),
-               OMP_NUM_THREADS="1", CMAKE_BUILD_PARALLEL_LEVEL="1")
+    env = dict(os.environ, OMP_NUM_THREADS="1", CMAKE_BUILD_PARALLEL_LEVEL="1")
     checked = 0
     try:
         with tempfile.TemporaryDirectory(prefix="vector-mask-frontend-", dir=str(scratch)) as temporary:

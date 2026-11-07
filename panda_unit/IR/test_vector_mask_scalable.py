@@ -15,9 +15,9 @@ def main():
     parser.add_argument("--bambu", required=True)
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[2]
-    scratch = root / "documentation/tmp"
+    scratch = pathlib.Path(tempfile.gettempdir())
     scratch.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ, TMPDIR=str(scratch), TMP=str(scratch), TEMP=str(scratch))
+    env = os.environ.copy()
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     with tempfile.TemporaryDirectory(prefix="vector-mask-scalable-", dir=str(scratch)) as work:
         result = subprocess.run(

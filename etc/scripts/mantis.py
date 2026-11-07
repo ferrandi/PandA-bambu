@@ -748,7 +748,7 @@ def run_command(
                 result = "Cancelled"
 
             log_execution(outcome, log_message, result)
-            if run_command.clean_cwd:
+            if run_command.clean_cwd and outcome == ExecutionOutcome.SUCCESS:
                 for relpath in os.listdir(cwd):
                     if relpath not in run_command.skip_clean:
                         path = os.path.join(cwd, relpath)
@@ -949,6 +949,7 @@ def main():
                 executor.shutdown(wait=False)
 
     ### Create execution report
+    testsuites.set("failures", str(sum(int(suite.get("failures")) for suite in testsuites)))
     ET.indent(testsuites)
     ET.ElementTree(testsuites).write(junit_report_filename, encoding="utf-8")
 
