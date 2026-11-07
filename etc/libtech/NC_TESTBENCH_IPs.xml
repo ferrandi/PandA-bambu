@@ -2335,10 +2335,6 @@ generate
           automatic ptr_t address = current[BITSIZE_item*i+OFFSET_address+:BITSIZE_address];
           _q[BITSIZE_q*i+:BITSIZE_q] &lt;= m_utils.read_a(address);
         end
-        else
-        begin
-          _q[BITSIZE_q*i+:BITSIZE_q] &lt;= 0;
-        end
       end
     end
     else

@@ -36,6 +36,7 @@
 #include "refcount.hpp"
 #include <iosfwd>
 #include <string>
+#include <vector>
 
 #include "config_HAVE_UNORDERED.hpp"
 
@@ -162,6 +163,29 @@ class conn_binding
    /// map between a call operation and the datapath endpoint carrying its predicate value
    std::map<gc_vertex_descriptor, generic_objRef> command_predicates;
 
+   struct TimedCaptureParameters
+   {
+      unsigned int latency;
+      unsigned int capacity;
+      unsigned int bitsize;
+   };
+
+   /// per-operation result capture adapters for bounded pipeline results in loop BBs with wait states
+   std::map<gc_vertex_descriptor, generic_objRef> timed_captures;
+   std::map<gc_vertex_descriptor, TimedCaptureParameters> timed_capture_parameters;
+
+   struct InputHoldGroup
+   {
+      generic_objRef selector;
+      generic_objRef fu_unit;
+      std::vector<structural_objectRef> launch_ports;
+   };
+   std::vector<InputHoldGroup> input_hold_groups;
+   std::map<structural_objectRef, structural_objectRef> input_hold_inputs;
+
+   generic_objRef stallable_selector;
+   std::vector<generic_objRef> stallable_fu_units;
+
    /// selector ports
 #if HAVE_UNORDERED
    using Selectors = std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>;
@@ -208,6 +232,11 @@ class conn_binding
     * Add signals from/to controller
     */
    void add_command_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
+
+   void add_timed_captures(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM);
+   void add_input_holds(const hlsRef HLS, const structural_managerRef SM);
+   void connect_input_hold_launches(const structural_managerRef SM);
+   void connect_stallable_fu_inputs(const structural_managerRef SM);
 
    /**
     * Add multiplexers to the structural representation of the datapath
@@ -257,6 +286,14 @@ class conn_binding
                                      const OpGraph& data);
 
    generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const generic_objRef elem, unsigned int op);
+
+   generic_objRef bind_timed_capture(gc_vertex_descriptor op, unsigned int latency, unsigned int capacity,
+                                     unsigned int bitsize, const std::string& operation_name);
+   generic_objRef get_timed_capture(gc_vertex_descriptor op) const;
+   void bind_input_hold_group(const generic_objRef selector, const generic_objRef fu_unit);
+   structural_objectRef get_input_hold_input(const structural_objectRef fu_input) const;
+   generic_objRef bind_stallable_fu_input(const generic_objRef fu_unit);
+   bool is_stallable_fu_bound(const generic_objRef fu_unit) const;
 
    void bind_command_predicate(gc_vertex_descriptor ver, const generic_objRef& predicate_port)
    {

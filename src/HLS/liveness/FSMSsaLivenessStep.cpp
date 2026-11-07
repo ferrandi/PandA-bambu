@@ -576,7 +576,7 @@ DesignFlowStep_Status FSMSsaLivenessStep::InternalExec()
    for(const auto& ds : dummyStates)
    {
       const auto& state_info = fsm_info->getState(ds);
-      for(const auto& eo : state_info.executingOperations)
+      for(const auto& eo : state_info.endingOperations)
       {
          const auto& scalar_defs = getVariablesScalarDef(data, eo);
          for(const auto scalar_def : scalar_defs)

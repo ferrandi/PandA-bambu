@@ -2990,8 +2990,17 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
    const auto HLS_D = HLSMgr->get_HLS_device();
    const auto TechMan = HLS_D->get_technology_manager();
-   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
-      !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
+   const bool has_existing_fu = TechMan->is_library_manager(INTERFACE_LIBRARY) &&
+                                TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName);
+   auto existing_fu =
+       has_existing_fu ? GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY)) : nullptr;
+   THROW_ASSERT(!has_existing_fu || existing_fu, "Interface resource is not a functional unit: " + ResourceName);
+   const bool metadata_only_fu = existing_fu && !existing_fu->CM;
+   if(metadata_only_fu)
+   {
+      existing_fu->remove_metadata_only_placeholder_operation();
+   }
+   if(!has_existing_fu || metadata_only_fu)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                      "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName +
@@ -3003,6 +3012,18 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
                    "Missing parameter element count for parameter '" + info.arg_id + "'.");
       const auto arraySize = std::stoull(parm_attrs.at(FunctionArchitecture::parm_elem_count));
       CM->set_top_info(ResourceName, module_type);
+      const auto fu = GetPointerS<functional_unit>(TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM));
+      THROW_ASSERT(fu, "Unable to register generated array interface resource " + ResourceName);
+      if(fu->attributes.find("Stallable") == fu->attributes.end())
+      {
+         if(std::find(fu->ordered_attributes.begin(), fu->ordered_attributes.end(), "Stallable") ==
+            fu->ordered_attributes.end())
+         {
+            fu->ordered_attributes.push_back("Stallable");
+         }
+         fu->attributes["Stallable"] = attributeRef(new attribute(attribute::BOOLEAN, "true"));
+      }
+      const bool stallable = fu->is_stallable();
       interface_top = CM->get_circ();
       /// add description and license
       GetPointerS<module_o>(interface_top)->set_description("Interface module for function: " + ResourceName);
@@ -3024,6 +3045,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
+      if(stallable)
+      {
+         CM->add_port(STALL_PORT_NAME, port_o::IN, interface_top, bool_type);
+      }
 
       CM->add_port_vector("in1", port_o::IN, n_resources, interface_top,
                           size1); // when 0 is a read otherwise is a write
@@ -3089,12 +3114,10 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
                                read_write_string + getHDLGeneratorNameToken(info.name) + "HDLGenerator");
-      TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
       if(unused_port)
       {
          HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
       }
-      const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       fu->area_m = std::make_shared<area_info>();
       fu->area_m->resources[area_info::AREA] = 0;
       HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] =
@@ -3103,7 +3126,7 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    }
    else
    {
-      const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      const auto fu = existing_fu;
       THROW_ASSERT(fu->CM && fu->CM->get_circ(),
                    "Missing structural description for interface resource '" + ResourceName + "'");
       const auto interface_top = fu->CM->get_circ();
@@ -3241,10 +3264,13 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
       if(!operationsW.empty())
       {
          ensure_port("_" + bundle_name + "_we0", port_o::OUT, bool_type, port_o::port_interface::PI_WRITEENABLE);
-         ensure_port("_" + bundle_name + "_d0", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
          if(isDP)
          {
             ensure_port("_" + bundle_name + "_we1", port_o::OUT, bool_type, port_o::port_interface::PI_WRITEENABLE);
+         }
+         ensure_port("_" + bundle_name + "_d0", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
+         if(isDP)
+         {
             ensure_port("_" + bundle_name + "_d1", port_o::OUT, dataType, port_o::port_interface::PI_DOUT);
          }
       }

@@ -3281,15 +3281,18 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    }
 
    unsigned int offset = 0;
+   std::vector<structural_objectRef> operand_ports;
    bool is_multi_read_cond = allocation_information->get_fu_name(fu).first == MULTI_READ_COND_STD;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing input ports");
    for(unsigned int i = 0; i < fu_module->get_in_port_size(); i++)
    {
       structural_objectRef port = fu_module->get_in_port(i);
-      if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME || port->get_id() == START_PORT_NAME)
+      if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME || port->get_id() == START_PORT_NAME ||
+         port->get_id() == STALL_PORT_NAME)
       {
-         ++offset;
+         continue;
       }
+      operand_ports.push_back(port);
       if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
       {
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
@@ -3320,7 +3323,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       for(auto piOffset = 0U; piOffset < piIndexLimit; ++piOffset)
       {
-         structural_objectRef port = fu_module->get_in_port(l->first + offset + piOffset);
+         const auto port_index = l->first + offset + piOffset;
+         THROW_ASSERT(port_index < operand_ports.size(), "Functional unit operand index exceeds its data inputs");
+         structural_objectRef port = operand_ports[port_index];
          port_o::resize_std_port(bitsize_variable, n_elmts, debug_level, port);
       }
       if(is_dual && l->first)

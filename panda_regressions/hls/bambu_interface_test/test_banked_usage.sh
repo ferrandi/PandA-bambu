@@ -2,10 +2,8 @@
 set -euo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(git -C "$script_dir" rev-parse --show-toplevel)"
-export TMPDIR="$repo_root/documentation/tmp" TMP="$repo_root/documentation/tmp" TEMP="$repo_root/documentation/tmp"
 export OMP_NUM_THREADS=1
-mkdir -p "$TMPDIR"
-scratch_dir="$(mktemp -d "$TMPDIR/banked-usage.XXXXXX")"
+scratch_dir="$(mktemp -d)"
 trap 'rm -rf -- "$scratch_dir"' EXIT
 source "$repo_root/install/settings.sh"
 for mode in INVALID_CHUNK INVALID_DUPLICATE_BANK INVALID_BANK_ID INVALID_BANK_COUNT; do
