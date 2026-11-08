@@ -16,6 +16,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <algorithm>
 #include <sstream>
 
 namespace
@@ -89,7 +90,10 @@ namespace
       in5.type = "bool";
       in5.type_size = 32;
       in5.alignment = 1;
-      ports.insert(ports.begin() + 7, in5);
+      // Workaround for a GCC 13 false positive -Warray-bounds on the inlined
+      // std::vector::insert path: append the port and rotate it into place.
+      ports.push_back(in5);
+      std::rotate(ports.begin() + 7, ports.end() - 1, ports.end());
       return ports;
    }
 
