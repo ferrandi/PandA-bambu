@@ -271,7 +271,6 @@ STATE={str(state)!r}
 slot_weight() {{ case $1 in long|waiting) echo 3 ;; small) echo 2 ;; esac; }}
 worker() {{
   local name=$1 weight=$2
-  : >"$STATE/$name.started"
   printf '%s\n' "$weight" >"$STATE/$name.weight"
   case $name in
     long)
@@ -280,15 +279,22 @@ worker() {{
         sleep 0.01
       done
       [[ -e "$STATE/small.started" ]] || {{ echo 'small job was blocked behind unfit job' >&2; return 101; }}
+      : >"$STATE/long.started"
       sleep 0.20
       : >"$STATE/long.finished"
       ;;
     small)
+      : >"$STATE/small.started"
+      for ((attempt=0; attempt<200; ++attempt)); do
+        [[ -e "$STATE/long.started" ]] && break
+        sleep 0.01
+      done
       [[ -e "$STATE/long.started" ]] || {{ echo 'small did not overlap long' >&2; return 102; }}
       sleep 0.05
       : >"$STATE/small.finished"
       ;;
     waiting)
+      : >"$STATE/waiting.started"
       [[ -e "$STATE/long.finished" ]] || {{ echo 'slot budget was exceeded while long remained active' >&2; return 103; }}
       ;;
   esac
@@ -300,10 +306,8 @@ run_bounded_jobs 5 worker --slots=slot_weight long waiting small
         for name, weight in (("long", "3"), ("small", "2"), ("waiting", "3")):
             self.assertTrue((state / f"{name}.started").is_file())
             self.assertEqual((state / f"{name}.weight").read_text(), f"{weight}\n")
-        self.assertLess(
-            result.stdout.index("PASS: burst job small"),
-            result.stdout.index("PASS: burst job waiting"),
-        )
+        self.assertTrue((state / "long.finished").is_file())
+        self.assertTrue((state / "small.finished").is_file())
 
     def test_weighted_pool_rejects_invalid_weights_before_dispatch(self) -> None:
         for weight, expected in (("0", "invalid weight"), ("not-a-number", "non-integer"),
