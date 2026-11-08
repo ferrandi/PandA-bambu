@@ -349,5 +349,8 @@ bool loadXMLModule(pugi::xml_document& doc, const std::string& outdirName);
 void modifyXMLModule(ArrPartCtx& arrPartCtx, const std::string& outdirName);
 std::string getDemangled(const std::string& declname);
 Function* findTopFunction(Module& M, const std::string& topFunctionNameArgPass);
+/// Position of argument argNo of F in the source signature, read from its bambu.orig_index attribute; argNo when
+/// the attribute is missing or is not a number.
+size_t getOrigIndex(const Function& F, unsigned argNo);
 
 #endif // ARR_PART_HPP
