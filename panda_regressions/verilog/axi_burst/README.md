@@ -35,16 +35,15 @@ Python and standard shell tools. They do not require Bambu, Vivado, ABC or Yosys
 Examples, from the repository root (use fresh output directories):
 
 ```bash
-mkdir -p documentation/tmp
-bash panda_regressions/verilog/axi_burst.sh documentation/tmp/axi-components
+bash panda_regressions/verilog/axi_burst.sh out_axi_components
 python3 -m unittest discover -s panda_regressions/verilog/axi_burst/rtl_tests
 python3 -m unittest discover -s panda_regressions/verilog/axi_burst/t4b_tests
 python3 -m unittest discover -s panda_regressions/verilog/axi_burst -p 'test_*.py'
-bash panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh documentation/tmp/axi-read all
-BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 bash panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh documentation/tmp/axi-write
+bash panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh out_axi_read all
+BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 bash panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh out_axi_write
 source install-CI/settings.sh
 BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=6 bash panda_regressions/verilog/axi_burst/rtl_tests/run_generated_memaxi_response_tests.sh \
-  "$PWD/install-CI/bin/bambu" "$PWD/documentation/tmp/axi-generated-memaxi-reset"
+  "$PWD/install-CI/bin/bambu" "$PWD/out_axi_generated_memaxi_reset"
 ```
 
 The generated MEMAXI runner requires an installed Bambu and ModelSim/Questa;
