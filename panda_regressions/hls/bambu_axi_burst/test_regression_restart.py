@@ -547,5 +547,110 @@ esac
         self.assertFalse(output.exists())
 
 
+class DefaultBurstRTLComparisonTests(unittest.TestCase):
+    def setUp(self) -> None:
+        TMP_ROOT.mkdir(parents=True, exist_ok=True)
+        self.temp = tempfile.TemporaryDirectory(prefix="default_burst_rtl_", dir=TMP_ROOT)
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.checker = ROOT / "panda_regressions/hls/bambu_axi_burst/check_default_burst_artifacts.py"
+
+    def _write_hdl(self, root: Path, name: str, body: str, date: str, invocation: str) -> None:
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            "// \n// Politecnico di Milano\n"
+            f"// Code created using PandA - Version: test - Revision abc - Date {date}\n"
+            f"// Bambu executed with: {invocation}\n// \n{body}\n",
+            encoding="utf-8",
+        )
+
+    def _compare(self, mode: str, first: Path, second: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [sys.executable, str(self.checker), mode, str(first), "--compare", str(second)],
+            capture_output=True, text=True, check=False,
+        )
+
+    def test_equal_normalizes_only_generated_provenance_headers(self) -> None:
+        first = self.root / "off-a"
+        second = self.root / "off-b"
+        self._write_hdl(first, "kernel.v", "module kernel; assign out = in; endmodule", "2026-01-01",
+                        "'/usr/bin/bambu' '/src/kernel.cpp' '--bambu-parameter=m-axi-burst=0'")
+        self._write_hdl(second, "kernel.v", "module kernel; assign out = in; endmodule", "2026-01-02",
+                        "'/usr/bin/bambu' '/src/kernel.cpp'")
+        result = self._compare("rtl-equal", first, second)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self._write_hdl(second, "kernel.v", "module kernel; assign out = in; endmodule", "2026-01-02",
+                        "'/usr/bin/bambu' '/src/kernel.cpp' '--compiler=I386_CLANG13'")
+        result = self._compare("rtl-equal", first, second)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_comparison_rejects_logic_or_file_set_changes(self) -> None:
+        first = self.root / "off"
+        second = self.root / "on"
+        self._write_hdl(first, "kernel.v", "module kernel; assign out = in; endmodule", "2026-01-01", "bambu")
+        self._write_hdl(second, "kernel.v", "module kernel; assign out = in + 1; endmodule", "2026-01-02", "bambu")
+        result = self._compare("rtl-equal", first, second)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        result = self._compare("rtl-different", first, second)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        (second / "extra.v").write_text("module extra; endmodule\n", encoding="utf-8")
+        result = self._compare("rtl-equal", first, second)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_comparison_normalizes_only_compiler_node_id_suffixes(self) -> None:
+        first = self.root / "ids-a"
+        second = self.root / "ids-b"
+        self._write_hdl(
+            first, "kernel.v",
+            "wire out_UIdata_converter_FU_2_i0_fu_kernel_429240_429301;\n"
+            "assign out_UIdata_converter_FU_2_i0_fu_kernel_429240_429301 = 1'b0;",
+            "2026-01-01", "bambu",
+        )
+        self._write_hdl(
+            second, "kernel.v",
+            "wire out_UIdata_converter_FU_2_i0_fu_kernel_428891_428952;\n"
+            "assign out_UIdata_converter_FU_2_i0_fu_kernel_428891_428952 = 1'b0;",
+            "2026-01-02", "bambu",
+        )
+        result = self._compare("rtl-equal", first, second)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+        (second / "kernel.v").write_text(
+            (second / "kernel.v").read_text(encoding="utf-8").replace("1'b0", "1'b1"),
+            encoding="utf-8",
+        )
+        result = self._compare("rtl-equal", first, second)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_comparison_preserves_numeric_literals_and_quoted_paths(self) -> None:
+        first = self.root / "literal-a"
+        second = self.root / "literal-b"
+        first_body = (
+            "wire out_kernel_429240_429301;\n"
+            "assign out_kernel_429240_429301 = 64'h0_123456_123456;\n"
+            'initial $readmemh("data_123456_654321.hex", out_kernel_429240_429301);'
+        )
+        same_body = (
+            "wire out_kernel_428891_428952;\n"
+            "assign out_kernel_428891_428952 = 64'h0_123456_123456;\n"
+            'initial $readmemh("data_123456_654321.hex", out_kernel_428891_428952);'
+        )
+        self._write_hdl(first, "kernel.v", first_body, "2026-01-01", "bambu")
+        self._write_hdl(second, "kernel.v", same_body, "2026-01-02", "bambu")
+        result = self._compare("rtl-equal", first, second)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+        literal_changed = same_body.replace("64'h0_123456_123456", "64'h0_654321_654321")
+        self._write_hdl(second, "kernel.v", literal_changed, "2026-01-02", "bambu")
+        result = self._compare("rtl-equal", first, second)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+        path_changed = same_body.replace("data_123456_654321.hex", "data_654321_123456.hex")
+        self._write_hdl(second, "kernel.v", path_changed, "2026-01-02", "bambu")
+        result = self._compare("rtl-equal", first, second)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

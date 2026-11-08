@@ -94,24 +94,23 @@ run_pragma_case() {
               --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
   args+=("--extra-cc-options=-D$case_macro")
   args+=("--bambu-parameter=${BURST_PARAMETER}=0")
-  mkdir -p "$case_dir"
-  printf '%q ' "$BAMBU" "$source" "${args[@]}" >"$case_dir/argv.txt"; printf '\n' >>"$case_dir/argv.txt"
-  if (cd "$case_dir" && "$BAMBU" "$source" "${args[@]}" >stdout.log 2>stderr.log); then
-    rc=0
-  else
-    rc=$?
+  local expected_failure=""
+  if [[ "$expect" == reject ]]; then
+    case "$case_macro" in
+      AXI_CASE_INVALID_CONFLICT) expected_failure="Conflicting maximum AXI burst length values" ;;
+      AXI_CASE_INVALID_NON_AXI) expected_failure="AXI read profile attributes" ;;
+      *) expected_failure="Maximum AXI burst length must be an integer" ;;
+    esac
   fi
-  if [[ "$expect" == accept && $rc -ne 0 ]]; then
-    echo "expected accepted pragma '$top', Bambu exited $rc; see $case_dir/stderr.log" >&2; return 1
-  elif [[ "$expect" == reject && $rc -eq 0 ]]; then
-    echo "expected rejected pragma '$top', but Bambu accepted it; see $case_dir" >&2; return 1
-  elif [[ "$expect" == reject ]]; then
+  python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" \
+    --expected-failure "$expected_failure" -- "$source" "${args[@]}"
+  if [[ "$expect" == reject ]]; then
     local plugin_outputs=("$case_dir/stdout.log" "$case_dir/stderr.log")
     while IFS= read -r output; do plugin_outputs+=("$output"); done \
       < <(find "$case_dir/panda-temp" -maxdepth 1 -type f -name '__cc_output*' -print 2>/dev/null || true)
     if ! grep -Eqi 'Maximum AXI burst length|Conflicting maximum AXI burst length values|AXI read profile attributes num_read_outstanding(/| and )read_fifo_depth are only valid for mode=m_axi' \
         "${plugin_outputs[@]}"; then
-      echo "'$top' exited $rc but has no ASTAnalyzer burst-pragma diagnostic in compiler output; see $case_dir" >&2
+      echo "'$top' has no ASTAnalyzer burst-pragma diagnostic in compiler output; see $case_dir" >&2
       return 1
     fi
   fi
@@ -132,10 +131,8 @@ run_pragma_suite() {
                 --AXI-burst-type=INCREMENTAL --no-clean --device-name=xcu250,-2L,figd2104
                 "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
                 --extra-cc-options=-DAXI_CASE_DUPLICATE_ATTRIBUTES)
-    mkdir -p "$case_dir"
-    printf '%q ' "$BAMBU" "$TESTS/compiler_cases/axi_invalid_attribute_cases.cpp" "${args[@]}" >"$case_dir/argv.txt"
-    printf '\n' >>"$case_dir/argv.txt"
-    (cd "$case_dir" && "$BAMBU" "$TESTS/compiler_cases/axi_invalid_attribute_cases.cpp" "${args[@]}" >stdout.log 2>stderr.log)
+    python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" -- \
+      "$TESTS/compiler_cases/axi_invalid_attribute_cases.cpp" "${args[@]}"
     echo "PRAGMA accept PASS: duplicate attributes (opt-in enabled)"
   fi
 }
@@ -149,8 +146,8 @@ run_burst_profile_suite() {
               --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
               --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
               --extra-cc-options=-DAXI_CASE_READ_PROFILE_VALID)
-  mkdir -p "$case_dir"
-  (cd "$case_dir" && "$BAMBU" "$source" "${args[@]}" >stdout.log 2>stderr.log)
+  python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" -- \
+    "$source" "${args[@]}"
   local architecture
   architecture=$(find "$case_dir" -type f -name architecture.xml -print -quit)
   if [[ -z "$architecture" ]]; then
@@ -160,21 +157,6 @@ run_burst_profile_suite() {
   python3 "$TESTS/check_read_profile_architecture.py" "$architecture" positive
   echo "BURST-PROFILE PASS: pragma -> canonical architecture.xml serialization"
 
-  local no_b_dir="$OUT/compiler/burst-profile/default-burst-length"
-  mkdir -p "$no_b_dir"
-  if (cd "$no_b_dir" && "$BAMBU" "$source" \
-      --top-fname=read_profile_without_burst --compiler=I386_CLANG16 --generate-interface=INFER \
-      --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean \
-      --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU \
-      --extra-cc-options=-DAXI_CASE_READ_PROFILE_WITHOUT_BURST \
-      >stdout.log 2>stderr.log); then
-    :
-  else
-    echo "O/D profile without max_read_burst_length failed under default burst analysis; see $no_b_dir" >&2; return 1
-  fi
-  python3 "$CHECKER" rtl --output "$no_b_dir" --require='MinimalAXI4MasterPipelined' \
-    --configure-log="$no_b_dir/stderr.log" --configured-contract --expected-burst-max=16 \
-    --expected-outstanding=3 --expected-fifo-depth=8
   local legacy_dir="$OUT/compiler/burst-profile/no-burst-optout"
   mkdir -p "$legacy_dir"
   (cd "$legacy_dir" && "$BAMBU" "$source" \
@@ -184,65 +166,47 @@ run_burst_profile_suite() {
       --extra-cc-options=-DAXI_CASE_READ_PROFILE_WITHOUT_BURST \
       >stdout.log 2>stderr.log)
   python3 "$CHECKER" fallback --output "$legacy_dir"
-  echo "BURST-PROFILE PASS: O/D without B uses default B=16; explicit m-axi-burst=0 remains legacy"
+  echo "BURST-PROFILE PASS: O/D without B selects B=1; explicit m-axi-burst=0 remains legacy"
 
-  local profile_case profile_top profile_o profile_d profile_dir
-  for profile_case in 'o1_d256|1|256|AXI_CASE_READ_PROFILE_O1_D256' \
-                      'o3_d32|3|32|AXI_CASE_READ_PROFILE_O3_D32' \
-                      'o16_d4096|16|4096|AXI_CASE_READ_PROFILE_O16_D4096'; do
-    IFS='|' read -r profile_top profile_o profile_d profile_macro <<<"$profile_case"
-    profile_dir="$OUT/compiler/burst-profile/$profile_top"
-    mkdir -p "$profile_dir"
-    (cd "$profile_dir" && "$BAMBU" "$source" \
-        --top-fname="read_profile_${profile_top}" --compiler=I386_CLANG16 --generate-interface=INFER \
-        --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean \
-        "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU \
-        "--extra-cc-options=-D$profile_macro" \
-        >stdout.log 2>stderr.log)
-    python3 "$CHECKER" rtl --output "$profile_dir" --require='MinimalAXI4MasterPipelined' \
-      --configure-log="$profile_dir/stderr.log" --configured-contract --expected-burst-max=16 \
-      --expected-outstanding="$profile_o" --expected-fifo-depth="$profile_d"
-    echo "BURST-PROFILE PASS: generated RTL carries O=$profile_o/D=$profile_d"
-  done
-
-  # The three simple out-of-range values O=17, D=3 and D=8192 (and B=257
-  # in pragma mode) are covered by the Mantis list. Keep this matrix focused
-  # on malformed, overflow, duplicate/conflict, and applicability behavior.
-  local cases=(
-    "read_profile_invalid_outstanding_zero|AXI_CASE_READ_PROFILE_INVALID_OUTSTANDING_ZERO|num_read_outstanding must be an integer in \\[1,16\\]"
-    "read_profile_invalid_depth_zero|AXI_CASE_READ_PROFILE_INVALID_DEPTH_ZERO|read_fifo_depth must be a power-of-two integer in \\[1,4096\\] beats"
-    "read_profile_invalid_negative|AXI_CASE_READ_PROFILE_INVALID_NEGATIVE|num_read_outstanding must be a decimal integer in its supported range"
-    "read_profile_invalid_malformed|AXI_CASE_READ_PROFILE_INVALID_MALFORMED|read_fifo_depth must be a decimal integer in its supported range"
-    "read_profile_invalid_huge|AXI_CASE_READ_PROFILE_INVALID_HUGE|num_read_outstanding must be an integer in \\[1,16\\]"
-    "read_profile_invalid_non_axi|AXI_CASE_READ_PROFILE_INVALID_NON_AXI|AXI read profile attributes.*only valid for mode=m_axi"
-    "read_profile_invalid_conflict|AXI_CASE_READ_PROFILE_INVALID_CONFLICT|Conflicting num_read_outstanding values in interface bundle 'data'"
-    "read_profile_invalid_duplicate_outstanding_conflict|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_CONFLICT|Conflicting num_read_outstanding values in interface bundle 'data'"
-    "read_profile_invalid_duplicate_depth_conflict|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_CONFLICT|Conflicting read_fifo_depth values in interface bundle 'data'"
-    "read_profile_invalid_duplicate_outstanding_range|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_RANGE|num_read_outstanding must be an integer in \\[1,16\\]"
-    "read_profile_invalid_duplicate_depth_range|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_RANGE|read_fifo_depth must be a power-of-two integer in \\[1,4096\\] beats"
-    "read_profile_invalid_duplicate_outstanding_missing|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_MISSING|num_read_outstanding must be a decimal integer in its supported range"
-    "read_profile_invalid_duplicate_outstanding_comma|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_OUTSTANDING_COMMA|num_read_outstanding must be a decimal integer in its supported range"
-    "read_profile_invalid_duplicate_depth_missing|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_MISSING|read_fifo_depth must be a decimal integer in its supported range"
-    "read_profile_invalid_duplicate_depth_comma|AXI_CASE_READ_PROFILE_INVALID_DUPLICATE_DEPTH_COMMA|read_fifo_depth must be a decimal integer in its supported range"
-  )
-  local item top case_macro diagnostic invalid_dir
-  for item in "${cases[@]}"; do
-    IFS='|' read -r top case_macro diagnostic <<<"$item"
-    invalid_dir="$OUT/compiler/burst-profile/$top"
-    mkdir -p "$invalid_dir"
-    if (cd "$invalid_dir" && "$BAMBU" "$source" \
-        --top-fname="$top" --compiler=I386_CLANG16 --generate-interface=INFER \
-        --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean \
-        --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU "--extra-cc-options=-D$case_macro" \
-        >stdout.log 2>stderr.log); then
-      echo "expected read-profile fixture '$top' to fail; see $invalid_dir" >&2; return 1
+  local manifest="$TESTS/compiler_profile_cases.tsv"
+  local fixture="$TESTS/compiler_cases/axi_read_profile_cases.cpp"
+  python3 "$TESTS/compiler_case_manifest.py" validate "$manifest" --fixture "$fixture" --direction read
+  local direction legacy_id top case_macro tag outcome burst outstanding fifo diagnostic attrs engine
+  while IFS='|' read -r direction legacy_id top case_macro tag outcome burst outstanding fifo diagnostic attrs engine; do
+    [[ -z "$direction" || "$direction" == \#* || "$direction" != read ]] && continue
+    local case_dir="$OUT/compiler/burst-profile/$legacy_id"
+    local -a args=("$fixture" "--top-fname=$top" --compiler=I386_CLANG16
+      --generate-interface=INFER --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
+      "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
+      "--extra-cc-options=-D$case_macro")
+    local expected_failure=""
+    [[ "$outcome" != invalid ]] || expected_failure=$diagnostic
+    python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" \
+      --expected-failure "$expected_failure" -- "${args[@]}"
+    local diagnostic_files=("$case_dir/stdout.log" "$case_dir/stderr.log")
+    while IFS= read -r output; do diagnostic_files+=("$output"); done \
+      < <(find "$case_dir/panda-temp" -maxdepth 1 -type f -name '__cc_output*' -print 2>/dev/null || true)
+    if [[ "$outcome" == accepted ]]; then
+      python3 "$CHECKER" rtl --output "$case_dir" --require='MinimalAXI4MasterPipelined' \
+        --configure-log="$case_dir/stderr.log" --configured-contract --expected-burst-max="$burst" \
+        --expected-outstanding="$outstanding" --expected-fifo-depth="$fifo"
+      if [[ "$legacy_id" == read_profile_without_burst ]]; then
+        grep -Fq 'read_max=1(single-beat-default:outstanding+fifo-hints)' "$case_dir/stderr.log" || {
+          echo "read O/D hints without B did not report its single-beat default; see $case_dir" >&2; return 1;
+        }
+        grep -Eq 'AXI_BURST_DECISION .*bundle=data read=recognized\(B=1/single-beat-default:outstanding\+fifo-hints,O=3/explicit,D=8' \
+          "$case_dir/stderr.log" || {
+          echo "read O/D hints without B did not report successful burst analysis; see $case_dir" >&2; return 1;
+        }
+      fi
+      echo "BURST-PROFILE PASS: generated RTL carries O=$outstanding/D=$fifo"
+    else
+      if ! grep -Eq "$diagnostic" "${diagnostic_files[@]}"; then
+        echo "read-profile fixture '$top' failed without expected diagnostic '$diagnostic'; see $case_dir" >&2; return 1
+      fi
+      echo "BURST-PROFILE reject PASS: $legacy_id"
     fi
-    if ! grep -Eq "$diagnostic" "$invalid_dir/stdout.log" "$invalid_dir/stderr.log" \
-        "$invalid_dir"/panda-temp/__cc_output* 2>/dev/null; then
-      echo "read-profile fixture '$top' failed without expected diagnostic '$diagnostic'; see $invalid_dir" >&2; return 1
-    fi
-    echo "BURST-PROFILE reject PASS: $top"
-  done
+  done < "$manifest"
 }
 if [[ "$MODE" == burst-profile ]]; then
   run_burst_profile_suite
@@ -267,10 +231,8 @@ run_compile() {
   if [[ "$top" == root_reinvocation && ${BURST_SIMULATE:-0} == 1 ]]; then
     args+=(--simulate --simulator=MODELSIM "--generate-tb=$TESTS/compiler_cases/tb_root_reinvocation.cpp")
   fi
-  mkdir -p "$case_dir"
-  printf '%q ' "$BAMBU" "$source" "${args[@]}" >"$case_dir/argv.txt"
-  printf '\n' >>"$case_dir/argv.txt"
-  (cd "$case_dir" && "$BAMBU" "$source" "${args[@]}" >stdout.log 2>stderr.log)
+  python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" -- \
+    "$source" "${args[@]}"
 }
 if [[ "$MODE" == latency-metadata ]]; then
   python3 "$TESTS/run_latency_metadata_tests.py" "$BAMBU" "$OUT/compiler/latency-metadata" \
@@ -360,7 +322,7 @@ run_shared_profile_case() {
     return 1
   fi
   assert_shared_root_order "$order" "$expected_first" "$expected_second" "$case_dir/stderr.log"
-  if ! grep -Eqi "Incompatible m_axi burst profile for bundle 'data': existing roots use max_read_burst_length=(16|32) while this root requires max_read_burst_length=(16|32).*Use distinct bundle names" \
+  if ! grep -Eqi "Incompatible m_axi burst profile for bundle 'data': existing roots use max_read_burst_length=(1|16|32) while this root requires max_read_burst_length=(1|16|32).*Use distinct bundle names" \
       "$case_dir/stdout.log" "$case_dir/stderr.log"; then
     echo "configured roots '$tops' failed without the expected burst-profile diagnostic; see $case_dir" >&2
     return 1
@@ -390,6 +352,7 @@ run_shared_od_conflict_case() {
 }
 run_shared_default_match_case() {
   local tag=$1 tops=$2 define=$3 first=$4 second=$5
+  local expected_burst=${6:-16} expected_outstanding=${7:-16} expected_fifo=${8:-256}
   local rc
   local case_dir="$OUT/compiler/shared-profile/$tag"
   local args=("--top-fname=$tops" --compiler=I386_CLANG16 --generate-interface=INFER
@@ -415,10 +378,9 @@ run_shared_default_match_case() {
   python3 "$CHECKER" shared-profile --output "$case_dir" \
     --compiler-status "$rc" --stdout-log "$case_dir/stdout.log" --stderr-log "$case_dir/stderr.log" \
     --shared-root renamed_sum --shared-root configured32 \
-    --expected-burst-max 16 --expected-outstanding 16 --expected-fifo-depth 256
-  # The omitted O/D defaults are O=16 and D=256 for B=16; the explicit side
-  # names the same values so both roots must share one compatible profile.
-  echo "SHARED-PROFILE PASS: $tag omitted defaults equal explicit O16/D256 (shared RTL profile witnessed)"
+    --expected-burst-max "$expected_burst" --expected-outstanding "$expected_outstanding" \
+    --expected-fifo-depth "$expected_fifo"
+  echo "SHARED-PROFILE PASS: $tag uses compatible B=$expected_burst/O=$expected_outstanding/D=$expected_fifo roots"
 }
 run_burst_type_case() {
   local tag=$1 expected=$2 burst_type=$3 burst_value=$4 device_file=${5:-}
@@ -480,6 +442,8 @@ if [[ "$MODE" == shared-resource ]]; then
   run_shared_od_conflict_case D8-second renamed_sum,configured32 SHARED_PROFILE_D_CONFLICT renamed_sum configured32 read_fifo_depth 256 8
   run_shared_default_match_case defaults-first renamed_sum,configured32 SHARED_PROFILE_DEFAULT_MATCH_FIRST configured32 renamed_sum
   run_shared_default_match_case defaults-second renamed_sum,configured32 SHARED_PROFILE_DEFAULT_MATCH renamed_sum configured32
+  run_shared_default_match_case no-max-o3 renamed_sum,configured32 SHARED_PROFILE_NO_MAX_O3_FIRST configured32 renamed_sum 1 3 4
+  run_shared_profile_case b1-o3-vs-b16 renamed_sum,configured32 SHARED_PROFILE_SINGLE_BURST_CONFLICT_FIRST configured32 renamed_sum
   exit 0
 fi
 if [[ "$MODE" == root-reinvocation ]]; then

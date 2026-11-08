@@ -1,42 +1,23 @@
 /*
- *
- *        _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
- *       _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
- *      _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
- *     _/      _/    _/ _/    _/ _/   _/ _/    _/
- *    _/      _/    _/ _/    _/ _/_/_/  _/    _/
- *
- *  ***********************************************
- *                   PandA Project
- *   URL: https://github.com/ferrandi/PandA-bambu
- *            Politecnico di Milano - DEIB
- *             System Architectures Group
- *  ***********************************************
- *   Copyright (C) 2022-2026 Politecnico di Milano
- *
  * Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
  * SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
- *
  */
 /**
- * @file InterfaceInfer_internal.hpp
+ * @file AXIBurstAnalysis.hpp
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  */
-#ifndef INTERFACE_INFER_INTERNAL_HPP
-#define INTERFACE_INFER_INTERNAL_HPP
+#ifndef AXI_BURST_ANALYSIS_HPP
+#define AXI_BURST_ANALYSIS_HPP
 
-#include "InterfaceInfer.hpp"
+#include "HLS/axi_interface_profile.hpp"
+#include "HLS/hls_manager.hpp"
+#include "application_manager.hpp"
+#include "call_graph_manager.hpp"
 #include "constant_strings.hpp"
-#include "hls_manager.hpp"
-#include "technology_manager.hpp"
-
 #include "custom_map.hpp"
 #include "ir_basic_block.hpp"
-#include "ir_manipulation.hpp"
 #include "ir_node.hpp"
 
-#include <cstdint>
-#include <list>
 #include <map>
 #include <set>
 #include <string>
@@ -155,14 +136,6 @@ namespace InterfaceInferInternal
       std::uint32_t latency = 0;
    };
 
-   struct AXIBurstProfileOrigins
-   {
-      bool read_burst_default = false;
-      bool read_outstanding_default = false;
-      bool write_burst_default = false;
-      bool write_outstanding_default = false;
-   };
-
    void PreanalyzeBursts(bool burst_feature_enabled, unsigned int effective_burst_type, unsigned int root_id,
                          const function_val_node* fd, const FunctionArchitectureRef& func_arch,
                          const std::vector<OriginalMemoryAccess>& original_memory_accesses,
@@ -174,48 +147,10 @@ namespace InterfaceInferInternal
                          int debug_level);
 
    bool IsDataflowArchitecture(const FunctionArchitectureRef& arch);
-   void RegisterFrozenDuplexResources(
-       const technology_managerRef& TechMan, const ParameterConstRef& parameters,
-       const std::map<std::string, FrozenDuplexContribution>& frozen_by_bundle,
-       std::map<std::pair<std::string, std::string>, std::pair<unsigned int, unsigned int>>& global_constraints);
    bool GetDuplexContribution(unsigned int root_id, const FunctionArchitectureRef& arch, const std::string& bundle,
                               bool burst_feature_enabled, unsigned int effective_burst_type,
                               unsigned int address_bitsize, const application_managerRef& AppM, const ir_managerRef& TM,
                               const CallGraphManager& CGM, FrozenDuplexContribution& contribution, std::string& reason);
-
-   ir_nodeRef createInterfaceCast(ir_nodeRef value, const ir_nodeConstRef& target_type,
-                                  const ir_manipulationRef& ir_man, unsigned scope,
-                                  std::vector<ir_nodeRef>& intermediate_stmts, const std::string& context);
-   void serializeInterfaceAccess(const ir_nodeRef& stmt, const std::string& interface_fname,
-                                 std::map<std::string, ir_nodeRef>& last_interface_vdefs,
-                                 const ir_manipulationRef& ir_man);
-   void preserveBlockingInterfaceAccess(const ir_nodeRef& stmt, const ir_nodeRef& original_stmt,
-                                        const std::string& interface_fname,
-                                        std::map<std::string, ir_nodeRef>& last_interface_vdefs,
-                                        const ir_manipulationRef& ir_man);
-   void LowerReadBurstRegions(const statement_list_node* sl, const function_val_node* fd,
-                              const std::vector<ReadBurstRegion>& regions, const ir_nodeRef& expected_base,
-                              const std::string& bundle_name, const std::string& argument_name,
-                              const ir_nodeConstRef& interface_datatype, const application_managerRef& AppM,
-                              const ir_managerRef& TM, const ir_manipulationRef& ir_man,
-                              std::map<std::string, ir_nodeRef>& channel_read_vdefs,
-                              std::map<unsigned int, std::map<std::string, std::list<unsigned int>>>& interface_io,
-                              std::set<std::string>& operationsR, std::set<unsigned int>& modified);
-   void LowerWriteBurstRegion(const statement_list_node* sl, const function_val_node* fd,
-                              const WriteBurstRegion& region, const ir_nodeRef& expected_base,
-                              const std::string& bundle_name, const std::string& argument_name,
-                              const ir_nodeConstRef& interface_datatype, const application_managerRef& AppM,
-                              const ir_managerRef& TM, const ir_manipulationRef& ir_man,
-                              std::map<std::string, ir_nodeRef>& channel_write_vdefs,
-                              std::map<unsigned int, std::map<std::string, std::list<unsigned int>>>& interface_io,
-                              std::set<std::string>& operationsW, std::set<unsigned int>& modified);
-   std::vector<ir_nodeRef> lowerRuntimeGuardedDuplex(
-       const statement_list_node* const_sl, const function_val_node* fd, const SameBaseDuplexProof& proof,
-       const std::string& bundle_name, const std::string& read_argument_name, const std::string& write_argument_name,
-       const ir_nodeConstRef& interface_datatype, unsigned int address_bitsize, const application_managerRef& AppM,
-       const ir_managerRef& TM, const ir_manipulationRef& ir_man, std::map<std::string, ir_nodeRef>& channel_read_vdefs,
-       std::map<std::string, ir_nodeRef>& channel_write_vdefs,
-       std::map<unsigned int, std::map<std::string, std::list<unsigned int>>>& interface_io);
 
    bool hasOnlyOrdinaryReadEffects(const statement_list_node* sl,
                                    const CustomOrderedSet<unsigned int>& function_memory);
@@ -245,6 +180,20 @@ namespace InterfaceInferInternal
                                   const std::vector<OriginalMemoryAccess>& original_memory_accesses,
                                   const std::string& expected_bundle, WriteBurstRegion& result,
                                   const ir_nodeRef& paired_read = ir_nodeRef());
+   struct AXIBurstApplicationPlan
+   {
+      std::map<unsigned int, std::map<std::string, FrozenDuplexContribution>> frozen_by_root;
+      std::map<std::string, FrozenDuplexContribution> frozen_by_bundle;
+      std::map<std::string, std::string> bundle_vetoes;
+      std::set<std::string> force_legacy_bundles;
+   };
+
+   AXIBurstApplicationPlan AnalyzeAXIBurstApplication(const std::vector<unsigned int>& sorted_roots,
+                                                      bool burst_feature_enabled, unsigned int effective_burst_type,
+                                                      unsigned int address_bitsize,
+                                                      const ModuleArchitectureRef& module_arch,
+                                                      const application_managerRef& AppM, const ir_managerRef& TM,
+                                                      const CallGraphManager& CGM);
 } // namespace InterfaceInferInternal
 
-#endif // INTERFACE_INFER_INTERNAL_HPP
+#endif // AXI_BURST_ANALYSIS_HPP

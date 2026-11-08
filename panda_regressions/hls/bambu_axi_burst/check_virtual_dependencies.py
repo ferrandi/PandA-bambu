@@ -12,6 +12,9 @@ from pathlib import Path
 CONFIGURE = "data_bambu_artificial_ParmMgr_configure_read"
 BURST_READ = "data_bambu_artificial_ParmMgr_burst_read"
 FUNCTION = "renamed_sum"
+ALIAS_FUNCTION = "kernel"
+ALIAS_CONFIGURE = "shared_bambu_artificial_ParmMgr_configure_read"
+ALIAS_DRAIN = "shared_bambu_artificial_ParmMgr_drain_write"
 
 
 def parse_raw(text: str) -> dict[str, dict[str, str]]:
@@ -40,11 +43,11 @@ def unique_node(records: dict[str, dict[str, str]], predicate, label: str) -> st
     return matches[0]
 
 
-def function_graph(records: dict[str, dict[str, str]]) -> tuple[str, str, str]:
+def function_graph(records: dict[str, dict[str, str]], function_name: str = FUNCTION) -> tuple[str, str, str]:
     identifiers = {
         node for node, rec in records.items()
         if rec["kind"] == "identifier_node"
-        and re.search(rf'\bstrg:\s*"{re.escape(FUNCTION)}"', rec["attrs"])
+        and re.search(rf'\bstrg:\s*"{re.escape(function_name)}"', rec["attrs"])
     }
     functions = [
         node for node, rec in records.items()
@@ -52,12 +55,234 @@ def function_graph(records: dict[str, dict[str, str]]) -> tuple[str, str, str]:
         and len(set(refs(rec["attrs"], "name")) & identifiers) == 1
     ]
     if len(functions) != 1:
-        raise ValueError(f"expected one function node named {FUNCTION}; found {len(functions)}")
+        raise ValueError(f"expected one function node named {function_name}; found {len(functions)}")
     fn = functions[0]
     bodies = refs(records[fn]["attrs"], "body")
     if len(bodies) != 1 or records.get(bodies[0], {}).get("kind") != "statement_list_node":
-        raise ValueError(f"{FUNCTION} has a missing or ambiguous statement-list body")
+        raise ValueError(f"{function_name} has a missing or ambiguous statement-list body")
     return fn, bodies[0], next(iter(identifiers))
+
+
+def _reachable(blocks: dict[int, dict[str, object]], start: int, target: int) -> bool:
+    pending = [start]
+    seen: set[int] = set()
+    while pending:
+        block = pending.pop()
+        if block == target:
+            return True
+        if block in seen:
+            continue
+        seen.add(block)
+        pending.extend(int(value) for value in blocks[block]["successors"])
+    return False
+
+
+def validate_scalar_fallback(interface_text: str, phi_text: str,
+                              adg_text: str, fdfg_text: str) -> dict[str, str]:
+    """Prove the scalar configure/drain Use-Def contract and its graph consumers."""
+    pre = parse_raw(interface_text)
+    post = parse_raw(phi_text)
+
+    def alias_statements(records: dict[str, dict[str, str]], fn_name: str):
+        fn, body, _ = function_graph(records, fn_name)
+        statements = {node: rec for node, rec in records.items()
+                      if rec["kind"].endswith("stmt") and refs(rec["attrs"], "parent") == [fn]}
+        calls = {node: call_name(records, node) for node in statements}
+        configures = [node for node, name in calls.items() if name == ALIAS_CONFIGURE]
+        drains = [node for node, name in calls.items() if name == ALIAS_DRAIN]
+        return records, fn, body, statements, configures, drains
+
+    pre, _, pre_body, pre_statements, pre_configures, pre_drains = alias_statements(pre, ALIAS_FUNCTION)
+    if not pre_configures or not pre_drains:
+        raise ValueError("InterfaceInfer: missing scalar configure/drain statements")
+    pre_drains_by_def = {value: stmt for stmt in pre_drains
+                         for value in refs(pre_statements[stmt]["attrs"], "vdef")}
+    pre_pairs = [(configure, drain_vdef, drain)
+                 for configure in pre_configures
+                 for drain_vdef, drain in pre_drains_by_def.items()
+                 if drain_vdef in refs(pre_statements[configure]["attrs"], "vuse")]
+    if len(pre_pairs) != 1:
+        raise ValueError(f"InterfaceInfer: expected one direct configure-to-drain vuse; found {len(pre_pairs)}")
+    pre_configure, drain_vdef, pre_drain = pre_pairs[0]
+    pre_blocks = blocks_from_body(pre[pre_body]["attrs"])
+    pre_cattrs, pre_dattrs = pre_statements[pre_configure]["attrs"], pre_statements[pre_drain]["attrs"]
+    cbb = re.search(r"\bbb_index:\s*(\d+)", pre_cattrs)
+    dbb = re.search(r"\bbb_index:\s*(\d+)", pre_dattrs)
+    if not cbb or not dbb:
+        raise ValueError("InterfaceInfer: configure/drain lacks a CFG block")
+    configure_bb, drain_bb = int(cbb.group(1)), int(dbb.group(1))
+    if not (_reachable(pre_blocks, configure_bb, drain_bb) and _reachable(pre_blocks, drain_bb, configure_bb)):
+        raise ValueError("InterfaceInfer: configure/drain are not connected in both loop directions")
+
+    post, post_fn, post_body, post_statements, post_configures, post_drains = alias_statements(post, ALIAS_FUNCTION)
+    drains_by_def = {value: stmt for stmt in post_drains
+                     for value in refs(post_statements[stmt]["attrs"], "vdef")}
+    candidates = []
+    for configure in post_configures:
+        attrs = post_statements[configure]["attrs"]
+        for vdef, drain in drains_by_def.items():
+            vuses = refs(attrs, "vuse")
+            if vdef in vuses:
+                candidates.append((configure, vdef, drain, vuses))
+    if len(candidates) != 1:
+        raise ValueError(f"BuildVirtualPhi: expected one direct scalar configure/drain pair; found {len(candidates)}")
+    configure, vdef, drain, configure_vuses = candidates[0]
+    configure_attrs = post_statements[configure]["attrs"]
+    drain_attrs = post_statements[drain]["attrs"]
+    configure_bb_match = re.search(r"\bbb_index:\s*(\d+)", configure_attrs)
+    drain_bb_match = re.search(r"\bbb_index:\s*(\d+)", drain_attrs)
+    if not configure_bb_match or not drain_bb_match:
+        raise ValueError("BuildVirtualPhi: scalar configure/drain lacks a basic-block identity")
+    configure_bb = int(configure_bb_match.group(1))
+    drain_bb = int(drain_bb_match.group(1))
+    post_blocks = blocks_from_body(post[post_body]["attrs"])
+    if configure_bb != drain_bb:
+        raise ValueError("BuildVirtualPhi: scalar configure and drain are not in the same rebuilt block")
+    if configure_bb not in post_blocks or not post_blocks[configure_bb]["predecessors"]:
+        raise ValueError("BuildVirtualPhi: scalar loop header has no CFG predecessor information")
+    if int(post_blocks[configure_bb]["loop_id"]) == 0:
+        raise ValueError("BuildVirtualPhi: scalar PHI block is outside a loop")
+    matching_phis = [node for node, rec in post.items()
+                     if rec["kind"] == "phi_stmt" and refs(rec["attrs"], "parent") == [post_fn]
+                     and "virtual" in rec["attrs"]
+                     and refs(rec["attrs"], "res") and refs(rec["attrs"], "res")[0] in configure_vuses
+                     and vdef in refs(rec["attrs"], "def")
+                     and re.search(r"\bbb_index:\s*(\d+)", rec["attrs"])
+                     and int(re.search(r"\bbb_index:\s*(\d+)", rec["attrs"]).group(1)) == configure_bb]
+    if len(matching_phis) != 1:
+        raise ValueError(f"BuildVirtualPhi: expected one virtual PHI with drain backedge; found {len(matching_phis)}")
+    phi = matching_phis[0]
+    phi_attrs = post[phi]["attrs"]
+    phi_result = refs(phi_attrs, "res")[0]
+    incoming_pairs = [(value, int(edge)) for value, edge in
+                      re.findall(r"\bdef:\s*(@\d+)\s+edge:\s*(\d+)", phi_attrs)]
+    incoming = [value for value, _ in incoming_pairs]
+    if len(incoming) < 2 or vdef not in incoming:
+        raise ValueError("BuildVirtualPhi: virtual PHI lacks initial and drain backedge inputs")
+    predecessor_ids = set(int(value) for value in post_blocks[configure_bb]["predecessors"])
+    incoming_edges = [edge for _, edge in incoming_pairs]
+    if len(incoming_pairs) != len(refs(phi_attrs, "def")) or len(set(incoming_edges)) != len(incoming_edges):
+        raise ValueError("BuildVirtualPhi: virtual PHI has malformed or duplicate edge/value pairs")
+    if set(incoming_edges) != predecessor_ids:
+        raise ValueError("BuildVirtualPhi: virtual PHI edge IDs do not match CFG predecessors")
+    edge_values = {edge: value for value, edge in incoming_pairs}
+    if int(post_blocks[drain_bb]["loop_id"]) == 0 or edge_values.get(drain_bb) != vdef:
+        raise ValueError("BuildVirtualPhi: drain vdef is not incoming on the loop backedge")
+    seed_edges = predecessor_ids - {drain_bb}
+    if not seed_edges or any(edge not in post_blocks or int(post_blocks[edge]["loop_id"]) != 0
+                             for edge in seed_edges):
+        raise ValueError("BuildVirtualPhi: PHI initial input does not arrive from an outside-loop predecessor")
+    seed_values = [edge_values[edge] for edge in seed_edges]
+    if not seed_values or any(post.get(value, {}).get("kind") != "ssa_node" for value in seed_values):
+        raise ValueError("BuildVirtualPhi: virtual PHI lacks a resolvable initial incoming value")
+    for value in seed_values:
+        seed_defs = refs(post[value]["attrs"], "def_stmt")
+        if len(seed_defs) != 1 or post.get(seed_defs[0], {}).get("kind") != "nop_stmt":
+            raise ValueError("BuildVirtualPhi: initial incoming value is not seeded outside the loop")
+    drain_over = refs(drain_attrs, "vover")
+    if phi_result not in drain_over:
+        raise ValueError("BuildVirtualPhi: scalar drain does not overwrite the reaching virtual PHI result")
+    if phi_result not in configure_vuses:
+        raise ValueError("BuildVirtualPhi: configure does not use the virtual PHI result")
+    phi_ssa = post.get(phi_result, {})
+    drain_ssa = post.get(vdef, {})
+    if configure not in refs(phi_ssa.get("attrs", ""), "use_stmt") or \
+            drain not in refs(phi_ssa.get("attrs", ""), "use_stmt"):
+        raise ValueError("BuildVirtualPhi: PHI result reverse use list omits configure or drain")
+    if configure not in refs(drain_ssa.get("attrs", ""), "use_stmt") or \
+            phi not in refs(drain_ssa.get("attrs", ""), "use_stmt"):
+        raise ValueError("BuildVirtualPhi: drain vdef reverse use list omits configure or PHI")
+
+    # Require the downstream analyses to consume this relation in both directions.
+    def graph_edges(text: str) -> tuple[set[int], set[tuple[int, int, str]]]:
+        nodes: dict[int, str] = {}
+        for match in re.finditer(r"(?m)^\s*(\d+)\s*\[.*?label=\"(.*?)\"\s*\];", text):
+            nodes[int(match.group(1))] = match.group(2)
+        edges = {(int(a), int(b), label) for a, b, label in re.findall(
+            r"(?m)^\s*(\d+)\s*->\s*(\d+)\s*\[[^\]]*label=\"([^\"]*)\"", text)}
+        return set(nodes), edges
+
+    def dot_node(text: str, stmt: str) -> int:
+        matches = [int(node) for node, label in re.findall(
+            r"(?m)^\s*(\d+)\s*\[[^\]]*label=\"([^\"]*)\"", text)
+            if re.search(rf"_{re.escape(stmt.lstrip('@'))} - ", label)]
+        if len(matches) != 1:
+            raise ValueError(f"dot graph: expected one node for IR statement {stmt}; found {len(matches)}")
+        return matches[0]
+
+    adg_configure, adg_drain = dot_node(adg_text, configure), dot_node(adg_text, drain)
+    _, adg_edges = graph_edges(adg_text)
+    vers_match = re.search(r"\bvers:\s*(\d+)", post[vdef]["attrs"])
+    if not vers_match:
+        raise ValueError("BuildVirtualPhi: scalar drain vdef has no SSA version")
+    virtual_label = f"_{vers_match.group(1)}"
+    label_pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(virtual_label)}(?![A-Za-z0-9_])")
+    if not any(a == adg_configure and b == adg_drain and label_pattern.search(label)
+               for a, b, label in adg_edges):
+        raise ValueError("OP_ADG lacks scalar configure-to-drain anti-dependence")
+    fdfg_configure, fdfg_drain = dot_node(fdfg_text, configure), dot_node(fdfg_text, drain)
+    _, fdfg_edges = graph_edges(fdfg_text)
+    if not any(a == fdfg_drain and b == fdfg_configure and label_pattern.search(label)
+               for a, b, label in fdfg_edges):
+        raise ValueError("OP_FDFG lacks scalar drain-to-configure feedback dependency")
+    return {"configure": configure, "drain": drain, "phi": phi, "phi_result": phi_result,
+            "drain_vdef": vdef, "configure_bb": str(configure_bb), "drain_bb": str(drain_bb)}
+
+
+def negative_scalar_contract_checks(interface_text: str, phi_text: str,
+                                    adg_text: str, fdfg_text: str) -> None:
+    result = validate_scalar_fallback(interface_text, phi_text, adg_text, fdfg_text)
+    configure_line = re.search(rf"(?m)^{re.escape(result['configure'])}[^\n]*", phi_text)
+    drain_line = re.search(rf"(?m)^{re.escape(result['drain'])}[^\n]*", phi_text)
+    phi_line = re.search(rf"(?m)^{re.escape(result['phi'])}[^\n]*", phi_text)
+    if not configure_line or not drain_line or not phi_line:
+        raise ValueError("cannot construct scalar Use-Def negative mutations")
+    phi_pairs = [(value, int(edge)) for value, edge in
+                 re.findall(r"\bdef:\s*(@\d+)\s+edge:\s*(\d+)", phi_line.group(0))]
+    seed_pairs = [pair for pair in phi_pairs if pair[0] != result["drain_vdef"]]
+    drain_pairs = [pair for pair in phi_pairs if pair[0] == result["drain_vdef"]]
+    if len(seed_pairs) != 1 or len(drain_pairs) != 1:
+        raise ValueError("cannot construct PHI edge negative mutations")
+    seed_value, seed_edge = seed_pairs[0]
+    _, drain_edge = drain_pairs[0]
+    swapped_phi_line = phi_line.group(0).replace(
+        f"def: {seed_value} edge: {seed_edge}", f"def: {seed_value} edge: {drain_edge}", 1).replace(
+            f"def: {result['drain_vdef']} edge: {drain_edge}",
+            f"def: {result['drain_vdef']} edge: {seed_edge}", 1)
+    version = re.search(r"\bvers:\s*(\d+)", parse_raw(phi_text)[result["drain_vdef"]]["attrs"])
+    if not version:
+        raise ValueError("cannot construct graph-label prefix collision mutation")
+    virtual_label = f"_{version.group(1)}"
+    label_pattern = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(virtual_label)}(?![A-Za-z0-9_])")
+    mutations = (
+        (phi_text.replace(configure_line.group(0), configure_line.group(0).replace(
+            f"vuse: {result['drain_vdef']} ", "", 1), 1), "direct configure vuse"),
+        (phi_text.replace(phi_line.group(0), phi_line.group(0).replace(
+            f"def: {result['drain_vdef']} edge:", "def: @0 edge:", 1), 1), "PHI drain backedge"),
+        (phi_text.replace(drain_line.group(0), drain_line.group(0).replace(
+            f"vover: {result['phi_result']} ", "", 1), 1), "drain vover"),
+        (phi_text.replace(phi_line.group(0), phi_line.group(0).replace(
+            f"edge: {seed_edge}", "edge: 999999", 1), 1), "invalid PHI edge"),
+        (phi_text.replace(phi_line.group(0), swapped_phi_line, 1), "mismatched PHI edge definitions"),
+    )
+    for mutated, label in mutations:
+        if mutated == phi_text:
+            raise ValueError(f"failed to create {label} negative mutation")
+        try:
+            validate_scalar_fallback(interface_text, mutated, adg_text, fdfg_text)
+        except ValueError:
+            continue
+        raise ValueError(f"negative mutation unexpectedly passed after removing {label}")
+    bad_adg = label_pattern.sub(virtual_label + "0", adg_text)
+    bad_fdfg = label_pattern.sub(virtual_label + "0", fdfg_text)
+    if bad_adg == adg_text or bad_fdfg == fdfg_text:
+        raise ValueError("failed to create graph-label prefix collision mutation")
+    try:
+        validate_scalar_fallback(interface_text, phi_text, bad_adg, bad_fdfg)
+    except ValueError:
+        pass
+    else:
+        raise ValueError("negative mutation unexpectedly passed with an SSA label prefix collision")
 
 
 def call_name(records: dict[str, dict[str, str]], statement: str) -> str | None:
@@ -102,7 +327,8 @@ def blocks_from_body(body_attrs: str) -> dict[int, dict[str, object]]:
             raise ValueError(f"ambiguous duplicate basic block BB{block_id}")
         section = body_attrs[start.end():end]
         successors = [int(value) for value in re.findall(r"\bsucc:\s*(\d+)", section)]
-        blocks[block_id] = {"loop_id": loop_id, "successors": successors}
+        predecessors = [int(value) for value in re.findall(r"\bpred:\s*(\d+)", section)]
+        blocks[block_id] = {"loop_id": loop_id, "successors": successors, "predecessors": predecessors}
     return blocks
 
 

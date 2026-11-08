@@ -16,9 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 RUNNER = Path(__file__).resolve().with_name("run_generated_memaxi_response_tests.sh")
-TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", ROOT / "documentation/tmp")) / (
-    "generated_memaxi_response_runner_contract"
-)
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / "out_generated_memaxi_response_runner_contract"
 
 
 def validate_transcript(transcript: str, raw_status: str, status: str, mode: str, engine: str,
@@ -208,6 +206,17 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
                       "aw=17 w=17 b=17 wlast=17 backend=17 done=1")
             with self.subTest(engine=engine):
                 self.check(engine, "b1o3", marker)
+
+    def test_generated_b1_o3_sources_omit_the_burst_limit(self) -> None:
+        read_source = (ROOT / "panda_regressions/hls/bambu_axi_burst/bambu_axi_burst_sum_profile.cpp").read_text()
+        read_branch = read_source.split("#elif defined(BAMBU_AXI_SUM_B1_O3)", 1)[1].split("#elif defined", 1)[0]
+        self.assertIn("num_read_outstanding=3", read_branch)
+        self.assertNotIn("max_read_burst_length", read_branch)
+        write_source = (ROOT / "panda_regressions/hls/bambu_axi_burst/write_compiler_cases/write_cases.cpp").read_text()
+        write_branch = write_source.split('extern "C" void write_count_seed_single_beat', 1)[1].split('extern "C"', 1)[0]
+        self.assertIn("write_burst_outstanding=3", write_branch)
+        self.assertIn("write_fifo_depth=8", write_branch)
+        self.assertNotIn("max_write_burst_length", write_branch)
 
     def test_rejects_b1_o3_missing_duplicate_wrong_counts_and_diagnostics(self) -> None:
         good = ("GENERATED_MEMAXI_RESPONSE_B1O3 mode=read n=17 outstanding_before_response=3 "
@@ -432,10 +441,11 @@ if tool == "bambu":
     if source.endswith("bambu_axi_burst_sum_profile.cpp"):
         print("Configured read burst regions for bundle src (B=%d)" % (1 if report_b1 else 16), file=sys.stderr)
         if report_b1:
-            print("AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=INCREMENTAL(device) read_max=1(explicit) read_outstanding=3(explicit) read_fifo=8(explicit)", file=sys.stderr)
+            print("AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=INCREMENTAL(device) read_max=1(single-beat-default:outstanding+fifo-hints) read_outstanding=3(explicit) read_fifo=8(explicit)", file=sys.stderr)
     else:
         print("Configured write burst region for bundle output (B=%d)" % (1 if report_b1 else 16), file=sys.stderr)
-        print("AXI_BURST_PROFILE root=%s bundle=output enabled=1 burst_type=INCREMENTAL(device) write_max=%d(explicit) write_outstanding=3(explicit) write_fifo=8(explicit)" % (top, 1 if report_b1 else 16), file=sys.stderr)
+        write_max = "1(single-beat-default:outstanding+fifo-hints)" if report_b1 else "16(explicit)"
+        print("AXI_BURST_PROFILE root=%s bundle=output enabled=1 burst_type=INCREMENTAL(device) write_max=%s write_outstanding=3(explicit) write_fifo=8(explicit)" % (top, write_max), file=sys.stderr)
     activity(False)
     if os.environ.get("FAKE_BAMBU_FAIL_AFTER_ARTIFACTS_CASE") == case:
         print("synthetic Bambu failure after artifact generation", file=sys.stderr)

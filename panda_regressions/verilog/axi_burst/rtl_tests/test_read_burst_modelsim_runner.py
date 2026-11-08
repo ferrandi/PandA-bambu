@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import csv
 import os
 from pathlib import Path
 import subprocess
@@ -143,6 +144,44 @@ class ReadBurstModelSimRunnerTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp.cleanup()
+
+    def test_profile_manifest_preserves_the_parameter_matrix(self) -> None:
+        manifest = RTL_TESTS / "read_burst_profiles.tsv"
+        with manifest.open(encoding="utf-8", newline="") as stream:
+            rows = list(csv.reader((line for line in stream if not line.startswith("#")), delimiter="\t"))
+        self.assertEqual(len(rows), 21)
+        self.assertEqual(len({row[1] for row in rows}), len(rows))
+        self.assertEqual(
+            {row[1] for row in rows},
+            {
+                "B1-O1-D256", "B2-O1-D256", "B16-O1-D256", "B256-O1-D256",
+                "B16-O3-D64", "B16-O15-D256", "B16-O16-D256", "B16-O2-D64",
+                "B16-O3-D64-PENDING", "B16-O3-D1", "B16-O3-D2", "B16-O3-D16",
+                "B16-O3-D64-SKID", "B16-O3-D512", "B16-O3-D4096",
+                "B16-O16-D32", "B256-O2-D8", "B16-O1-D1", "B1-O1-D1", "B1-O3-D8",
+                "B16-O1-D4096",
+            },
+        )
+        self.assertTrue(all(len(row) == 7 for row in rows))
+        self.assertTrue(all(row[5] in {"yes", "no"} for row in rows))
+        self.assertTrue(all(int(row[2]) <= 256 and int(row[3]) <= 16 and int(row[4]) <= 4096 for row in rows))
+        self.assertEqual(rows[2][6].split()[0], "ERROR")
+
+    def test_duplicate_manifest_id_is_rejected_before_modelsim(self) -> None:
+        manifest = RTL_TESTS / "read_burst_profiles.tsv"
+        lines = manifest.read_text(encoding="utf-8").splitlines()
+        duplicate = self.root / "duplicate-profiles.tsv"
+        first_row = next(line for line in lines if line and not line.startswith("#"))
+        duplicate.write_text("\n".join(lines + [first_row, ""]), encoding="utf-8")
+        output = self.root / "duplicate-manifest"
+        env = self.env | {"BURST_READ_PROFILE_MANIFEST": str(duplicate)}
+        result = subprocess.run(
+            ["bash", str(RUNNER), str(output), "credits"], cwd=REPO, env=env,
+            text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+        )
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("invalid or duplicate reader profile manifest row", result.stderr)
+        self.assertFalse(self.calls.exists())
 
     def run_runner(self, name: str, suite: str, mode: str = "") -> subprocess.CompletedProcess[str]:
         out = self.root / name

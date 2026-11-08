@@ -239,6 +239,55 @@ PY
 else
   printf 'simulation completed without the expected marker\n' > HLS_output/simulation/testbench.log
 fi
+if ((debug_proof)) && [[ $case_id == 1 || $case_id == 2 || $case_id == 3 ]]; then
+  mkdir -p panda-temp HLS_output/dot/kernel
+  cat > panda-temp/after_Frontend::InterfaceInfer.raw <<'RAW'
+@1 identifier_node strg: "kernel"
+@2 function_val_node name: @1 body: @3
+@3 statement_list_node bloc: 1 loop_id: 1 succ: 2 bloc: 2 loop_id: 1 succ: 1
+@10 identifier_node strg: "shared_bambu_artificial_ParmMgr_configure_read"
+@11 function_val_node name: @10
+@12 addr_node op: @11
+@13 identifier_node strg: "shared_bambu_artificial_ParmMgr_drain_write"
+@14 function_val_node name: @13
+@15 addr_node op: @14
+@20 call_stmt parent: @2 bb_index: 1 vuse: @40 vdef: @41 fn: @12
+@21 call_stmt parent: @2 bb_index: 2 vdef: @40 fn: @15
+RAW
+  cat > 'panda-temp/after_Frontend::BuildVirtualPhi::kernel(1)[1].raw' <<'RAW'
+@1 identifier_node strg: "kernel"
+@2 function_val_node name: @1 body: @3
+@3 statement_list_node bloc: 3 loop_id: 0 succ: 2 bloc: 2 loop_id: 1 pred: 2 pred: 3 succ: 2
+@10 identifier_node strg: "shared_bambu_artificial_ParmMgr_configure_read"
+@11 function_val_node name: @10
+@12 addr_node op: @11
+@13 identifier_node strg: "shared_bambu_artificial_ParmMgr_drain_write"
+@14 function_val_node name: @13
+@15 addr_node op: @14
+@20 call_stmt parent: @2 bb_index: 2 vuse: @40 vuse: @43 vdef: @41 fn: @12
+@21 call_stmt parent: @2 bb_index: 2 vdef: @40 vover: @43 fn: @15
+@22 phi_stmt parent: @2 bb_index: 2 res: @43 def: @42 edge: 3 def: @40 edge: 2 virtual
+@40 ssa_node vers: 49 def_stmt: @21 use_stmt: @20 use_stmt: @22 virtual
+@41 ssa_node def_stmt: @20 virtual
+@42 ssa_node def_stmt: @44 use_stmt: @22 virtual
+@43 ssa_node def_stmt: @22 use_stmt: @20 use_stmt: @21 virtual
+@44 nop_stmt parent: @2 bb_index: 3
+RAW
+  cat > HLS_output/dot/kernel/OP_ADG.dot <<'DOT'
+digraph G {
+1 [label="kernel_2_20 - configure"];
+2 [label="kernel_2_21 - drain"];
+1->2 [color=green4,label="_49"];
+}
+DOT
+  cat > HLS_output/dot/kernel/OP_FDFG.dot <<'DOT'
+digraph G {
+1 [label="kernel_2_20 - configure"];
+2 [label="kernel_2_21 - drain"];
+2->1 [color=lightblue,label="_49"];
+}
+DOT
+fi
 printf 'stub compiler stdout\n'
 '''
 
@@ -451,6 +500,8 @@ printf 'stub compiler stdout\n'
         provenance = (case_dir / "provenance.txt").read_text()
         argv = shlex.split(next(line for line in provenance.splitlines() if line.startswith("argv="))[5:])
         self.assertIn("--debug-classes=InterfaceInfer,BuildVirtualPhi", argv)
+        self.assertIn("--print-dot", argv)
+        self.assertIn("--bambu-parameter=print-ir-manager=1", argv)
         compiler_output = (case_dir / "stdout.log").read_text() + (case_dir / "stderr.log").read_text()
         self.assertIn("AXI_BURST_DUPLEX_PROOF", compiler_output)
         self.assertIn("DUPLEX_ALIAS_CHECK PASS PAYLOAD=FLOAT32_BITS PROFILES=1 SCENARIOS=3", result.stdout)

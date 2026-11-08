@@ -11,6 +11,10 @@ extern "C" size_t __m_param_size(uint8_t);
 
 #if MDPI_EXTENT_CASE == 1 || MDPI_EXTENT_CASE == 5 || MDPI_EXTENT_CASE == 7 || MDPI_EXTENT_CASE == 11 || MDPI_EXTENT_CASE == 13
 extern "C" void kernel(int *data);
+#elif MDPI_EXTENT_CASE == 14
+extern "C" void kernel(int *data, int *unused, int n);
+#elif MDPI_EXTENT_CASE == 15
+extern "C" void kernel(int *unused, int *data, int n);
 #elif MDPI_EXTENT_CASE == 4
 extern "C" void kernel(unsigned char *data);
 #elif MDPI_EXTENT_CASE == 2 || MDPI_EXTENT_CASE == 6 || MDPI_EXTENT_CASE == 12
@@ -26,6 +30,9 @@ extern "C" void kernel(int (*data)[4]);
 int main() {
 #if MDPI_EXTENT_CASE == 11
   int output = 0;
+#elif MDPI_EXTENT_CASE == 14 || MDPI_EXTENT_CASE == 15
+  static int data[5] = {7, 9, 11, 13, 0x13579};
+  static int unused[7] = {0x24680, 21, 22, 23, 24, 25, 26};
 #else
 #if MDPI_EXTENT_CASE == 3
   static unsigned char data[1] = {7};
@@ -53,10 +60,20 @@ int main() {
   m_param_alloc(0, sizeof(output));
 #elif MDPI_EXTENT_CASE == 13
   m_param_alloc(0, 0);
+#elif MDPI_EXTENT_CASE == 14
+  m_param_alloc(0, sizeof(data));
+  m_param_alloc(1, sizeof(unused));
+#elif MDPI_EXTENT_CASE == 15
+  m_param_alloc(0, sizeof(unused));
+  m_param_alloc(1, sizeof(data));
 #endif
 
 #if MDPI_EXTENT_CASE == 11
   kernel(&output);
+#elif MDPI_EXTENT_CASE == 14
+  kernel(data, unused, 4);
+#elif MDPI_EXTENT_CASE == 15
+  kernel(unused, data, 4);
 #else
   kernel(data);
 #endif
@@ -64,6 +81,27 @@ int main() {
   if (output != 42) {
     std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d output=%d expected=42\n", MDPI_EXTENT_CASE, output);
     return 1;
+  }
+#elif MDPI_EXTENT_CASE == 14 || MDPI_EXTENT_CASE == 15
+  for (size_t i = 0; i < 4; ++i) {
+    if (data[i] != 100 + static_cast<int>(i)) {
+      std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d data_index=%zu value=%d expected=%zu\n",
+                   MDPI_EXTENT_CASE, i, data[i], 100 + i);
+      return 1;
+    }
+  }
+  if (data[4] != 0x13579) {
+    std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d data_canary=%d expected=%d\n",
+                 MDPI_EXTENT_CASE, data[4], 0x13579);
+    return 1;
+  }
+  static const int unused_expected[7] = {0x24680, 21, 22, 23, 24, 25, 26};
+  for (size_t i = 0; i < 7; ++i) {
+    if (unused[i] != unused_expected[i]) {
+      std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d unused_index=%zu value=%d expected=%d\n",
+                   MDPI_EXTENT_CASE, i, unused[i], unused_expected[i]);
+      return 1;
+    }
   }
 #elif MDPI_EXTENT_CASE == 4
   for (size_t i = 0; i < sizeof(data); ++i) {
@@ -102,6 +140,19 @@ int main() {
   }
 #endif
 #ifdef __BAMBU_SIM__
+#if MDPI_EXTENT_CASE == 14
+  if (__m_param_size(0) != sizeof(data) || __m_param_size(1) != sizeof(unused)) {
+    std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d sizes=%zu,%zu expected=%zu,%zu\n",
+                 MDPI_EXTENT_CASE, __m_param_size(0), __m_param_size(1), sizeof(data), sizeof(unused));
+    return 1;
+  }
+#elif MDPI_EXTENT_CASE == 15
+  if (__m_param_size(0) != sizeof(unused) || __m_param_size(1) != sizeof(data)) {
+    std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d sizes=%zu,%zu expected=%zu,%zu\n",
+                 MDPI_EXTENT_CASE, __m_param_size(0), __m_param_size(1), sizeof(unused), sizeof(data));
+    return 1;
+  }
+#else
   const size_t expected_size = (MDPI_EXTENT_CASE == 1 || MDPI_EXTENT_CASE == 11) ? 4 :
                                MDPI_EXTENT_CASE == 3 ? 1 : MDPI_EXTENT_CASE == 4 ? 38 :
                                MDPI_EXTENT_CASE == 6 ? 8 : MDPI_EXTENT_CASE == 8 ? 16 :
@@ -121,6 +172,7 @@ int main() {
     std::fprintf(stderr, "MDPI_EXTENT_GOLDEN_FAIL CASE=%d tail=%d\n", MDPI_EXTENT_CASE, data[2]);
     return 1;
   }
+#endif
 #endif
 #endif
   std::printf("MDPI_EXTENT_GOLDEN_PASS CASE=%d\n", MDPI_EXTENT_CASE);

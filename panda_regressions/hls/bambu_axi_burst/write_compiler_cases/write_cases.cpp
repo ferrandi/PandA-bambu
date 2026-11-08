@@ -67,7 +67,7 @@ extern "C" void write_count_seed_three(int *dst, int n, int seed) {
 }
 
 extern "C" void write_count_seed_single_beat(int *dst, int n, int seed) {
-#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output max_write_burst_length=1 write_burst_outstanding=3 write_fifo_depth=8
+#pragma HLS interface mode=m_axi port=dst offset=direct bundle=output write_burst_outstanding=3 write_fifo_depth=8
   for (int i = 0; i < n; ++i) dst[i] = seed + i;
 }
 
@@ -153,10 +153,5 @@ extern "C" void read_write_distinct_buffers_same_bundle(int *dst, const int *src
 #pragma HLS interface mode=m_axi port=dst offset=direct bundle=shared max_write_burst_length=16
 #pragma HLS interface mode=m_axi port=src offset=direct bundle=shared max_read_burst_length=16
   for (int i = 0; i < n; ++i) dst[i] = src[i];
-}
-
-extern "C" void valid_write_profile(int *dst, int n) {
-#pragma HLS interface mode=m_axi port=dst offset=direct bundle=data max_write_burst_length=16 write_burst_outstanding=1 write_fifo_depth=64
-  for (int i = 0; i < n; ++i) dst[i] = i;
 }
 

@@ -24,7 +24,6 @@ fi
 for tool in python3 timeout sha256sum git sed grep; do
     command -v "$tool" >/dev/null 2>&1 || { echo "missing required tool: $tool" >&2; exit 2; }
 done
-modelsim_resolve
 TASK_OUT=$(realpath -m "$1")
 mkdir -p "$TASK_OUT/tmp"
 export TMPDIR="$TASK_OUT/tmp" TMP="$TASK_OUT/tmp" TEMP="$TASK_OUT/tmp"
@@ -39,11 +38,6 @@ printf 'extractor=' >> "$TASK_OUT/provenance.txt"; sha256sum "$TESTS/extract_wri
 printf 'generated_hdl=' >> "$TASK_OUT/provenance.txt"; sha256sum "$READ_RTL" >> "$TASK_OUT/provenance.txt"
 printf 'testbench=' >> "$TASK_OUT/provenance.txt"; sha256sum "$TB" >> "$TASK_OUT/provenance.txt"
 printf 'runner=' >> "$TASK_OUT/provenance.txt"; sha256sum "$0" >> "$TASK_OUT/provenance.txt"
-cat "$TASK_OUT/provenance.txt" > "$TASK_OUT/aggregate.log"
-echo "ModelSim: $(modelsim_version | sed -n '1p')"
-echo "Stimulus seed: deterministic (no random stimulus)"
-echo "All generated RTL, logs, and build products: $TASK_OUT"
-echo "ModelSim suite: $SUITE (serial within each isolated work library)"
 
 record_rtl_hash() {
     printf '%s  %s\n' "$(sha256sum "$1")" "$1" >> "$TASK_OUT/extracted_hdl_sha256.txt"
@@ -182,6 +176,74 @@ run_scenarios() {
     for scenario in "$@"; do run_one_scenario "$build" "$top" "$scenario"; done
 }
 
+validate_profile_manifest() {
+    local manifest=$1 suite id burst outstanding depth launch scenarios extra
+    local -A ids=()
+    local -A suites=()
+    local rows=0
+    while IFS=$'\t' read -r suite id burst outstanding depth launch scenarios extra; do
+        [[ $suite == \#* ]] && continue
+        [[ -z ${suite}${id}${burst}${outstanding}${depth}${launch}${scenarios}${extra} ]] && continue
+        if [[ -n $extra || ! $suite =~ ^(transactions|credits|bounds)$ ||
+              ! $id =~ ^[A-Z0-9-]+$ || -n ${ids[$id]:-} ||
+              ! $burst =~ ^[1-9][0-9]*$ || ! $outstanding =~ ^[1-9][0-9]*$ ||
+              ! $depth =~ ^[1-9][0-9]*$ || ! $launch =~ ^(yes|no)$ ||
+              ! $scenarios =~ ^[A-Z0-9_\ ]*$ ]]; then
+            echo "invalid or duplicate reader profile manifest row: $id" >&2
+            return 2
+        fi
+        if ((burst > 256 || outstanding > 16 || depth > 4096 || (depth & (depth - 1)))) ||
+           [[ $launch == no && -z $scenarios ]]; then
+            echo "out-of-range or incomplete reader profile row: $id" >&2
+            return 2
+        fi
+        local -A scenario_ids=()
+        local scenario
+        for scenario in $scenarios; do
+            if [[ -n ${scenario_ids[$scenario]:-} ]]; then
+                echo "duplicate reader scenario in profile $id: $scenario" >&2
+                return 2
+            fi
+            scenario_ids[$scenario]=1
+        done
+        ids[$id]=1
+        suites[$suite]=1
+        rows=$((rows + 1))
+    done < "$manifest"
+    if ((rows == 0)) || [[ -z ${suites[transactions]:-} || -z ${suites[credits]:-} || -z ${suites[bounds]:-} ]]; then
+        echo "reader profile manifest is incomplete: $manifest" >&2
+        return 2
+    fi
+}
+
+READ_PROFILE_MANIFEST=${BURST_READ_PROFILE_MANIFEST:-$TESTS/read_burst_profiles.tsv}
+if [[ ! -f $READ_PROFILE_MANIFEST ]]; then
+    echo "missing reader profile manifest: $READ_PROFILE_MANIFEST" >&2
+    exit 2
+fi
+validate_profile_manifest "$READ_PROFILE_MANIFEST"
+printf 'profile_manifest=' >> "$TASK_OUT/provenance.txt"
+sha256sum "$READ_PROFILE_MANIFEST" >> "$TASK_OUT/provenance.txt"
+cat "$TASK_OUT/provenance.txt" > "$TASK_OUT/aggregate.log"
+modelsim_resolve
+echo "ModelSim: $(modelsim_version | sed -n '1p')"
+echo "Stimulus seed: deterministic (no random stimulus)"
+echo "All generated RTL, logs, and build products: $TASK_OUT"
+echo "ModelSim suite: $SUITE (serial within each isolated work library)"
+
+run_profile_manifest() {
+    local selected_suite=$1 suite id burst outstanding depth launch scenarios extra
+    while IFS=$'\t' read -r suite id burst outstanding depth launch scenarios extra; do
+        [[ $suite != "$selected_suite" ]] && continue
+        local -a scenario_args=()
+        read -r -a scenario_args <<< "$scenarios"
+        run_build tb_burst_engine "$burst" "$TB" "" "$outstanding" "$depth" "$launch"
+        ((${#scenario_args[@]} == 0)) || \
+            run_scenarios "$TASK_OUT/build-tb_burst_engine-B${burst}-O${outstanding}-D${depth}" \
+                tb_burst_engine "${scenario_args[@]}"
+    done < "$READ_PROFILE_MANIFEST"
+}
+
 run_build() {
     local top=$1 burst_max=$2 tb=$3 snapshot=${4:-} outstanding=${5:-1} depth=${6:-256} launch=${7:-yes}
     local build="$TASK_OUT/build-${top}-B${burst_max}-O${outstanding}-D${depth}"
@@ -214,54 +276,16 @@ run_async_reset_build() {
 }
 
 if [[ $SUITE == all || $SUITE == transactions ]]; then
-    for burst_max in 1 2 16 256; do
-        run_build tb_burst_engine "$burst_max" "$TB"
-        if [[ $burst_max == 16 ]]; then
-            run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D256" tb_burst_engine \
-                ERROR BADALIGN OVERFLOW BADSIZE_CONFIG STORE \
-                RANGE_ZERO RANGE_LIMIT_BASE0 RANGE_LIMIT_BASE4 RANGE_OVER_BASE4 RANGE_OVER_PLUS1 RANGE_OVER_HALF \
-                RANGE_OVER_MAX RANGE_TOP_VALID RANGE_TOP_OVER RANGE_ORACLE BADADDR_EMPTY BADSIZE_EMPTY BADADDR_FULL BADSIZE_FULL \
-                DRAIN_CONFIG_RACE CONTINUOUS_CFG ADJACENT_CFG BADRID EARLY_RLAST CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
-                RRESP_FIRST RRESP_INTERMEDIATE RRESP_FINAL ADJACENT_CFG_TRUNC ADJACENT_CFG_SIZE \
-                MISSING_RLAST RESET_TRAFFIC FIFO_WRAP
-        fi
-        if [[ $burst_max == 256 ]]; then
-            run_scenarios "$TASK_OUT/build-tb_burst_engine-B256-O1-D256" tb_burst_engine FIFO_BACKPRESSURE
-        fi
-    done
-    for outstanding in 3 15 16; do
-        depth=256; [[ $outstanding != 3 ]] || depth=64
-        run_build tb_burst_engine 16 "$TB" "" "$outstanding" "$depth" no
-        run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O${outstanding}-D${depth}" tb_burst_engine MULTI
-    done
-    run_build tb_burst_engine 16 "$TB" "" 2 64 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O2-D64" tb_burst_engine AQC FAULT_STALLED_AR RRESP_STALLED_AR RESET_MULTI PENDING_SECOND
-    run_build tb_burst_engine 16 "$TB" "" 3 64 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D64" tb_burst_engine BOUNDARY_PENDING RRESP_RESERVATION_RACE RREADY_SIDEBAND
-    # Alternate bypass and queued consumption, including depth-one and BRAM FIFOs.
-    for depth in 1 2 16 64 512 4096; do
-        run_build tb_burst_engine 16 "$TB" "" 3 "$depth" no
-        run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O3-D${depth}" tb_burst_engine SKID_STREAM
-    done
+    run_profile_manifest transactions
     for polarity in active-low active-high; do run_async_reset_build "$polarity"; done
 fi
 
 if [[ $SUITE == all || $SUITE == credits ]]; then
-    run_build tb_burst_engine 16 "$TB" "" 16 32 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O16-D32" tb_burst_engine CREDIT_LIMIT CREDIT_POP READY_CREDIT_PROOF
-    run_build tb_burst_engine 256 "$TB" "" 2 8 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B256-O2-D8" tb_burst_engine CREDIT_LIMIT
-    run_build tb_burst_engine 16 "$TB" "" 1 1 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D1" tb_burst_engine CREDIT_LIMIT READY_CREDIT_PROOF
-    run_build tb_burst_engine 1 "$TB" "" 1 1 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B1-O1-D1" tb_burst_engine CONFIG_PIPELINE_B1
-    run_build tb_burst_engine 1 "$TB" "" 3 8 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B1-O3-D8" tb_burst_engine MULTI
+    run_profile_manifest credits
 fi
 
 if [[ $SUITE == all || $SUITE == bounds ]]; then
-    run_build tb_burst_engine 16 "$TB" "" 1 4096 no
-    run_scenarios "$TASK_OUT/build-tb_burst_engine-B16-O1-D4096" tb_burst_engine DEPTH4096
+    run_profile_manifest bounds
 
     expect_parameter_failure() {
         local name=$1 outstanding=$2 depth=$3 diagnostic=$4

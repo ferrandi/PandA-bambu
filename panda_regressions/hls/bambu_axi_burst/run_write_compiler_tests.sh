@@ -46,18 +46,16 @@ run_write_suite() {
   run_case() {
     local top=$1 tag=$2 expectation=$3 reason=${4:-} feature_value=${5:-$feature}
     local source_file=${6:-$fixture}
-    local dir="$OUT/write/$tag" rc=0
-    mkdir -p "$dir"
+    local case_macro=${7:-}
+    local dir="$OUT/write/$tag" expected_failure=""
     local args=("--top-fname=$top" --compiler=I386_CLANG16 --generate-interface=INFER
       --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
       "--bambu-parameter=${BURST_PARAMETER}=${feature_value}"
       --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
-    printf '%q ' "$BAMBU" "$source_file" "${args[@]}" >"$dir/argv.txt"; printf '\n' >>"$dir/argv.txt"
-    if (cd "$dir" && "$BAMBU" "$source_file" "${args[@]}" >stdout.log 2>stderr.log); then rc=0; else rc=$?; fi
-    if [[ "$expectation" == accepted && $rc -ne 0 ]]; then echo "expected $top accepted, rc=$rc; see $dir" >&2; return 1; fi
-    if [[ "$expectation" == invalid && $rc -eq 0 ]]; then echo "expected $top rejected, but it compiled; see $dir" >&2; return 1; fi
-    if [[ "$expectation" == fallback && $rc -ne 0 ]]; then echo "expected $top to compile with legacy fallback, rc=$rc; see $dir" >&2; return 1; fi
-    if [[ "$expectation" == legacy && $rc -ne 0 ]]; then echo "expected $top to compile on the legacy path, rc=$rc; see $dir" >&2; return 1; fi
+    [[ -z "$case_macro" ]] || args+=("--extra-cc-options=-D$case_macro")
+    [[ "$expectation" != invalid ]] || expected_failure=$reason
+    python3 "$TESTS/compiler_case_manifest.py" execute --output "$dir" --bambu "$BAMBU" \
+      --expected-failure "$expected_failure" -- "$source_file" "${args[@]}"
     case "$expectation" in
       accepted) ;;
       fallback) ;;
@@ -127,96 +125,42 @@ run_write_suite() {
   run_case write_count feature-off fallback 'explicit write-burst request ignored because m-axi-burst=0' 0
   python3 "$checker" fallback --output "$OUT/write/feature-off" --bundle output --feature-off \
     --reason 'explicit write-burst request ignored because m-axi-burst=0'
-  for profile in write_burst_one write_burst_three_default_fifo write_burst_256; do
-    case "$profile" in
-      write_burst_one) burst=1 ;;
-      write_burst_three_default_fifo) burst=3 ;;
-      write_burst_256) burst=256 ;;
-    esac
-    run_case "$profile" "profile-${burst}" accepted '' 1 "$profile_fixture"
-    python3 "$checker" accepted --output "$OUT/write/profile-${burst}" --expected-write-burst "$burst"
-    if [[ "$profile" == write_burst_three_default_fifo ]]; then
-      python3 "$checker" profile --output "$OUT/write/profile-${burst}" \
-        --expect-engine-parameter B_MAX=3 --expect-engine-parameter MAX_OUTSTANDING=16 \
-        --expect-engine-parameter FIFO_DEPTH=8
+  local profile_manifest="$TESTS/compiler_profile_cases.tsv"
+  python3 "$TESTS/compiler_case_manifest.py" validate "$profile_manifest" --fixture "$profile_fixture" --direction write
+  local direction legacy_id top case_macro tag outcome burst outstanding fifo diagnostic attrs engine
+  while IFS='|' read -r direction legacy_id top case_macro tag outcome burst outstanding fifo diagnostic attrs engine; do
+    [[ -z "$direction" || "$direction" == \#* ]] && continue
+    [[ "$direction" == write ]] || continue
+    local case_dir="$OUT/write/$tag"
+    local -a profile_argv=("$profile_fixture" "--top-fname=$top" --compiler=I386_CLANG16
+      --generate-interface=INFER --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --no-clean
+      "--bambu-parameter=${BURST_PARAMETER}=1" --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
+      "--extra-cc-options=-D$case_macro")
+    python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" \
+      --expected-failure "$diagnostic" -- "${profile_argv[@]}"
+    if [[ "$outcome" == accepted ]]; then
+      python3 "$checker" accepted --output "$case_dir" --expected-write-burst "$burst"
+      if [[ -n "$attrs" || -n "$engine" ]]; then
+        local -a profile_args=(profile --output "$case_dir")
+        local item
+        IFS=, read -r -a items <<<"$attrs"
+        for item in "${items[@]}"; do [[ -z "$item" ]] || profile_args+=(--expect-profile-attribute "$item"); done
+        IFS=, read -r -a items <<<"$engine"
+        for item in "${items[@]}"; do [[ -z "$item" ]] || profile_args+=(--expect-engine-parameter "$item"); done
+        python3 "$checker" "${profile_args[@]}"
+      fi
+      if [[ "$tag" == fifo-default-burst ]]; then
+        grep -Fq 'write_max=1(single-beat-default:fifo-hint) write_outstanding=16(default) write_fifo=64(explicit)' \
+          "$OUT/write/$tag/stderr.log" || {
+          echo "FIFO-only profile lost its B1 FIFO-hint default, O16, or explicit D64 provenance" >&2; return 1;
+        }
+      fi
+    else
+      python3 "$checker" invalid --output "$case_dir" --reason "$diagnostic"
     fi
-  done
-  run_case write_outstanding_one profile-outstanding-1 accepted '' 1 "$profile_fixture"
-  python3 "$checker" accepted --output "$OUT/write/profile-outstanding-1" --expected-write-burst 16
-  # F2: more than one write burst may be in flight. The requested outstanding must survive
-  # into the emitted engine generic; the FIFO default stays next_pow2(2*B_MAX).
-  run_case write_outstanding_sixteen profile-outstanding-16 accepted '' 1 "$profile_fixture"
-  python3 "$checker" accepted --output "$OUT/write/profile-outstanding-16" --expected-write-burst 16
-  python3 "$checker" profile --output "$OUT/write/profile-outstanding-16" \
-    --expect-profile-attribute write_burst_outstanding=16 \
-    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=16 \
-    --expect-engine-parameter FIFO_DEPTH=64
-  run_invalid_profile write_outstanding_zero invalid-outstanding-zero \
-    'write_burst_outstanding must be an integer in \[1,16\]' "$TESTS/write_compiler_cases/invalid_profiles/write_outstanding_zero.cpp"
-  run_case write_duplicate_equal_profile duplicate-equal-profile accepted '' 1 "$profile_fixture"
-  python3 "$checker" accepted --output "$OUT/write/duplicate-equal-profile" --expected-write-burst 16
-  run_invalid_profile write_burst_257 invalid-burst-257 \
-    'Maximum AXI burst length must be an integer in \[1,256\]' "$TESTS/write_compiler_cases/invalid_profiles/write_burst_257.cpp"
-  run_invalid_profile write_fifo_out_of_range invalid-fifo-4097 \
-    'write_fifo_depth must be a power-of-two integer in \[1,4096\] beats' "$TESTS/write_compiler_cases/invalid_profiles/write_fifo_out_of_range.cpp"
-  run_case write_outstanding_with_default_burst outstanding-default-burst accepted '' 1 \
-    "$TESTS/write_compiler_cases/write_outstanding_with_default_burst.cpp"
-  python3 "$checker" accepted --output "$OUT/write/outstanding-default-burst" --expected-write-burst 16
-  python3 "$checker" profile --output "$OUT/write/outstanding-default-burst" \
-    --expect-profile-attribute write_burst_outstanding=1 \
-    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=1 \
-    --expect-engine-parameter FIFO_DEPTH=32
-  run_invalid_profile write_attributes_non_m_axi non-m-axi-profile \
-    "AXI write profile attributes num_write_outstanding, write_burst_outstanding and write_fifo_depth are only valid for mode=m_axi" \
-    "$TESTS/write_compiler_cases/invalid_profiles/write_attributes_non_m_axi.cpp"
+  done < "$profile_manifest"
   run_case scalar_m_axi_without_burst no-burst-feature-off legacy '' 0 \
     "$TESTS/write_compiler_cases/legacy_m_axi_without_write_burst.cpp"
-  run_invalid_profile invalid_write_profile invalid-zero \
-    'Maximum AXI burst length must be an integer in \[1,256\]' "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_profile.cpp"
-  run_case outstanding_two_profile outstanding-two accepted '' 1 \
-    "$TESTS/write_compiler_cases/outstanding_two_profile.cpp"
-  python3 "$checker" accepted --output "$OUT/write/outstanding-two" --expected-write-burst 16
-  python3 "$checker" profile --output "$OUT/write/outstanding-two" \
-    --expect-profile-attribute write_burst_outstanding=2 \
-    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=2 \
-    --expect-engine-parameter FIFO_DEPTH=32
-  run_case write_outstanding_three profile-outstanding-3 accepted '' 1 "$profile_fixture"
-  python3 "$checker" accepted --output "$OUT/write/profile-outstanding-3" --expected-write-burst 16
-  python3 "$checker" profile --output "$OUT/write/profile-outstanding-3" \
-    --expect-profile-attribute write_burst_outstanding=3 \
-    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=3 \
-    --expect-engine-parameter FIFO_DEPTH=32
-  run_case valid_write_profile valid-write-profile accepted
-  python3 "$checker" accepted --output "$OUT/write/valid-write-profile"
-  python3 "$checker" profile --output "$OUT/write/valid-write-profile" \
-    --expect-profile-attribute write_burst_outstanding=1 --expect-profile-attribute write_fifo_depth=64
-  run_invalid_profile invalid_write_outstanding invalid-outstanding \
-    'write_burst_outstanding must be an integer in \[1,16\]' \
-    "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_outstanding.cpp"
-  run_invalid_profile invalid_write_fifo_non_power_two invalid-fifo-not-power-two \
-    'write_fifo_depth must be a power-of-two integer in \[1,4096\] beats' \
-    "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_fifo_non_power_two.cpp"
-  run_invalid_profile invalid_write_fifo_too_shallow invalid-fifo-below-bmax \
-    "Invalid AXI interface attribute 'write_fifo_depth' for bundle 'data': must be at least max_write_burst_length" \
-    "$TESTS/write_compiler_cases/invalid_profiles/invalid_write_fifo_too_shallow.cpp"
-  run_case write_fifo_with_default_burst fifo-default-burst accepted '' 1 \
-    "$TESTS/write_compiler_cases/write_fifo_with_default_burst.cpp"
-  python3 "$checker" accepted --output "$OUT/write/fifo-default-burst" --expected-write-burst 16
-  python3 "$checker" profile --output "$OUT/write/fifo-default-burst" \
-    --expect-profile-attribute write_fifo_depth=64 \
-    --expect-engine-parameter B_MAX=16 --expect-engine-parameter MAX_OUTSTANDING=16 \
-    --expect-engine-parameter FIFO_DEPTH=64
-  grep -Fq 'write_max=16(default) write_outstanding=16(default) write_fifo=64(explicit)' \
-    "$OUT/write/fifo-default-burst/stderr.log" || {
-      echo "FIFO-only profile lost its implicit B16/O16 or explicit D64 provenance" >&2; return 1;
-    }
-  run_invalid_profile conflicting_write_burst_profile conflicting-write-profile \
-    "Conflicting maximum AXI burst length values in interface bundle 'data'" \
-    "$TESTS/write_compiler_cases/invalid_profiles/conflicting_write_burst_profile.cpp"
-  run_invalid_profile conflicting_write_fifo_profile conflicting-write-fifo-profile \
-    "Conflicting write_fifo_depth values in interface bundle 'data'" \
-    "$TESTS/write_compiler_cases/invalid_profiles/conflicting_write_fifo_profile.cpp"
-
   local alias_fixture="$TESTS/compiler_cases/axi_write_outstanding_alias_cases.cpp"
   local alias_dir alias_top alias_macro alias_expect alias_reason rc
   run_alias_case() {

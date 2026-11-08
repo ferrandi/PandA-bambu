@@ -5,12 +5,15 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import os
 import pathlib
 import re
 import shlex
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+
+import compiler_test_support as compiler_support
 
 
 TESTS = pathlib.Path(__file__).resolve().parent
@@ -89,15 +92,19 @@ def record_argv(case_dir: pathlib.Path, argv: list[str]) -> None:
 
 
 def invoke(bambu: pathlib.Path, case_dir: pathlib.Path, raw_ir: pathlib.Path,
-           architecture: pathlib.Path, top: str, burst_parameter: str) -> subprocess.CompletedProcess[str]:
+           architecture: pathlib.Path, top: str, burst_parameter: str,
+           expected_failure: str | None = None) -> subprocess.CompletedProcess[str]:
     argv = [str(bambu), "--use-raw", str(raw_ir), f"--architecture-xml={architecture}",
             f"--top-fname={top}", "--compiler=I386_CLANG16", "--generate-interface=INFER",
             "--device-name=xcu250,-2L,figd2104", "--AXI-burst-type=INCREMENTAL", "--no-clean",
             f"--bambu-parameter={burst_parameter}=1",
             "--extra-cc-options=-DNDEBUG", "--extra-cc-options=-DBAMBU"]
     record_argv(case_dir, argv)
-    result = subprocess.run(argv, cwd=case_dir, text=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, check=False)
+    result = compiler_support.run_compiler(
+        argv, cwd=case_dir, timeout=600, expected_failure=expected_failure,
+        sandbox_markers=("Bad system call", "Operation not permitted", "Failed to create stream fd"),
+        diagnostic_output_dir=case_dir,
+    )
     (case_dir / "stdout.log").write_text(result.stdout, encoding="utf-8")
     (case_dir / "stderr.log").write_text(result.stderr, encoding="utf-8")
     (case_dir / "exit_code.txt").write_text(f"{result.returncode}\n", encoding="ascii")
@@ -126,17 +133,19 @@ def check_negative(case_dir: pathlib.Path, result: subprocess.CompletedProcess[s
         raise RuntimeError(f"invalid {attribute} XML profile was accepted; see {case_dir}")
     if result.returncode < 0 or result.returncode >= 128:
         raise RuntimeError(f"invalid {attribute} XML profile crashed (exit {result.returncode}); see {case_dir}")
-    combined = result.stdout + "\n" + result.stderr
-    expected = re.compile(
-        rf"Invalid AXI interface attribute '{re.escape(attribute)}' for bundle '{re.escape(bundle_name)}'",
-        re.IGNORECASE,
-    )
+    combined = compiler_output(case_dir, result)
+    expected = re.compile(re.escape(invalid_attribute_diagnostic(attribute, bundle_name)),
+                          re.IGNORECASE)
     if not expected.search(combined):
         raise RuntimeError(
             f"invalid {attribute} XML profile failed without the explicit attribute+bundle diagnostic; "
             f"see {case_dir}"
         )
     print(f"XML-PROFILE reject PASS: {case_dir.name}")
+
+
+def invalid_attribute_diagnostic(attribute: str, bundle_name: str) -> str:
+    return f"Invalid AXI interface attribute '{attribute}' for bundle '{bundle_name}'"
 
 
 def check_unbound_profile_accept(case_dir: pathlib.Path,
@@ -178,13 +187,16 @@ def check_unbound_write_profile(case_dir: pathlib.Path,
         raise RuntimeError(f"unbound write profile {bundle_name!r} with outstanding={outstanding} "
                            f"was rejected (exit {result.returncode}); see {case_dir}")
     combined = result.stdout + "\n" + result.stderr
-    if not re.search(rf"AXI_BURST_ANALYSIS root=.* bundle={re.escape(bundle_name)} "
-                     r"enabled=1 profile=not-inferred reason=unbound(?: m_axi bundle)?(?:;|\s)", combined):
+    analysis_lines = [line for line in combined.splitlines()
+                      if re.search(rf"AXI_BURST_ANALYSIS root=.* bundle={re.escape(bundle_name)} "
+                                   r"enabled=1 profile=not-inferred reason=unbound(?: m_axi bundle)?(?:;|\s)",
+                                   line)]
+    if not analysis_lines:
         raise RuntimeError(f"unbound write profile {bundle_name!r} lacks the not-inferred diagnostic; "
                            f"see {case_dir}")
-    if expected_profile not in combined:
+    if not any(expected_profile in line for line in analysis_lines):
         raise RuntimeError(f"unbound write profile {bundle_name!r} lacks expected validated metadata "
-                           f"{expected_profile!r}; see {case_dir}")
+                           f"{expected_profile!r} on its not-inferred diagnostic; see {case_dir}")
     refused = [line for line in combined.splitlines()
                if "write_burst_outstanding" in line and "only" in line]
     if refused:
@@ -208,11 +220,17 @@ def check_xml_alias_rejection(case_dir: pathlib.Path,
     if result.returncode == 0 or result.returncode < 0 or result.returncode >= 128:
         raise RuntimeError(f"invalid XML write-outstanding profile was accepted or crashed "
                            f"(exit {result.returncode}); see {case_dir}")
-    combined = result.stdout + "\n" + result.stderr
+    combined = compiler_output(case_dir, result)
     if reason not in combined or "bundle 'alias_write'" not in combined:
         raise RuntimeError(f"invalid XML write-outstanding profile failed without its explicit "
                            f"bundle diagnostic; see {case_dir}")
     print(f"XML-PROFILE write alias reject PASS: {case_dir.name}")
+
+
+def compiler_output(case_dir: pathlib.Path, result: subprocess.CompletedProcess[str]) -> str:
+    files = sorted((case_dir / "panda-temp").glob("__cc_output*"))
+    return "\n".join((result.stdout, result.stderr,
+                       *(path.read_text(encoding="utf-8", errors="replace") for path in files)))
 
 
 def case_name(attribute: str, value: str) -> str:
@@ -241,6 +259,9 @@ def main() -> int:
     stride_xml = args.stride_xml.resolve(strict=True)
     if not bambu.is_file() or not bambu.stat().st_mode & 0o111:
         raise RuntimeError(f"Bambu is not executable: {bambu}")
+    bambu_hls = pathlib.Path(os.environ.get("BAMBU_HLS", ""))
+    compiler_support.validate_install(
+        bambu, bambu_hls, bambu_hls / "lib/panda/clang-16/ASTAnalyzer.so")
     if seed_ir.suffix != ".bambuir" or stride_ir.suffix != ".bambuir":
         raise RuntimeError("XML-profile tests require frontend-produced .bambuir files (debug .raw is not accepted)")
     verify_seed(seed_xml, "renamed_sum")
@@ -294,7 +315,8 @@ def main() -> int:
         case_dir.mkdir(parents=True, exist_ok=False)
         architecture = case_dir / "architecture.xml"
         write_case_xml(seed_xml, architecture, "renamed_sum", {attribute: value})
-        result = invoke(bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter)
+        result = invoke(bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter,
+                        expected_failure=(f"Invalid AXI interface attribute '{attribute}' for bundle 'data'"))
         check_negative(case_dir, result, attribute)
 
     # The unsupported stride must still reject malformed architecture data;
@@ -305,7 +327,8 @@ def main() -> int:
         case_dir.mkdir(parents=True, exist_ok=False)
         architecture = case_dir / "architecture.xml"
         write_case_xml(stride_xml, architecture, "stride_two", {attribute: value})
-        result = invoke(bambu, case_dir, stride_ir, architecture, "stride_two", args.burst_parameter)
+        result = invoke(bambu, case_dir, stride_ir, architecture, "stride_two", args.burst_parameter,
+                        expected_failure=(f"Invalid AXI interface attribute '{attribute}' for bundle 'data'"))
         check_negative(case_dir, result, attribute)
 
     # F2 unlocked write_burst_outstanding > 1: an unbound bundle asking for two bursts in
@@ -327,17 +350,21 @@ def main() -> int:
     unbound_write_aliases = (
         ("unbound-write-vitis-alias", {"num_write_outstanding": "03"},
          "read_max=16(default) read_outstanding=16(default) read_fifo=256(derived) "
-         "write_max=16(default) write_outstanding=3(explicit) write_fifo=32(derived)"),
+         "write_max=1(single-beat-default:outstanding-hint) write_outstanding=3(explicit) "
+         "write_fifo=2(derived)"),
         ("unbound-write-bambu-alias", {"write_burst_outstanding": "3"},
          "read_max=16(default) read_outstanding=16(default) read_fifo=256(derived) "
-         "write_max=16(default) write_outstanding=3(explicit) write_fifo=32(derived)"),
+         "write_max=1(single-beat-default:outstanding-hint) write_outstanding=3(explicit) "
+         "write_fifo=2(derived)"),
         ("unbound-write-aliases-equal", {"num_write_outstanding": "03",
                                          "write_burst_outstanding": "3"},
          "read_max=16(default) read_outstanding=16(default) read_fifo=256(derived) "
-         "write_max=16(default) write_outstanding=3(explicit) write_fifo=32(derived)"),
+         "write_max=1(single-beat-default:outstanding-hint) write_outstanding=3(explicit) "
+         "write_fifo=2(derived)"),
         ("unbound-write-fifo-only", {"write_fifo_depth": "32"},
          "read_max=16(default) read_outstanding=16(default) read_fifo=256(derived) "
-         "write_max=16(default) write_outstanding=16(default) write_fifo=32(explicit)"),
+         "write_max=1(single-beat-default:fifo-hint) write_outstanding=16(default) "
+         "write_fifo=32(explicit)"),
         ("unbound-write-explicit-max", {"max_write_burst_length": "8"},
          "read_max=16(default) read_outstanding=16(default) read_fifo=256(derived) "
          "write_max=8(explicit) write_outstanding=16(default) write_fifo=16(derived)"),
@@ -376,15 +403,18 @@ def main() -> int:
         case_dir.mkdir(parents=True, exist_ok=False)
         architecture = case_dir / "architecture.xml"
         write_unbound_profile_xml(seed_xml, architecture, "renamed_sum", "alias_write", attributes)
-        result = invoke(bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter)
+        result = invoke(bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter,
+                        expected_failure=diagnostic)
         check_xml_alias_rejection(case_dir, result, diagnostic)
 
     unbound_profiles = [
         ("unbound-read-outstanding-only", {"num_read_outstanding": "3"},
-         "read_max=16(default) read_outstanding=3(explicit) read_fifo=64(derived) "
+         "read_max=1(single-beat-default:outstanding-hint) read_outstanding=3(explicit) "
+         "read_fifo=4(derived) "
          "write_max=16(default) write_outstanding=16(default) write_fifo=32(derived)"),
         ("unbound-read-depth-only", {"read_fifo_depth": "8"},
-         "read_max=16(default) read_outstanding=16(default) read_fifo=8(explicit) "
+         "read_max=1(single-beat-default:fifo-hint) read_outstanding=16(default) "
+         "read_fifo=8(explicit) "
          "write_max=16(default) write_outstanding=16(default) write_fifo=32(derived)"),
         ("unbound-read-explicit-max", {"max_read_burst_length": "8"},
          "read_max=8(explicit) read_outstanding=16(default) read_fifo=128(derived) "
@@ -406,15 +436,17 @@ def main() -> int:
         ("read-depth-zero", "unbound_read", {"read_fifo_depth": "0"}, "read_fifo_depth"),
         ("read-depth-3", "unbound_read", {"read_fifo_depth": "3"}, "read_fifo_depth"),
         ("read-depth-4097", "unbound_read", {"read_fifo_depth": "4097"}, "read_fifo_depth"),
-        ("write-depth-below-default-burst", "unbound_write",
-         {"write_fifo_depth": "8"}, "write_fifo_depth"),
+        ("write-depth-below-explicit-burst", "unbound_write",
+         {"max_write_burst_length": "16", "write_fifo_depth": "8"}, "write_fifo_depth"),
     ]
     for name, bundle_name, attributes, invalid_attribute in unbound_invalid:
         case_dir = output / "cases" / f"unbound-invalid-{name}"
         case_dir.mkdir(parents=True, exist_ok=False)
         architecture = case_dir / "architecture.xml"
         write_unbound_profile_xml(seed_xml, architecture, "renamed_sum", bundle_name, attributes)
-        result = invoke(bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter)
+        result = invoke(
+            bambu, case_dir, seed_ir, architecture, "renamed_sum", args.burst_parameter,
+            expected_failure=invalid_attribute_diagnostic(invalid_attribute, bundle_name))
         check_negative(case_dir, result, invalid_attribute, bundle_name)
     positive_count = len(positive) + 1 + len(unbound_write_aliases) + len(unbound_profiles)
     negative_count = len(matrix) + 2 + len(alias_negative) + len(unbound_invalid)

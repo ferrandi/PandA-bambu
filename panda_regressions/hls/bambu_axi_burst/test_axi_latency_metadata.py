@@ -6,6 +6,7 @@ import importlib.util
 import os
 from pathlib import Path
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 
 
@@ -15,6 +16,9 @@ RUNNER = Path(__file__).with_name("run_latency_metadata_tests.py")
 
 
 def load_runner():
+    runner_dir = str(RUNNER.parent)
+    if runner_dir not in sys.path:
+        sys.path.insert(0, runner_dir)
     spec = importlib.util.spec_from_file_location("latency_metadata_runner", RUNNER)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load {RUNNER}")
@@ -46,6 +50,69 @@ def explicit_values_compatible(port_values):
 
 
 class AxiLatencyMetadataTest(unittest.TestCase):
+    def test_unbound_read_outstanding_alias_has_single_beat_default(self):
+        runner_source = (RUNNER.parent / "run_xml_profile_tests.py").read_text(encoding="utf-8")
+        start = runner_source.index('("unbound-read-outstanding-only"')
+        profile = runner_source[start:runner_source.index("),", start)]
+        self.assertIn("read_max=1(single-beat-default:outstanding-hint)", profile)
+        self.assertIn("read_outstanding=3(explicit)", profile)
+        self.assertIn("read_fifo=4(derived)", profile)
+        depth_start = runner_source.index('("unbound-read-depth-only"')
+        depth_profile = runner_source[depth_start:runner_source.index("),", depth_start)]
+        self.assertIn("read_max=1(single-beat-default:fifo-hint)", depth_profile)
+        self.assertIn("read_outstanding=16(default)", depth_profile)
+        self.assertIn("read_fifo=8(explicit)", depth_profile)
+        self.assertIn('("write-depth-below-explicit-burst", "unbound_write",', runner_source)
+        self.assertIn('{"max_write_burst_length": "16", "write_fifo_depth": "8"}', runner_source)
+
+    def test_unbound_write_alias_defaults_and_provenance(self):
+        runner_source = (RUNNER.parent / "run_xml_profile_tests.py").read_text(encoding="utf-8")
+        for source_alias in ("unbound-write-vitis-alias", "unbound-write-bambu-alias",
+                             "unbound-write-aliases-equal"):
+            with self.subTest(source_alias=source_alias):
+                start = runner_source.index(f'("{source_alias}"')
+                profile = runner_source[start:runner_source.index("),", start)]
+                self.assertIn("write_max=1(single-beat-default:outstanding-hint)", profile)
+                self.assertIn("write_outstanding=3(explicit)", profile)
+                self.assertIn("write_fifo=2(derived)", profile)
+        fifo_start = runner_source.index('("unbound-write-fifo-only"')
+        fifo_profile = runner_source[fifo_start:runner_source.index("),", fifo_start)]
+        self.assertIn("write_max=1(single-beat-default:fifo-hint)", fifo_profile)
+        self.assertIn("write_outstanding=16(default)", fifo_profile)
+        self.assertIn("write_fifo=32(explicit)", fifo_profile)
+        explicit_start = runner_source.index('("unbound-write-explicit-max"')
+        explicit_profile = runner_source[explicit_start:runner_source.index("),", explicit_start)]
+        self.assertIn("write_max=8(explicit)", explicit_profile)
+
+    def test_unbound_write_checker_requires_metadata_on_not_inferred_line(self):
+        xml_runner = RUNNER.with_name("run_xml_profile_tests.py")
+        spec = importlib.util.spec_from_file_location("xml_profile_runner", xml_runner)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        checker = module.check_unbound_write_profile
+        expected = ("write_max=1(single-beat-default:outstanding-hint) "
+                    "write_outstanding=3(explicit) write_fifo=2(derived)")
+        with TemporaryDirectory(dir=TMP_ROOT) as temporary:
+            case_dir = Path(temporary)
+            (case_dir / "resource.v").write_text("module resource; endmodule\n", encoding="utf-8")
+            valid = subprocess.CompletedProcess(
+                args=[], returncode=0,
+                stdout="AXI_BURST_ANALYSIS root=kernel bundle=alias_write enabled=1 "
+                      "profile=not-inferred reason=unbound " + expected + "\n",
+                stderr="",
+            )
+            checker(case_dir, valid, "alias_write", 3, expected)
+            split = subprocess.CompletedProcess(
+                args=[], returncode=0,
+                stdout="AXI_BURST_ANALYSIS root=kernel bundle=alias_write enabled=1 "
+                      "profile=not-inferred reason=unbound\n" + expected + "\n",
+                stderr="",
+            )
+            with self.assertRaisesRegex(RuntimeError, "lacks the not-inferred diagnostic"):
+                checker(case_dir, split, "alias_write", 3, expected)
+
     def test_compiled_suite_creates_its_output_directory(self):
         TMP_ROOT.mkdir(parents=True, exist_ok=True)
         with TemporaryDirectory(dir=TMP_ROOT) as temporary:
@@ -123,26 +190,24 @@ class AxiLatencyMetadataTest(unittest.TestCase):
 
     def test_production_paths_keep_latency_as_metadata_only(self):
         plugin = (ROOT / "etc/clang_plugin/plugin_ASTAnalyzer.cpp").read_text(encoding="utf-8")
-        manager_h = (ROOT / "src/HLS/hls_manager.hpp").read_text(encoding="utf-8")
+        architecture_h = (ROOT / "src/HLS/function_architecture.hpp").read_text(encoding="utf-8")
         manager_cpp = (ROOT / "src/HLS/hls_manager.cpp").read_text(encoding="utf-8")
+        profile_cpp = (ROOT / "src/HLS/axi_interface_profile.cpp").read_text(encoding="utf-8")
         infer = (ROOT / "src/frontend_analysis/IR_analysis/InterfaceInfer.cpp").read_text(encoding="utf-8")
+        duplex_binding = (ROOT / "src/HLS/binding/module/AXIDuplexBinding.cpp").read_text(encoding="utf-8")
 
         self.assertIn('attr_id == "latency"', plugin)
         self.assertIn('#include "axi_interface_profile.hpp"', plugin)
         self.assertIn('parse_axi_profile_decimal(attr_value, 0U, panda::utility::axi_latency_max, value)', plugin)
         self.assertNotIn('key_loc_t("latency", SourceLocation())', plugin)
-        self.assertIn("Invalid AXI interface attribute 'latency' for bundle '", manager_cpp)
+        self.assertIn("Invalid AXI interface attribute 'latency' for bundle '", profile_cpp)
         self.assertIn('mode->second != "m_axi"', manager_cpp)
         self.assertIn("ParseAXIInterfaceLatency(iface_attr, bundle_name)", manager_cpp)
-        self.assertIn('iface_latency', manager_h)
-        self.assertIn('FunctionArchitecture::iface_latency', manager_cpp)
+        self.assertIn('iface_latency', architecture_h)
+        self.assertIn('FunctionArchitecture::iface_latency', profile_cpp)
         self.assertIn('to_iface_attr("iface_" + std::string(a.name()))', manager_cpp)
-        self.assertIn('ParseAXIInterfaceLatency(iface_attrs, bundle_name)', infer)
-        self.assertIn('std::string("bambu_axi_latency")', infer)
-        self.assertIn('attribute::STRING, std::to_string(requested_axi_latency)', infer)
-        self.assertIn('existing_latency_value != requested_latency_value', infer)
+        self.assertIn('"bambu_axi_latency"', duplex_binding)
         self.assertNotIn('set_execution_time(requested_axi_latency', infer)
-        self.assertNotIn('mem_delay_read', infer[infer.find('ParseAXIInterfaceLatency(iface_attrs, bundle_name)'):])
 
         generator = (ROOT / "src/HLS/simulation/hdl_testbench_generation.cpp").read_text(encoding="utf-8")
         self.assertNotIn("bundle_latency", generator)

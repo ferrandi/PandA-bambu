@@ -12,7 +12,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[4]
 RUNNER = Path(__file__).with_name("run_axi_width_contract.sh")
-TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", ROOT / "documentation/tmp/wp7-w1-width-test"))
+TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd() / "out_axi_width_contract_runner"))
 
 VSIM = r'''#!/usr/bin/env python3
 import os, sys

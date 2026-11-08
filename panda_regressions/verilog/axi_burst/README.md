@@ -116,5 +116,14 @@ The CI component suite checks:
 
 The runner retains per-component logs and writes `junit.xml`, including failures.
 The pre-existing AXI master, Verilog compilation, analysis and synthesis tests
-are preserved. The new CI selection adds functional component checks only; it
-does not add area/frequency benchmarks or require synthesis/formal tools.
+are preserved. The default burst engines also have this out-of-context synthesis
+reference, generated with Vivado 2024.2 for `xcu250-figd2104-2L-e` at 3.33 ns:
+
+| Engine/profile | CLB LUTs | CLB registers | BRAM | DSP | Worst setup slack | Worst setup data-path delay |
+|---|---:|---:|---:|---:|---:|---:|
+| Reader B16/O16/FIFO256 | 729 | 611 | 0.5 tile (1 RAMB18) | 0 | +0.361 ns | 2.852 ns |
+| Writer B16/O16/FIFO32, FAST_STORE_ACK=1 | 1055 (20 LUTRAM) | 1455 | 0 | 0 | +1.062 ns | 2.250 ns |
+
+These are out-of-context synthesis results, not place-and-route, full-chip area,
+or routed timing. The CI component selection adds functional checks only and does
+not require synthesis or formal tools.

@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import csv
 import os
 import shutil
 import subprocess
@@ -121,6 +122,12 @@ case $tool in
         if [[ $selected_case == FAST_STORE_ACK_BACKPRESSURE ]]; then
           echo '# WRITE_FAST_STORE_ACK_BACKPRESSURE_PASS held=1'
         fi
+        if [[ $selected_case == SUSTAINED_B1 ]]; then
+          echo '# WRITE_SUSTAINED_PASS profile=B1-O16-F1 accepted=64 interval=1'
+        fi
+        if [[ $selected_case == SUSTAINED_B16 ]]; then
+          echo '# WRITE_SUSTAINED_PASS profile=B16-O2-D32 accepted=64 interval=1'
+        fi
         exit 0
         ;;
       no-marker)
@@ -206,6 +213,62 @@ class WriterModelSimRunnerTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         shutil.rmtree(self.case_root)
+
+    def test_profile_manifest_preserves_parameter_only_groups(self) -> None:
+        manifest = RTL_TESTS / "write_burst_profiles.tsv"
+        with manifest.open(encoding="utf-8", newline="") as stream:
+            rows = list(csv.reader((line for line in stream if not line.startswith("#")), delimiter="\t"))
+        expected = {
+            "core-B16-D16", "core-B16-D32", "core-B1-D1", "core-B1-O16", "core-B3-D4",
+            "core-B16-D4096", "core-B16-A32-F3", "multi-O2-D16", "multi-O2-D32",
+            "multi-O3-D16", "multi-O16-D16", "multi-O16-D32", "multi-O16-D32-A64",
+            "boundary-O16-D32", "wrap-O16-D32-A64", "multi-O2-D32-F3", "address-B16-A64",
+            "limit-B255-D256", "limit-B256-O16", "limit-B256-D256", "maxlen-B256-O2",
+        }
+        self.assertEqual({row[0] for row in rows}, expected)
+        self.assertEqual(len(rows), len(expected))
+        self.assertTrue(all(len(row) == 9 for row in rows))
+        for _, mode, _, burst, outstanding, depth, address, fast_ack, scenarios in rows:
+            self.assertIn(mode, {"base", "outstanding"})
+            self.assertLessEqual(int(burst), 256)
+            self.assertLessEqual(int(outstanding), 16)
+            self.assertGreaterEqual(int(depth), int(burst))
+            self.assertIn(address, {"32", "64"})
+            self.assertIn(fast_ack, {"0", "1"})
+            self.assertTrue(scenarios.split())
+
+    def test_duplicate_manifest_group_is_rejected_before_modelsim(self) -> None:
+        manifest = RTL_TESTS / "write_burst_profiles.tsv"
+        lines = manifest.read_text(encoding="utf-8").splitlines()
+        duplicate = self.case_root / "duplicate-profiles.tsv"
+        first_row = next(line for line in lines if line and not line.startswith("#"))
+        duplicate.write_text("\n".join(lines + [first_row, ""]), encoding="utf-8")
+        output = self._new_output("duplicate-manifest")
+        result = self._run(
+            output, "core-B16-D16",
+            env=self.env | {"BURST_WRITER_PROFILE_MANIFEST": str(duplicate)},
+        )
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("invalid or duplicate writer profile manifest row", result.stdout)
+        self.assertFalse(output.exists())
+        self.assertFalse(self.trace.exists())
+
+    def test_manifest_groups_execute_with_the_declared_profiles(self) -> None:
+        manifest = RTL_TESTS / "write_burst_profiles.tsv"
+        with manifest.open(encoding="utf-8", newline="") as stream:
+            rows = list(csv.reader((line for line in stream if not line.startswith("#")), delimiter="\t"))
+        groups = ",".join(row[0] for row in rows)
+        output = self._new_output("profile-manifest")
+        result = self._run(output, groups, jobs=2)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        calls = self.trace.read_text(encoding="utf-8")
+        for _, mode, label, burst, outstanding, depth, address, fast_ack, _ in rows:
+            self.assertTrue((output / f"build-{label}" / "modelsim.ini").is_file())
+            self.assertIn(f"-gB_MAX={burst}", calls)
+            self.assertIn(f"-gMAX_OUTSTANDING={outstanding}", calls)
+            self.assertIn(f"-gFIFO_DEPTH={depth}", calls)
+            self.assertIn(f"-gADDR_BITS={address}", calls)
+            self.assertIn(f"-gFAST_STORE_ACK={fast_ack}", calls)
 
     @staticmethod
     def _install_fake_tools(path: Path) -> None:

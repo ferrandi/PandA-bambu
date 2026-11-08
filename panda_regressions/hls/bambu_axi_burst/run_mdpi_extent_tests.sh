@@ -170,6 +170,30 @@ run_case() {
     tail -n 80 "$tb_log" >&2 || true
     return 1
   fi
+  if [[ $case_id == 14 || $case_id == 15 ]]; then
+    local mdpi_wrapper="$case_dir/HLS_output/simulation/mdpi_wrapper.cpp"
+    [[ -s $mdpi_wrapper ]] || { echo "$case_name missing generated MDPI wrapper" >&2; return 1; }
+    grep -F -q 'void kernel(int* P0, int* P1, int P2)' "$mdpi_wrapper" || {
+      echo "$case_name lost or reordered a pointer argument in the MDPI wrapper" >&2; return 1;
+    }
+    if [[ $feature_mode == on ]]; then
+      [[ $(grep -F -c 'AXI_BURST_PROFILE root=kernel bundle=memory ' "$case_dir/stderr.log" || true) == 1 ]] || {
+        echo "$case_name did not resolve exactly one shared m_axi bundle" >&2; return 1;
+      }
+      [[ $(grep -F -c 'Configured write burst region for bundle memory (B=16)' \
+        "$case_dir/stderr.log" || true) == 1 ]] || {
+        echo "$case_name did not activate exactly one expected write burst" >&2; return 1;
+      }
+    else
+      [[ $(grep -F -c 'AXI_BURST_ANALYSIS root=kernel bundle=memory enabled=0 reason=m-axi-burst=0' \
+        "$case_dir/stderr.log" || true) == 1 ]] || {
+        echo "$case_name did not resolve exactly one disabled shared m_axi bundle" >&2; return 1;
+      }
+      if grep -F -q 'Configured write burst region for bundle memory' "$case_dir/stderr.log"; then
+        echo "$case_name activated a write burst with m-axi-burst=0" >&2; return 1
+      fi
+    fi
+  fi
   printf '%s\n' "$marker" >"$case_dir/scenario-marker.txt"
 }
 
@@ -178,7 +202,8 @@ jobs=(pointer_cli_size_4:1:pass int_array_one:2:pass byte_array_one:3:pass
   pointer_cli_size_zero:7:failure int_reference_array_four:8:pass
   pointer_to_array_missing_extent:9:failure pointer_to_array_cli_size:10:pass
   scalar_output_testbench_extent:11:pass source_cli_testbench_extent_precedence:12:pass
-  testbench_zero_overrides_cli_extent:13:failure)
+  testbench_zero_overrides_cli_extent:13:failure
+  shared_bundle_used_pointer_first:14:pass shared_bundle_unused_pointer_first:15:pass)
 for feature_mode in off on; do
   mode_jobs=()
   for job in "${jobs[@]}"; do mode_jobs+=("$feature_mode:$job"); done

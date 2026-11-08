@@ -10,6 +10,7 @@ from contextlib import redirect_stderr
 from io import StringIO
 
 from check_write_compiler_artifacts import check_case, main
+from compiler_case_manifest import load_cases, validate_fixture
 
 REPO = pathlib.Path(__file__).resolve().parents[3]
 TMP_ROOT = pathlib.Path(os.environ.get("BURST_TEST_TMPDIR", pathlib.Path.cwd())) / f"out_{pathlib.Path(__file__).stem}"
@@ -301,6 +302,13 @@ class CheckerTests(unittest.TestCase):
                                   "reason": r"Maximum AXI burst length must be an integer in \[1,256\]"})()
         self.assertEqual(check_case(args), 0)
 
+    def test_invalid_accepts_plugin_error_from_cc_output(self):
+        self.write("panda-temp/__cc_output0",
+                   "error -> Maximum AXI burst length must be an integer in [1,256]\n")
+        args = type("Args", (), {"output": self.root, "kind": "invalid",
+                                  "reason": r"Maximum AXI burst length must be an integer in \[1,256\]"})()
+        self.assertEqual(check_case(args), 0)
+
     def test_profile_verifies_architecture_attributes(self):
         self.write("design.bambuir", "call void @configure_write(i32 %n)\ncall void @store_write()\ncall void @drain_write()\n")
         self.write("design.v", "MinimalAXI4MasterPipelinedWrite writer();\n")
@@ -500,43 +508,67 @@ class CheckerTests(unittest.TestCase):
         self.assertEqual(ordinary.count(b1_signature), 1)
         b1_block = b1_signature + ordinary.split(b1_signature, 1)[1].split('extern "C"', 1)[0]
         self.assertIn("write_fifo_depth=8", b1_block)
+        self.assertNotIn("max_write_burst_length", b1_block)
         ordinary = ordinary.replace(b1_block, "", 1)
         for invalid_value in ("max_write_burst_length=0", "write_burst_outstanding=17",
                               "write_fifo_depth=48", "write_fifo_depth=8"):
             self.assertNotIn(invalid_value, ordinary)
-        invalid_dir = cases / "invalid_profiles"
-        expected = {
-            "invalid_write_profile.cpp": "max_write_burst_length=0",
-            "write_burst_257.cpp": "max_write_burst_length=257",
-            "write_outstanding_zero.cpp": "write_burst_outstanding=0",
-            "write_fifo_out_of_range.cpp": "write_fifo_depth=4097",
-            "write_attributes_non_m_axi.cpp": "mode=array",
-            "invalid_write_outstanding.cpp": "write_burst_outstanding=17",
-            "invalid_write_fifo_non_power_two.cpp": "write_fifo_depth=48",
-            "invalid_write_fifo_too_shallow.cpp": "write_fifo_depth=8",
-            "conflicting_write_burst_profile.cpp": "max_write_burst_length=32",
-            "conflicting_write_fifo_profile.cpp": "write_fifo_depth=64",
-        }
-        for filename, pragma in expected.items():
-            text = (invalid_dir / filename).read_text()
-            self.assertEqual(text.count('extern "C" void '), 1, filename)
-            self.assertIn(pragma, text, filename)
+        manifest = pathlib.Path(__file__).with_name("compiler_profile_cases.tsv")
+        fixture = cases / "write_profile_matrix.cpp"
+        profile_cases = load_cases(manifest)
+        validate_fixture(profile_cases, fixture, "write")
+        invalid = {case.legacy_id: case for case in profile_cases
+                   if case.direction == "write" and case.outcome == "invalid"}
+        self.assertEqual(set(invalid), {
+            "invalid-zero", "invalid-burst-257", "invalid-outstanding-zero", "invalid-outstanding",
+            "invalid-fifo-4097", "invalid-fifo-not-power-two", "invalid-fifo-below-bmax",
+            "non-m-axi-profile", "conflicting-write-profile", "conflicting-write-fifo-profile",
+        })
+        source = fixture.read_text()
+        for case in invalid.values():
+            self.assertIn(f"defined({case.macro})", source)
+            self.assertEqual(source.count(f'void {case.top}('), 1, case.legacy_id)
+        for top, pragma in {
+            "invalid_write_profile": "max_write_burst_length=0",
+            "write_burst_257": "max_write_burst_length=257",
+            "write_outstanding_zero": "write_burst_outstanding=0",
+            "write_fifo_out_of_range": "write_fifo_depth=4097",
+            "write_attributes_non_m_axi": "mode=array",
+            "invalid_write_outstanding": "write_burst_outstanding=17",
+            "invalid_write_fifo_non_power_two": "write_fifo_depth=48",
+            "invalid_write_fifo_too_shallow": "write_fifo_depth=8",
+            "conflicting_write_burst_profile": "max_write_burst_length=32",
+            "conflicting_write_fifo_profile": "write_fifo_depth=64",
+        }.items():
+            self.assertIn(pragma, source[source.index(f"void {top}("):], top)
 
     def test_profiles_with_default_burst_are_not_invalid_fixtures(self):
-        """An omitted burst max uses 16 beats, so explicit outstanding/FIFO values are valid."""
+        """An O/FIFO hint without max burst defaults to one beat in each direction."""
         cases = pathlib.Path(__file__).parent / "write_compiler_cases"
-        self.assertFalse((cases / "invalid_profiles" / "outstanding_two_profile.cpp").exists())
-        text = (cases / "outstanding_two_profile.cpp").read_text()
-        self.assertEqual(text.count('extern "C" void '), 1)
-        self.assertIn("write_burst_outstanding=2", text)
-        default_burst = (cases / "write_outstanding_with_default_burst.cpp").read_text()
-        self.assertEqual(default_burst.count('extern "C" void '), 1)
+        source = (cases / "write_profile_matrix.cpp").read_text()
+        self.assertIn("WRITE_PROFILE_OUTSTANDING_2", source)
+        self.assertIn("write_burst_outstanding=2", source)
+        def case_branch(macro):
+            match = re.search(rf"#(?:if|elif) defined\({macro}\)(.*?)(?=\n#elif defined|\Z)", source, re.S)
+            self.assertIsNotNone(match, macro)
+            return match.group(1)
+
+        default_burst = case_branch("WRITE_PROFILE_OUTSTANDING_DEFAULT_BURST")
         self.assertIn("write_burst_outstanding=1", default_burst)
         self.assertNotIn("max_write_burst_length", default_burst)
-        default_fifo = (cases / "write_fifo_with_default_burst.cpp").read_text()
-        self.assertEqual(default_fifo.count('extern "C" void '), 1)
+        default_fifo = case_branch("WRITE_PROFILE_FIFO_DEFAULT_BURST")
         self.assertIn("write_fifo_depth=64", default_fifo)
         self.assertNotIn("max_write_burst_length", default_fifo)
+        profiles = {case.legacy_id: case for case in load_cases(pathlib.Path(__file__).with_name("compiler_profile_cases.tsv"))}
+        self.assertEqual((profiles["outstanding-default-burst"].burst,
+                          profiles["outstanding-default-burst"].outstanding,
+                          profiles["outstanding-default-burst"].fifo), ("1", "1", "2"))
+        self.assertEqual((profiles["fifo-default-burst"].burst,
+                          profiles["fifo-default-burst"].outstanding,
+                          profiles["fifo-default-burst"].fifo), ("1", "16", "64"))
+        runner = (pathlib.Path(__file__).parent / "run_write_compiler_tests.sh").read_text()
+        self.assertIn("write_max=1(single-beat-default:fifo-hint) write_outstanding=16(default) "
+                      "write_fifo=64(explicit)", runner)
 
     def test_profile_matrix_covers_supported_boundaries_and_inactive_attributes(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_profile_matrix.cpp").read_text()
@@ -547,8 +579,21 @@ class CheckerTests(unittest.TestCase):
             self.assertIn(witness, source)
         for top in ("write_burst_one", "write_burst_three_default_fifo", "write_burst_256",
                     "write_outstanding_one", "write_outstanding_three", "write_outstanding_sixteen",
-                    "write_duplicate_equal_profile"):
+                    "write_duplicate_equal_profile", "write_outstanding_with_default_burst",
+                    "write_fifo_with_default_burst", "outstanding_two_profile", "valid_write_profile"):
             self.assertEqual(source.count(f'extern "C" void {top}('), 1, top)
+
+    def test_profile_manifest_preserves_legacy_case_ids_and_fixture_coverage(self):
+        directory = pathlib.Path(__file__).parent
+        cases = load_cases(directory / "compiler_profile_cases.tsv")
+        fixture = directory / "write_compiler_cases" / "write_profile_matrix.cpp"
+        validate_fixture(cases, fixture, "write")
+        read_fixture = directory / "compiler_cases" / "axi_read_profile_cases.cpp"
+        validate_fixture(cases, read_fixture, "read")
+        self.assertEqual(sum(case.direction == "write" for case in cases), 21)
+        self.assertEqual(sum(case.direction == "read" for case in cases), 20)
+        self.assertEqual(len(cases), 41)
+        self.assertEqual(len({case.legacy_id for case in cases}), len(cases))
 
 if __name__ == "__main__":
     unittest.main()

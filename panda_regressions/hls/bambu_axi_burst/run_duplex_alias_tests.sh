@@ -137,7 +137,8 @@ run_case() {
     --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU
     "--extra-cc-options=-DDUPLEX_ALIAS_PROFILE=$profile_id"
     "--extra-cc-options=-DDUPLEX_ALIAS_CASE=$case_id")
-  [[ $proof_mode != development ]] || args+=(--debug-classes=InterfaceInfer,BuildVirtualPhi)
+  [[ $proof_mode != development ]] || args+=(--debug-classes=InterfaceInfer,BuildVirtualPhi --print-dot
+    --bambu-parameter=print-ir-manager=1)
   [[ $payload_bits == 0 ]] || args+=(--extra-cc-options=-DDUPLEX_ALIAS_FLOAT_BITS)
   if [[ $scenario == zero-trip || $scenario == forward-overlap || $scenario == reverse-overlap ]]; then
     args+=(--generate-vcd)
@@ -191,7 +192,9 @@ run_case() {
       echo "$profile/$scenario missing nonempty VCD for the AXI witness" >&2; return 1;
     }
   fi
-  find "$case_dir" -type f \( -name '*.v' -o -name '*.sv' -o -name '*.xml' -o -name '*.log' -o -name '*.vcd' \) -print0 | sort -z |
+  artifact_find=( -name '*.v' -o -name '*.sv' -o -name '*.xml' -o -name '*.log' -o -name '*.vcd' )
+  if [[ $proof_mode == development ]]; then artifact_find+=( -o -name '*.raw' -o -name '*.dot' ); fi
+  find "$case_dir" -type f \( "${artifact_find[@]}" \) -print0 | sort -z |
     while IFS= read -r -d '' artifact; do
       printf '%s  %s\n' "$(digest "$artifact")" "${artifact#"$case_dir/"}"
     done >"$case_dir/artifact-sha256.txt"

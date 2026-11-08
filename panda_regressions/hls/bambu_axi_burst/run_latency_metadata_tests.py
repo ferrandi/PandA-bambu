@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import re
 import shlex
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+
+import compiler_test_support as compiler_support
 
 
 TESTS = pathlib.Path(__file__).resolve().parent
@@ -40,11 +43,17 @@ def record(case: pathlib.Path, argv: list[str]) -> None:
     (case / "argv.txt").write_text(shlex.join(argv) + "\n", encoding="utf-8")
 
 
-def run(case: pathlib.Path, argv: list[str]) -> subprocess.CompletedProcess[str]:
+def run(case: pathlib.Path, argv: list[str],
+        expected_failure: str | None = None,
+        allow_success: bool = False) -> subprocess.CompletedProcess[str]:
     case.mkdir(parents=True, exist_ok=False)
     record(case, argv)
-    result = subprocess.run(argv, cwd=case, text=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, check=False)
+    result = compiler_support.run_compiler(
+        argv, cwd=case, timeout=600, expected_failure=expected_failure,
+        sandbox_markers=("Bad system call", "Operation not permitted", "Failed to create stream fd"),
+        diagnostic_output_dir=case,
+        allow_success=allow_success,
+    )
     (case / "stdout.log").write_text(result.stdout, encoding="utf-8")
     (case / "stderr.log").write_text(result.stderr, encoding="utf-8")
     (case / "exit_code.txt").write_text(f"{result.returncode}\n", encoding="ascii")
@@ -221,7 +230,9 @@ def set_root_latencies(seed_xml: pathlib.Path, target: pathlib.Path,
 
 def invoke_shared_xml(bambu: pathlib.Path, out: pathlib.Path, seed_ir: pathlib.Path,
                       seed_xml: pathlib.Path, tops: str, tag: str,
-                      values: dict[str, str | None], burst_parameter: str) -> subprocess.CompletedProcess[str]:
+                      values: dict[str, str | None], burst_parameter: str,
+                      expected_failure: str | None = None,
+                      allow_success: bool = False) -> subprocess.CompletedProcess[str]:
     case = out / "shared-roots" / f"xml-{tag}"
     case.mkdir(parents=True, exist_ok=False)
     xml = case / "architecture.xml"
@@ -231,8 +242,12 @@ def invoke_shared_xml(bambu: pathlib.Path, out: pathlib.Path, seed_ir: pathlib.P
             # isolates latency agreement from burst-resource eligibility.
             *BASE_ARGS, f"--top-fname={tops}", f"--bambu-parameter={burst_parameter}=0"]
     record(case, argv)
-    result = subprocess.run(argv, cwd=case, text=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, check=False)
+    result = compiler_support.run_compiler(
+        argv, cwd=case, timeout=600, expected_failure=expected_failure,
+        sandbox_markers=("Bad system call", "Operation not permitted", "Failed to create stream fd"),
+        diagnostic_output_dir=case,
+        allow_success=allow_success,
+    )
     (case / "stdout.log").write_text(result.stdout, encoding="utf-8")
     (case / "stderr.log").write_text(result.stderr, encoding="utf-8")
     (case / "exit_code.txt").write_text(f"{result.returncode}\n", encoding="ascii")
@@ -243,7 +258,8 @@ def invoke_xml(bambu: pathlib.Path, out: pathlib.Path, seed_ir: pathlib.Path,
                source_xml: pathlib.Path, symbol: str, value: str | None,
                burst_parameter: str, mode: str | None = None,
                tag: str | None = None, bundle_name: str | None = "data",
-               remove_mode: bool = False) -> subprocess.CompletedProcess[str]:
+               remove_mode: bool = False,
+               expected_failure: str | None = None) -> subprocess.CompletedProcess[str]:
     case = out / "xml" / (tag or ("omitted" if value is None else re.sub(r"\W+", "_", value).strip("_") or "empty"))
     if mode:
         case = out / "xml" / f"non-axi-{mode}"
@@ -253,8 +269,11 @@ def invoke_xml(bambu: pathlib.Path, out: pathlib.Path, seed_ir: pathlib.Path,
     argv = [str(bambu), "--use-raw", str(seed_ir), f"--architecture-xml={xml}",
             *BASE_ARGS, f"--top-fname={symbol}", f"--bambu-parameter={burst_parameter}=1"]
     record(case, argv)
-    result = subprocess.run(argv, cwd=case, text=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, check=False)
+    result = compiler_support.run_compiler(
+        argv, cwd=case, timeout=600, expected_failure=expected_failure,
+        sandbox_markers=("Bad system call", "Operation not permitted", "Failed to create stream fd"),
+        diagnostic_output_dir=case,
+    )
     (case / "stdout.log").write_text(result.stdout, encoding="utf-8")
     (case / "stderr.log").write_text(result.stderr, encoding="utf-8")
     (case / "exit_code.txt").write_text(f"{result.returncode}\n", encoding="ascii")
@@ -279,7 +298,9 @@ def assert_accept(result: subprocess.CompletedProcess[str], case: pathlib.Path) 
 
 
 def assert_reject(result: subprocess.CompletedProcess[str], case: pathlib.Path) -> None:
-    text = result.stdout + "\n" + result.stderr
+    cc_outputs = sorted((case / "panda-temp").glob("__cc_output*"))
+    text = "\n".join((result.stdout, result.stderr,
+                       *(path.read_text(encoding="utf-8", errors="replace") for path in cc_outputs)))
     if result.returncode == 0 or result.returncode < 0 or result.returncode >= 128:
         raise RuntimeError(f"invalid latency metadata was accepted or crashed (exit={result.returncode}); see {case}")
     if not re.search(r"Invalid AXI interface attribute 'latency' for bundle 'data'", text, re.IGNORECASE):
@@ -304,6 +325,9 @@ def main() -> int:
     out = prepare_output(args.output)
     if not bambu.is_file() or not bambu.stat().st_mode & 0o111:
         raise RuntimeError(f"Bambu is not executable: {bambu}")
+    bambu_hls = pathlib.Path(os.environ.get("BAMBU_HLS", ""))
+    compiler_support.validate_install(
+        bambu, bambu_hls, bambu_hls / "lib/panda/clang-16/ASTAnalyzer.so")
 
     # Frontend pragma cases establish real .bambuir/XML artifacts and check
     # canonical decimal serialization before any direct architecture replay.
@@ -353,7 +377,8 @@ def main() -> int:
         case_name = f"{index}-{slug}"
         case = out / "xml" / f"invalid-{case_name}"
         result = invoke_xml(bambu, out, seed_ir, seed_xml, "latency_omitted", invalid,
-                            args.burst_parameter, tag=f"invalid-{case_name}")
+                            args.burst_parameter, tag=f"invalid-{case_name}",
+                            expected_failure="Invalid AXI interface attribute 'latency'")
         assert_reject(result, case)
         results.append({"case": f"xml/invalid-{case_name}", "expected": "reject", "exit_code": result.returncode})
 
@@ -384,7 +409,8 @@ def main() -> int:
                                     ("missing-mode-latency-zero", "0", True)):
         case = out / "xml" / tag
         result = invoke_xml(bambu, out, non_axi_seed_ir[0], non_axi_seed_xml, non_axi_symbol, value,
-                            args.burst_parameter, tag=tag, bundle_name="a", remove_mode=remove_mode)
+                            args.burst_parameter, tag=tag, bundle_name="a", remove_mode=remove_mode,
+                            expected_failure="Invalid AXI interface attribute 'latency' for bundle 'a'")
         text = result.stdout + "\n" + result.stderr
         if result.returncode == 0 or result.returncode < 0 or result.returncode >= 128:
             raise RuntimeError(f"non-m_axi/missing-mode XML latency accepted or crashed (exit={result.returncode}); see {case}")
@@ -409,7 +435,7 @@ def main() -> int:
                 # Exercise metadata on the legacy m_axi path, independently of
                 # whether either root can use the configured burst ABI.
                 f"--bambu-parameter={args.burst_parameter}=0"]
-        result = run(case, argv)
+        result = run(case, argv, expected_failure="Expected single top function name", allow_success=True)
         combined = result.stdout + "\n" + result.stderr
         seen = re.findall(r"Analyzing function ([^\s]+)", combined)
         if len(seen) < 2 or set(seen[:2]) != root_names:
@@ -440,7 +466,8 @@ def main() -> int:
                                       f"--top-fname={tops}",
                                       # The seed and XML replay must have the
                                       # same legacy ABI so latency is isolated.
-                                      f"--bambu-parameter={args.burst_parameter}=0"])
+                                      f"--bambu-parameter={args.burst_parameter}=0"],
+                          expected_failure="Expected single top function name", allow_success=True)
         observed = re.findall(r"Analyzing function ([^\s]+)", seed_result.stdout + "\n" + seed_result.stderr)
         if len(observed) < 2 or set(observed[:2]) != root_names:
             raise RuntimeError(f"shared-root XML seed did not analyze both roots for {label}: saw {observed}; see {seed_case}")
@@ -462,7 +489,10 @@ def main() -> int:
             tag = f"{label}-{suffix}"
             case = out / "shared-roots" / f"xml-{tag}"
             result = invoke_shared_xml(bambu, out, seed_irs[0], seed_arch, tops, tag,
-                                       values, args.burst_parameter)
+                                       values, args.burst_parameter,
+                                       expected_failure=("Expected single top function name" if accepted else
+                                                         "Incompatible AXI latency for bundle 'data'"),
+                                       allow_success=accepted)
             combined = result.stdout + "\n" + result.stderr
             if accepted and result.returncode:
                 if not is_expected_multitop_backend_guard(result):
@@ -496,7 +526,8 @@ def main() -> int:
     stride_xml = architecture(stride_case)
     case = out / "xml" / "unsupported-stride-invalid"
     result = invoke_xml(bambu, out, stride_ir[0], stride_xml, "stride_two", "1x",
-                        args.burst_parameter, tag="unsupported-stride-invalid")
+                        args.burst_parameter, tag="unsupported-stride-invalid",
+                        expected_failure="Invalid AXI interface attribute 'latency'")
     assert_reject(result, case)
     results.append({"case": "xml/unsupported-stride-invalid", "expected": "reject",
                     "exit_code": result.returncode})
@@ -530,7 +561,8 @@ def main() -> int:
     conflict_case = out / "pragma" / conflict_top
     conflict_result = run(conflict_case, [str(bambu), str(FIXTURE), *BASE_ARGS,
                                           *select_case_defines(conflict_top), f"--top-fname={conflict_top}",
-                                          f"--bambu-parameter={args.burst_parameter}=1"])
+                                          f"--bambu-parameter={args.burst_parameter}=1"],
+                          expected_failure="Conflicting")
     conflict_text = conflict_result.stdout + "\n" + conflict_result.stderr
     if conflict_result.returncode == 0 or conflict_result.returncode < 0 or conflict_result.returncode >= 128:
         raise RuntimeError(f"conflicting explicit latency values were accepted or crashed; see {conflict_case}")

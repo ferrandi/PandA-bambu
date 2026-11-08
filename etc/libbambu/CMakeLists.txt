@@ -290,6 +290,15 @@ function(_panda_add_arch arch arch_flag)
       "${libm_hls}" "${libm_hls_s}" "${libm_musl}" "${libm_newlib}"
    )
    add_dependencies(libbambu_${arch} bambu-cc)
+   install(CODE "
+      execute_process(
+         COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target libbambu_${arch} --config \"\${CMAKE_INSTALL_CONFIG_NAME}\"
+         RESULT_VARIABLE _panda_build_result
+      )
+      if(NOT \"\${_panda_build_result}\" STREQUAL \"0\")
+         message(FATAL_ERROR \"Failed to build libbambu_${arch} before installation: \${_panda_build_result}\")
+      endif()
+   ")
 
    # Install: libraries under lib/panda/<compiler_dir>/<arch>
    set(_install_dir "${PANDA_LIB_INSTALLDIR_REL}/${LIBBAMBU_COMPILER_DIR}/${arch}")

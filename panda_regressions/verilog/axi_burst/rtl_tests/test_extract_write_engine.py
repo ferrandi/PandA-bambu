@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import csv
 import importlib.util
 import os
 import re
@@ -100,7 +101,20 @@ class WriteEngineExtractorTests(unittest.TestCase):
         testbench = (TESTS / "tb_write_burst_engine.sv").read_text()
         self.assertEqual(runner.count(f'"{target}"'), 1)
         self.assertEqual(runner.count(f'"{replacement}"'), 1)
-        self.assertIn("build_run_o O2-D16 16 2 16 32 MULTI_OUTSTANDING TWO_AW_BEFORE_B", runner)
+        with (TESTS / "write_burst_profiles.tsv").open(encoding="utf-8", newline="") as manifest:
+            rows = csv.DictReader((line for line in manifest if not line.startswith("#")), delimiter="\t",
+                                  fieldnames=("group", "mode", "label", "burst", "outstanding",
+                                              "depth", "addr", "fast", "scenarios"))
+            profile = next(row for row in rows if row["group"] == "multi-O2-D16")
+        self.assertEqual(profile["mode"], "outstanding")
+        self.assertEqual(profile["label"], "O2-D16")
+        self.assertEqual(profile["burst"], "16")
+        self.assertEqual(profile["outstanding"], "2")
+        self.assertEqual(profile["depth"], "16")
+        self.assertIn("MULTI_OUTSTANDING TWO_AW_BEFORE_B", profile["scenarios"])
+        group_dispatch = runner[runner.index('case "$group" in'):]
+        dispatch = re.search(r"(?s)(multi-O2-D16.*?run_writer_profile_group \"\$group\")", group_dispatch)
+        self.assertIsNotNone(dispatch, "multi-O2-D16 must use the table-driven writer profile dispatcher")
         self.assertIn("TWO_AW_BEFORE_B \"F2_TWO_AW_BEFORE_FIRST_B_REQUIRED\"", runner)
         self.assertIn("F2_TWO_AW_BEFORE_FIRST_B_REQUIRED", testbench)
 

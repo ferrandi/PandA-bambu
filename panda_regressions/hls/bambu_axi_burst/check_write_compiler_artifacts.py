@@ -36,7 +36,8 @@ LEGACY_COMPONENT = re.compile(r"(?i)(MinimalAXI4AdapterSingleBeat|IOB_cache_axi)
 
 
 def read_tree(root):
-    return [p for p in root.rglob("*") if p.is_file() and p.suffix.lower() in ARTIFACT_SUFFIXES]
+    return [p for p in root.rglob("*") if p.is_file() and
+            (p.suffix.lower() in ARTIFACT_SUFFIXES or p.name.startswith("__cc_output"))]
 
 
 def read_top_rtl(files):
@@ -80,6 +81,8 @@ def check_case(args):
         raise ValueError(f"no compiler artifacts found below {root}")
     log = "\n".join((root / name).read_text(encoding="utf-8", errors="replace")
                     for name in ("stdout.log", "stderr.log") if (root / name).is_file())
+    log += "\n" + "\n".join(path.read_text(encoding="utf-8", errors="replace")
+                              for path in sorted(root.glob("panda-temp/__cc_output*")) if path.is_file())
     top_rtl = read_top_rtl(files)
     if args.kind == "accepted":
         ir = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in files

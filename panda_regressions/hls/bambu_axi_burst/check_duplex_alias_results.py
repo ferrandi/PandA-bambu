@@ -11,13 +11,14 @@ import sys
 from pathlib import Path
 
 from check_burst_results import _parameterized_instances
+from check_virtual_dependencies import negative_scalar_contract_checks
 
 
 PROFILES = {"symmetric": "1", "asymmetric": "2"}
 SCENARIOS = {"disjoint": "1", "forward-overlap": "2", "reverse-overlap": "3", "zero-trip": "4",
              "nested-changing-base": "5", "nested-changing-count": "6"}
 FALLBACK_SCENARIOS = {"nested-changing-base", "nested-changing-count"}
-ARTIFACT_SUFFIXES = {".v", ".sv", ".xml", ".log", ".vcd"}
+ARTIFACT_SUFFIXES = {".v", ".sv", ".xml", ".log", ".vcd", ".raw", ".dot"}
 
 
 class CheckError(ValueError):
@@ -52,7 +53,8 @@ def parse_fields(path: Path, label: str) -> dict[str, str]:
     return result
 
 
-def check_manifest(case_dir: Path, allow_empty_vcd: bool = False) -> set[Path]:
+def check_manifest(case_dir: Path, allow_empty_vcd: bool = False,
+                   include_diagnostics: bool = False) -> set[Path]:
     manifest = safe_file(case_dir / "artifact-sha256.txt", "artifact manifest")
     declared: dict[Path, str] = {}
     for number, line in enumerate(manifest.read_text(encoding="utf-8", errors="strict").splitlines(), 1):
@@ -63,6 +65,8 @@ def check_manifest(case_dir: Path, allow_empty_vcd: bool = False) -> set[Path]:
         if not path.is_absolute():
             path = case_dir / path
         suffix = path.suffix.lower()
+        need(include_diagnostics or suffix not in {".raw", ".dot"},
+             f"unexpected compiler diagnostic artifact outside development proof mode: {raw}")
         resolved = safe_file(path, "manifest artifact",
                              nonempty=suffix != ".log" and not (allow_empty_vcd and suffix == ".vcd"))
         try:
@@ -77,7 +81,8 @@ def check_manifest(case_dir: Path, allow_empty_vcd: bool = False) -> set[Path]:
         if path.is_symlink():
             need(path.suffix.lower() not in ARTIFACT_SUFFIXES,
                  f"generated artifact is a symlink: {path.relative_to(case_dir)}")
-        elif path.is_file() and path.suffix.lower() in ARTIFACT_SUFFIXES:
+        elif path.is_file() and path.suffix.lower() in ARTIFACT_SUFFIXES and \
+                (include_diagnostics or path.suffix.lower() not in {".raw", ".dot"}):
             actual.add(path.resolve())
     need(actual == set(declared), "artifact manifest does not exactly cover generated RTL/XML/log files")
     return set(declared)
@@ -400,6 +405,22 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
         need(compiler_output.count(activation) == expected_activations,
              f"{profile}/{scenario}: expected {expected_activations} runtime-range guard activation witnesses")
         check_runtime_proof(compiler_output, profile, scenario)
+        if scenario in {"disjoint", "forward-overlap", "reverse-overlap"}:
+            panda_temp = case_dir / "panda-temp"
+            interface_path = safe_file(panda_temp / "after_Frontend::InterfaceInfer.raw",
+                                       "InterfaceInfer raw dump")
+            phi_matches = sorted(panda_temp.glob("after_Frontend::BuildVirtualPhi::kernel*.raw"))
+            need(len(phi_matches) == 1, f"{profile}/{scenario}: expected one kernel BuildVirtualPhi dump")
+            phi_path = safe_file(phi_matches[0], "BuildVirtualPhi raw dump")
+            adg_path = safe_file(case_dir / "HLS_output/dot/kernel/OP_ADG.dot", "OP_ADG dependency graph")
+            fdfg_path = safe_file(case_dir / "HLS_output/dot/kernel/OP_FDFG.dot", "OP_FDFG feedback graph")
+            try:
+                negative_scalar_contract_checks(interface_path.read_text(encoding="utf-8", errors="strict"),
+                                                phi_path.read_text(encoding="utf-8", errors="strict"),
+                                                adg_path.read_text(encoding="utf-8", errors="strict"),
+                                                fdfg_path.read_text(encoding="utf-8", errors="strict"))
+            except ValueError as exc:
+                raise CheckError(f"{profile}/{scenario}: scalar fallback virtual dependency proof failed: {exc}") from exc
 
     vcd = case_dir / "HLS_output/simulation/test.vcd"
     if scenario == "zero-trip":
@@ -418,8 +439,11 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
         required_artifacts.add(safe_file(vcd, "zero-trip simulation VCD"))
     elif scenario in {"forward-overlap", "reverse-overlap"}:
         required_artifacts.add(safe_file(vcd, "overlap AXI simulation VCD"))
+    if args.proof_mode == "development" and scenario in {"disjoint", "forward-overlap", "reverse-overlap"}:
+        required_artifacts.update((interface_path, phi_path, adg_path, fdfg_path))
     artifacts = check_manifest(case_dir, allow_empty_vcd=scenario not in {
-        "zero-trip", "forward-overlap", "reverse-overlap"})
+        "zero-trip", "forward-overlap", "reverse-overlap"},
+        include_diagnostics=args.proof_mode == "development")
     need(required_artifacts <= artifacts, f"{profile}/{scenario}: required evidence omitted from manifest")
 
     argv_text = fields.get("argv", "")
@@ -437,6 +461,9 @@ def check_case(out: Path, profile: str, scenario: str, args: argparse.Namespace)
     expected_debug_count = 1 if args.proof_mode == "development" else 0
     need(debug_count == expected_debug_count,
          f"{profile}/{scenario}: debug proof option count does not match proof mode")
+    need(argv.count("--print-dot") == expected_debug_count and
+         argv.count("--bambu-parameter=print-ir-manager=1") == expected_debug_count,
+         f"{profile}/{scenario}: IR and dependency graph artifacts do not match proof mode")
     needs_vcd = scenario == "zero-trip" or scenario in {"forward-overlap", "reverse-overlap"}
     need(argv.count("--generate-vcd") == (1 if needs_vcd else 0),
          f"{profile}/{scenario}: VCD generation does not match scenario")

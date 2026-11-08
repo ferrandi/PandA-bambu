@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 SCRIPT = ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/run_testbench_memaxi_model.sh"
-SCRATCH = ROOT / "documentation/tmp/wp7-model-runner-abort-20261027"
+SCRATCH = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd() / "out_testbench_memaxi_model_runner"))
 
 
 class ModelRunnerContract(unittest.TestCase):

@@ -111,7 +111,7 @@ generate_kernel() {
             echo "read kernel did not enable its requested burst path" >&2; return 1;
         }
         if [[ $name == read_b1_o3 ]]; then
-            grep -Eq 'AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=INCREMENTAL\(device\) read_max=1\(explicit\) read_outstanding=3\(explicit\) read_fifo=8\(explicit\)' \
+            grep -Eq 'AXI_BURST_PROFILE root=kernel bundle=src enabled=1 burst_type=INCREMENTAL\(device\) read_max=1\(single-beat-default:outstanding\+fifo-hints\) read_outstanding=3\(explicit\) read_fifo=8\(explicit\)' \
                 "$gen/bambu.stderr.log" || { echo "B1/O3 read profile missing from effective log" >&2; return 1; }
         fi
         grep -q 'MinimalAXI4MasterPipelined' "$rtl" || { echo "read engine missing from generated RTL" >&2; return 1; }
@@ -122,7 +122,7 @@ generate_kernel() {
             echo "write kernel did not enable its requested burst path" >&2; return 1;
         }
         if [[ $name == write_b1_o3 ]]; then
-            grep -Eq 'AXI_BURST_PROFILE root=write_count_seed_single_beat bundle=output enabled=1 burst_type=INCREMENTAL\(device\).*write_max=1\(explicit\) write_outstanding=3\(explicit\) write_fifo=8\(explicit\)' \
+            grep -Eq 'AXI_BURST_PROFILE root=write_count_seed_single_beat bundle=output enabled=1 burst_type=INCREMENTAL\(device\).*write_max=1\(single-beat-default:outstanding\+fifo-hints\) write_outstanding=3\(explicit\) write_fifo=8\(explicit\)' \
                 "$gen/bambu.stderr.log" || { echo "B1/O3 write profile missing from effective log" >&2; return 1; }
         fi
         grep -q 'MinimalAXI4MasterPipelinedWrite' "$rtl" || { echo "write engine missing from generated RTL" >&2; return 1; }

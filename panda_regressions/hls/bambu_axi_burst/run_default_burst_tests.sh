@@ -9,6 +9,7 @@ BAMBU_ARG=${1:?Bambu executable required}
 OUT_ARG=${2:?fresh output directory required}
 CHECKER="$TESTS/check_default_burst_artifacts.py"
 SOURCE="$TESTS/compiler_cases/axi_default_profile_cases.cpp"
+BURST_PARAMETER=${BURST_PARAMETER:-m-axi-burst}
 
 if [[ "$BAMBU_ARG" == */* ]]; then BAMBU=$(realpath "$BAMBU_ARG"); else
   BAMBU=$(command -v "$BAMBU_ARG" || true)
@@ -47,43 +48,51 @@ grep -Fq '<axi_burst_type value="0"/>' "$FIXED_DEVICE" || {
 
 run_case() {
   local tag=$1 top=$2 macro=$3 expected=$4 bundle=${5:-data} reason=${6:-}
+  local read_burst=${PROFILE_READ_BURST:-16} read_outstanding=${PROFILE_READ_OUTSTANDING:-16}
+  local read_fifo=${PROFILE_READ_FIFO:-256} write_burst=${PROFILE_WRITE_BURST:-16}
+  local write_outstanding=${PROFILE_WRITE_OUTSTANDING:-16} write_fifo=${PROFILE_WRITE_FIFO:-32}
+  local read_burst_origin=${PROFILE_READ_BURST_ORIGIN:-default}
+  local write_burst_origin=${PROFILE_WRITE_BURST_ORIGIN:-default}
   if (( $# >= 6 )); then shift 6; else shift 5; fi
-  local case_dir="$OUT/$tag" rc=0
-  mkdir -p "$case_dir"
+  local case_dir="$OUT/$tag" source_file=${CASE_SOURCE_OVERRIDE:-$SOURCE}
   local args=("--top-fname=$top" --compiler=I386_CLANG16 --generate-interface=INFER
     --device-name=xcu250,-2L,figd2104 --no-clean
-    --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU "--extra-cc-options=-D$macro")
+    --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU)
+  [[ -z $macro ]] || args+=("--extra-cc-options=-D$macro")
   args+=("$@")
-  printf '%q ' "$BAMBU" "$SOURCE" "${args[@]}" >"$case_dir/argv.txt"
-  printf '\n' >>"$case_dir/argv.txt"
-  if (cd "$case_dir" && "$BAMBU" "$SOURCE" "${args[@]}" >stdout.log 2>stderr.log); then
-    :
-  else
-    rc=$?
-  fi
   if [[ "$expected" == reject ]]; then
-    [[ $rc -ne 0 ]] || { echo "$tag was accepted; expected rejection" >&2; return 1; }
+    python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" \
+      --expected-failure "$reason" -- "$source_file" "${args[@]}"
+    local diagnostic_files=("$case_dir/stdout.log" "$case_dir/stderr.log")
+    while IFS= read -r output; do diagnostic_files+=("$output"); done \
+      < <(find "$case_dir/panda-temp" -maxdepth 1 -type f -name '__cc_output*' -print 2>/dev/null || true)
     grep -Fq "$reason" \
-      "$case_dir/stdout.log" "$case_dir/stderr.log" || {
+      "${diagnostic_files[@]}" || {
       echo "$tag failed without the expected parameter validation diagnostic; see $case_dir" >&2; return 1;
     }
     echo "DEFAULT BURST INVALID-VALUE PASS: $tag"
     return
   fi
-  [[ $rc -eq 0 ]] || { echo "$tag failed with Bambu status $rc; see $case_dir" >&2; return 1; }
-  if [[ "$expected" == default-read || "$expected" == default-write || "$expected" == default-duplex ]]; then
-    local kind=${expected#default-}
-    python3 "$CHECKER" "$kind" "$case_dir" --bundle "$bundle"
-  elif [[ "$expected" == override-read ]]; then
-    python3 "$CHECKER" read "$case_dir" --bundle "$bundle" --read-burst 8 \
-      --read-outstanding 3 --read-fifo 32
-  elif [[ "$expected" == override-write ]]; then
-    python3 "$CHECKER" write "$case_dir" --bundle "$bundle" --write-burst 8 \
-      --write-outstanding 3 --write-fifo 16
+  python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" \
+    -- "$source_file" "${args[@]}"
+  if [[ "$expected" == default-read || "$expected" == default-write || "$expected" == default-duplex ||
+        "$expected" == override-read || "$expected" == override-write ]]; then
+    local kind
+    case "$expected" in
+      default-read|override-read) kind=read ;;
+      default-write|override-write) kind=write ;;
+      default-duplex) kind=duplex ;;
+    esac
+    python3 "$CHECKER" "$kind" "$case_dir" --bundle "$bundle" \
+      --read-burst "$read_burst" --read-outstanding "$read_outstanding" --read-fifo "$read_fifo" \
+      --write-burst "$write_burst" --write-outstanding "$write_outstanding" --write-fifo "$write_fifo" \
+      --read-burst-origin "$read_burst_origin" --write-burst-origin "$write_burst_origin"
   elif [[ "$expected" == fixed ]]; then
     python3 "$CHECKER" fixed "$case_dir" --bundle "$bundle"
   elif [[ "$expected" == optout ]]; then
     python3 "$CHECKER" optout "$case_dir" --bundle "$bundle"
+  elif [[ "$expected" == rtl-fallback ]]; then
+    python3 "$CHECKER" rtl-fallback "$case_dir" --bundle "$bundle"
   elif [[ "$expected" == no-access ]]; then
     python3 "$CHECKER" no-access "$case_dir" --bundle "$bundle"
   elif [[ "$expected" == fallback ]]; then
@@ -93,17 +102,54 @@ run_case() {
   fi
 }
 
-# The three positive cases intentionally omit both --bambu-parameter=m-axi-burst
-# and --AXI-burst-type. The device's INCREMENTAL profile supplies burst type.
-run_case default-read read_only AXI_DEFAULT_CASE_READ default-read data
-run_case default-write write_only AXI_DEFAULT_CASE_WRITE default-write data
-run_case default-duplex duplex_copy AXI_DEFAULT_CASE_DUPLEX default-duplex shared
-run_case explicit-optout read_only AXI_DEFAULT_CASE_READ optout data \
-  '' --bambu-parameter=m-axi-burst=0
-run_case read-override read_only AXI_DEFAULT_CASE_READ override-read data \
-  '' --extra-cc-options=-DAXI_DEFAULT_READ_OVERRIDE
-run_case write-override write_only AXI_DEFAULT_CASE_WRITE override-write data \
-  '' --extra-cc-options=-DAXI_DEFAULT_WRITE_OVERRIDE
+run_case_with_source() {
+  local source_file=$1
+  shift
+  [[ -s $source_file ]] || { echo "required source missing: $source_file" >&2; return 2; }
+  CASE_SOURCE_OVERRIDE=$source_file run_case "$@"
+}
+
+run_noop_pair() {
+  local tag=$1 top=$2 macro=$3 bundle=$4 on_case=$5 source_file=$6 reason=$7 off_kind=$8
+  shift 8
+  local -a extra_args=("$@")
+  local on_dir
+  run_case_with_source "$source_file" "$tag-off-a" "$top" "$macro" "$off_kind" "$bundle" "" \
+    "${extra_args[@]}" --bambu-parameter=m-axi-burst=0
+  run_case_with_source "$source_file" "$tag-off-b" "$top" "$macro" "$off_kind" "$bundle" "" \
+    "${extra_args[@]}" --bambu-parameter=m-axi-burst=0
+  if [[ $on_case == - ]]; then
+    on_dir="$tag-on"
+    run_case_with_source "$source_file" "$on_dir" "$top" "$macro" rtl-fallback "$bundle" "" \
+      "${extra_args[@]}"
+  else
+    on_dir=$on_case
+  fi
+  python3 "$CHECKER" rtl-equal "$OUT/$tag-off-a" --compare "$OUT/$tag-off-b"
+  python3 "$CHECKER" rtl-equal "$OUT/$tag-off-a" --compare "$OUT/$on_dir"
+  printf 'DEFAULT BURST NO-OP PASS: %s reason=%s\n' "$tag" "$reason"
+  printf 'case=%s reason=%s off_runs=%s,%s on_run=%s\n' \
+    "$tag" "$reason" "$tag-off-a" "$tag-off-b" "$on_dir" >>"$OUT/noop-rtl-comparisons.txt"
+}
+
+PROFILE_MANIFEST="$TESTS/default_profile_cases.tsv"
+while IFS='|' read -r tag top macro expected bundle burst_setting extra_macro reason \
+  read_burst read_outstanding read_fifo write_burst write_outstanding write_fifo \
+  read_burst_origin write_burst_origin; do
+  [[ -z "$tag" || "$tag" == \#* ]] && continue
+  local_args=()
+  case "$burst_setting" in
+    default) ;;
+    off) local_args+=("--bambu-parameter=${BURST_PARAMETER}=0") ;;
+    invalid) local_args+=("--bambu-parameter=${BURST_PARAMETER}=2") ;;
+    *) echo "invalid burst setting in $PROFILE_MANIFEST: $burst_setting" >&2; exit 2 ;;
+  esac
+  [[ -z "$extra_macro" ]] || local_args+=("--extra-cc-options=-D$extra_macro")
+  PROFILE_READ_BURST=$read_burst PROFILE_READ_OUTSTANDING=$read_outstanding PROFILE_READ_FIFO=$read_fifo \
+  PROFILE_WRITE_BURST=$write_burst PROFILE_WRITE_OUTSTANDING=$write_outstanding PROFILE_WRITE_FIFO=$write_fifo \
+  PROFILE_READ_BURST_ORIGIN=$read_burst_origin PROFILE_WRITE_BURST_ORIGIN=$write_burst_origin \
+    run_case "$tag" "$top" "$macro" "$expected" "$bundle" "$reason" "${local_args[@]}"
+done < "$PROFILE_MANIFEST"
 run_case fixed-device-default read_only AXI_DEFAULT_CASE_READ fixed data \
   '' -b "$FIXED_DEVICE"
 run_case fallback-stride stride_read AXI_DEFAULT_CASE_STRIDE fallback data \
@@ -113,7 +159,24 @@ run_case fallback-cache cached_read AXI_DEFAULT_CASE_CACHE fallback data \
 run_case fallback-nested nested_read AXI_DEFAULT_CASE_NESTED fallback data \
   'read-burst CFG/SSA recognition failed or bundle is not exclusive'
 run_case unused-m-axi-pointer no_access AXI_DEFAULT_CASE_NO_ACCESS no-access data
-run_case invalid-burst-value read_only AXI_DEFAULT_CASE_READ reject data \
-  'm-axi-burst must be exactly 0 or 1' --bambu-parameter=m-axi-burst=2
+# Repeated off runs establish deterministic generated RTL before comparing the
+# default-on fallback cases. Only the generated provenance banner is ignored.
+: >"$OUT/noop-rtl-comparisons.txt"
+run_noop_pair fallback-stride stride_read AXI_DEFAULT_CASE_STRIDE data fallback-stride "$SOURCE" \
+  'non-unit stride prevents burst recognition' optout
+run_noop_pair fallback-cache cached_read AXI_DEFAULT_CASE_CACHE data fallback-cache "$SOURCE" \
+  'cache-enabled bundle' optout
+run_noop_pair fallback-nested nested_read AXI_DEFAULT_CASE_NESTED data fallback-nested "$SOURCE" \
+  'nested loops use the conservative scalar path' optout
+run_noop_pair unused-m-axi-pointer no_access AXI_DEFAULT_CASE_NO_ACCESS data unused-m-axi-pointer "$SOURCE" \
+  'pointer has no memory accesses' optout
+BYTE_SOURCE="$ROOT/panda_regressions/hls/bambu_interface_test/axi_legacy_burst_hint.cpp"
+run_noop_pair byte-legacy copy_bytes '' shared - "$BYTE_SOURCE" '8-bit accesses are outside the burst ABI' optout
+MM_AXI_SOURCE="$ROOT/panda_regressions/hls/bambu_axi_verification/mm_axi.c"
+run_noop_pair mm-axi-matrix mmult '' gmem0 - "$MM_AXI_SOURCE" \
+  'nested tiled matrix loops retain the legacy RTL' optout \
+  --extra-cc-options=-Drank=8 --extra-cc-options=-Dtile_rank=2
 
-echo "DEFAULT AXI BURST PROFILE PASS: default read/write/duplex, opt-out, explicit profiles, FIXED and fallback diagnostics, no-access and invalid-value check"
+python3 "$CHECKER" rtl-different "$OUT/default-read" --compare "$OUT/explicit-optout"
+
+echo "DEFAULT AXI BURST PROFILE PASS: profile defaults, explicit profiles, fallbacks, RTL no-op comparisons and positive control"

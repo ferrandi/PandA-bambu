@@ -15,7 +15,7 @@ def main():
     parser.add_argument("--bambu", required=True)
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[2]
-    scratch = pathlib.Path(tempfile.gettempdir())
+    scratch = pathlib.Path(os.environ.get("BURST_TEST_TMPDIR", pathlib.Path.cwd() / "out_vector_mask_scalable"))
     scratch.mkdir(parents=True, exist_ok=True)
     env = os.environ.copy()
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))

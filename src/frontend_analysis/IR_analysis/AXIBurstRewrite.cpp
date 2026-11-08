@@ -19,10 +19,10 @@
  *
  */
 /**
- * @file InterfaceInfer_burst_rewrite.cpp
+ * @file AXIBurstRewrite.cpp
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  */
-#include "InterfaceInfer_internal.hpp"
+#include "AXIBurstRewrite.hpp"
 #include "application_manager.hpp"
 #include "call_graph_manager.hpp"
 #include "dbgPrintHelper.hpp"
@@ -731,6 +731,7 @@ namespace InterfaceInferInternal
       const auto latch = splitBlockBeforeStatement(sl, current_store_block, *std::next(after_store), AppM, TM);
       insertConditionalCallDiamond(sl, current_store_block, latch, fast_mode, scalar_drain, function_id, AppM, TM);
       register_call(scalar_drain, drain_decl, write_argument_name, channel_write_vdefs);
+      // Preserve configure-to-drain ordering; BuildVirtualPhi adds the loop-carried virtual PHI separately.
       addVirtualUseToStatement(scalar_read_configure, GetPointerS<const node_stmt>(scalar_drain)->vdef);
 
       const auto full_drain_block = make_block(parent_loop_id);
@@ -974,6 +975,225 @@ namespace InterfaceInferInternal
       serializeInterfaceAccess(drain_call, bundle_name, channel_write_vdefs, ir_man);
       interface_io[region.exit][argument_name].push_back(drain_call->index);
       add_to_modified(drain_call);
+   }
+
+   void ApplyAXIBurstDecision(const AXIBurstRewriteContext& context)
+   {
+      const auto* decision = context.decision;
+      const auto& fd = context.fd;
+      const auto root_id = context.root_id;
+      const auto argument_id = context.argument_id;
+      const auto address_bitsize = context.address_bitsize;
+      const auto& argument_name = context.argument_name;
+      const auto& bundle_name = context.bundle_name;
+      const auto& function_name = context.function_name;
+      const auto bitwidth = context.bitwidth;
+      const auto alignment = context.alignment;
+      const bool isRead = context.is_read;
+      const bool isWrite = context.is_write;
+      const bool burst_enabled = context.burst_feature_enabled;
+      const bool same_base_duplex_active = context.same_base_duplex_active;
+      const auto& iface_attrs = context.iface_attrs;
+      const auto& interface_datatype = context.interface_datatype;
+      const auto& AppM = context.AppM;
+      const auto& TM = context.TM;
+      const auto& ir_man = context.ir_man;
+      auto& read_statements = context.read_statements;
+      auto& write_statements = context.write_statements;
+      auto& channel_read_vdefs = context.channel_read_vdefs;
+      auto& channel_write_vdefs = context.channel_write_vdefs;
+      auto& interface_io = context.interface_io;
+      auto& operations_read = context.operations_read;
+      auto& operations_write = context.operations_write;
+      auto& modified = context.modified;
+      const auto output_level = context.output_level;
+      const bool write_burst_requested =
+          burst_enabled && decision && decision->write_requested && !context.force_legacy;
+      const bool burst_requested = burst_enabled && decision && decision->read_requested && !context.force_legacy;
+      const bool runtime_guarded_duplex =
+          same_base_duplex_active && decision->same_base_duplex_proof->runtime_range_guard;
+      if(same_base_duplex_active)
+      {
+#if HAVE_ASSERTS
+         const auto& proof = *decision->same_base_duplex_proof;
+         const auto read_regions = decision->read_regions.find(proof.read_owner_argument_index);
+         const auto write_region = decision->write_regions.find(proof.write_owner_argument_index);
+         const auto same_optional_node = [](const ir_nodeRef& lhs, const ir_nodeRef& rhs) {
+            return (!lhs && !rhs) || (lhs && rhs && lhs->index == rhs->index);
+         };
+#endif
+         THROW_ASSERT(
+             read_regions != decision->read_regions.end() && read_regions->second.size() == 1 &&
+                 write_region != decision->write_regions.end() &&
+                 read_regions->second.front().preheader == proof.read_region.preheader &&
+                 read_regions->second.front().header == proof.read_region.header &&
+                 read_regions->second.front().bound->index == proof.read_region.bound->index &&
+                 read_regions->second.front().loop_trip_bound->index == proof.read_region.loop_trip_bound->index &&
+                 same_optional_node(read_regions->second.front().loop_trip_compare,
+                                    proof.read_region.loop_trip_compare) &&
+                 read_regions->second.front().effective_bound->index == proof.read_region.effective_bound->index &&
+                 same_optional_node(read_regions->second.front().effective_compare,
+                                    proof.read_region.effective_compare) &&
+                 read_regions->second.front().has_direction_guard == proof.read_region.has_direction_guard &&
+                 read_regions->second.front().access_bb == proof.read_region.access_bb &&
+                 write_region->second.preheader == proof.write_region.preheader &&
+                 write_region->second.header == proof.write_region.header &&
+                 write_region->second.exit == proof.write_region.exit &&
+                 write_region->second.bound->index == proof.write_region.bound->index &&
+                 write_region->second.loop_trip_bound->index == proof.write_region.loop_trip_bound->index &&
+                 same_optional_node(write_region->second.loop_trip_compare, proof.write_region.loop_trip_compare) &&
+                 write_region->second.effective_bound->index == proof.write_region.effective_bound->index &&
+                 same_optional_node(write_region->second.effective_compare, proof.write_region.effective_compare) &&
+                 write_region->second.has_direction_guard == proof.write_region.has_direction_guard &&
+                 write_region->second.access_bb == proof.write_region.access_bb,
+             "Both frozen duplex regions must be validated before either direction is rewritten");
+      }
+      bool burst_profile_eligible = true;
+      std::string burst_fallback_reason = burst_requested ? decision->read_fallback_reason : "";
+      if(burst_requested)
+      {
+         if(burst_fallback_reason.empty() && (bitwidth != 32 || alignment < 4))
+         {
+            burst_fallback_reason = "data width/alignment is not 32-bit/4-byte";
+         }
+         else if(burst_fallback_reason.empty() &&
+                 iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+                 std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)
+         {
+            burst_fallback_reason = "m_axi interface data width is not 32-bit";
+         }
+         else if(burst_fallback_reason.empty() && address_bitsize != 32 && address_bitsize != 64)
+         {
+            burst_fallback_reason = "AXI address width is not 32 or 64 bit";
+         }
+         else if(burst_fallback_reason.empty() && !decision->read_recognized)
+         {
+            burst_fallback_reason = "read-burst CFG/SSA recognition failed or bundle is not exclusive";
+         }
+         burst_profile_eligible = burst_fallback_reason.empty();
+         if(!burst_profile_eligible && isRead)
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Keeping legacy m_axi accesses for bundle " + bundle_name + ": " + burst_fallback_reason);
+         }
+      }
+      if(runtime_guarded_duplex && argument_id == decision->same_base_duplex_proof->read_owner_argument_index)
+      {
+         THROW_ASSERT(burst_profile_eligible && decision->write_recognized,
+                      "Frozen runtime duplex profile failed direction eligibility");
+         const auto lowered_calls = lowerRuntimeGuardedDuplex(
+             GetPointerS<const statement_list_node>(fd->body), fd, *decision->same_base_duplex_proof, bundle_name,
+             get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->read_owner_argument_index)),
+             get_decl_name(TM->GetIRNode(decision->same_base_duplex_proof->write_owner_argument_index)),
+             interface_datatype, address_bitsize, AppM, TM, ir_man, channel_read_vdefs, channel_write_vdefs,
+             interface_io);
+         for(const auto& call : lowered_calls)
+         {
+            modified.insert(GetPointer<node_stmt>(call)->parent->index);
+         }
+         read_statements.clear();
+         operations_read.insert(ENCODE_FDNAME(bundle_name, "_configure_read", ""));
+         operations_read.insert(ENCODE_FDNAME(bundle_name, "_burst_read", ""));
+         operations_write.insert(ENCODE_FDNAME(bundle_name, "_configure_write", ""));
+         operations_write.insert(ENCODE_FDNAME(bundle_name, "_store_write", ""));
+         operations_write.insert(ENCODE_FDNAME(bundle_name, "_drain_write", ""));
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "---Activated guarded distinct-base duplex for bundle " + bundle_name +
+                            " (overlap uses serialized scalar transfers)");
+      }
+      else if(!runtime_guarded_duplex && burst_requested && burst_profile_eligible && isRead)
+      {
+         const auto sl = GetPointerS<const statement_list_node>(fd->body);
+         const auto expected_base_id = AppM->getSSAFromParm(root_id, argument_id);
+         const auto expected_base = TM->GetIRNode(expected_base_id);
+         const auto recognized_regions = decision->read_regions.find(argument_id);
+         const bool recognized = decision->read_recognized && recognized_regions != decision->read_regions.end();
+         if(recognized)
+         {
+            const auto& regions = recognized_regions->second;
+            const auto max_burst = decision->read_max_burst_length;
+            THROW_ASSERT(max_burst >= 1 && max_burst <= 256, "Invalid parsed max_read_burst_length");
+            LowerReadBurstRegions(sl, fd, regions, expected_base, bundle_name, argument_name, interface_datatype, AppM,
+                                  TM, ir_man, channel_read_vdefs, interface_io, operations_read, modified);
+            read_statements.clear();
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Configured read burst regions for bundle " + bundle_name +
+                               " (B=" + std::to_string(max_burst) + ")");
+         }
+         else
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Keeping legacy m_axi reads for bundle " + bundle_name +
+                               ": read-burst CFG/SSA recognition failed or bundle is not exclusive");
+         }
+      }
+      if(runtime_guarded_duplex && argument_id == decision->same_base_duplex_proof->write_owner_argument_index)
+      {
+         write_statements.clear();
+      }
+      else if(!runtime_guarded_duplex && write_burst_requested && isWrite)
+      {
+         std::string write_fallback_reason = decision->write_fallback_reason;
+         if(write_fallback_reason.empty() &&
+            (bitwidth != 32 || alignment < 4 ||
+             (iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() &&
+              std::stoul(iface_attrs.at(FunctionArchitecture::iface_bitwidth)) != 32)))
+         {
+            write_fallback_reason = "data width/alignment is not 32-bit/4-byte";
+         }
+         else if(write_fallback_reason.empty() && address_bitsize != 32 && address_bitsize != 64)
+         {
+            write_fallback_reason = "AXI address width is not 32 or 64 bit";
+         }
+         else if(write_fallback_reason.empty() && !decision->write_recognized)
+         {
+            write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
+         }
+         const auto sl = GetPointerS<const statement_list_node>(fd->body);
+         const auto expected_base_id = AppM->getSSAFromParm(root_id, argument_id);
+         const auto expected_base = TM->GetIRNode(expected_base_id);
+         const auto recognized_region = decision->write_regions.find(argument_id);
+         const bool recognized = write_fallback_reason.empty() && decision->write_recognized &&
+                                 recognized_region != decision->write_regions.end();
+         if(!recognized && write_fallback_reason.empty())
+         {
+            write_fallback_reason = "write-burst CFG/SSA/effect recognition failed";
+         }
+         if(recognized)
+         {
+            const auto& region = recognized_region->second;
+            LowerWriteBurstRegion(sl, fd, region, expected_base, bundle_name, argument_name, interface_datatype, AppM,
+                                  TM, ir_man, channel_write_vdefs, interface_io, operations_write, modified);
+            write_statements.clear();
+            if(same_base_duplex_active)
+            {
+               INDENT_OUT_MEX(
+                   OUTPUT_LEVEL_MINIMUM, output_level,
+                   std::string(decision->same_base_duplex_proof->runtime_range_guard ?
+                                   "---Activated distinct-base runtime-range-guarded pointwise duplex m_axi bundle " :
+                               decision->same_base_duplex_proof->distinct_bases ?
+                                   "---Activated distinct-base restricted pointwise duplex m_axi bundle " :
+                                   "---Activated same-base pointwise duplex m_axi bundle ") +
+                       bundle_name + " for root " + function_name);
+               if(decision->same_base_duplex_proof->distinct_bases &&
+                  !decision->same_base_duplex_proof->runtime_range_guard)
+               {
+                  INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                 "WARNING: distinct-base duplex relies on the caller's __restrict contract; "
+                                 "the caller must ensure the accessed regions do not overlap (no runtime "
+                                 "range validation is performed)");
+               }
+            }
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Configured write burst region for bundle " + bundle_name +
+                               " (B=" + std::to_string(decision->write_profile.max_burst_length) + ")");
+         }
+         else
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "---Keeping legacy m_axi writes for bundle " + bundle_name + ": " + write_fallback_reason);
+         }
+      }
    }
 
 } // namespace InterfaceInferInternal

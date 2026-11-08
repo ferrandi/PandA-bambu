@@ -91,6 +91,42 @@ for tool in python3 sha256sum timeout grep sed tail tr; do
         exit 2
     fi
 done
+WRITER_PROFILE_MANIFEST=${BURST_WRITER_PROFILE_MANIFEST:-$SCRIPT_DIR/write_burst_profiles.tsv}
+if [[ ! -f $WRITER_PROFILE_MANIFEST ]]; then
+    echo "missing writer profile manifest: $WRITER_PROFILE_MANIFEST" >&2
+    exit 2
+fi
+declare -A writer_profile_ids=()
+while IFS=$'\t' read -r profile_group profile_mode profile_label profile_burst profile_outstanding \
+    profile_depth profile_addr profile_fast profile_scenarios profile_extra; do
+    [[ -z ${profile_group}${profile_mode}${profile_label}${profile_burst}${profile_outstanding}${profile_depth}${profile_addr}${profile_fast}${profile_scenarios}${profile_extra} ||
+       $profile_group == \#* ]] && continue
+    if [[ -n $profile_extra || ! $profile_group =~ ^[a-zA-Z0-9-]+$ ||
+          -n ${writer_profile_ids[$profile_group]:-} ||
+          ! $profile_mode =~ ^(base|outstanding)$ || ! $profile_label =~ ^[A-Za-z0-9-]+$ ||
+          ! $profile_burst =~ ^[1-9][0-9]*$ || ! $profile_outstanding =~ ^[1-9][0-9]*$ ||
+          ! $profile_depth =~ ^[1-9][0-9]*$ || ! $profile_addr =~ ^(32|64)$ ||
+          ! $profile_fast =~ ^[01]$ || ! $profile_scenarios =~ ^[A-Z0-9_\ ]+$ ]]; then
+        echo "invalid or duplicate writer profile manifest row: $profile_group" >&2
+        exit 2
+    fi
+    if ((profile_burst > 256 || profile_outstanding > 16 || profile_depth > 4096 ||
+         profile_depth < profile_burst || (profile_depth & (profile_depth - 1)))) ||
+       [[ ($profile_mode == base && $profile_outstanding != 1) ||
+          ($profile_mode == outstanding && $profile_outstanding == 1) ]]; then
+        echo "out-of-range or inconsistent writer profile row: $profile_group" >&2
+        exit 2
+    fi
+    declare -A profile_scenario_ids=()
+    for profile_scenario in $profile_scenarios; do
+        if [[ -n ${profile_scenario_ids[$profile_scenario]:-} ]]; then
+            echo "duplicate writer scenario in profile $profile_group: $profile_scenario" >&2
+            exit 2
+        fi
+        profile_scenario_ids[$profile_scenario]=1
+    done
+    writer_profile_ids[$profile_group]=1
+done < "$WRITER_PROFILE_MANIFEST"
 modelsim_resolve
 MODELSIM_VERSION=$(modelsim_version) || exit 2
 WRITER_GROUP_JOBS=${BURST_WRITER_GROUP_JOBS:-12}
@@ -118,6 +154,7 @@ python3 -B "$EXTRACTOR" --xml "$XML" --out "$TASK_OUT/MinimalAXI4MasterPipelined
     printf 'xml='; sha256sum "$XML"
     printf 'extractor='; sha256sum "$EXTRACTOR"
     printf 'testbench='; sha256sum "$TB"
+    printf 'profile_manifest='; sha256sum "$WRITER_PROFILE_MANIFEST"
     printf 'modelsim_lookup_source=%s\nmodelsim_bin=%s\nvsim=%s\nvlib=%s\nvlog=%s\nvmap=%s\n' \
         "$MODELSIM_SOURCE" "$MODELSIM_BIN" "$MODELSIM_VSIM" \
         "$MODELSIM_VLIB" "$MODELSIM_VLOG" "$MODELSIM_VMAP"
@@ -250,6 +287,26 @@ build_run_o() {
     done
 }
 
+run_writer_profile_group() {
+    local wanted=$1 group mode label burst outstanding depth addr fast scenarios extra
+    while IFS=$'\t' read -r group mode label burst outstanding depth addr fast scenarios extra; do
+        [[ $group != "$wanted" ]] && continue
+        local -a cases=() run_args=()
+        read -r -a cases <<< "$scenarios"
+        if [[ $fast == 1 ]]; then run_args+=(--fast-store-ack=1); fi
+        if [[ $mode == base ]]; then
+            build_run "$label" "$burst" "$depth" "$addr" "${cases[0]}" \
+                "${run_args[@]}" "${cases[@]:1}"
+        else
+            build_run_o "$label" "$burst" "$outstanding" "$depth" "$addr" "${cases[0]}" \
+                "${run_args[@]}" "${cases[@]:1}"
+        fi
+        return $?
+    done < "$WRITER_PROFILE_MANIFEST"
+    echo "internal error: writer profile group not found: $wanted" >&2
+    return 2
+}
+
 build_async_reset_run() {
     local polarity=$1 active_low=$2 fast_store_ack=${3:-0}
     local label="ASYNC_RESET_${polarity}_FAST${fast_store_ack}"
@@ -335,82 +392,12 @@ run_writer_group() {
     local RESULTS_LOG="$TASK_OUT/group-results/$group.log"
     : > "$RESULTS_LOG" || return $?
     case "$group" in
-        core-B16-D16)
-            build_run B16-D16 16 16 32 CORE BOUNDARY W_BEFORE_AW AW_BEFORE_W STALLS \
-                CFG_SIZE_CHANGE CFG_COUNT_CHANGE CONFIG_PIPELINE_VALID CONFIG_PIPELINE_INVALID \
-                BAD_CONFIG_SIZE BAD_CONFIG_ALIGN COUNT_MSB OVERFLOW32 BAD_STORE_SIZE \
-                BAD_STORE_SIZE8 BAD_STORE_ADDRESS EARLY_DRAIN BID BRESP MAX_COUNT \
-                PENDING_STORE PENDING_OPERAND_CHANGE PENDING_OPERAND_CHANGE_ON_FREE \
-                PENDING_OPERAND_CHANGE_WITH_ROOM PENDING_OPERAND_CHANGE_AT_COMMIT \
-                TRANSIENT_DRAIN_RESTORE TRANSIENT_CONFIGURE_PENDING \
-                DRAIN_PENDING_FULL_COUNT DRAIN_PENDING_SHORT_COUNT STORE_ACK_PULSE DUPLICATE_START \
-                DRAIN_BEFORE_B DRAIN_ONE_SHOT PREMATURE_CONFIGURE INIT_DRAIN
-            ;;
-        core-B16-D32)
-            # CFG_SIZE_CHANGE and CFG_COUNT_CHANGE also run here: the configure-size and
-            # configure-count-width mutations run at FIFO_DEPTH=32, so the clean comparison has
-            # to be at the same parameters.
-            build_run B16-D32 16 32 32 CORE BRESP_NO_NEXT_DESCRIPTOR CFG_SIZE_CHANGE CFG_COUNT_CHANGE
-            ;;
-        core-B1-D1)
-            build_run B1-D1 1 1 32 CORE CONFIG_PIPELINE_B1
-            ;;
-        core-B1-O16)
-            build_run_o B1-O16 1 16 1 32 PLAN_FIFO_WITNESS SUSTAINED_B1
-            ;;
-        core-B3-D4)
-            build_run B3-D4 3 4 32 CORE
-            ;;
-        core-B16-D4096)
-            build_run B16-D4096 16 4096 32 CORE
-            ;;
-        core-B16-A32-F3)
-            build_run B16-A32-F3 16 32 32 MULTIPAGE PREMATURE_CONFIGURE_B_PENDING \
-                PREMATURE_CONFIGURE_B_DRAINS_E0
-            ;;
-        multi-O2-D16)
-            build_run_o O2-D16 16 2 16 32 MULTI_OUTSTANDING TWO_AW_BEFORE_B
-            ;;
-        multi-O2-D32)
-            build_run_o O2-D32 16 2 32 32 INDEPENDENT_CURSORS BRESP_MULTI PEER_FAULT_SPECULATIVE SUSTAINED_B16
-            ;;
-        multi-O3-D16)
-            build_run_o O3-D16 16 3 16 32 MULTI_OUTSTANDING
-            ;;
-        multi-O16-D16)
-            build_run_o O16-D16 16 16 16 32 MULTI_OUTSTANDING
-            ;;
-        multi-O16-D32)
-            build_run_o O16-D32 16 16 32 32 MULTI_OUTSTANDING
-            ;;
-        multi-O16-D32-A64)
-            build_run_o O16-D32-A64 16 16 32 64 MULTI_OUTSTANDING
-            ;;
-        boundary-O16-D32)
-            build_run_o boundary-O16-D32 16 16 32 32 BOUNDARY
-            ;;
-        wrap-O16-D32-A64)
-            build_run_o wrap-O16-D32-A64 16 16 32 64 FAST_STORE_ACK_WRAP --fast-store-ack=1
-            ;;
-        multi-O2-D32-F3)
-            build_run_o O2-D32-F3 16 2 32 32 BRESP_AW_W_HELD BRESP_W_BEFORE_AW
-            ;;
-        address-B16-A64)
-            build_run B16-A64 16 32 64 OVERFLOW64 MAX_COUNT CFG_BASE_CHANGE COUNT_MAX_64 \
-                CONFIGURE64_ZERO_FFFC CONFIGURE64_END_2P64 CONFIGURE64_CARRY_NONMAX \
-                CONFIGURE64_HIGH_MAX_NO_CARRY CONFIGURE64_BAD_ALIGN_ZERO COUNT_MSB
-            ;;
-        limit-B255-D256)
-            build_run B255-D256 255 256 32 CORE
-            ;;
-        limit-B256-O16)
-            build_run_o B256-O16 256 16 256 32 CORE
-            ;;
-        limit-B256-D256)
-            build_run B256-D256 256 256 32 PARAM
-            ;;
-        maxlen-B256-O2)
-            build_run_o B256-O2-MAXLEN 256 2 512 32 MAX_BURST_LENGTH
+        core-B16-D16|core-B16-D32|core-B1-D1|core-B1-O16|core-B3-D4|core-B16-D4096|\
+        core-B16-A32-F3|multi-O2-D16|multi-O2-D32|multi-O3-D16|multi-O16-D16|\
+        multi-O16-D32|multi-O16-D32-A64|boundary-O16-D32|wrap-O16-D32-A64|\
+        multi-O2-D32-F3|address-B16-A64|limit-B255-D256|limit-B256-O16|\
+        limit-B256-D256|maxlen-B256-O2)
+            run_writer_profile_group "$group"
             ;;
         async-reset-active-low)
             build_async_reset_run active-low 1

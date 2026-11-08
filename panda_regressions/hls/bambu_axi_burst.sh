@@ -178,6 +178,8 @@ if [[ $group != compiler ]]; then
   python3 -B "$script_dir/bambu_axi_burst/test_check_burst_results.py"
 fi
 python3 -B "$script_dir/bambu_axi_burst/test_regression_restart.py"
+python3 -B "$script_dir/bambu_axi_burst/test_compiler_test_support.py"
+python3 -B "$script_dir/bambu_axi_burst/test_compiler_case_manifest.py"
 python3 -B "$script_dir/bambu_axi_burst/test_write_compiler_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 if [[ $group != compiler ]]; then

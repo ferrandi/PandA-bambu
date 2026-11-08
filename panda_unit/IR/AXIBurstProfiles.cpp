@@ -1,22 +1,33 @@
 // Copyright (C) 2026 Politecnico di Milano
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include "HLS/hls_manager.hpp"
 #include "BambuParameter.hpp"
+#include "HLS/axi_interface_profile.hpp"
 
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(axi_burst_profiles_use_vitis_defaults)
 {
    const FunctionArchitecture::iface_attrs empty;
-   const auto read = ParseAXIReadBurstProfile(empty, "read");
+   AXIBurstProfileOrigins read_origins;
+   const auto read = ParseAXIReadBurstProfile(empty, "read", &read_origins);
+   BOOST_CHECK_EQUAL(read.max_burst_length, 16U);
    BOOST_CHECK_EQUAL(read.max_outstanding, 16U);
    BOOST_CHECK_EQUAL(read.fifo_depth, 256U);
+   BOOST_CHECK(read_origins.read_outstanding_default);
+   BOOST_CHECK(read_origins.read_fifo_default);
+   BOOST_CHECK_EQUAL(static_cast<unsigned int>(read_origins.read_burst_reason),
+                     static_cast<unsigned int>(AXIBurstLengthDefaultReason::default_value));
 
-   const auto write = ParseAXIWriteBurstProfile(empty, "write");
+   AXIBurstProfileOrigins write_origins;
+   const auto write = ParseAXIWriteBurstProfile(empty, "write", &write_origins);
    BOOST_CHECK_EQUAL(write.max_burst_length, 16U);
    BOOST_CHECK_EQUAL(write.max_outstanding, 16U);
    BOOST_CHECK_EQUAL(write.fifo_depth, 32U);
+   BOOST_CHECK(write_origins.write_outstanding_default);
+   BOOST_CHECK(write_origins.write_fifo_default);
+   BOOST_CHECK_EQUAL(static_cast<unsigned int>(write_origins.write_burst_reason),
+                     static_cast<unsigned int>(AXIBurstLengthDefaultReason::default_value));
 }
 
 BOOST_AUTO_TEST_CASE(m_axi_burst_parameter_is_enabled_by_default_and_overridable)
@@ -47,6 +58,69 @@ BOOST_AUTO_TEST_CASE(axi_burst_profile_attributes_override_defaults)
    BOOST_CHECK_EQUAL(write.max_burst_length, 8U);
    BOOST_CHECK_EQUAL(write.max_outstanding, 3U);
    BOOST_CHECK_EQUAL(write.fifo_depth, 64U);
+}
+
+BOOST_AUTO_TEST_CASE(axi_burst_profiles_default_single_beat_independently)
+{
+   FunctionArchitecture::iface_attrs read_attrs;
+   read_attrs[FunctionArchitecture::iface_num_read_outstanding] = "3";
+   AXIBurstProfileOrigins read_origins;
+   const auto read = ParseAXIReadBurstProfile(read_attrs, "read", &read_origins);
+   BOOST_CHECK_EQUAL(read.max_burst_length, 1U);
+   BOOST_CHECK_EQUAL(read.max_outstanding, 3U);
+   BOOST_CHECK_EQUAL(read.fifo_depth, 4U);
+   BOOST_CHECK(read_origins.read_burst_default);
+   BOOST_CHECK(!read_origins.read_outstanding_default);
+   BOOST_CHECK(read_origins.read_fifo_default);
+   BOOST_CHECK_EQUAL(static_cast<unsigned int>(read_origins.read_burst_reason),
+                     static_cast<unsigned int>(AXIBurstLengthDefaultReason::outstanding_hint));
+
+   FunctionArchitecture::iface_attrs write_attrs;
+   write_attrs[FunctionArchitecture::iface_write_fifo_depth] = "64";
+   AXIBurstProfileOrigins write_origins;
+   const auto write = ParseAXIWriteBurstProfile(write_attrs, "write", &write_origins);
+   BOOST_CHECK_EQUAL(write.max_burst_length, 1U);
+   BOOST_CHECK_EQUAL(write.max_outstanding, 16U);
+   BOOST_CHECK_EQUAL(write.fifo_depth, 64U);
+   BOOST_CHECK(write_origins.write_burst_default);
+   BOOST_CHECK(write_origins.write_outstanding_default);
+   BOOST_CHECK(!write_origins.write_fifo_default);
+   BOOST_CHECK_EQUAL(static_cast<unsigned int>(write_origins.write_burst_reason),
+                     static_cast<unsigned int>(AXIBurstLengthDefaultReason::fifo_hint));
+
+   FunctionArchitecture::iface_attrs write_outstanding_attrs;
+   write_outstanding_attrs[FunctionArchitecture::iface_write_burst_outstanding] = "3";
+   BOOST_CHECK_EQUAL(ParseAXIWriteBurstProfile(write_outstanding_attrs, "write").max_burst_length, 1U);
+   write_outstanding_attrs[FunctionArchitecture::iface_max_write_burst_length] = "8";
+   write_origins = {};
+   BOOST_CHECK_EQUAL(ParseAXIWriteBurstProfile(write_outstanding_attrs, "write", &write_origins).max_burst_length, 8U);
+   BOOST_CHECK(!write_origins.write_burst_default);
+
+   read_attrs[FunctionArchitecture::iface_read_fifo_depth] = "8";
+   read_origins = {};
+   BOOST_CHECK_EQUAL(ParseAXIReadBurstProfile(read_attrs, "read", &read_origins).max_burst_length, 1U);
+   BOOST_CHECK_EQUAL(static_cast<unsigned int>(read_origins.read_burst_reason),
+                     static_cast<unsigned int>(AXIBurstLengthDefaultReason::outstanding_and_fifo_hints));
+
+   read_attrs[FunctionArchitecture::iface_max_read_burst_length] = "8";
+   read_origins = {};
+   BOOST_CHECK_EQUAL(ParseAXIReadBurstProfile(read_attrs, "read", &read_origins).max_burst_length, 8U);
+   BOOST_CHECK(!read_origins.read_burst_default);
+   BOOST_CHECK_EQUAL(static_cast<unsigned int>(read_origins.read_burst_reason),
+                     static_cast<unsigned int>(AXIBurstLengthDefaultReason::explicit_value));
+
+   FunctionArchitecture::iface_attrs mixed_attrs;
+   mixed_attrs[FunctionArchitecture::iface_num_read_outstanding] = "3";
+   mixed_attrs[FunctionArchitecture::iface_write_fifo_depth] = "64";
+   BOOST_CHECK_EQUAL(ParseAXIReadBurstProfile(mixed_attrs, "mixed").max_burst_length, 1U);
+   BOOST_CHECK_EQUAL(ParseAXIWriteBurstProfile(mixed_attrs, "mixed").max_burst_length, 1U);
+
+   FunctionArchitecture::iface_attrs read_only_hint;
+   read_only_hint[FunctionArchitecture::iface_num_read_outstanding] = "3";
+   BOOST_CHECK_EQUAL(ParseAXIWriteBurstProfile(read_only_hint, "mixed").max_burst_length, 16U);
+   FunctionArchitecture::iface_attrs write_only_hint;
+   write_only_hint[FunctionArchitecture::iface_write_burst_outstanding] = "3";
+   BOOST_CHECK_EQUAL(ParseAXIReadBurstProfile(write_only_hint, "mixed").max_burst_length, 16U);
 }
 
 BOOST_AUTO_TEST_CASE(axi_burst_profiles_reject_invalid_explicit_overrides)

@@ -330,6 +330,9 @@ target_link_libraries(panda_hdl_generators PRIVATE panda_core)
 set(PANDA_UNIT_TEST_SOURCES
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/main_tests.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/TechnologyTiming.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/HLS/AXIDuplexBindingMetadata.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/HLS/AXIBurstGeneratorContracts.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/HLS/FSMInfoPhiTiming.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/OrdinaryMemoryAccess.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/AXIBurstProfiles.cpp"
    "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/IR/VectorAllocationCharacterization.cpp"
@@ -372,7 +375,13 @@ set_target_properties(record_output PROPERTIES
 # Build the copier if a partial build left it missing at install time.
 install(CODE "
    if(NOT EXISTS \"$<TARGET_FILE:record_output>\")
-      execute_process(COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target record_output --config \"\${CMAKE_INSTALL_CONFIG_NAME}\")
+      execute_process(
+         COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target record_output --config \"\${CMAKE_INSTALL_CONFIG_NAME}\"
+         RESULT_VARIABLE _panda_build_result
+      )
+      if(NOT \"\${_panda_build_result}\" STREQUAL \"0\")
+         message(FATAL_ERROR \"Failed to build record_output before installation: \${_panda_build_result}\")
+      endif()
    endif()
 " )
 install(TARGETS record_output
@@ -403,6 +412,17 @@ if(PANDA_BUILD_BAMBU)
    )
    # Generated Bambu scripts require the copier.
    add_dependencies(bambu record_output)
+   install(CODE "
+      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu\")
+         execute_process(
+            COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu --config \"\${CMAKE_INSTALL_CONFIG_NAME}\"
+            RESULT_VARIABLE _panda_build_result
+         )
+         if(NOT \"\${_panda_build_result}\" STREQUAL \"0\")
+            message(FATAL_ERROR \"Failed to build bambu before installation: \${_panda_build_result}\")
+         endif()
+      endif()
+   " )
    install(TARGETS bambu
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
@@ -423,6 +443,17 @@ if(PANDA_BUILD_EUCALYPTUS)
    set_target_properties(eucalyptus PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
+   install(CODE "
+      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/eucalyptus\")
+         execute_process(
+            COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target eucalyptus --config \"\${CMAKE_INSTALL_CONFIG_NAME}\"
+            RESULT_VARIABLE _panda_build_result
+         )
+         if(NOT \"\${_panda_build_result}\" STREQUAL \"0\")
+            message(FATAL_ERROR \"Failed to build eucalyptus before installation: \${_panda_build_result}\")
+         endif()
+      endif()
+   " )
    install(TARGETS eucalyptus
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
@@ -443,6 +474,17 @@ if(PANDA_BUILD_CC)
    set_target_properties(bambu-cc PROPERTIES
       INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
    )
+   install(CODE "
+      if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu-cc\")
+         execute_process(
+            COMMAND \"${CMAKE_COMMAND}\" --build \"${CMAKE_BINARY_DIR}\" --target bambu-cc --config \"\${CMAKE_INSTALL_CONFIG_NAME}\"
+            RESULT_VARIABLE _panda_build_result
+         )
+         if(NOT \"\${_panda_build_result}\" STREQUAL \"0\")
+            message(FATAL_ERROR \"Failed to build bambu-cc before installation: \${_panda_build_result}\")
+         endif()
+      endif()
+   " )
    install(TARGETS bambu-cc
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
