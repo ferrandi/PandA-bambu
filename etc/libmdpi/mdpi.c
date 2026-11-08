@@ -95,7 +95,11 @@ unsigned int m_next(unsigned int state)
             __ipc_wait(MDPI_IPC_STATE_RESPONSE);
             state_next = __m_ipc_operation.payload.sc.state;
             retval = __m_ipc_operation.payload.sc.retval;
-            __ipc_release();
+            // The peer may exit immediately after publishing a terminal response.
+            if(state_next != MDPI_STATE_END && state_next != MDPI_STATE_ERROR && state_next != MDPI_STATE_ABORT)
+            {
+               __ipc_release();
+            }
          } while(state_next == state);
          break;
       default:
