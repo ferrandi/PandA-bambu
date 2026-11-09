@@ -185,20 +185,18 @@ python3 -B "$script_dir/bambu_axi_burst/test_read_compiler_artifacts.py"
 if [[ $group != compiler ]]; then
   BURST_TEST_TMPDIR="$scratch/tmp" python3 -B "$script_dir/bambu_axi_burst/test_modelsim_tool_lookup.py"
 fi
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_extract_write_engine.py"
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_write_burst_modelsim_runner.py"
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_read_burst_modelsim_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_master_specialization.py"
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_generated_read_modelsim_runner.py"
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_generated_memaxi_response_runner.py"
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_vlog_portability_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/test_generated_memaxi_response_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/test_generated_read_modelsim_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/test_generated_duplex_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/test_generated_duplex_kernel_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/test_duplex_iteration_results.py"
+python3 -B "$script_dir/bambu_axi_burst/test_duplex_iteration_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_axi_latency_metadata.py"
 python3 -B "$script_dir/bambu_axi_burst/test_simulation_logging.py"
 python3 -B "$script_dir/bambu_axi_burst/test_bundle_preanalysis_artifacts.py"
 python3 -B "$script_dir/bambu_axi_burst/test_parallel_helpers.py"
 python3 -B "$script_dir/bambu_axi_burst/test_duplex_effect_analysis_artifacts.py"
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/test_generated_duplex_kernel_runner.py"
-python3 -B "$repo_root/panda_regressions/verilog/axi_burst/test_generated_duplex_runner.py"
 python3 -B "$script_dir/bambu_axi_burst/test_source_restrict_provenance.py"
 bash "$script_dir/bambu_axi_burst/test_compiler_runner_export_root.sh"
 
@@ -226,28 +224,17 @@ run_post_mantis_job() {
       BURST_WRITE_FLOAT_SIM_OUTSIDE_SANDBOX=1 \
         bash "$script_dir/bambu_axi_burst/run_write_compiler_tests.sh" float-sim "$bambu" "$scratch/functional-float-read-write"
       ;;
-    rtl-burst-diagnostics)
-      BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_burst_fault_diagnostics.sh" "$scratch/rtl-burst-diagnostics"
-      ;;
-    rtl-width-contract)
-      SIM_JOBS=1 bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_axi_width_contract.sh" "$scratch/rtl-width-contract"
-      ;;
-    rtl-duplex-core)
-      BURST_DUPLEX_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_duplex_core_tests.sh" "$scratch/rtl-duplex-core"
-      ;;
     rtl-generated-duplex)
       BURST_DUPLEX_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_duplex_tests.sh" "$bambu" "$scratch/rtl-generated-duplex"
+        bash "$repo_root/panda_regressions/hls/bambu_axi_burst/run_generated_duplex_tests.sh" "$bambu" "$scratch/rtl-generated-duplex"
       ;;
     rtl-generated-duplex-kernel)
       BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" DUPLEX_G2_JOBS="$job_slots" \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_duplex_kernel_tests.sh" "$bambu" "$scratch/rtl-generated-duplex-kernel"
+        bash "$repo_root/panda_regressions/hls/bambu_axi_burst/run_generated_duplex_kernel_tests.sh" "$bambu" "$scratch/rtl-generated-duplex-kernel"
       ;;
     rtl-default-duplex-reduction)
       BURST_DUPLEX_DEFAULT_SIM_OUTSIDE_SANDBOX=1 \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_default_duplex_reduction_modelsims.sh" \
+        bash "$repo_root/panda_regressions/hls/bambu_axi_burst/run_default_duplex_reduction_modelsims.sh" \
           "$bambu" "$scratch/rtl-default-duplex-reduction"
       ;;
     rtl-generated-write-kernels)
@@ -255,7 +242,7 @@ run_post_mantis_job() {
       local outstanding
       for outstanding in 1 2 3; do
         BURST_G2_SIM_OUTSIDE_SANDBOX=1 WRITE_OUTSTANDING=$outstanding SIM_JOBS=1 \
-          bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_write_kernel_tests.sh" \
+          bash "$repo_root/panda_regressions/hls/bambu_axi_burst/run_generated_write_kernel_tests.sh" \
             "$bambu" "$write_out/outstanding-$outstanding" || return $?
       done
       ;;
@@ -274,17 +261,9 @@ run_post_mantis_job() {
           bash "$script_dir/bambu_axi_burst/run_duplex_independent_tests.sh" "$bambu" "$scratch/$job"
       fi
       ;;
-    rtl-adapter-size)
-      BURST_ADAPTER_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_adapter_size_guard.sh" "$scratch/rtl-adapter-size"
-      ;;
     rtl-mdpi-extent)
       MDPI_EXTENT_TESTS_OUTSIDE_SANDBOX=1 MDPI_EXTENT_JOBS="$job_slots" SIM_JOBS="$job_slots" \
         bash "$script_dir/bambu_axi_burst/run_mdpi_extent_tests.sh" "$bambu" "$scratch/rtl-mdpi-extent"
-      ;;
-    rtl-testbench-memaxi-qualify)
-      BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_testbench_memaxi_model.sh" qualify "$scratch/rtl-testbench-memaxi-qualify"
       ;;
     rtl-vector-payload)
       BURST_MODELSIM_OUTSIDE_SANDBOX=1 \
@@ -292,34 +271,19 @@ run_post_mantis_job() {
       ;;
     rtl-generated-memaxi-response)
       BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS="$job_slots" \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_memaxi_response_tests.sh" \
+        bash "$repo_root/panda_regressions/hls/bambu_axi_burst/run_generated_memaxi_response_tests.sh" \
           "$bambu" "$scratch/rtl-generated-memaxi-response"
       ;;
     rtl-copy-comparison)
       BURST_COPY_COMPARISON_OUTSIDE_SANDBOX=1 COPY_COMPARISON_JOBS="$job_slots" \
         bash "$script_dir/bambu_axi_burst/run_copy_comparison_tests.sh" "$bambu" "$scratch/rtl-copy-comparison"
       ;;
-    rtl-modelsim-transactions|rtl-modelsim-credits|rtl-modelsim-bounds|rtl-modelsim-configure)
-      local suite=${job#rtl-modelsim-}
-      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh" \
-        "$scratch/rtl-modelsim-$suite" "$suite"
-      ;;
-    rtl-write-engine)
-      BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 \
-        BURST_WRITER_GROUP_JOBS="$job_slots" \
-        bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh" \
-          "$scratch/rtl-write-engine"
-      ;;
-    rtl-vlog)
-      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_vlog_portability.sh" \
-        "$scratch/out_axi_core_vlog_portability"
-      ;;
     generated-kernel-wrapper)
       # These checks deliberately share generated RTL and must remain serial.
       local generated_out="$scratch/generated-kernel"
-      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_kernel_tests.sh" \
+      bash "$repo_root/panda_regressions/hls/bambu_axi_burst/run_generated_kernel_tests.sh" \
         "$bambu" "$generated_out" || return $?
-      bash "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/run_generated_wrapper_rid_tests.sh" \
+      bash "$repo_root/panda_regressions/hls/bambu_axi_burst/run_generated_wrapper_rid_tests.sh" \
         "$bambu" "$generated_out/generated" "$scratch/wrapper-rid" || return $?
       ;;
     *)
@@ -332,7 +296,6 @@ run_post_mantis_job() {
 burst_job_slots() {
   local capacity
   case $1 in
-    rtl-write-engine) capacity=49 ;;
     rtl-generated-duplex) capacity=2 ;;
     rtl-generated-duplex-kernel) capacity=6 ;;
     rtl-duplex-alias) capacity=12 ;;
@@ -356,11 +319,10 @@ mkdir -p "$BURST_JOB_LOG_DIR"
 compiler_jobs=(compiler-pragma compiler-burst-profile compiler-xml-profile compiler-latency-metadata
   compiler-fallback-matrix compiler-root-reinvocation compiler-shared-resource compiler-write-all
   compiler-frontend-compatibility compiler-default-burst)
-functional_jobs=(rtl-modelsim-transactions rtl-modelsim-credits rtl-modelsim-bounds rtl-modelsim-configure
-  rtl-write-engine rtl-vlog generated-kernel-wrapper rtl-burst-diagnostics rtl-width-contract
-  rtl-duplex-core rtl-generated-duplex rtl-generated-duplex-kernel rtl-generated-write-kernels
-  rtl-default-duplex-reduction rtl-duplex-alias rtl-duplex-fallback rtl-duplex-independent rtl-adapter-size rtl-mdpi-extent
-  functional-float-read-write rtl-testbench-memaxi-qualify rtl-vector-payload
+functional_jobs=(generated-kernel-wrapper
+  rtl-generated-duplex rtl-generated-duplex-kernel rtl-generated-write-kernels
+  rtl-default-duplex-reduction rtl-duplex-alias rtl-duplex-fallback rtl-duplex-independent rtl-mdpi-extent
+  functional-float-read-write rtl-vector-payload
   rtl-generated-memaxi-response rtl-copy-comparison)
 jobs=()
 case $group in
@@ -388,19 +350,14 @@ rm -rf -- \
   "$scratch/compiler-write-all" \
   "$scratch/compiler-frontend-compatibility" \
   "$scratch/compiler-default-burst" \
-  "$scratch/rtl-modelsim-transactions" "$scratch/rtl-modelsim-credits" \
-  "$scratch/rtl-modelsim-bounds" "$scratch/rtl-modelsim-configure" \
-  "$scratch/rtl-write-engine" \
-  "$scratch/out_axi_core_vlog_portability" \
   "$scratch/generated-kernel" "$scratch/wrapper-rid" \
-  "$scratch/rtl-burst-diagnostics" "$scratch/rtl-width-contract" \
-  "$scratch/rtl-duplex-core" "$scratch/rtl-generated-duplex" \
+  "$scratch/rtl-generated-duplex" \
   "$scratch/rtl-generated-duplex-kernel" "$scratch/rtl-generated-write-kernels" \
   "$scratch/rtl-default-duplex-reduction" \
   "$scratch/rtl-duplex-alias-integer" "$scratch/rtl-duplex-alias-float32" \
   "$scratch/rtl-duplex-fallback" "$scratch/rtl-duplex-independent" \
-  "$scratch/rtl-adapter-size" "$scratch/rtl-mdpi-extent" \
-  "$scratch/functional-float-read-write" "$scratch/rtl-testbench-memaxi-qualify" \
+  "$scratch/rtl-mdpi-extent" \
+  "$scratch/functional-float-read-write" \
   "$scratch/rtl-vector-payload" "$scratch/rtl-generated-memaxi-response" "$scratch/rtl-copy-comparison"
 fi
 printf 'AXI burst regression PASS: %s\n' "$scratch"

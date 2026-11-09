@@ -63,6 +63,41 @@ fi
             check=False,
         )
 
+    def test_backend_optimization_flags_match_modelsim_edition(self) -> None:
+        setup = LOOKUP.with_name("setup.sh")
+        self.write_executable(self.tools / "bambu_results", '''case "$1" in
+  */sources@cflags) echo -m64 ;;
+  */backend@discrepancy|*/backend@assert) echo false ;;
+  */outputs/file) echo design.sv ;;
+esac
+''')
+        self.write_executable(self.tools / "vlib")
+        self.write_executable(self.tools / "vmap")
+        for edition, expected in (("ModelSim - Intel FPGA Edition", ""), ("QuestaSim", "-O5")):
+            with self.subTest(edition=edition):
+                self.write_executable(self.tools / "vlog", f'''if [ "$1" = -version ]; then
+  echo "{edition}"
+else
+  printf '%s\\n' "$*" >> "$COMPILE_LOG"
+fi
+''')
+                (self.scratch / "modelsim.ini").write_text("; AssertionFailAction = 1\n")
+                compile_log = self.scratch / "compile.log"
+                compile_log.write_text("")
+                env = self.env | {"SWD": str(self.scratch), "BAMBU_HLS": str(self.scratch),
+                                  "BEH_CFLAGS": "", "COMPILE_LOG": str(compile_log)}
+                command = f'source {shlex.quote(str(setup))}; printf "CMD=%s\\n" "$BAMBU_IPC_SIM_CMD"'
+                result = subprocess.run(["/bin/bash", "-e", "-c", command], cwd=self.scratch,
+                                        env=env, text=True, capture_output=True, check=False)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                evidence = compile_log.read_text() + result.stdout
+                if expected:
+                    self.assertIn(expected, compile_log.read_text())
+                    self.assertIn('-voptargs="-O5"', result.stdout)
+                else:
+                    self.assertNotIn("-O5", evidence)
+                    self.assertNotIn("-voptargs", result.stdout)
+
     def test_path_vsim_precedes_backend_roots(self) -> None:
         path_bin = self.scratch / "path-bin"
         self.write_executable(path_bin / "vsim")

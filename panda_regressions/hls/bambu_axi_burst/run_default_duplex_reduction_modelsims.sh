@@ -4,8 +4,9 @@
 set -euo pipefail
 
 TESTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-ROOT=$(realpath "$TESTS/../../../../")
-FAMILY="$ROOT/panda_regressions/hls/bambu_axi_burst"
+ROOT=$(realpath "$TESTS/../../..")
+FAMILY="$TESTS"
+TESTS="$ROOT/panda_regressions/verilog/axi_burst/rtl_tests"
 SOURCE="$FAMILY/compiler_cases/axi_default_profile_cases.cpp"
 TB="$TESTS/tb_default_duplex_reduction.sv"
 HELPERS="$TESTS/modelsim_helpers.sh"

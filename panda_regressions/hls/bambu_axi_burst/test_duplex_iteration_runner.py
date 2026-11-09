@@ -10,7 +10,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[3]
-RUNNER = ROOT / "panda_regressions/verilog/axi_burst/run_duplex_iteration_tests.sh"
+RUNNER = ROOT / "panda_regressions/hls/bambu_axi_burst/run_duplex_iteration_tests.sh"
 TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 
 

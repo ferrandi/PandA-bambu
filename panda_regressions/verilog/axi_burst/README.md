@@ -1,36 +1,42 @@
 # AXI burst Verilog regressions
 
-Following the Verilog regression layout used for priority encoders, this family
-contains tests that exercise AXI burst hardware directly:
+## Test organization rules
 
-- `rtl_tests/`: extracted XML components, FIFO/core tests, standalone memory
-  models, and Bambu-generated accelerator/wrapper RTL driven by dedicated
-  Verilog testbenches.
-  `run_std_fifo.sh` checks the complete shared FIFO across depths and data widths, including
-  ordering, full replacement, empty bypass, clear and collision forwarding.
-  `run_generated_kernel_tests.sh` also checks five normal reader invocations on
-  one generated DUT after a single reset, including a zero-trip call and
-  repeated parameters, with edge-counted completion/FIFO totals and quiet
-  cycles that reject unexpected read, write, completion or FIFO activity.
-  `run_generated_wrapper_rid_tests.sh` also checks early and missing RLAST on
-  the generated reader wrapper, verifies fault containment and reset recovery,
-  while separate scratch mapping mutations confirmed sensitivity to the
-  wrapper's RLAST connection.
-  `run_generated_memaxi_response_tests.sh` checks generated read/write wrappers,
-  including sync/async and active-low/high resets while AXI responses are pending,
-  and while AR/AW/W requests are stalled; checks include payload stability and
-  cancellation at RREADY/BREADY.
+- Keep each test in one location; reuse fixtures and generated RTL rather than duplicating tests.
+- Synthesis and area measurements are manual checks and are not scheduled in CI.
+- Runners that invoke Bambu, directly or indirectly, and their support checks belong in
+  `panda_regressions/hls/bambu_axi_burst/`. Tests that exercise RTL without Bambu belong
+  in `panda_regressions/verilog/axi_burst/`. Shared SystemVerilog fixtures stay in Verilog
+  and may be referenced by HLS runners.
+- CI has exactly one AXI-burst HLS job (`bambu-axi-burst`, `--group=all`) and one
+  AXI-burst Verilog job (`verilog-axi-burst`). Compiler/functional groups remain
+  available for targeted local runs.
+
+This family contains tests that exercise AXI hardware directly:
+
+- `rtl_tests/`: extracted XML components, FIFO/core tests, standalone memory models,
+  shared SystemVerilog testbenches and manual synthesis runners.
 - `t4b_tests/`: extracted-core and matched-slave floor/knee simulations, their
   extractor and offline checks.
-- `run_duplex_iteration_tests.sh` and `check_duplex_iteration_results.py`: generated-kernel iteration mapping and observation checks.
-- Root-level `test_*.py`: offline tests for generated-RTL runners and iteration checks.
+- Root-level `test_*.py`: offline checks for the RTL suite dispatch.
+
+Generated-kernel, wrapper-RID, generated MEMAXI response and duplex iteration
+runners and their support checks are in `panda_regressions/hls/bambu_axi_burst/`.
+They reuse the SystemVerilog fixtures here. Wrapper-RID checks reuse the kernel
+runner's generated RTL rather than invoking Bambu again in the CI suite.
 
 The shared C/C++ kernel fixtures, compiler checks, native Bambu end-to-end tests,
 and T4B runs using Bambu's own generated testbench remain in
-`panda_regressions/hls/bambu_axi_burst/`. The `verilog-axi-burst` CI job runs the functional component tests through
-`panda_regressions/verilog/axi_burst.sh`; the HLS job retains the existing AXI master, compiler and
-generated-accelerator integration checks. Component tests require ModelSim,
-Python and standard shell tools. They do not require Bambu, Vivado, ABC or Yosys.
+`panda_regressions/hls/bambu_axi_burst/`. All direct AXI master/component RTL
+tests are dispatched by `panda_regressions/verilog/axi_burst.sh` in the
+`verilog-axi-burst` CI job. This includes the reader profile matrix (including
+single-beat outstanding), all writer groups, duplex cores, adapter SIZE,
+fault diagnostics, width contracts, Verilog portability and the standalone
+memory model, plus FIFO/RAM/OpenMP and offline runner checks. Logs and failures
+are included in this job's JUnit report and artifact upload. These tests
+require ModelSim, Python and standard shell tools; they do not invoke Bambu
+or synthesis tools. The HLS job retains compiler checks and simulations that
+generate accelerators with Bambu, including the twelve feature-profile cases.
 
 Examples, from the repository root (use fresh output directories):
 
@@ -41,13 +47,7 @@ python3 -m unittest discover -s panda_regressions/verilog/axi_burst/t4b_tests
 python3 -m unittest discover -s panda_regressions/verilog/axi_burst -p 'test_*.py'
 bash panda_regressions/verilog/axi_burst/rtl_tests/run_read_burst_modelsim.sh out_axi_read all
 BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 bash panda_regressions/verilog/axi_burst/rtl_tests/run_write_burst_engine.sh out_axi_write
-source install-CI/settings.sh
-BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=6 bash panda_regressions/verilog/axi_burst/rtl_tests/run_generated_memaxi_response_tests.sh \
-  "$PWD/install-CI/bin/bambu" "$PWD/out_axi_generated_memaxi_reset"
 ```
-
-The generated MEMAXI runner requires an installed Bambu and ModelSim/Questa;
-it creates a fresh output directory and never uses Verilator.
 
 Set `BURST_TEST_TMPDIR` to place offline-test artifacts in a selected directory.
 Existing simulator guard variables and parameter checks are unchanged.

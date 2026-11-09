@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[3]
-RUNNER = ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/run_generated_duplex_tests.sh"
+RUNNER = ROOT / "panda_regressions/hls/bambu_axi_burst/run_generated_duplex_tests.sh"
 SCRATCH_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 SCENARIOS = (
     "LOAD_WAIT_STORE", "STORE_WAIT_LOAD", "WRITE_STALL_READ_PROGRESS", "READ_STALL_WRITE_PROGRESS",
@@ -33,7 +33,7 @@ class GeneratedDuplexRunnerTests(unittest.TestCase):
         self.rtl_tests = self.repo / "panda_regressions/verilog/axi_burst/rtl_tests"
         self.rtl_tests.mkdir(parents=True)
         self.family.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(RUNNER, self.rtl_tests / RUNNER.name)
+        shutil.copy2(RUNNER, self.family / RUNNER.name)
         shutil.copy2(ROOT / "panda_regressions/hls/bambu_axi_burst/parallel_helpers.sh",
                      self.family / "parallel_helpers.sh")
         shutil.copy2(ROOT / "panda_regressions/verilog/axi_burst/rtl_tests/modelsim_helpers.sh",
@@ -211,7 +211,7 @@ fi
             env.pop("BURST_DUPLEX_SIM_OUTSIDE_SANDBOX", None)
         output = self.scratch / output_name
         result = subprocess.run(
-            ["/bin/bash", str(self.rtl_tests / RUNNER.name), str(self.prefix / "bin/bambu"), str(output)],
+            ["/bin/bash", str(self.family / RUNNER.name), str(self.prefix / "bin/bambu"), str(output)],
             cwd=self.repo, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
         )
         return result, output

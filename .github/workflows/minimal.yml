@@ -447,7 +447,7 @@ jobs:
           username: ${{ env.storage-user }}
           password: ${{ env.storage-token }}
           submodules: "false"
-      - name: Run functional Verilog component tests
+      - name: Run AXI master and component RTL tests
         shell: bash
         run: |
           source "${{env.dist-dir}}/settings.sh"
@@ -458,45 +458,6 @@ jobs:
         with:
           name: verilog_axi_burst
           path: ${{env.report-dir}}/verilog-axi-burst
-
-  bambu-axi-burst-compiler:
-    needs: [build]
-    if: ${{ !cancelled() && needs.build.result == 'success' }}
-    runs-on: [self-hosted]
-    env:
-      script: ./panda_regressions/hls/bambu_axi_burst.sh
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-      - name: Setup repository + distribution
-        uses: ./.github/actions/panda-setup
-        with:
-          package-name: ${{ needs.build.outputs.package-name }}
-          storage-url: ${{ env.storage-url }}
-          username: ${{ env.storage-user }}
-          password: ${{ env.storage-token }}
-          submodules: "false"
-      - name: Launch AXI burst compiler checks
-        shell: bash
-        run: |
-          source ${{env.dist-dir}}/settings.sh
-          mkdir -p "${{env.report-dir}}"
-          output="${{env.report-dir}}/axi-burst-compiler-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          ${{env.script}} --group=compiler --no-clean --output="$output"
-      - name: Collect post-mortem data
-        if: ${{ failure() }}
-        shell: bash
-        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
-      - name: Upload compiler evidence
-        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
-        uses: ./.github/actions/artifact-upload
-        with:
-          name: bambu_axi_burst_compiler
-          path: ${{env.report-dir}}/axi-burst-compiler-${{github.run_id}}-${{github.run_attempt}}
-      - name: Clean post-mortem workdirs
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
 
   bambu-axi-burst:
     needs: [build]
@@ -536,8 +497,8 @@ jobs:
             fi
             printf 'ModelSim tool %s: %s\n' "$tool" "$tool_path"
           done
-          output="${{env.report-dir}}/axi-burst-functional-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          ${{env.script}} --group=functional --no-clean --output="$output" --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" -c=--simulator=MODELSIM
+          output="${{env.report-dir}}/axi-burst-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ${{env.script}} --group=all --no-clean --output="$output" --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" -c=--simulator=MODELSIM
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
@@ -1674,7 +1635,6 @@ jobs:
       - vector-and-loop-pipeline-test
       - vector-frontend-test
       - verilog-axi-burst
-      - bambu-axi-burst-compiler
       - bambu-axi-burst
       - bambu2hls4ml
       - libm-tests
@@ -1716,10 +1676,7 @@ jobs:
       - name: Check 'Verilog AXI burst components' status
         if: ${{ needs['verilog-axi-burst'].result != 'success' }}
         run: exit 1
-      - name: Check 'AXI burst compiler' status
-        if: ${{ needs['bambu-axi-burst-compiler'].result != 'success' }}
-        run: exit 1
-      - name: Check 'AXI burst functional' status
+      - name: Check 'AXI burst HLS' status
         if: ${{ needs['bambu-axi-burst'].result != 'success' }}
         run: exit 1
       - name: Check 'Bambu hls4ml regression' status

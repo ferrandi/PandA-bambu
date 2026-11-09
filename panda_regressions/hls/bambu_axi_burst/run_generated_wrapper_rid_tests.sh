@@ -4,7 +4,9 @@
 set -euo pipefail
 
 TESTS=$(cd "$(dirname "$0")" && pwd -P)
-ROOT=$(realpath "$TESTS/../../../../")
+ROOT=$(realpath "$TESTS/../../..")
+FAMILY="$TESTS"
+TESTS="$ROOT/panda_regressions/verilog/axi_burst/rtl_tests"
 BAMBU=${1:-$ROOT/install/bin/bambu}
 if [[ "$BAMBU" == */* ]]; then
   BAMBU=$(realpath "$BAMBU")

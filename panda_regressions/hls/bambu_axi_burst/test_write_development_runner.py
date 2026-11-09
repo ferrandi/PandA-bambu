@@ -46,7 +46,7 @@ class DevelopmentRunnerTests(unittest.TestCase):
             path = self.script_dir / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("# exported stub target\n")
-        (self.rtl_tests / "run_generated_write_kernel_tests.sh").write_text(
+        (self.script_dir / "run_generated_write_kernel_tests.sh").write_text(
             "# exported stub target\n"
         )
         (self.rtl_tests / "test_extract_write_engine.py").write_text(

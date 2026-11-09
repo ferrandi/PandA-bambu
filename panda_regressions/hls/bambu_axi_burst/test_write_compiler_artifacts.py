@@ -329,6 +329,20 @@ class CheckerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "one write engine.*FIFO_DEPTH=16"):
             check_case(args)
 
+    def test_scalar_profile_requires_historical_adapter_without_burst_resources(self):
+        args = type("Args", (), {"output": self.root, "kind": "profile",
+                                 "expect_profile_attribute": [], "expect_engine_parameter":
+                                 ["B_MAX=1", "MAX_OUTSTANDING=1", "FIFO_DEPTH=2"]})()
+        self.write("design.v", "MinimalAXI4AdapterSingleBeat #(.BURST_TYPE(1)) adapter();\n")
+        check_case(args)
+        for rtl in ("MinimalAXI4MasterPipelinedWrite #(.B_MAX(1), .MAX_OUTSTANDING(1), .FIFO_DEPTH(2)) writer();",
+                    "IOB_cache_axi #(.BITSIZE_data(32)) cache();",
+                    "MinimalAXI4AdapterSingleBeat #(.BURST_TYPE(1)) adapter(); fuselector_data_configure_write;"):
+            with self.subTest(rtl=rtl):
+                self.write("design.v", rtl)
+                with self.assertRaisesRegex(ValueError, "historical single-beat adapter"):
+                    check_case(args)
+
     def test_profile_rejects_engine_parameters_split_across_instances(self):
         self.write("design.v", "MinimalAXI4MasterPipelinedWrite #(.B_MAX(3), .MAX_OUTSTANDING(1)) first();\n"
                     "MinimalAXI4MasterPipelinedWrite #(.FIFO_DEPTH(8)) second();\n")
@@ -393,6 +407,8 @@ class CheckerTests(unittest.TestCase):
         self.assertIn("run_accepted copy_float_payload", gate)
         self.assertIn("--expected-read-bundle input --expected-write-bundle output", gate)
         self.assertIn("--simulate --simulator=MODELSIM", gate)
+        self.assertIn('"--mentor-root=$BAMBU_MODELSIM_ROOT"', gate)
+        self.assertIn('bambu_modelsim_resolve || return 2', gate)
         self.assertIn("for feature in 1 0", gate)
         self.assertIn("--tb-param-size=src:16384 --tb-param-size=dst:16384", gate)
         self.assertIn("--bundle input --direction reads", gate)
@@ -569,6 +585,8 @@ class CheckerTests(unittest.TestCase):
         runner = (pathlib.Path(__file__).parent / "run_write_compiler_tests.sh").read_text()
         self.assertIn("write_max=1(single-beat-default:fifo-hint) write_outstanding=16(default) "
                       "write_fifo=64(explicit)", runner)
+        self.assertIn('if [[ "$MODE" == read-compat ]]; then', runner)
+        self.assertNotIn('"$MODE" == read-compat || "$MODE" == all', runner)
 
     def test_profile_matrix_covers_supported_boundaries_and_inactive_attributes(self):
         source = (pathlib.Path(__file__).parent / "write_compiler_cases" / "write_profile_matrix.cpp").read_text()

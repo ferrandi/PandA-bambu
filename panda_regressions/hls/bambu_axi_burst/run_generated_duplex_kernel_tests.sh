@@ -5,8 +5,9 @@ set -euo pipefail
 ulimit -c 0
 
 TESTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-ROOT=$(realpath "$TESTS/../../../../")
-FAMILY="$ROOT/panda_regressions/hls/bambu_axi_burst"
+ROOT=$(realpath "$TESTS/../../..")
+FAMILY="$TESTS"
+TESTS="$ROOT/panda_regressions/verilog/axi_burst/rtl_tests"
 HELPERS="$FAMILY/parallel_helpers.sh"
 MODELSIM_HELPERS="$TESTS/modelsim_helpers.sh"
 SOURCE="$FAMILY/bambu_axi_burst_duplex.cpp"
@@ -18,7 +19,7 @@ OBSERVER="$TESTS/duplex_load_observer.sv"
 OBSERVER_CU=duplex_load_observer_cu
 OBSERVER_UNIT_TB="$TESTS/tb_duplex_load_observer.sv"
 PARALLELISM_CHECKER="$FAMILY/check_duplex_parallelism_results.py"
-RUNNER="$TESTS/run_generated_duplex_kernel_tests.sh"
+RUNNER="$FAMILY/run_generated_duplex_kernel_tests.sh"
 PROFILES=(symmetric asymmetric)
 KINDS=(inplace copy)
 CASES=(COUNTS_0_1_15_16_17 COUNT38_SPLITS PAGE_BOUNDARY REINVOKE_DEPENDENT REINVOKE_BASE_COUNT LAST_B_WAIT RRESP_FAULT_RESET BRESP_FAULT_RESET)

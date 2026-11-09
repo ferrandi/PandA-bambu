@@ -180,7 +180,7 @@ run_g2() {
   export TMPDIR="$g2_dir/tmp" TMP="$g2_dir/tmp" TEMP="$g2_dir/tmp"
   local top
   for top in write_count_seed write_with_unused_same_bundle write_with_unused_same_bundle_reversed; do
-    bash "$script_dir/../../verilog/axi_burst/rtl_tests/run_generated_write_kernel_tests.sh" \
+    bash "$script_dir/run_generated_write_kernel_tests.sh" \
       "$bambu" "$g2_dir/$top" "$top"
   done
 }

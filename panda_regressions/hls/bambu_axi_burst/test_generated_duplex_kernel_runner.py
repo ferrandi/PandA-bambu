@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 FAMILY = ROOT / "panda_regressions/hls/bambu_axi_burst"
 RTL_TESTS = ROOT / "panda_regressions/verilog/axi_burst/rtl_tests"
-RUNNER = RTL_TESTS / "run_generated_duplex_kernel_tests.sh"
+RUNNER = FAMILY / "run_generated_duplex_kernel_tests.sh"
 COPY_SOURCE = FAMILY / "bambu_axi_burst_duplex_copy.cpp"
 PREFIX_SOURCE = FAMILY / "bambu_axi_burst_duplex_prefix.cpp"
 OBSERVER = RTL_TESTS / "duplex_load_observer.sv"
@@ -66,7 +66,7 @@ class GeneratedDuplexKernelRunnerTests(unittest.TestCase):
         self.rtl_tests = self.repo / "panda_regressions/verilog/axi_burst/rtl_tests"
         self.rtl_tests.mkdir(parents=True)
         self.family.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(RUNNER, self.rtl_tests / RUNNER.name)
+        shutil.copy2(RUNNER, self.family / RUNNER.name)
         shutil.copy2(FAMILY / "parallel_helpers.sh", self.family / "parallel_helpers.sh")
         shutil.copy2(MODELSIM_HELPERS, self.rtl_tests / MODELSIM_HELPERS.name)
         lookup = self.repo / "etc/libtech/backend/simulation/modelsim"
@@ -314,7 +314,7 @@ for profile in ("symmetric", "asymmetric"):
             env.pop("BURST_DUPLEX_G2_SIM_OUTSIDE_SANDBOX", None)
         output = self.scratch / output_name
         result = subprocess.run(
-            ["/bin/bash", str(self.rtl_tests / RUNNER.name), str(self.prefix / "bin/bambu"), str(output)],
+            ["/bin/bash", str(self.family / RUNNER.name), str(self.prefix / "bin/bambu"), str(output)],
             cwd=self.repo, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
         )
         return result, output
@@ -399,7 +399,7 @@ exec {real_sha} \"$@\"
         self.assertIn("FAILED", result.stderr)
 
     def test_scenario_directories_manifests_and_bounded_parallelism(self):
-        self.assertNotIn("verilator", (self.rtl_tests / RUNNER.name).read_text().lower())
+        self.assertNotIn("verilator", (self.family / RUNNER.name).read_text().lower())
         result, output = self._run()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("GENERATED_DUPLEX_KERNEL_G2 PASS: 48 scenarios; includes two G3.1 parallelism scenarios", result.stdout)

@@ -304,16 +304,20 @@ esac
         self.assertFalse((output / "compiler-pragma").exists())
         calls = (self.root / "job-calls").read_text(encoding="utf-8")
         for runner in (
-            "run_burst_fault_diagnostics.sh", "run_axi_width_contract.sh",
-            "run_duplex_core_tests.sh", "run_generated_duplex_tests.sh",
+            "run_generated_duplex_tests.sh",
             "run_generated_duplex_kernel_tests.sh", "run_generated_write_kernel_tests.sh",
             "run_default_duplex_reduction_modelsims.sh",
             "run_duplex_alias_tests.sh", "run_duplex_fallback_tests.sh",
-            "run_duplex_independent_tests.sh", "run_adapter_size_guard.sh",
-            "run_mdpi_extent_tests.sh", "run_testbench_memaxi_model.sh",
+            "run_duplex_independent_tests.sh", "run_mdpi_extent_tests.sh",
             "run_write_compiler_tests.sh",
         ):
             self.assertIn(runner, calls)
+        for runner in (
+            "run_read_burst_modelsim.sh", "run_write_burst_engine.sh", "run_vlog_portability.sh",
+            "run_burst_fault_diagnostics.sh", "run_axi_width_contract.sh", "run_duplex_core_tests.sh",
+            "run_adapter_size_guard.sh", "run_testbench_memaxi_model.sh",
+        ):
+            self.assertNotIn(runner, calls)
         self.assertEqual(calls.count("run_generated_write_kernel_tests.sh"), 3)
         self.assertEqual(calls.count("run_duplex_alias_tests.sh"), 2)
         job_args = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
@@ -326,7 +330,7 @@ esac
         self.assertEqual(guard, "1")
         self.assertTrue(Path(destination).is_dir())
 
-    def test_functional_workflow_keeps_evidence_under_uploaded_report_dir(self) -> None:
+    def test_combined_workflow_keeps_evidence_under_uploaded_report_dir(self) -> None:
         workflow = (ROOT / ".github/workflows/minimal.yml").read_text(encoding="utf-8")
         job_start = workflow.index("\n  bambu-axi-burst:\n")
         next_job = workflow.index("\n  AXI4-verification:\n", job_start)
@@ -339,7 +343,7 @@ esac
             for line in job[run_start:run_end].splitlines()
         )
 
-        invocation = next(line for line in run_block.splitlines() if "--group=functional" in line)
+        invocation = next(line for line in run_block.splitlines() if "--group=all" in line)
         self.assertEqual(invocation.count("--output="), 1)
         self.assertIn("--no-clean", invocation)
         self.assertIn("--returnfail", invocation)
@@ -389,12 +393,12 @@ esac
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-        retained = report_dir / "axi-burst-functional-regression-restart-test-3"
-        self.assertTrue((retained / "jobs/rtl-adapter-size.log").is_file())
+        retained = report_dir / "axi-burst-regression-restart-test-3"
+        self.assertTrue((retained / "jobs/rtl-generated-duplex.log").is_file())
         sentinels = list(retained.rglob("workflow-retention-sentinel.txt"))
         self.assertTrue(sentinels)
         self.assertTrue(all(self.is_within(path, report_dir) for path in sentinels))
-        self.assertTrue(self.is_within(retained / "jobs/rtl-adapter-size.log", report_dir))
+        self.assertTrue(self.is_within(retained / "jobs/rtl-generated-duplex.log", report_dir))
         self.assertTrue((retained / "mantis/AXI-BURST").is_dir())
         self.assertTrue(self.is_within(retained, report_dir))
         self.assertIn("--no-clean", self.mantis_args_file.read_text(encoding="utf-8"))
@@ -419,7 +423,7 @@ esac
         self.assertTrue((output / "rtl-copy-comparison").is_dir())
         rows = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
         settings = {row.split("|", 1)[0]: row.split("|") for row in rows}
-        self.assertEqual(settings["run_write_burst_engine.sh"][1], "20")
+        self.assertNotIn("run_write_burst_engine.sh", settings)
         self.assertEqual(settings["run_generated_duplex_tests.sh"][2], "2")
         self.assertEqual(settings["run_generated_duplex_kernel_tests.sh"][2], "6")
         self.assertEqual(settings["run_generated_duplex_kernel_tests.sh"][5], "6")
@@ -439,7 +443,7 @@ esac
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         rows = (self.root / "job-args").read_text(encoding="utf-8").splitlines()
         settings = {row.split("|", 1)[0]: row.split("|") for row in rows}
-        self.assertEqual(settings["run_write_burst_engine.sh"][1], "1")
+        self.assertNotIn("run_write_burst_engine.sh", settings)
         self.assertEqual(settings["run_generated_duplex_tests.sh"][2], "1")
         self.assertEqual(settings["run_generated_duplex_kernel_tests.sh"][5], "1")
         self.assertEqual(settings["run_duplex_alias_tests.sh"][6], "1")
@@ -531,13 +535,13 @@ esac
         output = self.root / "out_failed_functional_gate"
         result = self.run_regression(
             "--group=functional", "--no-clean", "-j1", "-o", str(output),
-            env_overrides={"FAKE_FAIL_JOB": "run_adapter_size_guard.sh"},
+            env_overrides={"FAKE_FAIL_JOB": "run_generated_duplex_tests.sh"},
         )
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("AXI burst helper suite failed", result.stderr)
         markers = list(output.rglob("failure-marker.txt"))
         self.assertEqual(len(markers), 1, markers)
-        self.assertTrue((output / "jobs/rtl-adapter-size.log").is_file())
+        self.assertTrue((output / "jobs/rtl-generated-duplex.log").is_file())
 
     def test_invalid_group_fails_before_creating_output(self) -> None:
         output = self.root / "out_invalid_group"

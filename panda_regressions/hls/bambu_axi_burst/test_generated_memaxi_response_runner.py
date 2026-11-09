@@ -14,7 +14,7 @@ import uuid
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[3]
 RUNNER = Path(__file__).resolve().with_name("run_generated_memaxi_response_tests.sh")
 TMP_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / "out_generated_memaxi_response_runner_contract"
 

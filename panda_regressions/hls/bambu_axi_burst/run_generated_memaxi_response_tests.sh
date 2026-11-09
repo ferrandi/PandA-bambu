@@ -3,7 +3,9 @@
 set -Eeuo pipefail
 
 TESTS=$(cd "$(dirname "$0")" && pwd -P)
-ROOT=$(realpath "$TESTS/../../../../")
+ROOT=$(realpath "$TESTS/../../..")
+FAMILY="$TESTS"
+TESTS="$ROOT/panda_regressions/verilog/axi_burst/rtl_tests"
 if (($# != 2)); then
     echo "usage: BURST_MODELSIM_OUTSIDE_SANDBOX=1 $0 BAMBU FRESH_OUTPUT_DIR" >&2
     exit 2
@@ -138,7 +140,7 @@ check_log() {
     elif [[ $mode == reset_* ]]; then
         args+=("$reset_type" "$reset_level" "${mode#reset_}")
     fi
-    python3 -B "$TESTS/test_generated_memaxi_response_runner.py" "${args[@]}"
+    python3 -B "$FAMILY/test_generated_memaxi_response_runner.py" "${args[@]}"
 }
 
 run_case() {

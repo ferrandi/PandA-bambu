@@ -2757,6 +2757,7 @@ wire fast_pipe_push;
 wire fast_data_enqueue;
 wire [END_BEAT_W - 1 : 0] address_end_limit;
 wire configure_range_valid;
+wire configure_alignment_valid;
 wire [OFFSET_W - 1 : 0] accepted_offset;
 wire [OFFSET_W - 1 : 0] scheduled_offset;
 wire [OFFSET_W - 1 : 0] plan_scheduled_offset;
@@ -2948,8 +2949,16 @@ generate
   begin : legacy_configure_range
     assign configure_range_valid = region_end &lt;= address_end_limit;
   end
+  if(BEAT_SHIFT == 0)
+  begin : byte_beat_alignment
+    assign configure_alignment_valid = 1'b1;
+  end
+  else
+  begin : wider_beat_alignment
+    assign configure_alignment_valid = !(|in4[BEAT_SHIFT - 1 : 0]);
+  end
 endgenerate
-assign configure_valid = (in2 == DATA_BITS) &amp;&amp; (in4[BEAT_SHIFT - 1 : 0] == {BEAT_SHIFT{1'b0}}) &amp;&amp;
+assign configure_valid = (in2 == DATA_BITS) &amp;&amp; configure_alignment_valid &amp;&amp;
     (in5[COUNT_BITS - 1] == 1'b0) &amp;&amp; ((in5 == 0) || configure_range_valid);
 assign configure_capture = !peer_fault_active &amp;&amp; start &amp;&amp; (in1 == OP_CONFIGURE) &amp;&amp; !cfg_seen_reg &amp;&amp;
     !cfg_pipe_valid_reg &amp;&amp; !store_pending_reg;

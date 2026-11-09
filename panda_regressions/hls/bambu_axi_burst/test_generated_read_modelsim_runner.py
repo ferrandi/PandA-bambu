@@ -11,13 +11,14 @@ import tempfile
 import unittest
 
 
-REPO = Path(__file__).resolve().parents[4]
-RTL_TESTS = Path(__file__).resolve().parent
+REPO = Path(__file__).resolve().parents[3]
+FAMILY = Path(__file__).resolve().parent
+RTL_TESTS = REPO / "panda_regressions/verilog/axi_burst/rtl_tests"
 TASK_ROOT = Path(os.environ.get("BURST_TEST_TMPDIR", Path.cwd())) / f"out_{Path(__file__).stem}"
 TASK_ROOT.mkdir(parents=True, exist_ok=True)
 
-KERNEL_RUNNER = RTL_TESTS / "run_generated_kernel_tests.sh"
-WRAPPER_RUNNER = RTL_TESTS / "run_generated_wrapper_rid_tests.sh"
+KERNEL_RUNNER = FAMILY / "run_generated_kernel_tests.sh"
+WRAPPER_RUNNER = FAMILY / "run_generated_wrapper_rid_tests.sh"
 WRAPPER_RID_FAULT = (
     "AXI_BURST_FAULT engine=read reason=RID "
     "instance=tb_generated_wrapper_rid.dut.burst_engine.report_axi_read_diagnostic "

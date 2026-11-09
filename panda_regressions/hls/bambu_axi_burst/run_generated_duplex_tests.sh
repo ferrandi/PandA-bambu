@@ -3,8 +3,9 @@
 set -euo pipefail
 
 TESTS=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
-ROOT=$(realpath "$TESTS/../../../../")
-FAMILY="$ROOT/panda_regressions/hls/bambu_axi_burst"
+ROOT=$(realpath "$TESTS/../../..")
+FAMILY="$TESTS"
+TESTS="$ROOT/panda_regressions/verilog/axi_burst/rtl_tests"
 CHECKER="$FAMILY/check_duplex_effect_analysis_artifacts.py"
 HELPERS="$FAMILY/parallel_helpers.sh"
 MODELSIM_HELPERS="$TESTS/modelsim_helpers.sh"
@@ -66,8 +67,8 @@ digest() { sha256sum -- "$1" | awk '{print $1}'; }
     "$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)" "$ROOT" "$OUT" "$BAMBU" "$(digest "$BAMBU")" \
     "$SETTINGS" "$(digest "$SETTINGS")" "$PLUGIN" "$(digest "$PLUGIN")"
   printf 'testbench=%s\ntestbench_sha256=%s\nchecker=%s\nchecker_sha256=%s\nrunner=%s\nrunner_sha256=%s\n' \
-    "$TB" "$(digest "$TB")" "$CHECKER" "$(digest "$CHECKER")" "$TESTS/run_generated_duplex_tests.sh" \
-    "$(digest "$TESTS/run_generated_duplex_tests.sh")"
+    "$TB" "$(digest "$TB")" "$CHECKER" "$(digest "$CHECKER")" "$FAMILY/run_generated_duplex_tests.sh" \
+    "$(digest "$FAMILY/run_generated_duplex_tests.sh")"
   printf 'sim_jobs=%s\nscenario_jobs=1\n' "$SIM_JOBS"
   "$BAMBU" --version 2>&1 | sed -n '1,2p'
   modelsim_version
@@ -125,14 +126,14 @@ generate_profile() {
       "$profile" "$source" "$(digest "$source")" "$BAMBU" "$(digest "$BAMBU")"
     printf 'plugin=%s\nplugin_sha256=%s\nchecker=%s\nchecker_sha256=%s\nrunner=%s\nrunner_sha256=%s\n' \
       "$PLUGIN" "$(digest "$PLUGIN")" "$CHECKER" "$(digest "$CHECKER")" \
-      "$TESTS/run_generated_duplex_tests.sh" "$(digest "$TESTS/run_generated_duplex_tests.sh")"
+      "$FAMILY/run_generated_duplex_tests.sh" "$(digest "$FAMILY/run_generated_duplex_tests.sh")"
     printf 'rtl=%s\nrtl_sha256=%s\narchitecture=%s\narchitecture_sha256=%s\n' \
       "$rtl" "$(digest "$rtl")" "$architecture" "$(digest "$architecture")"
     printf 'stdout=%s\nstdout_sha256=%s\nstderr=%s\nstderr_sha256=%s\n' \
       "$stdout" "$(digest "$stdout")" "$stderr" "$(digest "$stderr")"
   } >"$out/generated/provenance.txt"
   python3 "$CHECKER" "$profile" --functional-only --output "$out/generated" --source "$source" --bambu "$BAMBU" \
-    --plugin "$PLUGIN" --checker "$CHECKER" --runner "$TESTS/run_generated_duplex_tests.sh" || return $?
+    --plugin "$PLUGIN" --checker "$CHECKER" --runner "$FAMILY/run_generated_duplex_tests.sh" || return $?
   sha256sum "$rtl" "$lib" >>"$out/provenance.txt"
   local -a overrides
   if [[ $profile == same_base_pointwise ]]; then
@@ -149,7 +150,7 @@ generate_profile() {
   if ! modelsim_compile "$out/sim" tb_generated_duplex "$rtl" "$lib" "$TB"; then
     echo "ModelSim build failed for $profile" >&2; return 1
   fi
-  sha256sum "$TB" "$TESTS/run_generated_duplex_tests.sh" "$out/sim/compile.log" >>"$out/provenance.txt"
+  sha256sum "$TB" "$FAMILY/run_generated_duplex_tests.sh" "$out/sim/compile.log" >>"$out/provenance.txt"
   printf 'GENERATED_DUPLEX_BUILD PASS PROFILE=%s RESET=%s LEVEL=%s\n' \
     "$profile" "${reset_mode:-default}" "${reset_level:-default}"
 }

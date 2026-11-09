@@ -139,7 +139,12 @@ run_write_suite() {
     python3 "$TESTS/compiler_case_manifest.py" execute --output "$case_dir" --bambu "$BAMBU" \
       --expected-failure "$diagnostic" -- "${profile_argv[@]}"
     if [[ "$outcome" == accepted ]]; then
-      python3 "$checker" accepted --output "$case_dir" --expected-write-burst "$burst"
+      if [[ $burst == 1 && $outstanding == 1 ]]; then
+        python3 "$checker" fallback --output "$case_dir" --bundle data \
+          --reason 'single-beat profile with one transaction; using scalar adapter'
+      else
+        python3 "$checker" accepted --output "$case_dir" --expected-write-burst "$burst"
+      fi
       if [[ -n "$attrs" || -n "$engine" ]]; then
         local -a profile_args=(profile --output "$case_dir")
         local item
@@ -214,8 +219,11 @@ run_float_copy_simulations() {
     echo "float-sim requires BURST_WRITE_FLOAT_SIM_OUTSIDE_SANDBOX=1 and must run outside the sandbox" >&2
     return 2
   fi
+  source "$ROOT/etc/libtech/backend/simulation/modelsim/tool_lookup.sh"
+  bambu_modelsim_resolve || return 2
+  export PATH="$BAMBU_MODELSIM_BIN${PATH:+:$PATH}"
   for tool in vsim vlib vmap vlog; do
-    command -v "$tool" >/dev/null || { echo "ModelSim tool $tool is required in PATH" >&2; return 2; }
+    [[ -x "$BAMBU_MODELSIM_BIN/$tool" ]] || { echo "ModelSim tool $tool is required beside vsim" >&2; return 2; }
   done
   local fixture="$TESTS/write_compiler_cases/write_cases.cpp"
   local testbench="$TESTS/bambu_axi_burst_write_tb.cpp"
@@ -241,7 +249,7 @@ run_float_copy_simulations() {
     mkdir -p "$dir/tmp"
     local -a args=("--top-fname=copy_float_payload" --compiler=I386_CLANG16 --generate-interface=INFER
       --device-name=xcu250,-2L,figd2104 --AXI-burst-type=INCREMENTAL --clock-period=3.33 --no-clean
-      --simulate --simulator=MODELSIM "--generate-tb=$testbench"
+      --simulate --simulator=MODELSIM "--mentor-root=$BAMBU_MODELSIM_ROOT" "--generate-tb=$testbench"
       --tb-param-size=src:16384 --tb-param-size=dst:16384
       "--bambu-parameter=${BURST_PARAMETER}=$feature"
       --extra-cc-options=-DNDEBUG --extra-cc-options=-DBAMBU --extra-cc-options=-DBURST_TEST_FLOAT_COPY)
@@ -282,7 +290,7 @@ run_float_copy_simulations() {
 }
 
 if [[ "$MODE" == write || "$MODE" == all ]]; then run_write_suite; fi
-if [[ "$MODE" == read-compat || "$MODE" == all ]]; then
+if [[ "$MODE" == read-compat ]]; then
   # Compatibility-only invocation; never runs by default as part of `write`.
   "$TESTS/run_compiler_tests.sh" burst-profile "$BAMBU" "$OUT/read-compat"
 fi

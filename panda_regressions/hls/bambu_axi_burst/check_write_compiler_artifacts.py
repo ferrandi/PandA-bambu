@@ -229,7 +229,14 @@ def check_case(args):
                 raise ValueError(f"architecture.xml does not serialize {name}={value}")
         expected_parameters = dict(item.split("=", 1)
                                    for item in getattr(args, "expect_engine_parameter", []))
-        if expected_parameters:
+        scalar_profile = (expected_parameters.get("B_MAX") == "1" and
+                          expected_parameters.get("MAX_OUTSTANDING") == "1")
+        if scalar_profile:
+            instances = list(_parameterized_instances(top_rtl, "MinimalAXI4AdapterSingleBeat"))
+            if len(instances) != 1 or BURST_COMPONENT.search(top_rtl) or any(
+                    pattern.search(top_rtl) for pattern in (*WRITE_OPERATIONS.values(), *READ_OPERATIONS.values())):
+                raise ValueError("B1/O1 must instantiate only the historical single-beat adapter")
+        elif expected_parameters:
             instances = _parameterized_instances(top_rtl, "MinimalAXI4MasterPipelinedWrite")
             if not any(all(parameters.get(name) == value for name, value in expected_parameters.items())
                        for parameters in instances):

@@ -11,7 +11,9 @@
 set -euo pipefail
 
 TESTS=$(cd "$(dirname "$0")" && pwd -P)
-ROOT=$(realpath "$TESTS/../../../../")
+ROOT=$(realpath "$TESTS/../../..")
+FAMILY="$TESTS"
+TESTS="$ROOT/panda_regressions/verilog/axi_burst/rtl_tests"
 MODELSIM_HELPERS="$TESTS/modelsim_helpers.sh"
 if (($# < 1 || $# > 3)); then
     echo "usage: BURST_G2_SIM_OUTSIDE_SANDBOX=1 $0 BAMBU [FRESH_OUTPUT_DIR] [TOP]" >&2

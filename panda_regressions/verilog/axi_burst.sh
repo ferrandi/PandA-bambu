@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Functional checks of the shared FIFO/RAM and their OpenMP caller.
+# AXI master/component RTL tests. This suite does not invoke Bambu.
 set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 ROOT=$(realpath "$SCRIPT_DIR/../..")
@@ -34,6 +34,22 @@ run_case() {
 run_case fifo bash "$TESTS/run_std_fifo.sh" "$OUT/fifo"
 run_case memory bash "$TESTS/run_std_sdp_bramfw.sh" "$OUT/memory"
 run_case openmp bash "$TESTS/run_openmp_fifo.sh" "$OUT/openmp"
+run_case offline-rtl python3 -B -m unittest discover -s "$TESTS"
+run_case offline-runners python3 -B -m unittest discover -s "$SCRIPT_DIR/axi_burst" -p 'test_*.py'
+run_case read-master bash "$TESTS/run_read_burst_modelsim.sh" "$OUT/read-master" all
+run_case write-master env BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 \
+    bash "$TESTS/run_write_burst_engine.sh" "$OUT/write-master"
+run_case vlog bash "$TESTS/run_vlog_portability.sh" "$OUT/vlog"
+run_case diagnostics env BURST_WRITER_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
+    bash "$TESTS/run_burst_fault_diagnostics.sh" "$OUT/diagnostics"
+run_case widths env SIM_JOBS=1 \
+    bash "$TESTS/run_axi_width_contract.sh" "$OUT/widths"
+run_case duplex-core env BURST_DUPLEX_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
+    bash "$TESTS/run_duplex_core_tests.sh" "$OUT/duplex-core"
+run_case adapter-size env BURST_ADAPTER_SIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
+    bash "$TESTS/run_adapter_size_guard.sh" "$OUT/adapter-size"
+run_case memory-model env BURST_MODELSIM_OUTSIDE_SANDBOX=1 SIM_JOBS=1 \
+    bash "$TESTS/run_testbench_memaxi_model.sh" qualify "$OUT/memory-model"
 python3 - "$OUT" <<'PY'
 from pathlib import Path
 import sys
