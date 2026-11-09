@@ -20,6 +20,19 @@ Mentor runner; both functional jobs use ModelSim/Questa. Verilator is not used
 for this qualification. The Release functional job retains its per-run output
 under `report-dir` for artifact upload.
 
+The same functional suite includes the complete AXI master specialization matrix:
+read sum, write fill and shared-bundle duplex copy, each with B1/O1, B16/O1,
+B1/O3 and B16/O3. These twelve `axi-master-*` cases are in
+`../bambu_axi_burst_list`, using the shared `axi_specialization.cpp` fixture
+and the existing golden testbenches on 37 elements. Mantis runs
+`check_axi_master_specialization.py` before cleanup to verify the actual
+controller selection and both directions' parameters. A failed co-simulation
+or post-check fails the case and appears in the existing CI reports. There is
+no separate co-simulation runner; use `../bambu_axi_burst.sh --group=functional`
+or `--group=all` for both these cases and the adversarial RTL tests.
+The Vivado area matrix remains an optional manual synthesis check in
+`panda_regressions/verilog/axi_burst/rtl_tests/run_axi_area_matrix.py`.
+
 The AXI-burst Mantis cases use a 1,000,000-cycle generated-testbench watchdog and
 a 30-minute per-command timeout. The cycle bound is about 15 times the measured
 66,563-cycle scalar fallback case; it also covers the 9,221-cycle read case with

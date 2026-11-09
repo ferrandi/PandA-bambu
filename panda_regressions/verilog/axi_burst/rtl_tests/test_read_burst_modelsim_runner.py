@@ -149,7 +149,7 @@ class ReadBurstModelSimRunnerTests(unittest.TestCase):
         manifest = RTL_TESTS / "read_burst_profiles.tsv"
         with manifest.open(encoding="utf-8", newline="") as stream:
             rows = list(csv.reader((line for line in stream if not line.startswith("#")), delimiter="\t"))
-        self.assertEqual(len(rows), 21)
+        self.assertEqual(len(rows), 23)
         self.assertEqual(len({row[1] for row in rows}), len(rows))
         self.assertEqual(
             {row[1] for row in rows},
@@ -159,7 +159,7 @@ class ReadBurstModelSimRunnerTests(unittest.TestCase):
                 "B16-O3-D64-PENDING", "B16-O3-D1", "B16-O3-D2", "B16-O3-D16",
                 "B16-O3-D64-SKID", "B16-O3-D512", "B16-O3-D4096",
                 "B16-O16-D32", "B256-O2-D8", "B16-O1-D1", "B1-O1-D1", "B1-O3-D8",
-                "B16-O1-D4096",
+                "B16-O1-D4096", "B1-O16-D16", "B1-O3-D8-FAULTS",
             },
         )
         self.assertTrue(all(len(row) == 7 for row in rows))

@@ -187,13 +187,13 @@ class WriteEngineExtractorTests(unittest.TestCase):
                     self.assertGreater(process_end, assignment_at)
                     credit_process = generated[process_start:process_end]
                     reset_branch = re.search(
-                        rf"if \(reset == 1'b{value}\)\s*begin(?P<body>.*?)\n\s*end\s*\n\s*else if \(activate_configure",
+                        rf"if\s*\(reset == 1'b{value}\)\s*begin(?P<body>.*?)\n\s*end\s*\n\s*else if\s*\(activate_configure",
                         credit_process, re.DOTALL)
                     if reset_branch is None:
                         self.fail(f"{assignment.split()[0]} reset branch does not precede activation")
                     self.assertIn(assignment, reset_branch.group("body"))
                     activation_branch = re.search(
-                        r"else if \(activate_configure\s*\|\|.*?\)\s*begin(?P<body>.*?)\n\s*end",
+                        r"else if\s*\(activate_configure\s*\|\|.*?\)\s*begin(?P<body>.*?)\n\s*end",
                         credit_process, re.DOTALL)
                     self.assertIsNotNone(activation_branch)
                     self.assertIn(assignment, activation_branch.group("body"))

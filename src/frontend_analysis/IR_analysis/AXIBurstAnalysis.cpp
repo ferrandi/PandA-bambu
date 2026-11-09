@@ -1947,6 +1947,20 @@ namespace InterfaceInferInternal
                (access.is_write ? direction.writes : direction.reads).push_back(access);
             }
          }
+         // With neither coalescing nor concurrent transactions, keep the scalar
+         // adapter and its start/done ABI. A configured engine would add region
+         // tracking and payload buffering without enabling either AXI feature.
+         const bool scalar_read = !decision.bundle_has_memory_read || (decision.read_profile.max_burst_length == 1 &&
+                                                                       decision.read_profile.max_outstanding == 1);
+         const bool scalar_write = !decision.bundle_has_memory_write || (decision.write_profile.max_burst_length == 1 &&
+                                                                         decision.write_profile.max_outstanding == 1);
+         if(scalar_read && scalar_write)
+         {
+            decision.read_fallback_reason = "single-beat profile with one transaction; using scalar adapter";
+            decision.write_fallback_reason = decision.read_fallback_reason;
+            decision.same_base_duplex_reason = decision.read_fallback_reason;
+            continue;
+         }
          const bool cache_enabled = iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end();
          if(decision.read_requested && decision.bundle_has_memory_read)
          {
@@ -2548,6 +2562,12 @@ namespace InterfaceInferInternal
       contribution.read_max_burst_length = static_cast<unsigned int>(std::stoul(read_max->second));
       contribution.read_profile = ParseAXIReadBurstProfile(attrs, bundle);
       contribution.write_profile = ParseAXIWriteBurstProfile(attrs, bundle);
+      if(contribution.read_profile.max_burst_length == 1 && contribution.read_profile.max_outstanding == 1 &&
+         contribution.write_profile.max_burst_length == 1 && contribution.write_profile.max_outstanding == 1)
+      {
+         reason = "single-beat profile with one transaction; using scalar adapter";
+         return false;
+      }
       if(contribution.read_max_burst_length < 1U || contribution.read_max_burst_length > 256U)
       {
          reason = "unsupported duplex burst profile";

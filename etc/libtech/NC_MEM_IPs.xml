@@ -10017,67 +10017,64 @@ begin
 // commands. Payload is not reset, and is valid only while !empty.
 localparam integer ADDRESS_BITS = (n_elements &lt;= 2) ? 1 : $clog2(n_elements);
 localparam integer COUNT_BITS = $clog2(n_elements + 1);
-    reg [ADDRESS_BITS-1:0] write_pointer_reg;
-    reg [ADDRESS_BITS-1:0] read_pointer_reg;
-    reg [COUNT_BITS-1:0] count_reg;
-    wire [ADDRESS_BITS-1:0] write_pointer_next =
-        write_pointer_reg == n_elements-1 ? 0 : write_pointer_reg + 1'b1;
-    wire [ADDRESS_BITS-1:0] read_pointer_next =
-        read_pointer_reg == n_elements-1 ? 0 : read_pointer_reg + 1'b1;
-    wire [ADDRESS_BITS-1:0] read_address = (1RESET_VALUE) || clear ? 0 :
-        (pop ? read_pointer_next : read_pointer_reg);
-    assign level = count_reg;
-    assign empty = count_reg == 0;
-    assign full = count_reg == n_elements;
+reg [ADDRESS_BITS - 1 : 0] write_pointer_reg;
+reg [ADDRESS_BITS - 1 : 0] read_pointer_reg;
+reg [COUNT_BITS - 1 : 0] count_reg;
+wire [ADDRESS_BITS - 1 : 0] write_pointer_next = write_pointer_reg == n_elements - 1 ? 0 : write_pointer_reg + 1'b1;
+wire [ADDRESS_BITS - 1 : 0] read_pointer_next = read_pointer_reg == n_elements - 1 ? 0 : read_pointer_reg + 1'b1;
+wire [ADDRESS_BITS - 1 : 0] read_address = (1RESET_VALUE) || clear ? 0 : (pop ? read_pointer_next : read_pointer_reg);
+assign level = count_reg;
+assign empty = count_reg == 0;
+assign full = count_reg == n_elements;
 
-    always @(posedge clock 1RESET_EDGE)
-    begin
-        if ((1RESET_VALUE) || clear)
-        begin
-            write_pointer_reg &lt;= 0;
-        end
-        else if (push)
-        begin
-            write_pointer_reg &lt;= write_pointer_next;
-        end
-    end
+always @(posedge clock 1RESET_EDGE)
+begin
+  if((1RESET_VALUE) || clear)
+  begin
+    write_pointer_reg &lt;= 0;
+  end
+  else if(push)
+  begin
+    write_pointer_reg &lt;= write_pointer_next;
+  end
+end
 
-    always @(posedge clock 1RESET_EDGE)
-    begin
-        if ((1RESET_VALUE) || clear)
-        begin
-            read_pointer_reg &lt;= 0;
-        end
-        else
-        begin
-            read_pointer_reg &lt;= read_address;
-        end
-    end
+always @(posedge clock 1RESET_EDGE)
+begin
+  if((1RESET_VALUE) || clear)
+  begin
+    read_pointer_reg &lt;= 0;
+  end
+  else
+  begin
+    read_pointer_reg &lt;= read_address;
+  end
+end
 
-    always @(posedge clock 1RESET_EDGE)
-    begin
-        if ((1RESET_VALUE) || clear)
-        begin
-            count_reg &lt;= 0;
-        end
-        else
-        begin
-            case ({push, pop})
-                2'b10: count_reg &lt;= count_reg + 1'b1;
-                2'b01: count_reg &lt;= count_reg - 1'b1;
-                default: count_reg &lt;= count_reg;
-            endcase
-        end
-    end
+always @(posedge clock 1RESET_EDGE)
+begin
+  if((1RESET_VALUE) || clear)
+  begin
+    count_reg &lt;= 0;
+  end
+  else
+  begin
+    case({push, pop})
+      2'b10:
+        count_reg &lt;= count_reg + 1'b1;
+      2'b01:
+        count_reg &lt;= count_reg - 1'b1;
+      default:
+        count_reg &lt;= count_reg;
+    endcase
+  end
+end
 
-    STD_SDP_BRAMFW #(
-        .BITSIZE_address_inr(ADDRESS_BITS), .BITSIZE_address_inw(ADDRESS_BITS),
-        .BITSIZE_data_in(BITSIZE_data_in), .BITSIZE_data_out(BITSIZE_data_out),
-        .n_elements(n_elements), .MEMORY_INIT_file(&quot;&quot;), .READ_ONLY_MEMORY(0),
-        .HIGH_LATENCY(0)) storage (
-        .clock(clock), .write_enable(!(1RESET_VALUE) &amp;&amp; !clear &amp;&amp; push),
-        .address_inw(write_pointer_reg), .address_inr(read_address),
-        .data_in(data_in), .data_out(data_out));
+STD_SDP_BRAMFW #(.BITSIZE_address_inr(ADDRESS_BITS), .BITSIZE_address_inw(ADDRESS_BITS),
+    .BITSIZE_data_in(BITSIZE_data_in), .BITSIZE_data_out(BITSIZE_data_out), .n_elements(n_elements),
+    .MEMORY_INIT_file(&quot;&quot;), .READ_ONLY_MEMORY(0), .HIGH_LATENCY(0))
+    storage(.clock(clock), .write_enable(!(1RESET_VALUE) &amp;&amp; !clear &amp;&amp; push), .address_inw(write_pointer_reg),
+        .address_inr(read_address), .data_in(data_in), .data_out(data_out));
 "/>
         </module_o>
       </circuit>
@@ -10114,33 +10111,33 @@ localparam integer COUNT_BITS = $clog2(n_elements + 1);
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <NP_functionality LIBRARY="STD_SDP_BRAMFW data_in address_inr address_inw data_out MEMORY_INIT_file n_elements READ_ONLY_MEMORY HIGH_LATENCY" VERILOG_PROVIDED="
-wire [BITSIZE_address_inr-1:0] address_inr_mem;
-reg [BITSIZE_address_inr-1:0] address_inr1;
-wire [BITSIZE_address_inw-1:0] address_inw_mem;
-reg [BITSIZE_address_inw-1:0] address_inw1;
+wire [BITSIZE_address_inr - 1 : 0] address_inr_mem;
+reg [BITSIZE_address_inr - 1 : 0] address_inr1;
+wire [BITSIZE_address_inw - 1 : 0] address_inw_mem;
+reg [BITSIZE_address_inw - 1 : 0] address_inw1;
 
 wire write_enable_mem;
 reg write_enable1;
 
-reg [BITSIZE_data_out-1:0] data_out_mem_temp;
-reg [BITSIZE_data_out-1:0] data_out1;
-wire [BITSIZE_data_out-1:0] data_out_mem;
+reg [BITSIZE_data_out - 1 : 0] data_out_mem_temp;
+reg [BITSIZE_data_out - 1 : 0] data_out1;
+wire [BITSIZE_data_out - 1 : 0] data_out_mem;
 
-wire [BITSIZE_data_in-1:0] data_in_mem;
-reg [BITSIZE_data_in-1:0] data_in1;
-reg [BITSIZE_data_in-1:0] data_in_mem1;
+wire [BITSIZE_data_in - 1 : 0] data_in_mem;
+reg [BITSIZE_data_in - 1 : 0] data_in1;
+reg [BITSIZE_data_in - 1 : 0] data_in_mem1;
 
 integer index;
 
-reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
+reg [BITSIZE_data_out - 1 : 0] memory[0 : n_elements - 1] /* synthesis syn_ramstyle =  &quot;no_rw_check&quot; */;
 
 initial
 begin
-  if (MEMORY_INIT_file != &quot;&quot;)
-    $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  if(MEMORY_INIT_file != &quot;&quot;)
+    $readmemb(MEMORY_INIT_file, memory, 0, n_elements - 1);
   else
   begin
-    for(index=0; index&lt;n_elements; index=index+1)
+    for(index = 0; index &lt; n_elements; index = index + 1)
     begin
       memory[index] = 0;
     end
@@ -10149,23 +10146,22 @@ end
 
 always @(posedge clock)
 begin
-  if(READ_ONLY_MEMORY==0)
+  if(READ_ONLY_MEMORY == 0)
   begin
-    if (write_enable_mem)
+    if(write_enable_mem)
       memory[address_inw_mem] &lt;= data_in_mem;
   end
   data_out_mem_temp &lt;= memory[address_inr_mem];
 end
 
-
-assign data_out = HIGH_LATENCY==0 ? data_out_mem : data_out1;
+assign data_out = HIGH_LATENCY == 0 ? data_out_mem : data_out1;
 always @(posedge clock)
   data_out1 &lt;= data_out_mem;
 
 // Both forms preserve the same forwarding contract. Larger memories use
 // separate match/enable registers to shorten the write-enable input path.
 generate
-  if (n_elements &lt; 512)
+  if(n_elements &lt; 512)
   begin : COMBINED_FORWARDING
     reg forward_valid_reg;
 
@@ -10201,14 +10197,14 @@ begin
 end
 
 generate
-  if(HIGH_LATENCY==2)
+  if(HIGH_LATENCY == 2)
   begin
-    always @ (posedge clock)
+    always @(posedge clock)
     begin
-       address_inr1 &lt;= address_inr;
-       address_inw1 &lt;= address_inw;
-       write_enable1 &lt;= write_enable;
-       data_in1 &lt;= data_in;
+      address_inr1 &lt;= address_inr;
+      address_inw1 &lt;= address_inw;
+      write_enable1 &lt;= write_enable;
+      data_in1 &lt;= data_in;
     end
     assign address_inr_mem = address_inr1;
     assign address_inw_mem = address_inw1;

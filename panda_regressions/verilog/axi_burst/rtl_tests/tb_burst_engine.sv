@@ -1851,6 +1851,8 @@ module tb_burst_engine #(
             integer error_index;
             integer base_transport;
             integer base_payload;
+            integer expected_ar;
+            integer expected_transport;
             reg [31:0] test_base;
             test_base = 32'h00007100;
             if ($test$plusargs("RRESP_FIRST"))
@@ -1876,6 +1878,10 @@ module tb_burst_engine #(
                        dut.returned_reg, dut.fifo_count_reg, done);
             base_transport = bus_transport_beats;
             base_payload = bus_returned_beats;
+            // Fault drains accepted traffic plus a held AR, which AXI cannot
+            // retract. Single-beat profiles can have several ARs for this region.
+            expected_ar = ar_count + (arvalid ? 1 : 0);
+            expected_transport = bus_issued_beats + (arvalid ? int'(arlen)+1 : 0);
             start = 1'b1;
             opcode = 2'd0;
             size_bits = 32'd32;
@@ -1898,13 +1904,13 @@ module tb_burst_engine #(
                 #1;
                 watchdog = watchdog + 1;
                 if (!fault || done || integer'(dut.fifo_count_reg) != base_payload ||
-                    bus_returned_beats != base_payload || ar_count != 1)
+                    bus_returned_beats != base_payload || ar_count > expected_ar)
                     $fatal(1, "RRESP drain wrote payload, completed LOAD, or issued another AR");
             end
             if (bus_desc_count != 0 || slave_q_count != 0 ||
-                bus_transport_beats != 4 || dut.descriptor_count_reg != 0 ||
+                ar_count != expected_ar || bus_transport_beats != expected_transport || dut.descriptor_count_reg != 0 ||
                 bus_issued_beats != bus_transport_beats ||
-                bus_transport_beats - base_transport != 4 - (error_index + 1))
+                bus_transport_beats - base_transport != expected_transport - (error_index + 1))
                 $fatal(1, "RRESP transport did not drain exactly once: issued=%0d transported=%0d bus_desc=%0d dut_desc=%0d",
                        bus_issued_beats, bus_transport_beats, bus_desc_count,
                        dut.descriptor_count_reg);

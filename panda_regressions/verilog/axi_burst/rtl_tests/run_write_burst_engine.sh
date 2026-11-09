@@ -369,13 +369,19 @@ expect_mutation_failure() {
     python3 - "$TASK_OUT/MinimalAXI4MasterPipelinedWrite.sv" "$mutant" \
         "$source_pattern" "$replacement" <<'PY' || return $?
 from pathlib import Path
+import re
 import sys
 
 source, target, needle, replacement = sys.argv[1:]
 text = Path(source).read_text()
-if text.count(needle) != 1:
-    raise SystemExit(f"expected exactly one mutation target, found {text.count(needle)}")
-Path(target).write_text(text.replace(needle, replacement))
+# Match the same tokens across spacing and line wrapping changes.
+tokens = re.findall(r"\d+'[sS]?[bBoOdDhH][0-9a-fA-F_xXzZ?]+|[A-Za-z_$]\w*|\d+|"
+                    r"===|!==|==|!=|>=|<=|&&|\|\||[^\s]", needle)
+matches = list(re.finditer(r"\s*".join(re.escape(token) for token in tokens), text))
+if len(matches) != 1:
+    raise SystemExit(f"expected exactly one mutation target, found {len(matches)}")
+match = matches[0]
+Path(target).write_text(text[:match.start()] + replacement + text[match.end():])
 PY
     mkdir -p "$build" || return $?
     modelsim_writer_compile "$build" tb_write_burst_engine "$mutant" "$TB" 0 || return $?
@@ -392,6 +398,7 @@ run_writer_group() {
     local RESULTS_LOG="$TASK_OUT/group-results/$group.log"
     : > "$RESULTS_LOG" || return $?
     case "$group" in
+        multi-B1-O3-D8|multi-B1-O16-D32|cursor-B1-O2-D4|multi-B1-O3-A64|\
         core-B16-D16|core-B16-D32|core-B1-D1|core-B1-O16|core-B3-D4|core-B16-D4096|\
         core-B16-A32-F3|multi-O2-D16|multi-O2-D32|multi-O3-D16|multi-O16-D16|\
         multi-O16-D32|multi-O16-D32-A64|boundary-O16-D32|wrap-O16-D32-A64|\
@@ -507,7 +514,8 @@ run_writer_group() {
     esac
 }
 
-WRITER_GROUPS=(core-B16-D16 core-B16-D32 core-B1-D1 core-B1-O16 core-B3-D4 \
+WRITER_GROUPS=(multi-B1-O3-D8 multi-B1-O16-D32 cursor-B1-O2-D4 multi-B1-O3-A64 \
+    core-B16-D16 core-B16-D32 core-B1-D1 core-B1-O16 core-B3-D4 \
     core-B16-D4096 core-B16-A32-F3 multi-O2-D16 multi-O2-D32 multi-O3-D16 \
     multi-O16-D16 multi-O16-D32 multi-O16-D32-A64 boundary-O16-D32 wrap-O16-D32-A64 \
     multi-O2-D32-F3 address-B16-A64 \
@@ -527,6 +535,7 @@ if [[ -n ${BURST_WRITER_GROUP_FILTER:-} ]]; then
             exit 2
         fi
         case "$group" in
+            multi-B1-O3-D8|multi-B1-O16-D32|cursor-B1-O2-D4|multi-B1-O3-A64|\
             core-B16-D16|core-B16-D32|core-B1-D1|core-B1-O16|core-B3-D4|core-B16-D4096|\
             core-B16-A32-F3|multi-O2-D16|multi-O2-D32|multi-O3-D16|multi-O16-D16|\
             multi-O16-D32|multi-O16-D32-A64|boundary-O16-D32|wrap-O16-D32-A64|\

@@ -188,6 +188,7 @@ fi
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_extract_write_engine.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_write_burst_modelsim_runner.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_read_burst_modelsim_runner.py"
+python3 -B "$script_dir/bambu_axi_burst/test_axi_master_specialization.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_generated_read_modelsim_runner.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_generated_memaxi_response_runner.py"
 python3 -B "$repo_root/panda_regressions/verilog/axi_burst/rtl_tests/test_vlog_portability_runner.py"
@@ -331,7 +332,7 @@ run_post_mantis_job() {
 burst_job_slots() {
   local capacity
   case $1 in
-    rtl-write-engine) capacity=45 ;;
+    rtl-write-engine) capacity=49 ;;
     rtl-generated-duplex) capacity=2 ;;
     rtl-generated-duplex-kernel) capacity=6 ;;
     rtl-duplex-alias) capacity=12 ;;

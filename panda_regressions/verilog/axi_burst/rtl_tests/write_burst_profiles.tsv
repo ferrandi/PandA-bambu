@@ -22,3 +22,8 @@ limit-B255-D256	base	B255-D256	255	1	256	32	0	CORE
 limit-B256-O16	outstanding	B256-O16	256	16	256	32	0	CORE
 limit-B256-D256	base	B256-D256	256	1	256	32	0	PARAM
 maxlen-B256-O2	outstanding	B256-O2-MAXLEN	256	2	512	32	0	MAX_BURST_LENGTH
+# Single-beat outstanding must fill AW/W credits with B responses withheld.
+multi-B1-O3-D8	outstanding	B1-O3-D8	1	3	8	32	0	MULTI_OUTSTANDING
+multi-B1-O16-D32	outstanding	B1-O16-D32	1	16	32	32	1	MULTI_OUTSTANDING
+cursor-B1-O2-D4	outstanding	B1-O2-D4	1	2	4	32	1	INDEPENDENT_CURSORS
+multi-B1-O3-A64	outstanding	B1-O3-A64	1	3	8	64	1	MULTI_OUTSTANDING SINGLE_BEAT_ADDRESS64

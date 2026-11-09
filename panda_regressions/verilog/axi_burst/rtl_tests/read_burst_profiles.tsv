@@ -22,3 +22,6 @@ credits	B16-O1-D1	16	1	1	no	CREDIT_LIMIT READY_CREDIT_PROOF
 credits	B1-O1-D1	1	1	1	no	CONFIG_PIPELINE_B1
 credits	B1-O3-D8	1	3	8	no	MULTI
 bounds	B16-O1-D4096	16	1	4096	no	DEPTH4096
+# Single-beat outstanding: fill all credits before any R, including non-power-of-two rings.
+credits	B1-O16-D16	1	16	16	no	MULTI
+transactions	B1-O3-D8-FAULTS	1	3	8	no	BADRID EARLY_RLAST MISSING_RLAST RRESP_FIRST RESET_MULTI FIFO_WRAP

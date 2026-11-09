@@ -220,9 +220,12 @@ module tb_write_burst_engine #(
                 end
             end
 `ifdef PLAN_FIFO_PRESENT
-            if (dut.plan_count_reg > 2 || (dut.plan_push && dut.plan_count_reg == 2 && !dut.plan_pop) ||
-                (dut.plan_pop && dut.plan_count_reg == 0))
+            if (B_MAX != 1 && (dut.plan_count_reg > 2 || (dut.plan_push && dut.plan_count_reg == 2 && !dut.plan_pop) ||
+                (dut.plan_pop && dut.plan_count_reg == 0)))
                 $fatal(1, "PLAN_FIFO_CAPACITY_INVARIANT count=%0d push=%b pop=%b",
+                       dut.plan_count_reg, dut.plan_push, dut.plan_pop);
+            if (B_MAX == 1 && (dut.plan_count_reg != 0 || dut.plan_push != dut.plan_pop))
+                $fatal(1, "SINGLE_BEAT_PLANNER_BYPASS count=%0d push=%b pop=%b",
                        dut.plan_count_reg, dut.plan_push, dut.plan_pop);
             plan_token_beats = 0;
             if (dut.plan_count_reg != 0)
@@ -569,7 +572,7 @@ module tb_write_burst_engine #(
                 $fatal(1, "SUSTAINED_OCCUPANCY profile=%s fifo_peak=%0d descriptor_peak=%0d",
                        label, fifo_peak_occupancy, descriptor_peak_occupancy);
 `ifdef PLAN_FIFO_PRESENT
-            if (plan_peak_occupancy != 2)
+            if (B_MAX != 1 && plan_peak_occupancy != 2)
                 $fatal(1, "SUSTAINED_PLAN_OCCUPANCY profile=%s plan_peak=%0d",
                        label, plan_peak_occupancy);
 `endif
@@ -1176,7 +1179,7 @@ module tb_write_burst_engine #(
                 committed_beats-start_commit != total_beats || response_count-start_b != MAX_OUTSTANDING+1 ||
                 reservations-start_reservations != MAX_OUTSTANDING+1 ||
                 simultaneous_reserve_b == start_sim_reserve_b ||
-                simultaneous_enqueue_w == start_sim_enqueue_w ||
+                (B_MAX != 1 && simultaneous_enqueue_w == start_sim_enqueue_w) ||
                 dut.descriptor_count_reg != 0 || dut.fifo_count_reg != 0 || dut.reserved_data_count_reg != 0)
                 $fatal(1, "F2_EVENT_DELTA_MISMATCH O=%0d reserve=%0d aw=%0d w=%0d commit=%0d b=%0d simultaneous_reserve_b=%0d simultaneous_enqueue_w=%0d desc=%0d fifo=%0d reserved=%0d",
                        MAX_OUTSTANDING, reservations-start_reservations, accepted_aw-start_aw,
@@ -1922,6 +1925,40 @@ module tb_write_burst_engine #(
         begin
             asynchronous_reset_witness();
         end
+        else if (selected_case == "SINGLE_BEAT_ADDRESS64")
+        begin
+            if (B_MAX != 1 || ADDR_BITS != 64 || MAX_OUTSTANDING < 2 || FIFO_DEPTH < 2)
+                $fatal(1, "SINGLE_BEAT_ADDRESS64_REQUIRES_B1_A64_O2_D2");
+            // Cross both the 4 KiB boundary and the low 32-bit address carry.
+            // Keep AW stalled while both payloads are accepted and reserved.
+            awready_driver = 1'b0;
+            wready = 1'b0;
+            expected[MEM_WORDS-4] = 32'h1234_abcd;
+            expected[MEM_WORDS-3] = 32'h5678_dcba;
+            command(OP_CONFIGURE, 32, 0, 64'h0000_0003_ffff_fffc, 2, 1'b0);
+            command(OP_STORE, 32, expected[MEM_WORDS-4], 64'h0000_0003_ffff_fffc, 0, 1'b0);
+            command(OP_STORE, 32, expected[MEM_WORDS-3], 64'h0000_0004_0000_0000, 0, 1'b0);
+            tick(8);
+            if (!awvalid || awaddr !== 64'h0000_0003_ffff_fffc || awlen != 0 || accepted_aw != 0)
+                $fatal(1, "SINGLE_BEAT_ADDRESS64_STALLED_AW");
+            awready_driver = 1'b1;
+            timeout_count = 0;
+            while (accepted_aw != 2 && timeout_count < 100)
+            begin
+                tick(1);
+                timeout_count = timeout_count + 1;
+            end
+            if (timeout_count == 100 || aw_queue_addr[0] !== 64'h0000_0003_ffff_fffc ||
+                aw_queue_addr[1] !== 64'h0000_0004_0000_0000 || accepted_w != 0 || response_count != 0)
+                $fatal(1, "SINGLE_BEAT_ADDRESS64_CARRY_OR_OUTSTANDING");
+            wready = 1'b1;
+            command(OP_DRAIN, 0, 0, 0, 0, 1'b0);
+            if (fault || accepted_aw != 2 || accepted_w != 2 || response_count != 2 ||
+                memory[MEM_WORDS-4] !== expected[MEM_WORDS-4] ||
+                memory[MEM_WORDS-3] !== expected[MEM_WORDS-3])
+                $fatal(1, "SINGLE_BEAT_ADDRESS64_DATA_OR_DRAIN");
+            $display("SINGLE_BEAT_ADDRESS64_PASS stalled_AW=1 AW_before_W=2 carry32=1");
+        end
         else if (selected_case == "MULTI_OUTSTANDING")
         begin
             if (MAX_OUTSTANDING < 2)
@@ -2026,7 +2063,7 @@ module tb_write_burst_engine #(
             command(OP_CONFIGURE, 32, 0, 32'h3f80, 16, 1'b0);
             tick(4);
 `ifdef PLAN_FIFO_PRESENT
-            if (dut.plan_count_reg != 2 || plan_peak_occupancy < 2)
+            if (B_MAX != 1 && (dut.plan_count_reg != 2 || plan_peak_occupancy < 2))
                 $fatal(1, "PLAN_FIFO_DID_NOT_FILL count=%0d peak=%0d", dut.plan_count_reg, plan_peak_occupancy);
 `endif
             first_store_cycle = clock_cycles;
@@ -2043,7 +2080,7 @@ module tb_write_burst_engine #(
                 $fatal(1, "PLAN_FIFO_EXCHANGE_OR_COUNTS_FAILED aw=%0d w=%0d b=%0d",
                        accepted_aw, accepted_w, response_count);
 `ifdef PLAN_FIFO_PRESENT
-            if (!plan_simultaneous_seen || !plan_full_exchange_seen || plan_peak_occupancy != 2)
+            if (B_MAX != 1 && (!plan_simultaneous_seen || !plan_full_exchange_seen || plan_peak_occupancy != 2))
                 $fatal(1, "PLAN_FIFO_EXCHANGE_OR_COUNTS_FAILED push_pop=%b full_exchange=%b peak=%0d aw=%0d w=%0d b=%0d",
                        plan_simultaneous_seen, plan_full_exchange_seen, plan_peak_occupancy,
                        accepted_aw, accepted_w, response_count);

@@ -224,6 +224,7 @@ class WriterModelSimRunnerTests(unittest.TestCase):
             "multi-O3-D16", "multi-O16-D16", "multi-O16-D32", "multi-O16-D32-A64",
             "boundary-O16-D32", "wrap-O16-D32-A64", "multi-O2-D32-F3", "address-B16-A64",
             "limit-B255-D256", "limit-B256-O16", "limit-B256-D256", "maxlen-B256-O2",
+            "multi-B1-O3-D8", "multi-B1-O16-D32", "cursor-B1-O2-D4", "multi-B1-O3-A64",
         }
         self.assertEqual({row[0] for row in rows}, expected)
         self.assertEqual(len(rows), len(expected))
