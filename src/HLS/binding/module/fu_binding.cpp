@@ -29,6 +29,7 @@
  */
 #include "fu_binding.hpp"
 
+#include "AXIDuplexBinding.hpp"
 #include "HDLGeneratorManager.hpp"
 #include "Parameter.hpp"
 #include "allocation_information.hpp"
@@ -72,6 +73,7 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1211,6 +1213,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
    std::list<structural_objectRef> memory_modules;
 
+   AXIDuplexBinding::bundles duplex_bundles;
+
    /// add the MEMCPY_STD component when parameters has to be copied into the local store
    const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const auto function_parameters = FB->CGetBehavioralHelper()->get_parameters();
@@ -1684,7 +1688,17 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             }
             kill_proxy_function_units(wrapped_units, curr_gate, fun_call_sites_rel, reverse_function_units);
 
-            bool added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
+            const auto fu_technology = GetPointerS<const functional_unit>(allocation_information->get_fu(i));
+            bool added_memory_element = false;
+            AXIDuplexBinding::endpoint duplex_endpoint;
+            if(AXIDuplexBinding::collect_endpoint(fu_technology, curr_gate, duplex_endpoint))
+            {
+               AXIDuplexBinding::add_endpoint(duplex_bundles, std::move(duplex_endpoint));
+            }
+            else
+            {
+               added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
+            }
             if(added_memory_element &&
                std::find(memory_modules.begin(), memory_modules.end(), curr_gate) == memory_modules.end())
             {
@@ -1699,6 +1713,17 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Specialized functional units");
+
+   if(!duplex_bundles.empty())
+   {
+      const auto aggregators =
+          AXIDuplexBinding::connect(HLSMgr, HLS, clock_port, reset_port, duplex_bundles, parameters, unique_id);
+      for(const auto& aggregator : aggregators)
+      {
+         manage_module_ports(HLSMgr, HLS, SM, aggregator, 0);
+      }
+   }
+
    if(!has_resource_sharing_p)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level,

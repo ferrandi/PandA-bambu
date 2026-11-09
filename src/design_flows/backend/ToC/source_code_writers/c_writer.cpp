@@ -62,6 +62,7 @@
 #include "op_graph.hpp"
 #include "utility.hpp"
 #include "var_pp_functor.hpp"
+#include <algorithm>
 #include <boost/range/adaptor/reversed.hpp>
 #if HAVE_HOST_PROFILING_BUILT
 #include "basic_blocks_profiling_c_writer.hpp"
@@ -436,10 +437,18 @@ void CWriter::WriteGlobalDeclarations()
       }
       for(const auto& [iface, attrs] : arch->ifaces)
       {
+         const auto mode = attrs.at(FunctionArchitecture::iface_mode);
+         const auto is_bound = std::any_of(arch->parms.begin(), arch->parms.end(), [&](const auto& parameter) {
+            const auto bundle = parameter.second.find(FunctionArchitecture::parm_bundle);
+            return bundle != parameter.second.end() && bundle->second == iface;
+         });
+         if(iface != "bus" && mode == "m_axi" && !is_bound)
+         {
+            continue;
+         }
          THROW_ASSERT(attrs.find(FunctionArchitecture::iface_alignment) != attrs.end(),
                       "Interface " + iface + " has no alignment");
          auto align = attrs.at(FunctionArchitecture::iface_alignment);
-         const auto mode = attrs.at(FunctionArchitecture::iface_mode);
          if(mode == "m_axi")
          {
             align = "1";

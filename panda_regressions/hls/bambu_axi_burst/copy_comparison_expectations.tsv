@@ -1,0 +1,5 @@
+profile	macro	read_bundle	write_bundle	requested_read_burst	requested_read_outstanding	requested_read_fifo	requested_write_burst	requested_write_outstanding	requested_write_fifo	actual_read_engine_burst	actual_read_engine_outstanding	actual_read_engine_fifo	actual_write_engine_burst	actual_write_engine_outstanding	actual_write_engine_fifo
+burst-two-bundles	1	input	output	16	1	64	16	1	32	16	1	64	16	1	32
+legacy-two-bundles	2	input	output	16	1	64	16	1	32	N/A	N/A	N/A	N/A	N/A	N/A
+legacy-shared	3	shared	shared	16	1	64	16	1	32	N/A	N/A	N/A	N/A	N/A	N/A
+duplex-shared	4	shared	shared	16	1	64	16	1	32	16	1	64	16	1	32

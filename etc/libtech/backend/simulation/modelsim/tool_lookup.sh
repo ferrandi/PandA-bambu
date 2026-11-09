@@ -11,6 +11,7 @@ bambu_modelsim_resolve() {
   BAMBU_MODELSIM_ROOT=""
   BAMBU_MODELSIM_SOURCE=""
 
+  # Match the production launcher: a simulator already on PATH always wins.
   if candidate=$(command -v vsim 2>/dev/null) && [[ -n $candidate ]]; then
     BAMBU_MODELSIM_SOURCE=PATH
   else
@@ -22,6 +23,7 @@ bambu_modelsim_resolve() {
 
     IFS=: read -r -a roots <<< "$backend_path"
     for root in "${roots[@]}"; do
+      # Empty components must not make find search the current directory.
       [[ -n $root && -d $root ]] && search_roots+=("$root")
     done
     if ((${#search_roots[@]} == 0)); then
@@ -29,6 +31,11 @@ bambu_modelsim_resolve() {
       return 1
     fi
 
+    # Deliberately keep find's first match, as Bambu does. Do not sort versions.
+    # find may report a traversal error in an earlier root after already
+    # printing a valid match from a later root. Preserve stdout in that case,
+    # as the original production launcher did; an empty result still fails
+    # closed below.
     candidate=$(find -L "${search_roots[@]}" \( -type f -o -type l \) \
       -path '*/bin/vsim' -print -quit 2>/dev/null || true)
     if [[ -z $candidate ]]; then
@@ -44,6 +51,8 @@ bambu_modelsim_resolve() {
   fi
 
   [[ $candidate == /* ]] || candidate="$PWD/$candidate"
+  # Preserve the invocation path and basename: vsim can be a dispatcher
+  # symlink to vco, and the executable name selects the simulator mode.
   BAMBU_MODELSIM_PATH=$candidate
   BAMBU_MODELSIM_BIN=${candidate%/*}
   BAMBU_MODELSIM_ROOT=$(dirname -- "$BAMBU_MODELSIM_BIN")

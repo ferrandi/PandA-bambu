@@ -27,6 +27,9 @@
  * @author Claudio Barone <claudio.barone@polimi.it>
  */
 #include "InterfaceInfer.hpp"
+#include "AXIBurstAnalysis.hpp"
+#include "AXIBurstRewrite.hpp"
+#include "AXIInterfaceResources.hpp"
 
 #include "CompilerWrapper.hpp"
 #include "IR/function_ordered_instructions.hpp"
@@ -61,58 +64,44 @@
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
 #include "time_info.hpp"
+#include "token_interface.hpp"
 #include "var_pp_functor.hpp"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <tuple>
 
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 
 #define EPSILON 0.000000001
-#define ENCODE_FDNAME(arg_name, MODE, interface_type) \
-   ((arg_name) + STR_CST_interface_parameter_keyword + (MODE) + (interface_type))
+
+using InterfaceInferInternal::ApplyAXIBurstDecision;
+using InterfaceInferInternal::BundleBurstDecision;
+using InterfaceInferInternal::CollectOriginalMemoryAccesses;
+using InterfaceInferInternal::createInterfaceCast;
+using InterfaceInferInternal::CreateMAXIResource;
+using InterfaceInferInternal::FrozenDuplexContribution;
+using InterfaceInferInternal::get_decl_name;
+using InterfaceInferInternal::getHDLGeneratorNameToken;
+using InterfaceInferInternal::hasBlockPath;
+using InterfaceInferInternal::hasOnlyOrdinaryMemoryEffects;
+using InterfaceInferInternal::hasOnlyOrdinaryReadEffects;
+using InterfaceInferInternal::isConstantValue;
+using InterfaceInferInternal::isUnsigned32Type;
+using InterfaceInferInternal::OriginalMemoryAccess;
+using InterfaceInferInternal::PreanalyzeBursts;
+using InterfaceInferInternal::preserveBlockingInterfaceAccess;
+using InterfaceInferInternal::ReadBurstRegion;
+using InterfaceInferInternal::serializeInterfaceAccess;
+using InterfaceInferInternal::WriteBurstRegion;
 
 namespace
 {
    using OrderedInstructionsCache = std::map<unsigned int, std::unique_ptr<FunctionOrderedInstructions>>;
-
-   /// Interfaces carry integer bits. Resize integers separately from reinterpreting
-   /// floating-point or vector values: bitcasts require equal operand/result widths.
-   /// `context` names the interface parameter, to make a rejected cast diagnosable.
-   ir_nodeRef createInterfaceCast(ir_nodeRef value, const ir_nodeConstRef& target_type,
-                                  const ir_manipulationRef& ir_man, unsigned scope,
-                                  std::vector<ir_nodeRef>& intermediate_stmts, const std::string& context)
-   {
-      const auto source_type = ir_helper::CGetType(value);
-      const auto source_is_bits = ir_helper::IsRealType(source_type) || ir_helper::IsVectorType(source_type);
-      const auto target_is_bits = ir_helper::IsRealType(target_type) || ir_helper::IsVectorType(target_type);
-      auto cast_kind = source_is_bits || target_is_bits ? bitcast_node_K : nop_node_K;
-      if(cast_kind == bitcast_node_K && ir_helper::Size(source_type) != ir_helper::Size(target_type))
-      {
-         // The intermediate is unsigned: the padding bits of a reinterpreted value
-         // carry no sign, so widening it must never fill the upper bits with ones.
-         const auto integer_type =
-             ir_man->GetCustomIntegerType(ir_helper::Size(source_is_bits ? source_type : target_type), true);
-         const auto intermediate_expr = ir_man->create_unary_operation(integer_type, value, BUILTIN_LOCINFO,
-                                                                       source_is_bits ? bitcast_node_K : nop_node_K);
-         const auto intermediate_stmt =
-             ir_man->CreateAssignStmt(integer_type, nullptr, nullptr, intermediate_expr, scope, BUILTIN_LOCINFO);
-         intermediate_stmts.push_back(intermediate_stmt);
-         value = GetPointerS<const assign_stmt>(intermediate_stmt)->op0;
-         cast_kind = target_is_bits ? bitcast_node_K : nop_node_K;
-      }
-      if(cast_kind == bitcast_node_K && ir_helper::Size(value) != ir_helper::Size(target_type))
-      {
-         const auto value_type = ir_helper::CGetType(value);
-         THROW_ERROR("Interface bitcast width mismatch on interface '" + context + "': " + STR(value_type) + " (" +
-                     STR(ir_helper::Size(value_type)) + " bits) -> " + STR(target_type) + " (" +
-                     STR(ir_helper::Size(target_type)) + " bits)");
-      }
-      return ir_man->create_unary_operation(target_type, value, BUILTIN_LOCINFO, cast_kind);
-   }
 
    bool isPointerDerivation(const ir_nodeRef& stmt, const ir_nodeRef& pointer)
    {
@@ -303,116 +292,6 @@ namespace
       return false;
    }
 
-   std::string getHDLGeneratorNameToken(const std::string& interface_name)
-   {
-      if(interface_name == "DP_array")
-      {
-         return "DPArray";
-      }
-      if(interface_name == "m_axi")
-      {
-         return "MAXI";
-      }
-
-      std::string token;
-      std::stringstream ss(interface_name);
-      std::string chunk;
-      while(std::getline(ss, chunk, '_'))
-      {
-         token += capitalize(chunk);
-      }
-      return token;
-   }
-
-   void addVirtualUseToStatement(const ir_nodeRef& stmt, const ir_nodeRef& vssa)
-   {
-      if(!vssa)
-      {
-         return;
-      }
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      if(stmt_node->AddVuse(vssa))
-      {
-         GetPointerS<ssa_node>(vssa)->AddUseStmt(stmt);
-      }
-   }
-
-   void addVirtualOverToStatement(const ir_nodeRef& stmt, const ir_nodeRef& vssa)
-   {
-      if(!vssa)
-      {
-         return;
-      }
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      if(stmt_node->AddVover(vssa))
-      {
-         GetPointerS<ssa_node>(vssa)->AddUseStmt(stmt);
-      }
-   }
-
-   void serializeInterfaceAccess(const ir_nodeRef& stmt, const std::string& interface_fname,
-                                 std::map<std::string, ir_nodeRef>& last_interface_vdefs,
-                                 const ir_manipulationRef& ir_man)
-   {
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      THROW_ASSERT(stmt_node, "Expected statement for interface serialization");
-      const auto last_vdef = last_interface_vdefs.find(interface_fname);
-      if(last_vdef != last_interface_vdefs.end())
-      {
-         addVirtualUseToStatement(stmt, last_vdef->second);
-      }
-      const auto new_vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()),
-                                                    ir_nodeRef(), ir_nodeRef(), true);
-      stmt_node->SetVdef(new_vdef);
-      GetPointerS<ssa_node>(new_vdef)->SetDefStmt(stmt);
-      last_interface_vdefs[interface_fname] = new_vdef;
-   }
-
-   void preserveBlockingInterfaceAccess(const ir_nodeRef& stmt, const ir_nodeRef& original_stmt,
-                                        const std::string& interface_fname,
-                                        std::map<std::string, ir_nodeRef>& last_interface_vdefs,
-                                        const ir_manipulationRef& ir_man)
-   {
-      const auto stmt_node = GetPointerS<node_stmt>(stmt);
-      const auto original_stmt_node = GetPointerS<node_stmt>(original_stmt);
-      THROW_ASSERT(stmt_node, "Expected statement for blocking interface serialization");
-      THROW_ASSERT(original_stmt_node, "Expected original statement for blocking interface serialization");
-
-      if(original_stmt_node->memdef && !stmt_node->memdef)
-      {
-         stmt_node->memdef = original_stmt_node->memdef;
-         GetPointerS<ssa_node>(stmt_node->memdef)->SetDefStmt(stmt);
-      }
-      if(original_stmt_node->memuse && !stmt_node->memuse)
-      {
-         stmt_node->memuse = original_stmt_node->memuse;
-         GetPointerS<ssa_node>(stmt_node->memuse)->AddUseStmt(stmt);
-      }
-      for(const auto& vuse : original_stmt_node->vuses)
-      {
-         addVirtualUseToStatement(stmt, vuse);
-      }
-      for(const auto& vover : original_stmt_node->vovers)
-      {
-         addVirtualOverToStatement(stmt, vover);
-      }
-
-      const auto last_vdef = last_interface_vdefs.find(interface_fname);
-      if(last_vdef != last_interface_vdefs.end())
-      {
-         addVirtualUseToStatement(stmt, last_vdef->second);
-      }
-
-      ir_nodeRef stmt_vdef = stmt_node->vdef;
-      if(!stmt_vdef)
-      {
-         stmt_vdef = ir_man->create_ssa_name(ir_nodeRef(), ir_man->GetPointerType(ir_man->GetVoidType()), ir_nodeRef(),
-                                             ir_nodeRef(), true);
-         stmt_node->SetVdef(stmt_vdef);
-         GetPointerS<ssa_node>(stmt_vdef)->SetDefStmt(stmt);
-      }
-      last_interface_vdefs[interface_fname] = stmt_vdef;
-   }
 
    bool isSimpleStreamInterface(const application_managerRef& AppM, unsigned int function_id,
                                 const std::string& bundle_name)
@@ -588,14 +467,6 @@ struct InterfaceInfer::interface_info
 
 static const std::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&\\/]*\\s*)");
 
-static std::string get_decl_name(ir_nodeRef tn)
-{
-   const auto dn = GetPointer<const decl_node>(tn);
-   THROW_ASSERT(dn, "Expected decl_node.");
-   THROW_ASSERT(dn->name, "Expected declaration name.");
-   return GetPointer<const identifier_node>(dn->name)->strg;
-}
-
 static std::vector<unsigned int> GetSortedRoots(const CallGraphManager& CGM)
 {
    std::vector<unsigned int> sorted_roots;
@@ -733,6 +604,7 @@ DesignFlowStep_Status InterfaceInfer::Exec()
    const auto TM = AppM->get_ir_manager();
    const auto& CGM = AppM->CGetCallGraphManager();
    const auto sorted_roots = GetSortedRoots(CGM);
+   const bool burst_feature_enabled = parameters->GetParameter<std::string>("m-axi-burst") == "1";
 
    std::set<unsigned int> modified;
    const auto add_to_modified = [&](const ir_nodeRef& tn) {
@@ -760,6 +632,118 @@ DesignFlowStep_Status InterfaceInfer::Exec()
       }
    }
 
+   unsigned int effective_burst_type = parameters->isOption(OPT_axi_burst_type) ?
+                                                               parameters->getOption<unsigned int>(OPT_axi_burst_type) :
+                                       burst_feature_enabled ? 1U :
+                                                               0U;
+   std::string burst_type_origin = parameters->isOption(OPT_axi_burst_type) ? "command-line" :
+                                   burst_feature_enabled                    ? "m-axi-burst default" :
+                                                                              "legacy default";
+   unsigned int device_burst_type = 0U;
+   if(HLSMgr->TryGetParameterFromParameterOrDevice<unsigned int>("axi_burst_type", HLSMgr->get_HLS_device(),
+                                                                 device_burst_type))
+   {
+      effective_burst_type = device_burst_type;
+      burst_type_origin = "device";
+   }
+
+   // Phase 1: resolve, record provenance and materialize burst defaults before
+   // taking the app-wide duplex snapshot.
+   const auto burst_profile_resolutions =
+       MaterializeAXIBurstProfileDefaults(HLSMgr->module_arch, burst_feature_enabled);
+   const auto burst_default_source = [](const bool is_default, const AXIBurstLengthDefaultReason reason) {
+      if(!is_default)
+      {
+         return std::string("explicit");
+      }
+      switch(reason)
+      {
+         case AXIBurstLengthDefaultReason::explicit_value:
+            return std::string("explicit");
+         case AXIBurstLengthDefaultReason::default_value:
+            return std::string("default");
+         case AXIBurstLengthDefaultReason::outstanding_hint:
+            return std::string("single-beat-default:outstanding-hint");
+         case AXIBurstLengthDefaultReason::fifo_hint:
+            return std::string("single-beat-default:fifo-hint");
+         case AXIBurstLengthDefaultReason::outstanding_and_fifo_hints:
+            return std::string("single-beat-default:outstanding+fifo-hints");
+         default:
+            return std::string("default");
+      }
+   };
+   for(const auto& profile_item : burst_profile_resolutions)
+   {
+      const auto& function_symbol = profile_item.first.first;
+      const auto& bundle_name = profile_item.first.second;
+      const auto& resolution = profile_item.second;
+      if(!resolution.enabled)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "AXI_BURST_ANALYSIS root=" + function_symbol + " bundle=" + bundle_name +
+                            " enabled=0 reason=m-axi-burst=0");
+         continue;
+      }
+      const auto& read_profile = resolution.read;
+      const auto& write_profile = resolution.write;
+      const auto& origins = resolution.origins;
+      if(!resolution.materialized)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                        "AXI_BURST_ANALYSIS root=" + function_symbol + " bundle=" + bundle_name +
+                            " enabled=1 profile=not-inferred reason=unbound read_max=" +
+                            std::to_string(read_profile.max_burst_length) + "(" +
+                            burst_default_source(origins.read_burst_default, origins.read_burst_reason) +
+                            ") read_outstanding=" + std::to_string(read_profile.max_outstanding) +
+                            (origins.read_outstanding_default ? "(default)" : "(explicit)") +
+                            " read_fifo=" + std::to_string(read_profile.fifo_depth) +
+                            (origins.read_fifo_default ? "(derived)" : "(explicit)") +
+                            " write_max=" + std::to_string(write_profile.max_burst_length) + "(" +
+                            burst_default_source(origins.write_burst_default, origins.write_burst_reason) +
+                            ") write_outstanding=" + std::to_string(write_profile.max_outstanding) +
+                            (origins.write_outstanding_default ? "(default)" : "(explicit)") +
+                            " write_fifo=" + std::to_string(write_profile.fifo_depth) +
+                            (origins.write_fifo_default ? "(derived)" : "(explicit)"));
+         continue;
+      }
+      const auto type_name = effective_burst_type == 1U ? "INCREMENTAL" :
+                             effective_burst_type == 0U ? "FIXED" :
+                                                          "unsupported";
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                     "AXI_BURST_PROFILE root=" + function_symbol + " bundle=" + bundle_name +
+                         " enabled=1 burst_type=" + type_name + "(" + burst_type_origin +
+                         ") read_max=" + std::to_string(read_profile.max_burst_length) + "(" +
+                         burst_default_source(origins.read_burst_default, origins.read_burst_reason) +
+                         ") read_outstanding=" + std::to_string(read_profile.max_outstanding) +
+                         (origins.read_outstanding_default ? "(default)" : "(explicit)") +
+                         " read_fifo=" + std::to_string(read_profile.fifo_depth) +
+                         (origins.read_fifo_default ? "(derived)" : "(explicit)") +
+                         " write_max=" + std::to_string(write_profile.max_burst_length) + "(" +
+                         burst_default_source(origins.write_burst_default, origins.write_burst_reason) +
+                         ") write_outstanding=" + std::to_string(write_profile.max_outstanding) +
+                         (origins.write_outstanding_default ? "(default)" : "(explicit)") +
+                         " write_fifo=" + std::to_string(write_profile.fifo_depth) +
+                         (origins.write_fifo_default ? "(derived)" : "(explicit)"));
+   }
+
+   // Phase 2: collect all eligible root contributions, then freeze compatible
+   // same-name bundles app-wide before any per-root DATAFLOW remapping or rewrite.
+   auto application_plan = InterfaceInferInternal::AnalyzeAXIBurstApplication(
+       sorted_roots, burst_feature_enabled, effective_burst_type, HLSMgr->get_address_bitsize(), HLSMgr->module_arch,
+       AppM, TM, CGM);
+   auto frozen_duplex_by_root = std::move(application_plan.frozen_by_root);
+   auto duplex_bundle_vetoes = std::move(application_plan.bundle_vetoes);
+   auto duplex_bundle_force_legacy = std::move(application_plan.force_legacy_bundles);
+   if(!application_plan.frozen_by_bundle.empty())
+   {
+      const auto TechMan = HLSMgr->get_HLS_device()->get_technology_manager();
+      InterfaceInferInternal::RegisterFrozenDuplexResources(TechMan, parameters, application_plan.frozen_by_bundle,
+                                                            HLSMgr->global_resource_constraints);
+   }
+
+   // Phase 3: per-root DATAFLOW remapping runs before recheck/preanalysis and
+   // mutation. Keep this inside the established root loop to preserve legacy
+   // interface interleaving and UpdateBBVersion behavior.
    for(const auto root_id : sorted_roots)
    {
       const auto fnode = TM->GetIRNode(root_id);
@@ -829,10 +813,37 @@ DesignFlowStep_Status InterfaceInfer::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
 
+      const bool has_read_burst_pragma =
+          std::any_of(func_arch->ifaces.begin(), func_arch->ifaces.end(), [](const auto& iface) {
+             return iface.second.find(FunctionArchitecture::iface_max_read_burst_length) != iface.second.end();
+          });
+      // InterfaceInfer runs before FunctionBehavior memory classification is guaranteed
+      // to exist. Use only immutable source-IR evidence here, before per-parameter rewrites.
+      const CustomOrderedSet<unsigned int> no_function_memory_info;
+      const bool has_only_read_effects =
+          hasOnlyOrdinaryReadEffects(GetPointerS<const statement_list_node>(fd->body), no_function_memory_info);
+      const auto original_statement_list = GetPointerS<const statement_list_node>(fd->body);
+      const bool original_ordinary_effects = hasOnlyOrdinaryMemoryEffects(original_statement_list);
+      bool all_original_memory_accesses_classified = true;
+      auto original_memory_accesses =
+          CollectOriginalMemoryAccesses(fd, root_id, func_arch, AppM, TM, all_original_memory_accesses_classified);
+      const bool original_memory_effects_safe = original_ordinary_effects && all_original_memory_accesses_classified;
+      const bool function_effects_safe =
+          !burst_feature_enabled || !has_read_burst_pragma ||
+          ((has_only_read_effects && original_ordinary_effects) || original_memory_effects_safe);
+
+      std::map<std::string, BundleBurstDecision> burst_decisions;
+      std::vector<OriginalMemoryAccess> burst_memory_accesses = original_memory_accesses;
+      std::map<unsigned int, std::string> dataflow_bundle_by_argument;
       const ir_manipulationRef ir_man(new ir_manipulation(TM, parameters, AppM));
       const auto is_dataflow_module =
           func_arch->attrs.find(FunctionArchitecture::func_dataflow_module) != func_arch->attrs.end() &&
           (func_arch->attrs.find(FunctionArchitecture::func_dataflow_module)->second == "1");
+      const auto is_forced_legacy_duplex_bundle = [&](const std::string& bundle_name) {
+         return duplex_bundle_force_legacy.count(bundle_name) != 0;
+      };
+      // Rebind DATAFLOW bundle identities before running the per-root burst
+      // proof against the frozen app-wide plan.
       if(is_dataflow_module)
       {
          const auto [caller_id, call_id] = GetCallStmt(CGM, root_id);
@@ -852,10 +863,18 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   return it.second.at(FunctionArchitecture::parm_index) == std::to_string(idx);
                });
                THROW_ASSERT(parm_attr != func_arch->parms.end(), "Expected parameter index " + std::to_string(idx));
+               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
                auto& current_bundle = parm_attr->second.at(FunctionArchitecture::parm_bundle);
+               const auto original_bundle = current_bundle;
+               const auto argument_index = fd->list_of_args.at(idx)->index;
                std::string bundle_name;
                if(base_var->get_kind() == argument_val_node_K)
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   func_arch->ifaces[current_bundle].at(FunctionArchitecture::iface_mode) = "default";
                   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
@@ -865,6 +884,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                if(ir_helper::IsConstant(base_var))
                {
+                  dataflow_bundle_by_argument[argument_index] = current_bundle;
+                  if(is_forced_legacy_duplex_bundle(original_bundle))
+                  {
+                     duplex_bundle_force_legacy.insert(current_bundle);
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "---Parameter " + parm_attr->second.at(FunctionArchitecture::parm_port) +
                                      " is constant at this call point");
@@ -902,7 +926,11 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                func_arch->ifaces[bundle_name].at(FunctionArchitecture::iface_name) = bundle_name;
                func_arch->ifaces.erase(current_bundle);
                current_bundle = bundle_name;
-               THROW_ASSERT(fd->list_of_args.size() > idx, "Unexpected function parameters count");
+               if(is_forced_legacy_duplex_bundle(original_bundle))
+               {
+                  duplex_bundle_force_legacy.insert(current_bundle);
+               }
+               dataflow_bundle_by_argument[argument_index] = current_bundle;
                auto pd = GetPointerS<argument_val_node>(fd->list_of_args.at(idx));
                pd->name = ir_man->create_identifier_node(bundle_name);
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
@@ -915,6 +943,68 @@ DesignFlowStep_Status InterfaceInfer::Exec()
             ++idx;
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+
+      for(auto& access : burst_memory_accesses)
+      {
+         const auto mapped_bundle = dataflow_bundle_by_argument.find(access.owner_argument_index);
+         if(access.classified && mapped_bundle != dataflow_bundle_by_argument.end())
+         {
+            access.bundle = mapped_bundle->second;
+         }
+      }
+
+      // Phase 4: recheck this root against the frozen plan after DATAFLOW
+      // remapping. Mutation remains in the following legacy/burst interleaving.
+      PreanalyzeBursts(burst_feature_enabled, effective_burst_type, root_id, fd, func_arch, original_memory_accesses,
+                       burst_memory_accesses, function_effects_safe, original_memory_effects_safe,
+                       frozen_duplex_by_root, duplex_bundle_vetoes, AppM, TM, burst_decisions, debug_level);
+
+      if(burst_feature_enabled)
+      {
+         for(const auto& bundle_decision : burst_decisions)
+         {
+            const auto& bundle = bundle_decision.first;
+            const auto& decision = bundle_decision.second;
+            const auto origins = burst_profile_resolutions.find({fsymbol, bundle});
+            const auto profile_origins =
+                origins == burst_profile_resolutions.end() ? AXIBurstProfileOrigins{} : origins->second.origins;
+            const auto read_source =
+                burst_default_source(profile_origins.read_burst_default, profile_origins.read_burst_reason);
+            const auto write_source =
+                burst_default_source(profile_origins.write_burst_default, profile_origins.write_burst_reason);
+            const auto read_outstanding_source = profile_origins.read_outstanding_default ? "default" : "explicit";
+            const auto write_outstanding_source = profile_origins.write_outstanding_default ? "default" : "explicit";
+            const auto read_outcome = !decision.bundle_has_memory_read ? "not-applicable-no-read-access" :
+                                      decision.read_recognized         ? "recognized" :
+                                                                         "legacy-fallback";
+            const auto write_outcome = !decision.bundle_has_memory_write ? "not-applicable-no-write-access" :
+                                       decision.write_recognized         ? "recognized" :
+                                                                           "legacy-fallback";
+            const auto read_reason =
+                !decision.bundle_has_memory_read       ? "no read access" :
+                !decision.read_fallback_reason.empty() ? decision.read_fallback_reason :
+                decision.read_recognized ? "preanalysis recognized; rewrite outcome is reported at lowering" :
+                                           "read-burst recognition unavailable";
+            const auto write_reason =
+                !decision.bundle_has_memory_write       ? "no write access" :
+                !decision.write_fallback_reason.empty() ? decision.write_fallback_reason :
+                decision.write_recognized ? "preanalysis recognized; rewrite outcome is reported at lowering" :
+                                            "write-burst recognition unavailable";
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                           "AXI_BURST_DECISION root=" + fsymbol + " bundle=" + bundle + " read=" + read_outcome +
+                               "(B=" + std::to_string(decision.read_max_burst_length) + "/" + read_source +
+                               ",O=" + std::to_string(decision.read_profile.max_outstanding) + "/" +
+                               read_outstanding_source + ",D=" + std::to_string(decision.read_profile.fifo_depth) +
+                               "; stage=preanalysis; reason=" + read_reason + "; rewrite=reported-at-lowering) write=" +
+                               write_outcome + "(B=" + std::to_string(decision.write_profile.max_burst_length) + "/" +
+                               write_source + ",O=" + std::to_string(decision.write_profile.max_outstanding) + "/" +
+                               write_outstanding_source + ",D=" + std::to_string(decision.write_profile.fifo_depth) +
+                               "; stage=preanalysis; reason=" + write_reason +
+                               "; rewrite=reported-at-lowering) duplex=" +
+                               (decision.same_base_duplex_candidate ? "preanalysis-candidate" : "not-candidate") + "(" +
+                               decision.same_base_duplex_reason + ")");
+         }
       }
 
       std::map<std::string, IRNodeSet> bundle_vdefs;
@@ -974,6 +1064,23 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                           func_arch->ifaces.end(),
                       "Missing parameter bundle: " + parm_attrs.at(FunctionArchitecture::parm_bundle));
          auto& iface_attrs = func_arch->ifaces.at(parm_attrs.at(FunctionArchitecture::parm_bundle));
+         if(ir_helper::IsPointerType(arg_type) && iface_attrs.at(FunctionArchitecture::iface_mode) == "m_axi")
+         {
+            const auto arg_ssa_id = AppM->getSSAFromParm(root_id, arg_id);
+            const auto arg_ssa = TM->GetIRNode(arg_ssa_id);
+            const bool has_no_uses = arg_ssa && arg_ssa->get_kind() == ssa_node_K &&
+                                     GetPointerS<const ssa_node>(arg_ssa)->CGetUseStmts().empty();
+            const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
+            const bool another_parameter_owns_bundle_access =
+                std::any_of(burst_memory_accesses.begin(), burst_memory_accesses.end(), [&](const auto& access) {
+                   return access.classified && access.owner_argument_index != arg_id && access.bundle == bundle_name;
+                });
+            if(has_no_uses && another_parameter_owns_bundle_access)
+            {
+               THROW_WARNING("Parameter '" + arg_name + "' is unused by any statement");
+               continue;
+            }
+         }
          iface_attrs[FunctionArchitecture::iface_direction] = port_o::GetString(port_o::IN);
          const auto is_pointer_type = ir_helper::IsPointerType(arg_type);
          const auto raw_interface_type = iface_attrs.at(FunctionArchitecture::iface_mode);
@@ -1039,7 +1146,36 @@ DesignFlowStep_Status InterfaceInfer::Exec()
 
                std::list<ir_nodeRef> writeStmt;
                std::list<ir_nodeRef> readStmt;
+               const auto early_decision = burst_decisions.find(parm_attrs.at(FunctionArchitecture::parm_bundle));
+               const bool runtime_guard_candidate =
+                   early_decision != burst_decisions.end() && early_decision->second.same_base_duplex_activated &&
+                   early_decision->second.same_base_duplex_proof &&
+                   early_decision->second.same_base_duplex_proof->runtime_range_guard &&
+                   (arg_id == early_decision->second.same_base_duplex_proof->read_owner_argument_index ||
+                    arg_id == early_decision->second.same_base_duplex_proof->write_owner_argument_index);
                ChasePointerInterface(arg_ssa, writeStmt, readStmt, info);
+               if(runtime_guard_candidate)
+               {
+                  if(info.bitwidth == 0)
+                  {
+                     const auto& proof = *early_decision->second.same_base_duplex_proof;
+                     info.bitwidth = ir_helper::Size(GetPointerS<const assign_stmt>(proof.load_statement)->op0);
+                  }
+                  writeStmt.clear();
+                  readStmt.clear();
+                  const auto owner = early_decision->second.accesses_by_argument.find(arg_id);
+                  if(owner != early_decision->second.accesses_by_argument.end())
+                  {
+                     for(const auto& access : owner->second.reads)
+                     {
+                        readStmt.push_back(access.statement);
+                     }
+                     for(const auto& access : owner->second.writes)
+                     {
+                        writeStmt.push_back(access.statement);
+                     }
+                  }
+               }
                const auto is_csroa_ac_type = [&]() {
                   const auto type_attr = parm_attrs.find(FunctionArchitecture::parm_original_typename);
                   if(type_attr == parm_attrs.end())
@@ -1069,6 +1205,25 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                }
                const auto isRead = !readStmt.empty();
                const auto isWrite = !writeStmt.empty();
+
+               if(!burst_feature_enabled && interface_type == "m_axi")
+               {
+                  if(isRead && iface_attrs.find(FunctionArchitecture::iface_max_read_burst_length) != iface_attrs.end())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi reads for bundle " +
+                                        parm_attrs.at(FunctionArchitecture::parm_bundle) +
+                                        ": explicit read-burst request ignored because m-axi-burst=0");
+                  }
+                  if(isWrite &&
+                     iface_attrs.find(FunctionArchitecture::iface_max_write_burst_length) != iface_attrs.end())
+                  {
+                     INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
+                                    "---Keeping legacy m_axi writes for bundle " +
+                                        parm_attrs.at(FunctionArchitecture::parm_bundle) +
+                                        ": explicit write-burst request ignored because m-axi-burst=0");
+                  }
+               }
 
                if(!isRead && !isWrite)
                {
@@ -1228,6 +1383,41 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                std::set<std::string> operationsR, operationsW;
                const auto interface_datatype = ir_man->GetCustomIntegerType(info.bitwidth, true);
                const auto& bundle_name = iface_attrs.at(FunctionArchitecture::iface_name);
+               const auto decision_it = burst_decisions.find(bundle_name);
+               const auto* decision = decision_it == burst_decisions.end() ? nullptr : &decision_it->second;
+               const auto same_base_duplex_active =
+                   decision && decision->same_base_duplex_activated && decision->same_base_duplex_proof &&
+                   (decision->same_base_duplex_proof->read_owner_argument_index == arg_id ||
+                    decision->same_base_duplex_proof->write_owner_argument_index == arg_id);
+               ApplyAXIBurstDecision({fd,
+                                      root_id,
+                                      arg_id,
+                                      HLSMgr->get_address_bitsize(),
+                                      arg_name,
+                                      bundle_name,
+                                      fsymbol,
+                                      info.bitwidth,
+                                      info.alignment,
+                                      isRead,
+                                      isWrite,
+                                      burst_feature_enabled && interface_type == "m_axi",
+                                      is_forced_legacy_duplex_bundle(bundle_name),
+                                      same_base_duplex_active,
+                                      iface_attrs,
+                                      decision,
+                                      interface_datatype,
+                                      AppM,
+                                      TM,
+                                      ir_man,
+                                      readStmt,
+                                      writeStmt,
+                                      channel_read_vdefs,
+                                      channel_write_vdefs,
+                                      HLSMgr->design_interface_io[fsymbol],
+                                      operationsR,
+                                      operationsW,
+                                      modified,
+                                      output_level});
                const auto require_flush =
                    interface_type == "m_axi" &&
                    iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end();
@@ -1254,7 +1444,10 @@ DesignFlowStep_Status InterfaceInfer::Exec()
                   add_to_modified(stmt);
                   store_vdef(stmt);
                }
-               create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               if(!same_base_duplex_active)
+               {
+                  create_resource(operationsR, operationsW, info, func_arch, unused_port, root_id);
+               }
             }
             else if(interface_type == "none")
             {
@@ -3323,353 +3516,6 @@ void InterfaceInfer::create_resource_array(const std::set<std::string>& operatio
    }
 }
 
-void InterfaceInfer::create_resource_m_axi(const std::set<std::string>& operationsR,
-                                           const std::set<std::string>& operationsW, const interface_info& info,
-                                           FunctionArchitectureRef func_arch, bool unused_port,
-                                           unsigned int root_id) const
-{
-   THROW_ASSERT(GetPointer<HLS_manager>(AppM), "");
-   const auto HLSMgr = GetPointerS<HLS_manager>(AppM);
-   THROW_ASSERT(func_arch->parms.find(info.arg_id) != func_arch->parms.end(),
-                "Missing parameter '" + info.arg_id + "' from function architecute.");
-   const auto& parm_attrs = func_arch->parms.at(info.arg_id);
-   const auto& bundle_name = parm_attrs.at(FunctionArchitecture::parm_bundle);
-   const auto ResourceName = ENCODE_FDNAME(bundle_name, "", "");
-   const auto HLS_D = HLSMgr->get_HLS_device();
-   const auto TechMan = HLS_D->get_technology_manager();
-
-   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) ||
-      !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                     "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
-      const auto& iface_attrs = func_arch->ifaces.at(bundle_name);
-      const structural_managerRef CM(new structural_manager(parameters));
-      const structural_type_descriptorRef module_type(new structural_type_descriptor(ResourceName));
-      CM->set_top_info(ResourceName, module_type);
-      const auto interface_top = CM->get_circ();
-      /// add description and license
-      GetPointerS<module_o>(interface_top)->set_description("Interface module for function: " + ResourceName);
-      GetPointerS<module_o>(interface_top)->set_copyright(GENERATED_COPYRIGHT);
-      GetPointerS<module_o>(interface_top)->set_authors("Component automatically generated by bambu");
-      GetPointerS<module_o>(interface_top)->set_license(GENERATED_LICENSE);
-      GetPointerS<module_o>(interface_top)->set_multi_unit_multiplicity(1U);
-
-      const auto address_bitsize = HLSMgr->get_address_bitsize();
-      const auto interface_bitwidth = iface_attrs.find(FunctionArchitecture::iface_bitwidth) != iface_attrs.end() ?
-                                          std::stoull(iface_attrs.find(FunctionArchitecture::iface_bitwidth)->second) :
-                                          info.bitwidth;
-      const auto nbitDataSize = 64u - static_cast<unsigned>(__builtin_clzll(interface_bitwidth));
-      const auto backEndBitsize =
-          iface_attrs.find(FunctionArchitecture::iface_cache_bus_size) != iface_attrs.end() ?
-              std::stoull(iface_attrs.find(FunctionArchitecture::iface_cache_bus_size)->second) :
-              interface_bitwidth;
-
-      const structural_type_descriptorRef address_interface_datatype(
-          new structural_type_descriptor("bool", address_bitsize));
-      const structural_type_descriptorRef size1(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef rwsize(new structural_type_descriptor("bool", nbitDataSize));
-      const structural_type_descriptorRef rwtypeIn(new structural_type_descriptor("bool", interface_bitwidth));
-      const structural_type_descriptorRef rwtypeOut(new structural_type_descriptor("bool", backEndBitsize));
-      const structural_type_descriptorRef idType(new structural_type_descriptor("bool", 6));
-      const structural_type_descriptorRef lenType(new structural_type_descriptor("bool", 8));
-      const structural_type_descriptorRef sizeType(new structural_type_descriptor("bool", 3));
-      const structural_type_descriptorRef burstType(new structural_type_descriptor("bool", 2));
-      const structural_type_descriptorRef lockType(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef cacheType(new structural_type_descriptor("bool", 4));
-      const structural_type_descriptorRef protType(new structural_type_descriptor("bool", 3));
-      const structural_type_descriptorRef qosType(new structural_type_descriptor("bool", 4));
-      const structural_type_descriptorRef regionType(new structural_type_descriptor("bool", 4));
-      const structural_type_descriptorRef userType(new structural_type_descriptor("bool", 1));
-      const structural_type_descriptorRef strbType(new structural_type_descriptor("bool", backEndBitsize / 8ULL));
-      const structural_type_descriptorRef respType(new structural_type_descriptor("bool", 2));
-      const structural_type_descriptorRef bool_type(new structural_type_descriptor("bool", 0));
-
-      CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
-      CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
-      CM->add_port_vector(START_PORT_NAME, port_o::IN, 1U, interface_top, bool_type);
-
-      // when 0 is a read otherwise is a write
-      CM->add_port("in1", port_o::IN, interface_top, size1);
-      // bit-width size of the written or read data
-      CM->add_port("in2", port_o::IN, interface_top, rwsize);
-      // value written when the first operand is 1, 0 otherwise
-      CM->add_port("in3", port_o::IN, interface_top, rwtypeIn);
-
-      const auto addrPort = CM->add_port("in4", port_o::IN, interface_top, address_interface_datatype);
-      GetPointerS<port_o>(addrPort)->set_is_addr_bus(true);
-
-      const auto cache_reset_port = CM->add_port(CACHE_RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
-      GetPointerS<port_o>(cache_reset_port)->set_port_interface(port_o::port_interface::CACHE_RESET);
-
-      const auto awready = CM->add_port("_m_axi_" + bundle_name + "_awready", port_o::IN, interface_top, bool_type);
-      GetPointerS<port_o>(awready)->set_port_interface(port_o::port_interface::M_AXI_AWREADY);
-
-      const auto wready = CM->add_port("_m_axi_" + bundle_name + "_wready", port_o::IN, interface_top, bool_type);
-      GetPointerS<port_o>(wready)->set_port_interface(port_o::port_interface::M_AXI_WREADY);
-
-      const auto bid = CM->add_port_vector("_m_axi_" + bundle_name + "_bid", port_o::IN, 1, interface_top, idType);
-      GetPointerS<port_o>(bid)->set_port_interface(port_o::port_interface::M_AXI_BID);
-
-      const auto bresp = CM->add_port("_m_axi_" + bundle_name + "_bresp", port_o::IN, interface_top, respType);
-      GetPointerS<port_o>(bresp)->set_port_interface(port_o::port_interface::M_AXI_BRESP);
-
-      const auto buser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_buser", port_o::IN, 1, interface_top, userType);
-      GetPointerS<port_o>(buser)->set_port_interface(port_o::port_interface::M_AXI_BUSER);
-
-      const auto bvalid = CM->add_port("_m_axi_" + bundle_name + "_bvalid", port_o::IN, interface_top, bool_type);
-      GetPointerS<port_o>(bvalid)->set_port_interface(port_o::port_interface::M_AXI_BVALID);
-
-      const auto arready = CM->add_port("_m_axi_" + bundle_name + "_arready", port_o::IN, interface_top, bool_type);
-      GetPointerS<port_o>(arready)->set_port_interface(port_o::port_interface::M_AXI_ARREADY);
-
-      const auto rid = CM->add_port_vector("_m_axi_" + bundle_name + "_rid", port_o::IN, 1, interface_top, idType);
-      GetPointerS<port_o>(rid)->set_port_interface(port_o::port_interface::M_AXI_RID);
-
-      const auto rdata = CM->add_port("_m_axi_" + bundle_name + "_rdata", port_o::IN, interface_top, rwtypeOut);
-      GetPointerS<port_o>(rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
-
-      const auto rresp = CM->add_port("_m_axi_" + bundle_name + "_rresp", port_o::IN, interface_top, respType);
-      GetPointerS<port_o>(rresp)->set_port_interface(port_o::port_interface::M_AXI_RRESP);
-
-      const auto rlast = CM->add_port("_m_axi_" + bundle_name + "_rlast", port_o::IN, interface_top, bool_type);
-      GetPointerS<port_o>(rlast)->set_port_interface(port_o::port_interface::M_AXI_RLAST);
-
-      const auto ruser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_ruser", port_o::IN, 1, interface_top, userType);
-      GetPointerS<port_o>(ruser)->set_port_interface(port_o::port_interface::M_AXI_RUSER);
-
-      const auto rvalid = CM->add_port("_m_axi_" + bundle_name + "_rvalid", port_o::IN, interface_top, bool_type);
-      GetPointerS<port_o>(rvalid)->set_port_interface(port_o::port_interface::M_AXI_RVALID);
-
-      CM->add_port(DONE_PORT_NAME, port_o::OUT, interface_top, bool_type);
-      CM->add_port("out1", port_o::OUT, interface_top, rwtypeIn);
-
-      const auto awid = CM->add_port_vector("_m_axi_" + bundle_name + "_awid", port_o::OUT, 1, interface_top, idType);
-      GetPointerS<port_o>(awid)->set_port_interface(port_o::port_interface::M_AXI_AWID);
-
-      const auto awaddr =
-          CM->add_port("_m_axi_" + bundle_name + "_awaddr", port_o::OUT, interface_top, address_interface_datatype);
-      GetPointerS<port_o>(awaddr)->set_port_interface(port_o::port_interface::M_AXI_AWADDR);
-
-      const auto awlen = CM->add_port("_m_axi_" + bundle_name + "_awlen", port_o::OUT, interface_top, lenType);
-      GetPointerS<port_o>(awlen)->set_port_interface(port_o::port_interface::M_AXI_AWLEN);
-
-      const auto awsize = CM->add_port("_m_axi_" + bundle_name + "_awsize", port_o::OUT, interface_top, sizeType);
-      GetPointerS<port_o>(awsize)->set_port_interface(port_o::port_interface::M_AXI_AWSIZE);
-
-      const auto awburst = CM->add_port("_m_axi_" + bundle_name + "_awburst", port_o::OUT, interface_top, burstType);
-      GetPointerS<port_o>(awburst)->set_port_interface(port_o::port_interface::M_AXI_AWBURST);
-
-      const auto awlock =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_awlock", port_o::OUT, 1, interface_top, lockType);
-      GetPointerS<port_o>(awlock)->set_port_interface(port_o::port_interface::M_AXI_AWLOCK);
-
-      const auto awcache = CM->add_port("_m_axi_" + bundle_name + "_awcache", port_o::OUT, interface_top, cacheType);
-      GetPointerS<port_o>(awcache)->set_port_interface(port_o::port_interface::M_AXI_AWCACHE);
-
-      const auto awprot = CM->add_port("_m_axi_" + bundle_name + "_awprot", port_o::OUT, interface_top, protType);
-      GetPointerS<port_o>(awprot)->set_port_interface(port_o::port_interface::M_AXI_AWPROT);
-
-      const auto awqos = CM->add_port("_m_axi_" + bundle_name + "_awqos", port_o::OUT, interface_top, qosType);
-      GetPointerS<port_o>(awqos)->set_port_interface(port_o::port_interface::M_AXI_AWQOS);
-
-      const auto awregion = CM->add_port("_m_axi_" + bundle_name + "_awregion", port_o::OUT, interface_top, regionType);
-      GetPointerS<port_o>(awregion)->set_port_interface(port_o::port_interface::M_AXI_AWREGION);
-
-      const auto awuser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_awuser", port_o::OUT, 1, interface_top, userType);
-      GetPointerS<port_o>(awuser)->set_port_interface(port_o::port_interface::M_AXI_AWUSER);
-
-      const auto awvalid = CM->add_port("_m_axi_" + bundle_name + "_awvalid", port_o::OUT, interface_top, bool_type);
-      GetPointerS<port_o>(awvalid)->set_port_interface(port_o::port_interface::M_AXI_AWVALID);
-
-      const auto wdata = CM->add_port("_m_axi_" + bundle_name + "_wdata", port_o::OUT, interface_top, rwtypeOut);
-      GetPointerS<port_o>(wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
-
-      const auto wstrb =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_wstrb", port_o::OUT, 1, interface_top, strbType);
-      GetPointerS<port_o>(wstrb)->set_port_interface(port_o::port_interface::M_AXI_WSTRB);
-
-      const auto wlast = CM->add_port("_m_axi_" + bundle_name + "_wlast", port_o::OUT, interface_top, bool_type);
-      GetPointerS<port_o>(wlast)->set_port_interface(port_o::port_interface::M_AXI_WLAST);
-
-      const auto wuser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_wuser", port_o::OUT, 1, interface_top, userType);
-      GetPointerS<port_o>(wuser)->set_port_interface(port_o::port_interface::M_AXI_WUSER);
-
-      const auto wvalid = CM->add_port("_m_axi_" + bundle_name + "_wvalid", port_o::OUT, interface_top, bool_type);
-      GetPointerS<port_o>(wvalid)->set_port_interface(port_o::port_interface::M_AXI_WVALID);
-
-      const auto bready = CM->add_port("_m_axi_" + bundle_name + "_bready", port_o::OUT, interface_top, bool_type);
-      GetPointerS<port_o>(bready)->set_port_interface(port_o::port_interface::M_AXI_BREADY);
-
-      const auto arid = CM->add_port_vector("_m_axi_" + bundle_name + "_arid", port_o::OUT, 1, interface_top, idType);
-      GetPointerS<port_o>(arid)->set_port_interface(port_o::port_interface::M_AXI_ARID);
-
-      const auto araddr =
-          CM->add_port("_m_axi_" + bundle_name + "_araddr", port_o::OUT, interface_top, address_interface_datatype);
-      GetPointerS<port_o>(araddr)->set_port_interface(port_o::port_interface::M_AXI_ARADDR);
-
-      const auto arlen = CM->add_port("_m_axi_" + bundle_name + "_arlen", port_o::OUT, interface_top, lenType);
-      GetPointerS<port_o>(arlen)->set_port_interface(port_o::port_interface::M_AXI_ARLEN);
-
-      const auto arsize = CM->add_port("_m_axi_" + bundle_name + "_arsize", port_o::OUT, interface_top, sizeType);
-      GetPointerS<port_o>(arsize)->set_port_interface(port_o::port_interface::M_AXI_ARSIZE);
-
-      const auto arburst = CM->add_port("_m_axi_" + bundle_name + "_arburst", port_o::OUT, interface_top, burstType);
-      GetPointerS<port_o>(arburst)->set_port_interface(port_o::port_interface::M_AXI_ARBURST);
-
-      const auto arlock =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_arlock", port_o::OUT, 1, interface_top, lockType);
-      GetPointerS<port_o>(arlock)->set_port_interface(port_o::port_interface::M_AXI_ARLOCK);
-
-      const auto arcache = CM->add_port("_m_axi_" + bundle_name + "_arcache", port_o::OUT, interface_top, cacheType);
-      GetPointerS<port_o>(arcache)->set_port_interface(port_o::port_interface::M_AXI_ARCACHE);
-
-      const auto arprot = CM->add_port("_m_axi_" + bundle_name + "_arprot", port_o::OUT, interface_top, protType);
-      GetPointerS<port_o>(arprot)->set_port_interface(port_o::port_interface::M_AXI_ARPROT);
-
-      const auto arqos = CM->add_port("_m_axi_" + bundle_name + "_arqos", port_o::OUT, interface_top, qosType);
-      GetPointerS<port_o>(arqos)->set_port_interface(port_o::port_interface::M_AXI_ARQOS);
-
-      const auto arregion = CM->add_port("_m_axi_" + bundle_name + "_arregion", port_o::OUT, interface_top, regionType);
-      GetPointerS<port_o>(arregion)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
-
-      const auto aruser =
-          CM->add_port_vector("_m_axi_" + bundle_name + "_aruser", port_o::OUT, 1, interface_top, userType);
-      GetPointerS<port_o>(aruser)->set_port_interface(port_o::port_interface::M_AXI_ARUSER);
-
-      const auto arvalid = CM->add_port("_m_axi_" + bundle_name + "_arvalid", port_o::OUT, interface_top, bool_type);
-      GetPointerS<port_o>(arvalid)->set_port_interface(port_o::port_interface::M_AXI_ARVALID);
-
-      const auto rready = CM->add_port("_m_axi_" + bundle_name + "_rready", port_o::OUT, interface_top, bool_type);
-      GetPointerS<port_o>(rready)->set_port_interface(port_o::port_interface::M_AXI_RREADY);
-
-      bool has_slave = false;
-      bool has_direct = false;
-      for(auto& p : func_arch->parms)
-      {
-         if(p.second.at(FunctionArchitecture::parm_bundle) == bundle_name)
-         {
-            const auto& parm_offset = p.second.at(FunctionArchitecture::parm_offset);
-            if(parm_offset == "slave")
-            {
-               has_slave = true;
-            }
-            else if(parm_offset == "direct")
-            {
-               has_direct = true;
-               const auto offset_port =
-                   CM->add_port("_" + p.first, port_o::IN, interface_top, address_interface_datatype);
-               GetPointerS<port_o>(offset_port)->set_port_interface(port_o::port_interface::PI_M_AXI_DIRECT);
-            }
-         }
-      }
-      if(!has_direct)
-      {
-         THROW_ERROR_USAGE("Only 'direct' AXI interfaces are supported for this configuration.");
-      }
-      if(has_slave)
-      {
-         const auto s_awvalid = CM->add_port("_s_axi_AXILiteS_AWVALID", port_o::IN, interface_top, bool_type);
-         GetPointerS<port_o>(s_awvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWVALID);
-         const auto s_awaddr =
-             CM->add_port("_s_axi_AXILiteS_AWADDR", port_o::IN, interface_top, address_interface_datatype);
-         GetPointerS<port_o>(s_awaddr)->set_port_interface(port_o::port_interface::S_AXIL_AWADDR);
-         const auto s_wvalid = CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
-         GetPointerS<port_o>(s_wvalid)->set_port_interface(port_o::port_interface::S_AXIL_WVALID);
-         const auto s_wdata =
-             CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, address_interface_datatype);
-         GetPointerS<port_o>(s_wdata)->set_port_interface(port_o::port_interface::S_AXIL_WDATA);
-         const auto s_wstrb = CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
-         GetPointerS<port_o>(s_wstrb)->set_port_interface(port_o::port_interface::S_AXIL_WSTRB);
-         const auto s_arvalid = CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
-         GetPointerS<port_o>(s_arvalid)->set_port_interface(port_o::port_interface::S_AXIL_ARVALID);
-         const auto s_araddr =
-             CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_datatype);
-         GetPointerS<port_o>(s_araddr)->set_port_interface(port_o::port_interface::S_AXIL_ARADDR);
-         const auto s_rready = CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
-         GetPointerS<port_o>(s_rready)->set_port_interface(port_o::port_interface::S_AXIL_RREADY);
-         const auto s_bready = CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
-         GetPointerS<port_o>(s_bready)->set_port_interface(port_o::port_interface::S_AXIL_BREADY);
-
-         const auto s_awready = CM->add_port("_s_axi_AXILiteS_AWREADY", port_o::OUT, interface_top, bool_type);
-         GetPointerS<port_o>(s_awready)->set_port_interface(port_o::port_interface::S_AXIL_AWREADY);
-         const auto s_wready = CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
-         GetPointerS<port_o>(s_wready)->set_port_interface(port_o::port_interface::S_AXIL_WREADY);
-         const auto s_arready = CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
-         GetPointerS<port_o>(s_arready)->set_port_interface(port_o::port_interface::S_AXIL_ARREADY);
-         const auto s_rvalid = CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
-         GetPointerS<port_o>(s_rvalid)->set_port_interface(port_o::port_interface::S_AXIL_RVALID);
-         const auto s_rdata =
-             CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, address_interface_datatype);
-         GetPointerS<port_o>(s_rdata)->set_port_interface(port_o::port_interface::S_AXIL_RDATA);
-         const auto s_rresp = CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
-         GetPointerS<port_o>(s_rresp)->set_port_interface(port_o::port_interface::S_AXIL_RRESP);
-         const auto s_bvalid = CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
-         GetPointerS<port_o>(s_bvalid)->set_port_interface(port_o::port_interface::S_AXIL_BVALID);
-         const auto s_bresp = CM->add_port("_s_axi_AXILiteS_BRESP", port_o::OUT, interface_top, respType);
-         GetPointerS<port_o>(s_bresp)->set_port_interface(port_o::port_interface::S_AXIL_BRESP);
-      }
-
-      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 in4 out1");
-      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR,
-                               "ReadWrite" + getHDLGeneratorNameToken(info.name) + "HDLGenerator");
-
-      TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      if(unused_port)
-      {
-         HLSMgr->unused_interfaces[root_id].insert(std::make_pair(INTERFACE_LIBRARY, ResourceName));
-      }
-      const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-      fu->area_m = std::make_shared<area_info>();
-      fu->area_m->resources[area_info::AREA] = 0;
-      if(iface_attrs.find(FunctionArchitecture::iface_cache_line_count) != iface_attrs.end())
-      {
-         const auto flushName = ENCODE_FDNAME(bundle_name, "_Flush_", "m_axi");
-         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, flushName);
-         const auto op = GetPointer<operation>(fu->get_operation(flushName));
-         op->time_m = std::make_shared<time_info>();
-         op->bounded = false;
-         op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-         op->time_m->set_synthesis_dependent(true);
-      }
-      HLSMgr->global_resource_constraints[std::make_pair(ResourceName, INTERFACE_LIBRARY)] = std::make_pair(1U, 1U);
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created");
-   }
-
-   for(const auto& fdName : operationsR)
-   {
-      TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-   }
-   for(const auto& fdName : operationsW)
-   {
-      TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
-   }
-
-   /* Flush Op */
-   const auto fu = GetPointerS<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
-
-   for(const auto& fdName : operationsR)
-   {
-      const auto op = GetPointerS<operation>(fu->get_operation(fdName));
-      op->time_m = std::make_shared<time_info>();
-      op->bounded = false;
-      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-      op->time_m->set_synthesis_dependent(true);
-   }
-   for(const auto& fdName : operationsW)
-   {
-      const auto op = GetPointer<operation>(fu->get_operation(fdName));
-      op->time_m = std::make_shared<time_info>();
-      op->bounded = false;
-      op->time_m->set_execution_time(HLS_D->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
-      op->time_m->set_synthesis_dependent(true);
-   }
-}
-
 void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, const std::set<std::string>& operationsW,
                                      const interface_info& info, FunctionArchitectureRef func_arch, bool unused_port,
                                      unsigned root_id) const
@@ -3688,7 +3534,8 @@ void InterfaceInfer::create_resource(const std::set<std::string>& operationsR, c
    }
    else if(info.name == "m_axi")
    {
-      create_resource_m_axi(operationsR, operationsW, info, func_arch, unused_port, root_id);
+      CreateMAXIResource(operationsR, operationsW, {info.arg_id, info.name, info.bitwidth}, func_arch, unused_port,
+                         root_id, AppM, parameters, debug_level);
    }
    else
    {

@@ -127,6 +127,8 @@ axi_wb_single_line.cpp --top-fname=kernel --generate-interface=INFER --generate-
 axi_misaligned_struct_cache.cpp --top-fname=misaligned_struct_axi --generate-tb=BENCHMARKS_ROOT/axi_misaligned_struct_cache.cpp --benchmark-name=axi_misaligned_struct_cache
 axi_mixed_arrays_cache.cpp --top-fname=mixed_arrays_axi --generate-tb=BENCHMARKS_ROOT/axi_mixed_arrays_cache.cpp --benchmark-name=axi_mixed_arrays
 axi_mixed_arrays_cache.cpp --top-fname=mixed_arrays_axi --generate-tb=BENCHMARKS_ROOT/axi_mixed_arrays_cache.cpp -DUSE_CACHE --benchmark-name=axi_mixed_arrays_cache
+axi_legacy_8bit_size.cpp --top-fname=copy_bytes --generate-tb=BENCHMARKS_ROOT/axi_legacy_8bit_size.cpp --benchmark-name=axi_legacy_8bit_size --generate-vcd --no-clean --max-sim-cycles=1000 BENCHMARK_ENV="MANTIS_POST_CHECK=python3 'BENCHMARKS_ROOT/check_axi_legacy_8bit_size.py'"
+axi_legacy_burst_hint.cpp --top-fname=copy_bytes --generate-tb=BENCHMARKS_ROOT/axi_legacy_burst_hint.cpp --benchmark-name=axi_legacy_burst_hint --generate-vcd --no-clean --max-sim-cycles=1000 BENCHMARK_ENV="MANTIS_POST_CHECK=python3 'BENCHMARKS_ROOT/check_axi_legacy_8bit_size.py'"
 BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=unknown.interface.bundle axi_cache_unknown_bundle.c --top-fname=kernel --generate-tb=x="{1}" --benchmark-name=axi_cache_unknown_bundle_expected_failure
 2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer
 2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus

@@ -1,0 +1,2 @@
+case	cycles	source
+plain-m-axi-write-n1024	3074	plain_m_axi_write.cpp

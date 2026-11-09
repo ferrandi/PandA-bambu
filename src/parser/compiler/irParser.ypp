@@ -408,7 +408,7 @@ bool pred;
 %token TOK_BISON_ARTIFICIAL TOK_BISON_SYSTEM TOK_BISON_OPERATING_SYSTEM TOK_BISON_LIBRARY_SYSTEM TOK_BISON_LIBBAMBU TOK_BISON_EXTERN TOK_BISON_ADDR_NOT_TAKEN TOK_BISON_C TOK_BISON_LSHIFT
 %token TOK_BISON_GLOBAL_INIT TOK_BISON_GLOBAL_FINI TOK_BISON_UNDEFINED TOK_BISON_BUILTIN
 %token TOK_BISON_OVERFLOW TOK_BISON_VIRT TOK_BISON_UNSIGNED TOK_BISON_STRUCT
-%token TOK_BISON_CONSTANT TOK_BISON_READONLY TOK_BISON_STATIC TOK_BISON_REVERSE_RESTRICT TOK_BISON_WRITING_MEMORY TOK_BISON_READING_MEMORY TOK_BISON_PIPELINE_ENABLED TOK_BISON_INITIATION_TIME
+%token TOK_BISON_CONSTANT TOK_BISON_READONLY TOK_BISON_ORDINARY_MEMORY_ACCESS TOK_BISON_STATIC TOK_BISON_REVERSE_RESTRICT TOK_BISON_WRITING_MEMORY TOK_BISON_READING_MEMORY TOK_BISON_PIPELINE_ENABLED TOK_BISON_INITIATION_TIME
 %token TOK_BISON_DEFAULT TOK_BISON_INF TOK_BISON_NAN TOK_BISON_VARARGS
 %token TOK_BISON_ENTRY TOK_BISON_EXIT TOK_BISON_NEW TOK_BISON_DELETE
 %token TOK_BISON_ASSIGN TOK_BISON_MEMBER TOK_BISON_PUBLIC TOK_BISON_PRIVATE
@@ -632,7 +632,6 @@ bool pred;
    parm_tok_readonly : /*empty*/
                | TOK_BISON_READONLY{NSV(argument_val_node,readonly_flag, true)}
                ;
-
    //argument_val_node: TOK_BISON_PARM_DECL^  decl_node (argt)? (bitsizealloc)? algn ;
    wparm_decl: TOK_BISON_PARM_DECL {CTN(argument_val_node)}
                wdecl_node          {}
@@ -790,7 +789,7 @@ bool pred;
   wbitcast_node : TOK_BISON_BITCAST_NODE{CTN(bitcast_node)}  wunary_node;
 
 //unaligned_mem_access_node:   TOK_BISON_UNALIGNED_MEM_ACCESS^ unary_node;
- wunaligned_mem_access : TOK_BISON_UNALIGNED_MEM_ACCESS{CTN(unaligned_mem_access_node)}  wunary_node;
+ wunaligned_mem_access : TOK_BISON_UNALIGNED_MEM_ACCESS{CTN(unaligned_mem_access_node)}  wunary_node ordinary_access_opt;
 
   //BINARY EXPRESSION
 
@@ -883,7 +882,8 @@ bool pred;
 
 
   //mem_access_node: TOK_BISON_MEM_ACCESS^ unary_node;
-  wmem_access : TOK_BISON_MEM_ACCESS{CTN(mem_access_node)}  wunary_node;
+  wmem_access : TOK_BISON_MEM_ACCESS{CTN(mem_access_node)}  wunary_node ordinary_access_opt;
+  ordinary_access_opt : /*empty*/ | TOK_BISON_ORDINARY_MEMORY_ACCESS{NSV(unary_node,ordinary_memory_access,true)};
 
 
   //widen_mul_node: TOK_BISON_WIDEN_MUL_NODE^ binary_node;

@@ -28,7 +28,7 @@ def main():
     spec = importlib.util.spec_from_file_location("checker", fixtures / "check_vector_mask_ir.py")
     checker = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(checker)
-    scratch = pathlib.Path(tempfile.gettempdir())
+    scratch = pathlib.Path(os.environ.get("BURST_TEST_TMPDIR", pathlib.Path.cwd() / "out_vector_mask_frontend"))
     scratch.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, OMP_NUM_THREADS="1", CMAKE_BUILD_PARALLEL_LEVEL="1")
     checked = 0

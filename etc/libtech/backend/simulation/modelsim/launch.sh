@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SWD=`dirname $(readlink -e $0)`
+SWD=$(dirname "$(readlink -e -- "$0")")
 OUT_LVL="$(bambu_results /application@verbosity)"
 
 BEH_CFLAGS="-DMODEL_TECH"
@@ -11,6 +11,8 @@ if ! bambu_modelsim_resolve; then
   exit -1
 fi
 MENTOR_BIN=$BAMBU_MODELSIM_BIN
-echo "Siemens Modelsim path: ${MENTOR_BIN}"
+if [[ $BAMBU_MODELSIM_SOURCE == BAMBU_HLS_BACKEND_PATH ]]; then
+  echo "Siemens Modelsim path: ${MENTOR_BIN}"
+fi
 
-(PATH="${MENTOR_BIN}${PATH:+:$PATH}" . "${SWD}/simulation_wrapper.sh" "${SWD}/setup.sh" "$@")
+(PATH="${MENTOR_BIN}${PATH:+:$PATH}" . "$SWD/simulation_wrapper.sh" "$SWD/setup.sh" "$@")

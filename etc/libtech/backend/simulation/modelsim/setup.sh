@@ -19,7 +19,12 @@ do
   VFLAGS+=" +incdir+${inc}"
 done
 
-OPT_FLAGS="-O5"
+# Intel's ModelSim edition does not accept the commercial optimization switch.
+# Leave optimization to that edition's defaults for both compilation and vopt.
+case "$(vlog -version 2>&1)" in
+  *"Intel FPGA"*) OPT_FLAGS="" ;;
+  *) OPT_FLAGS="-O5" ;;
+esac
 
 SV_FLAGS="${VFLAGS} ${OPT_FLAGS}"
 if $(bambu_results /application/backend@assert) ; then
