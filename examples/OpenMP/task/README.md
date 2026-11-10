@@ -25,6 +25,20 @@ with two levels of non-inlined callees. `taskMathCalls` exercises `expf` and
 frontend; its testbench checks a relative tolerance and allows 16 ULPs in the
 co-simulation comparison.
 
+Task entries use an internal `task_id` to keep their callee graphs independent;
+this identity is unrelated to OpenMP thread numbering. The task hardware has no
+OpenMP worker-thread model. Thread-ID queries such as `omp_get_thread_num()` in
+task bodies or their callees are therefore unsupported and diagnosed before
+thread-ID lowering. Ordinary OpenMP regions retain their existing thread IDs.
+After sourcing the installed `settings.sh`, check these diagnostics with:
+
+```sh
+python3 panda_regressions/clang_plugins/openmp_task/test_task_thread_queries.py --bambu "$(command -v bambu)"
+```
+
+This check uses Clang 19 for tasks and Clang 13 for ordinary OpenMP; the
+`--ordinary-compiler` option overrides the latter.
+
 MNIST dimension assertions are disabled only when compiling the synthesized
 kernel (`__SYNTHESIS__`); host and testbench assertions stay active.
 

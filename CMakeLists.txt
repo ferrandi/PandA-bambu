@@ -515,6 +515,7 @@ if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp_task AND TARGET clang_plu
    add_test(NAME openmp_task_passes
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_task/test_task_passes.py"
               --opt "${PANDA_CLANG19_LLVMOPT}" --clang "${PANDA_CLANG19_EXE}" --cxx "${CMAKE_CXX_COMPILER}"
+              --llvm-config "${PANDA_CLANG19_LLVM_CONFIG}"
               --plugin-dir "$<TARGET_FILE_DIR:clang_plugin_19_opt_openmp_task>")
    set_tests_properties(openmp_task_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 120)
 endif()

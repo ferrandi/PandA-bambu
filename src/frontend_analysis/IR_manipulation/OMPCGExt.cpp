@@ -158,7 +158,8 @@ DesignFlowStep_Status OMPCGExt::InternalExec()
       // A task entry owns an independent call graph, just like an outlined
       // OpenMP core. OMPLowering clones callees and propagates this context,
       // including single-channel memory allocation, to arbitrary depth.
-      const auto task_info = std::make_shared<OMPInfo>(function_id, 1U, 0U, 1U, function_id, nullptr, 1U);
+      // Keep its cloning identity separate from the ordinary OpenMP thread indices.
+      const auto task_info = std::make_shared<OMPInfo>(0U, 1U, 0U, 1U, function_id, nullptr, 1U, function_id);
       SetSimpleMemFunction(function_id, task_info);
       function_behavior->SetOMPCore(true);
    }
@@ -703,7 +704,7 @@ void OMPCGExt::SetSimpleMemFunction(const unsigned int fid, OMPInfoRef omp_info)
 
 ir_nodeRef OMPCGExt::CloneFunction(const ir_nodeRef& base_fnode, const OMPInfoRef& omp_info) const
 {
-   const auto suffix = OMPProcSuffix(omp_info->global_idx);
+   const auto suffix = omp_info->task_id ? "_task_" + STR(omp_info->task_id) : OMPProcSuffix(omp_info->global_idx);
    auto clone_fnode = TM->GetFunction(ir_helper::GetFunctionName(base_fnode) + suffix);
    const bool new_clone = !clone_fnode;
    if(!clone_fnode)
