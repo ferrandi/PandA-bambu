@@ -73,7 +73,7 @@ COMMON_FLAGS=(
     "--generate-tb=$root_dir/test_vector_add.xml"
     --simulate
     --top-fname=vector_add
-    --enable-ramulator-integrated
+    --enable-ramulator
     --memory-allocation-policy=NO_BRAM
     --clock-period=10.0
     -v5

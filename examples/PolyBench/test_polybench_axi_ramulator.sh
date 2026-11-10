@@ -129,7 +129,7 @@ timeout 30m "$BAMBU_BIN" \
     "--generate-tb=$tb_file" \
     --simulate \
     "--top-fname=$top_fn" \
-    --enable-ramulator-integrated \
+    --enable-ramulator \
     --memory-allocation-policy=NO_BRAM \
     --clock-period=10.0 \
     -v4 \

@@ -18,7 +18,7 @@ ggo_require_compiler=1
 BENCHMARKS_ROOT="${script_dir}/gapbs"
 BATCH_ARGS=("-m64" "-lm" "-fopenmp" "--generate-interface=INFER")
 BATCH_ARGS+=("--memory-allocation-policy=NO_BRAM" "--bus-pipelined" "--tb-queue-size=20")
-BATCH_ARGS+=("--enable-ramulator-integrated" "--clock-period=10.0")
+BATCH_ARGS+=("--enable-ramulator" "--clock-period=10.0")
 OUT_SUFFIX="${compiler}_gapbs_axi_ramulator"
 
 export RAMULATOR2_DIR="${RAMULATOR2_DIR:-${script_dir}/../../../ext/ramulator2-no-spdlog/install}"

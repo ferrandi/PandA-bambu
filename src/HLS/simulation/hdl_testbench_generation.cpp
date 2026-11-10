@@ -247,15 +247,10 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
       std::string mem_component = "TestbenchMEMMinimal";
-      if(parameters->isOption(OPT_enable_ramulator_integrated) &&
-         parameters->getOption<bool>(OPT_enable_ramulator_integrated))
+      if(parameters->isOption(OPT_enable_ramulator) &&
+         parameters->getOption<bool>(OPT_enable_ramulator))
       {
          mem_component = is_banked ? "TestbenchMEMRamulatorIntegratedNoC" : "TestbenchMEMRamulatorIntegrated";
-      }
-      else if(parameters->isOption(OPT_enable_ramulator) &&
-              parameters->getOption<bool>(OPT_enable_ramulator))
-      {
-         mem_component = "TestbenchMEMRamulator";
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating " + mem_component + "...");
       tb_mem =

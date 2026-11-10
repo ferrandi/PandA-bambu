@@ -24,7 +24,7 @@ BATCH_ARGS+=("--generate-interface=INFER" "--panda-parameter=simple-benchmark-na
 BATCH_ARGS+=("--max-sim-cycles=20000000" "--simulate")
 BATCH_ARGS+=("-p=__float,expf" "--hls-fpdiv=SRT4U" "-s")
 BATCH_ARGS+=("-DPOLYBENCH_USE_RESTRICT" "-DDATA_TYPE_IS_FLOAT")
-BATCH_ARGS+=("--enable-ramulator-integrated" "--clock-period=10.0" "--memory-allocation-policy=NO_BRAM")
+BATCH_ARGS+=("--enable-ramulator" "--clock-period=10.0" "--memory-allocation-policy=NO_BRAM")
 
 configuration="${device}_$(printf "%04.1f" $period)_$(echo $compiler | tr '[:upper:]' '[:lower:]')"
 OUT_SUFFIX="_${configuration}_Polybench_PerParam_AXI_Ramulator.${DATASET_SIZE}"

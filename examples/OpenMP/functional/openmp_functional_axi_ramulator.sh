@@ -16,7 +16,7 @@ ggo_require_compiler=1
 . $script_dir/../../../panda_regressions/hls/generic_getopt.sh
 
 BATCH_ARGS=("-m64" "-lm" "-fopenmp" "--simulate")
-BATCH_ARGS+=("--enable-ramulator-integrated" "--clock-period=10.0" "--memory-allocation-policy=NO_BRAM")
+BATCH_ARGS+=("--enable-ramulator" "--clock-period=10.0" "--memory-allocation-policy=NO_BRAM")
 BATCH_ARGS+=("--bus-pipelined")
 OUT_SUFFIX="openmp_functional_axi_ramulator"
 

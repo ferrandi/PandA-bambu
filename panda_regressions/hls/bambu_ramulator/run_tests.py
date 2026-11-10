@@ -198,7 +198,7 @@ def main():
             case_env["RAMULATOR_OVERRIDE_CHANNELS"] = "0"
         command = [str(bambu), str(source), f"--generate-tb={inputs}",
                    "--top-fname=ramulator_kernel", "--compiler=I386_CLANG13", "--simulator=VERILATOR",
-                   "--simulate", "--generate-interface=INFER", "--enable-ramulator-integrated",
+                   "--simulate", "--generate-interface=INFER", "--enable-ramulator",
                    "--memory-allocation-policy=NO_BRAM", f"--clock-period={5 if hbm else 10}", "-m64", "-lm", "-v4",
                    f"--max-sim-cycles={cycles_limit}", f"-DTEST_KERNEL={KERNELS.get(kernel, 0)}",
                    f"-DBANKED={banked}", f"-DUSE_AXI={axi}", f"-DDEDICATED_AXI={dedicated}",

@@ -138,8 +138,8 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
    add_port_parametric_wire("arvalid", port_o::IN, 0U);
    add_port_parametric_wire("rready", port_o::IN, 0U);
 
-   const auto use_ramulator = HLSMgr->get_parameter()->isOption(OPT_enable_ramulator_integrated) &&
-                              HLSMgr->get_parameter()->getOption<bool>(OPT_enable_ramulator_integrated);
+   const auto use_ramulator = HLSMgr->get_parameter()->isOption(OPT_enable_ramulator) &&
+                              HLSMgr->get_parameter()->getOption<bool>(OPT_enable_ramulator);
 
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 

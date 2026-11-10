@@ -434,6 +434,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when STORE are performed (default 1).\n\n"
       << "   --bus-pipelined\n"
       << "        Allows concurrent requests on the bus.\n\n"
+      << "   --enable-ramulator\n"
+      << "        Enable Ramulator memory timing in native bus and AXI testbenches.\n\n"
       << "   --tb-queue-size=value\n"
       << "        Define the maximum number of concurrent requests accepted by the testbench. (default 4).\n\n"
       << "   --data-bus-bitsize=<bitsize>\n"
@@ -990,7 +992,6 @@ int BambuParameter::Exec()
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
       {"enable-ramulator", no_argument, nullptr, 0},
-      {"enable-ramulator-integrated", no_argument, nullptr, 0},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
@@ -2196,11 +2197,6 @@ int BambuParameter::Exec()
             if(strcmp(long_options[option_index].name, "enable-ramulator") == 0)
             {
                setOption(OPT_enable_ramulator, true);
-               break;
-            }
-            if(strcmp(long_options[option_index].name, "enable-ramulator-integrated") == 0)
-            {
-               setOption(OPT_enable_ramulator_integrated, true);
                break;
             }
             /// scheduling options
@@ -3450,7 +3446,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_tb_queue_size, 4);
 
    setOption(OPT_enable_ramulator, false);
-   setOption(OPT_enable_ramulator_integrated, false);
 
    /// -- Memory allocation -- //
    setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);

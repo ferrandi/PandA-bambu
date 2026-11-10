@@ -168,9 +168,9 @@ export RAMULATOR2_DIR="$PWD/ext/ramulator2-no-spdlog/install"
 export RAMULATOR2_CONFIG="$PWD/etc/libmdpi/configs/default_ddr4.yaml"
 ```
 
-Build and install Bambu as described above, then source `install/settings.sh`. Add `--enable-ramulator-integrated`
-and `-m64` to an HDL co-simulation command to use the 64-bit Ramulator2 library. `--enable-ramulator`
-selects the memory profiling testbench. `--channels-number` controls Bambu AXI ports;
+Build and install Bambu as described above, then source `install/settings.sh`. Add `--enable-ramulator`
+and `-m64` to an HDL co-simulation command to use the 64-bit Ramulator2 library.
+The option enables integrated Ramulator timing for both native bus and AXI testbenches. `--channels-number` controls Bambu AXI ports;
 the YAML preset controls DRAM channels. Set `RAMULATOR_OVERRIDE_CHANNELS=1` to
 match the DRAM channel count to Bambu. Memory presets are installed under
 `share/panda/libmdpi/configs`; `RAMULATOR2_CONFIG` selects a YAML preset.
