@@ -270,7 +270,7 @@ void m_builtin_exit(int status)
 
 // Non-blocking memory operations for Ramulator2 integration
 
-int m_read_request(uint8_t id, uint16_t bitsize, ptr_t addr, int8_t cmd)
+int m_read_request(mdpi_idx_t id, uint16_t bitsize, ptr_t addr, int8_t cmd)
 {
    int retval;
    const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_REQUEST;
@@ -291,7 +291,7 @@ int m_read_request(uint8_t id, uint16_t bitsize, ptr_t addr, int8_t cmd)
    return retval;
 }
 
-int m_read_complete(uint8_t id, svLogicVecVal* data)
+int m_read_complete(mdpi_idx_t id, svLogicVecVal* data)
 {
    int retval;
    const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_COMPLETE;
@@ -330,7 +330,7 @@ int m_read_complete(uint8_t id, svLogicVecVal* data)
    return retval;
 }
 
-int m_read_complete_ch(uint8_t id, uint8_t channel, svLogicVecVal* data)
+int m_read_complete_ch(mdpi_idx_t id, uint8_t channel, svLogicVecVal* data)
 {
    int retval;
    const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_COMPLETE;
@@ -369,7 +369,7 @@ int m_read_complete_ch(uint8_t id, uint8_t channel, svLogicVecVal* data)
    return retval;
 }
 
-int m_write_request(uint8_t id, const svLogicVecVal* data, uint16_t bitsize, ptr_t addr, uint8_t shift)
+int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, uint16_t bitsize, ptr_t addr, uint8_t shift)
 {
    int retval;
    uint16_t i;
@@ -395,4 +395,15 @@ int m_write_request(uint8_t id, const svLogicVecVal* data, uint16_t bitsize, ptr
    debug("Interface %u write_request state -> %d.\n", id, retval);
    __ipc_release();
    return retval;
+}
+
+void m_memory_tick(unsigned long long cycle)
+{
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_MEM_TICK;
+   __m_ipc_operation.payload.interface.addr = cycle;
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+   terminate_if_not(MDPI_OP_TYPE_MEM_TICK);
+   __ipc_release();
 }

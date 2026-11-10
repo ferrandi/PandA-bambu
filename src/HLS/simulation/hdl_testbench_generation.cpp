@@ -440,6 +440,9 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       // Add interface components relative to each top function parameter
       const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_bh->GetFunctionName());
+      const auto dedicated_memories = func_arch->DedicatedMemoryIndices(
+          static_cast<unsigned int>(top_bh->GetParameters().size() + (top_bh->GetFunctionReturnType() != 0) + 1 +
+                                    (is_banked ? 1 : 0)));
       size_t interface_index = 0;
       for(const auto& arg : top_bh->GetParameters())
       {
@@ -486,7 +489,9 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                const auto if_port = tb_top->add_module_from_technology_library(
                    axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
-               if_port->SetParameter("index", tb_mem->GetParameter("index"));
+               if_port->SetParameter("index", parameters->getOption<bool>(OPT_enable_ramulator) ?
+                                                  STR(dedicated_memories.at(bundle_name)) :
+                                                  tb_mem->GetParameter("index"));
                if_port->SetParameter("READ_DELAY", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
                                                        "3" :
                                                    parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?

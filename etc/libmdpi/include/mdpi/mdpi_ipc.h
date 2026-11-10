@@ -73,7 +73,8 @@ typedef enum
    // Non-blocking operations for Ramulator2 integration
    MDPI_OP_TYPE_IF_READ_REQUEST  = 1 << 6,
    MDPI_OP_TYPE_IF_READ_COMPLETE = 1 << 7,
-   MDPI_OP_TYPE_IF_WRITE_REQUEST = 1 << 8
+   MDPI_OP_TYPE_IF_WRITE_REQUEST = 1 << 8,
+   MDPI_OP_TYPE_MEM_TICK         = 1 << 9
 } mdpi_op_type_t;
 // clang-format on
 

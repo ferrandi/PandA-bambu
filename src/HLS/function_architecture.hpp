@@ -62,6 +62,28 @@ class FunctionArchitecture
    func_attrs attrs;
    std::map<std::string, parm_attrs> parms;
    std::map<std::string, iface_attrs> ifaces;
+
+   /// Memory interfaces appended after the shared bus in the MDPI interface list.
+   /// Use the same stable bundle order in the HDL testbench and C wrapper.
+   std::map<std::string, unsigned int> DedicatedMemoryIndices(unsigned int first_index) const
+   {
+      std::map<std::string, unsigned int> indices;
+      for(const auto& parm : parms)
+      {
+         const auto& bundle = parm.second.at(parm_bundle);
+         const auto& iface = ifaces.at(bundle);
+         if(bundle != "bus" && iface.at(iface_mode) == "m_axi" && iface.count(iface_direction))
+         {
+            indices.emplace(bundle, 0U);
+         }
+      }
+      for(auto& entry : indices)
+      {
+         entry.second = first_index++;
+      }
+      return indices;
+   }
+
 };
 
 #endif // FUNCTION_ARCHITECTURE_HPP

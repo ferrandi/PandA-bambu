@@ -3,7 +3,7 @@
 The dedicated `Ramulator co-simulation` workflow builds Bambu with Clang 13,
 then runs a single test job. The test job checks out the exact Ramulator
 submodule revision, builds and installs it once, and reuses that installation
-for all 21 cases (15 smoke plus six intermediate HBM cases). The workflow assumes the pinned public Ramulator revision
+for all 24 cases (15 smoke, six intermediate HBM and three memory-isolation cases). The workflow assumes the pinned public Ramulator revision
 provides the standard CMake installation layout. It never patches or overrides
 the submodule revision and does not fall back to a different memory backend.
 
@@ -67,7 +67,7 @@ zero, within 5000 simulation cycles and a 180-second wall timeout including
 synthesis and simulator compilation. The driver must confirm Ramulator
 initialization, at least 20 real read completions and positive DRAM latency.
 The generated testbench must have the expected native/NoC memory model and
-exactly 0, 1, 4 or 3 AXI memory model instances for the selected interface.
+the expected number of AXI memory model instances (including both bus and dedicated bundles) for the selected interface.
 
 Banked cases additionally emit a VCD. Sampling at rising clock edges must show
 requests on at least two input memory channels simultaneously and activity on
@@ -95,22 +95,11 @@ python3 panda_regressions/hls/bambu_ramulator/run_tests.py \
   --bambu "$PWD/install/bin/bambu" --out "$PWD/out_ramulator_ci"
 ```
 
-Use `--list` to print the case IDs, `--group smoke|hbm` to select a group,
+Use `--list` to print the case IDs, `--group smoke|hbm|isolation` to select a group,
 or repeat `--case ID` to run a subset.
 `RAMULATOR_BUILD_JOBS` controls the one-time dependency build parallelism.
 `LD_LIBRARY_PATH` is deliberately removed from the test subprocess environment:
 the installed dependency must work through the MDPI driver's runtime path.
-
-## Initial local baseline
-
-The first complete run passed 12 of the 15 cases (220–1010 cycles); all six
-banked cases showed four simultaneous input-channel requests and activity on
-all four banks. The three `minimal-bus` cases currently fail before simulation
-with `DUT done_port is missing`: the ordinary native bus wrapper does not
-expose the completion port. They remain failures, not skips or expected passes.
-This CI change records that defect; it does not modify the Bambu runtime or
-rewrite the original Ramulator porting commit. The previous preliminary native
-interface test did not exercise this explicit common-bus wrapper.
 
 ## Intermediate HBM group (six cases)
 
@@ -151,3 +140,27 @@ hbm-scatter/banked-axi
 hbm-chase/banked-minimal
 hbm-chase/banked-axi
 ```
+
+## Independent memory interfaces
+
+The shared bus owns one Ramulator backend, including all channels of a banked
+bus, regardless of whether the external protocol is MINIMAL or AXI. Each
+dedicated AXI bundle owns another independent backend. Parameters in the same
+dedicated bundle share that memory. All backends advance from a single
+accelerator clock source in SystemMEM, once per cycle, including idle cycles.
+
+Three additional cases exercise a bus and a dedicated AXI bundle:
+
+- `add/mixed-axi`: sequential kernel; `a` uses the AXI bus and `b`/`c` share
+  one dedicated AXI bundle.
+- `add/mixed-banked-minimal` and `add/mixed-banked-axi`: `mixed_banked.cpp`
+  first reads `b` through a dedicated AXI bundle in the sequential section.
+  Four OpenMP threads then gather from `a` and write `c` on the four-bank bus.
+  No dedicated interface is accessed inside the parallel section. Both cases
+  must demonstrate parallel requests and activity on multiple banks in the VCD.
+
+The checker requires two initialized, active independent backends, each serving reads or writes,
+with completed reads where applicable, equal accelerator cycle counts and exactly three DRAM ticks
+per cycle (the smoke DDR4 configuration). The existing dedicated cases also
+require three active independent backends. Backend summaries are part of the
+normal simulation evidence; missing summaries or a shared backend fail the test.

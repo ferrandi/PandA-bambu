@@ -29,11 +29,14 @@ extern "C"
    DPI_DLLESPEC void m_builtin_exit(int status);
 
    // Non-blocking memory operations for Ramulator2 integration
-   DPI_DLLESPEC int m_read_request(unsigned char id, unsigned short bitsize, ptr_t addr, signed char cmd);
-   DPI_DLLESPEC int m_read_complete(unsigned char id, svLogicVecVal* data);
-   DPI_DLLESPEC int m_read_complete_ch(unsigned char id, unsigned char channel, svLogicVecVal* data);
-   DPI_DLLESPEC int m_write_request(unsigned char id, const svLogicVecVal* data, unsigned short bitsize, ptr_t addr,
-                                    unsigned char shift);
+   DPI_DLLESPEC int m_read_request(mdpi_idx_t id, unsigned short bitsize, ptr_t addr, signed char cmd);
+   DPI_DLLESPEC int m_read_complete(mdpi_idx_t id, svLogicVecVal* data);
+   DPI_DLLESPEC int m_read_complete_ch(mdpi_idx_t id, unsigned char channel, svLogicVecVal* data);
+   DPI_DLLESPEC int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, unsigned short bitsize, ptr_t addr,
+                                   unsigned char shift);
+
+   // Advance every independent memory once to the shared accelerator cycle.
+   DPI_DLLESPEC void m_memory_tick(unsigned long long cycle);
 
    extern double mdpi_clock_period;
 

@@ -3054,6 +3054,9 @@ end
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="setup_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="done_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -3115,10 +3118,10 @@ end
             IP_COMPONENT="if_utils"
             LIBRARY="TestbenchMEMRamulatorIntegrated index MEM_DELAY_READ MEM_DELAY_WRITE EMULATE_BRAM base_addr MEM_DUMP MEM_DUMP_FILE RAMULATOR_PROFILE RAMULATOR_PROFILE_FILE RAMULATOR_DEBUG RAMULATOR_DEBUG_FILE RAMULATOR_MODE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
-import &quot;DPI-C&quot; function int m_read_request (input byte unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
-import &quot;DPI-C&quot; function int m_read_complete (input byte unsigned id, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_read_complete_ch (input byte unsigned id, input byte unsigned channel, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_write_request (input byte unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+import &quot;DPI-C&quot; function int m_read_request (input shortint unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete (input shortint unsigned id, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_read_complete_ch (input shortint unsigned id, input byte unsigned channel, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_write_request (input shortint unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
 
 function automatic integer log2;
   input integer value;
@@ -3207,16 +3210,6 @@ endgenerate
 
 if_utils #(index, BITSIZE_Rdata) m_utils();
 
-// Ramulator2 clock synchronization - advance memory system on each clock
-reg [63:0] ramulator_cycle_counter = 0;
-always @(posedge clock) begin
-  if(reset == 1'b0) begin
-    ramulator_cycle_counter &lt;= 0;
-  end
-  else begin
-    ramulator_cycle_counter &lt;= ramulator_cycle_counter + 1;
-  end
-end
 
 generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
@@ -3235,7 +3228,6 @@ generate
     reg [15:0] total_issued, total_completed;
     wire [15:0] outstanding_count;
     assign outstanding_count = total_issued - total_completed;
-    reg [63:0] idle_cycles;  // Count cycles when no requests outstanding
 
     // Tag-based tracking for accurate per-request latency with multiple outstanding requests
     reg [63:0] issue_cycles [0:65535];  // Map tag[15:0] -> cycle when request was issued
@@ -3314,25 +3306,12 @@ generate
         begin
           total_issued &lt;= 0;
           total_completed &lt;= 0;
-          idle_cycles &lt;= 0;
         end
         else
         begin
-          // Count idle cycles only when truly idle (no outstanding reads AND no active writes)
-          // When has_any_activity is true, the global state() tick already advances Ramulator
-          if(outstanding_count == 0 &amp;&amp; !has_any_activity)
-            idle_cycles &lt;= idle_cycles + 1;
-
           // Issue new read request (accept every cycle oe is high - pipelined bus protocol)
           if(oe &amp;&amp; base_addr &lt;= Raddr)
           begin
-            if(outstanding_count == 0 &amp;&amp; idle_cycles &gt; 0 &amp;&amp; !has_any_activity)
-            begin
-              // Fast-forward idle cycles only when NO channels have any activity
-              void'(m_utils.state(32'h80000000 | idle_cycles));
-              idle_cycles &lt;= 0;
-            end
-
             request_result = m_read_request(index, BITSIZE_Rdata, Raddr, i[7:0]);
             if(request_result &gt; 0)
             begin
@@ -3436,40 +3415,29 @@ generate
   end
 endgenerate
 
-// Global multi-channel coordination (prevents race conditions)
-wire has_any_outstanding;
-wire has_any_writing;
-wire has_any_activity;
-reg global_idle_consumed;
-
-// Simple scalable approach using packed array and reduction operators
-wire [CHANNELS_NUMBER-1:0] channel_busy;
-wire [CHANNELS_NUMBER-1:0] channel_writing;
-genvar j;
-generate
-  for(j = 0; j &lt; CHANNELS_NUMBER; j++) begin : check_busy
-    assign channel_busy[j] = (channel[j].outstanding_count &gt; 0);
-    assign channel_writing[j] = (channel[j].we &amp;&amp; base_addr &lt;= channel[j].Waddr);
+// SystemMEM is the sole clock source for all independent memory backends.
+// Tick on the falling edge, after all rising-edge request handlers have run.
+import &quot;DPI-C&quot; function void m_memory_tick(input longint unsigned cycle);
+reg [63:0] memory_cycle = 0;
+reg memory_running = 0;
+always @(negedge clock) begin
+  if(1RESET_VALUE) begin
+    memory_cycle = 0;
+    memory_running = 0;
   end
-endgenerate
-
-// Clean reduction OR - works for any number of channels automatically
-assign has_any_outstanding = |channel_busy;
-assign has_any_writing = |channel_writing;
-assign has_any_activity = has_any_outstanding | has_any_writing;
-
-// Global clock coordination - exactly one state() call per cycle
-// Must advance Ramulator during both read AND write phases to prevent deadlock:
-// Without ticking during write-only bursts, Ramulator's internal buffers fill up,
-// writes get rejected, and the hardware stalls indefinitely.
-always @(posedge clock) begin
-  global_idle_consumed &lt;= 1'b0;  // Reset flag each cycle
-
-  if(has_any_activity) begin
-    // Active requests or writes: advance Ramulator exactly 1 cycle
-    void'(m_utils.state(32'h80000001));  // Single coordinated tick
+  else if(setup_port) begin
+    memory_cycle = 0;
+    memory_running = 1;
+  end
+  else if(done_port) begin
+    memory_running = 0;
+  end
+  else if(memory_running) begin
+    memory_cycle = memory_cycle + 1;
+    m_memory_tick(memory_cycle);
   end
 end
+
 "/>
         </module_o>
       </circuit>
@@ -3500,6 +3468,9 @@ end
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="setup_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="done_port" dir="IN">
@@ -3563,10 +3534,10 @@ end
             IP_COMPONENT="if_utils"
             LIBRARY="TestbenchMEMRamulatorIntegratedNoC index MEM_DELAY_READ MEM_DELAY_WRITE EMULATE_BRAM base_addr MEM_DUMP MEM_DUMP_FILE RAMULATOR_PROFILE RAMULATOR_PROFILE_FILE RAMULATOR_DEBUG RAMULATOR_DEBUG_FILE RAMULATOR_MODE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
             VERILOG_PROVIDED="
-import &quot;DPI-C&quot; function int m_read_request (input byte unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
-import &quot;DPI-C&quot; function int m_read_complete (input byte unsigned id, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_read_complete_ch (input byte unsigned id, input byte unsigned channel, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_write_request (input byte unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+import &quot;DPI-C&quot; function int m_read_request (input shortint unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete (input shortint unsigned id, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_read_complete_ch (input shortint unsigned id, input byte unsigned channel, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_write_request (input shortint unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
 
 function automatic integer log2;
   input integer value;
@@ -3655,16 +3626,6 @@ endgenerate
 
 if_utils #(index, BITSIZE_Rdata) m_utils();
 
-// Ramulator2 clock synchronization - advance memory system on each clock
-reg [63:0] ramulator_cycle_counter = 0;
-always @(posedge clock) begin
-  if(reset == 1'b0) begin
-    ramulator_cycle_counter &lt;= 0;
-  end
-  else begin
-    ramulator_cycle_counter &lt;= ramulator_cycle_counter + 1;
-  end
-end
 
 generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
@@ -3683,7 +3644,6 @@ generate
     reg [15:0] total_issued, total_completed;
     wire [15:0] outstanding_count;
     assign outstanding_count = total_issued - total_completed;
-    reg [63:0] idle_cycles;  // Count cycles when no requests outstanding
 
     // Tag-based tracking for accurate per-request latency with multiple outstanding requests
     reg [63:0] issue_cycles [0:65535];  // Map tag[15:0] -> cycle when request was issued
@@ -3826,7 +3786,6 @@ generate
         begin
           total_issued &lt;= 0;
           total_completed &lt;= 0;
-          idle_cycles &lt;= 0;
           rfifo_head &lt;= 0;
           rfifo_tail &lt;= 0;
           rfifo_count &lt;= 0;
@@ -3836,23 +3795,9 @@ generate
         end
         else
         begin
-          // Count idle cycles only when truly idle: no outstanding reads, no
-          // active write, and nothing queued for delivery (has_any_activity
-          // includes the FIFOs). The global state() tick advances Ramulator
-          // whenever has_any_activity is true.
-          if(outstanding_count == 0 &amp;&amp; !has_any_activity)
-            idle_cycles &lt;= idle_cycles + 1;
-
           // Issue new read request (accept every cycle oe is high - pipelined bus protocol)
           if(oe &amp;&amp; base_addr &lt;= Raddr)
           begin
-            if(outstanding_count == 0 &amp;&amp; idle_cycles &gt; 0 &amp;&amp; !has_any_activity)
-            begin
-              // Fast-forward idle cycles only when NO channels have any activity
-              void'(m_utils.state(32'h80000000 | idle_cycles));
-              idle_cycles &lt;= 0;
-            end
-
             request_result = m_read_request(index, BITSIZE_Rdata, Raddr, i[7:0]);
             if(request_result &gt; 0)
             begin
@@ -4044,45 +3989,29 @@ generate
   end
 endgenerate
 
-// Global multi-channel coordination (prevents race conditions)
-wire has_any_outstanding;
-wire has_any_writing;
-wire has_any_pending;
-wire has_any_activity;
-reg global_idle_consumed;
-
-// Simple scalable approach using packed array and reduction operators
-wire [CHANNELS_NUMBER-1:0] channel_busy;
-wire [CHANNELS_NUMBER-1:0] channel_writing;
-wire [CHANNELS_NUMBER-1:0] channel_pending;
-genvar j;
-generate
-  for(j = 0; j &lt; CHANNELS_NUMBER; j++) begin : check_busy
-    assign channel_busy[j] = (channel[j].outstanding_count &gt; 0);
-    assign channel_writing[j] = (channel[j].we &amp;&amp; base_addr &lt;= channel[j].Waddr);
-    assign channel_pending[j] = (channel[j].rfifo_count != 0) | (channel[j].wfifo_count != 0);
+// SystemMEM is the sole clock source for all independent memory backends.
+// Tick on the falling edge, after all rising-edge request handlers have run.
+import &quot;DPI-C&quot; function void m_memory_tick(input longint unsigned cycle);
+reg [63:0] memory_cycle = 0;
+reg memory_running = 0;
+always @(negedge clock) begin
+  if(1RESET_VALUE) begin
+    memory_cycle = 0;
+    memory_running = 0;
   end
-endgenerate
-
-// Clean reduction OR - works for any number of channels automatically
-assign has_any_outstanding = |channel_busy;
-assign has_any_writing = |channel_writing;
-assign has_any_pending = |channel_pending;
-assign has_any_activity = has_any_outstanding | has_any_writing | has_any_pending;
-
-// Global clock coordination - exactly one state() call per cycle
-// Must advance Ramulator during both read AND write phases to prevent deadlock:
-// Without ticking during write-only bursts, Ramulator's internal buffers fill up,
-// writes get rejected, and the hardware stalls indefinitely.
-// Also tick while pending responses wait for back-pressure to clear.
-always @(posedge clock) begin
-  global_idle_consumed &lt;= 1'b0;  // Reset flag each cycle
-
-  if(has_any_activity) begin
-    // Active requests or writes: advance Ramulator exactly 1 cycle
-    void'(m_utils.state(32'h80000001));  // Single coordinated tick
+  else if(setup_port) begin
+    memory_cycle = 0;
+    memory_running = 1;
+  end
+  else if(done_port) begin
+    memory_running = 0;
+  end
+  else if(memory_running) begin
+    memory_cycle = memory_cycle + 1;
+    m_memory_tick(memory_cycle);
   end
 end
+
 "/>
         </module_o>
       </circuit>
@@ -4249,10 +4178,10 @@ end
             IP_COMPONENT="if_utils"
             LIBRARY="TestbenchMEMAXIRamulatorIntegrated index AXI_PORT_ID QUEUE_SIZE RAMULATOR_PROFILE RAMULATOR_PROFILE_FILE RAMULATOR_DEBUG RAMULATOR_DEBUG_FILE RAMULATOR_MODE base_addr MEM_DUMP MEM_DUMP_FILE arid araddr arlen arsize arburst arlock arcache arprot arqos arregion aruser rid rdata rresp ruser awid awaddr awlen awsize awburst awlock awcache awprot awqos awregion awuser wdata wstrb wuser bid bresp buser"
             VERILOG_PROVIDED="
-import &quot;DPI-C&quot; function int m_read_request (input byte unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
-import &quot;DPI-C&quot; function int m_read_complete (input byte unsigned id, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_read_complete_ch (input byte unsigned id, input byte unsigned channel, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_write_request (input byte unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+import &quot;DPI-C&quot; function int m_read_request (input shortint unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete (input shortint unsigned id, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_read_complete_ch (input shortint unsigned id, input byte unsigned channel, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_write_request (input shortint unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
 
 function automatic integer log2;
   input integer value;
@@ -4307,7 +4236,6 @@ assign bvalid = bvalid_reg;
 reg [15:0] total_issued, total_completed;
 wire [15:0] outstanding_count;
 assign outstanding_count = total_issued - total_completed;
-reg [63:0] idle_cycles;
 reg [63:0] cycle_counter;
 reg [31:0] read_count, write_count;
 
@@ -4328,14 +4256,7 @@ reg pending_bvalid;
 reg [BITSIZE_id-1:0] pending_bid;
 
 // Activity tracking for Ramulator clock coordination
-wire has_any_outstanding;
-wire has_any_writing;
-wire has_any_pending;
-wire has_any_activity;
-assign has_any_outstanding = (outstanding_count &gt; 0);
-assign has_any_writing = (awvalid &amp;&amp; wvalid &amp;&amp; awready_reg &amp;&amp; wready_reg);
-assign has_any_pending = pending_rvalid | pending_bvalid;
-assign has_any_activity = has_any_outstanding | has_any_writing | has_any_pending;
+
 
 // Profiling and debug file initialization
 generate
@@ -4411,7 +4332,6 @@ always @(posedge clock) begin : read_path
     rlast_reg &lt;= 0;
     total_issued &lt;= 0;
     total_completed &lt;= 0;
-    idle_cycles &lt;= 0;
     pending_rvalid &lt;= 0;
     pending_rdata &lt;= 0;
     pending_rid &lt;= 0;
@@ -4474,18 +4394,10 @@ always @(posedge clock) begin : read_path
     end
 
     // ------- Accept new AR requests -------
-    if(outstanding_count == 0 &amp;&amp; !has_any_activity)
-      idle_cycles &lt;= idle_cycles + 1;
-
     // Issue #1 fix: single-source assignment of arready_reg from a complete
     // decision tree, replacing the previous default-then-override pattern
     // that drove arready_reg twice within this always block.
     if(arvalid &amp;&amp; arready_reg) begin
-      if(outstanding_count == 0 &amp;&amp; idle_cycles &gt; 0 &amp;&amp; !has_any_activity) begin
-        void&apos;(m_utils.state(32&apos;h80000000 | idle_cycles));
-        idle_cycles &lt;= 0;
-      end
-
       request_result = m_read_request(index, BITSIZE_data, araddr, (8'h80 | AXI_PORT_ID[7:0]));
       if(request_result &gt; 0) begin
         total_issued &lt;= total_issued + 1;
@@ -4605,14 +4517,7 @@ always @(posedge clock) begin : write_path
   end
 end
 
-// ============================================================
-// Global clock coordination - advance Ramulator each active cycle
-// ============================================================
-always @(posedge clock) begin
-  if(has_any_activity) begin
-    void&apos;(m_utils.state(32&apos;h80000001));
-  end
-end
+// Memory time is advanced centrally by SystemMEM.
 
 // Debug progress reporting
 generate

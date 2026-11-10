@@ -3,10 +3,15 @@
 
 #define N 20
 
-#if DEDICATED_AXI
+#if DEDICATED_AXI == 1
 #pragma HLS interface port = a mode = m_axi offset = direct
 #pragma HLS interface port = b mode = m_axi offset = direct
 #pragma HLS interface port = c mode = m_axi offset = direct
+#elif DEDICATED_AXI == 2
+#pragma HLS interface port = a mode = bus
+#pragma HLS interface port = b mode = m_axi offset = direct bundle = dedicated
+#pragma HLS interface port = c mode = m_axi offset = direct bundle = dedicated
+#pragma HLS bus mode = m_axi
 #else
 #pragma HLS interface port = a mode = bus
 #pragma HLS interface port = b mode = bus

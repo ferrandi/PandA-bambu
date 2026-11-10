@@ -919,14 +919,13 @@ class mem_interface_ramulator : public mem_interface
 
    // Queue of write addresses that Ramulator rejected due to full buffers.
    // Data is already safe in host memory (memcpy), but Ramulator needs to
-   // track these for cycle-accurate timing. Drained during state() ticks.
+   // track these for cycle-accurate timing. Drained during memory clock ticks.
    std::queue<ptr_t> pending_ramulator_writes;
 
    // Queue of reads (tag, addr) that Ramulator rejected due to a full read
    // buffer. Unlike the drop-on-reject behaviour, we KEEP the
    // outstanding_requests entry and return the valid tag to the caller, then
-   // resubmit the request to Ramulator once its buffer drains (during tick()/
-   // state()). This makes the read path lossless: at high thread counts the
+   // resubmit the request to Ramulator once its buffer drains during tick(). This makes the read path lossless: at high thread counts the
    // request buffer can momentarily fill, and silently dropping a read used to
    // strand a thread's load forever, deadlocking the NoC co-sim. This only ever
    // does work when a read was actually rejected, so the common (buffer not
@@ -936,10 +935,14 @@ class mem_interface_ramulator : public mem_interface
 
    int next_tag;
    uint64_t current_cycle;
+   uint64_t dram_ticks = 0;
+   uint64_t reads_issued = 0;
+   uint64_t reads_completed = 0;
+   uint64_t writes_issued = 0;
    uint8_t m_channels_number;
 
  public:
-   mem_interface_ramulator(uint8_t idx, double clock_period_ns_val, uint8_t channels_number_val = 1)
+   mem_interface_ramulator(mdpi_idx_t idx, double clock_period_ns_val, uint8_t channels_number_val = 1)
        : mem_interface(idx), next_tag(1), current_cycle(0), m_channels_number(channels_number_val)
    {
 #ifdef HAVE_RAMULATOR2
@@ -964,6 +967,35 @@ class mem_interface_ramulator : public mem_interface
       (void)clock_period_ns_val;
       if_debug("Basic memory interface for interface %d (Ramulator2 not compiled)\n", (int)_idx);
 #endif
+   }
+
+   ~mem_interface_ramulator() override
+   {
+      if_info("[MDPI-MEMORY] ID=%u,CYCLES=%llu,DRAM_TICKS=%llu,READS=%llu,COMPLETED=%llu,WRITES=%llu\n",
+              (unsigned)_idx, (unsigned long long)current_cycle, (unsigned long long)dram_ticks,
+              (unsigned long long)reads_issued, (unsigned long long)reads_completed,
+              (unsigned long long)writes_issued);
+      for(auto& channel : completed_requests)
+      {
+         while(!channel.second.empty())
+         {
+            delete[] channel.second.front().data;
+            channel.second.pop();
+         }
+      }
+#ifdef HAVE_RAMULATOR2
+      delete ramulator_frontend;
+      delete ramulator_memory_system;
+#endif
+   }
+
+   void advance_to(uint64_t cycle)
+   {
+      // One clock source for every backend; never multiply ticks by port count.
+      while(current_cycle < cycle)
+      {
+         tick(1);
+      }
    }
 
    int read(bptr_t data, uint16_t bitsize, ptr_t addr, int cmd) override
@@ -1000,53 +1032,14 @@ class mem_interface_ramulator : public mem_interface
       return mem_interface::write(data, bitsize, addr, cmd);
    }
 
-   int state(int data) override
+   int state(int /*data*/) override
    {
-      if(data & 0x80000000)
-      {
-         int tick_count = data & 0x7FFFFFFF;
-         current_cycle += tick_count;
-         if_debug("Advanced %d cycles, current cycle: %lu\n", tick_count, (unsigned long)current_cycle);
-
-#ifdef HAVE_RAMULATOR2
-         if(ramulator_initialized && ramulator_memory_system)
-         {
-            int scaled_tick_count = (int)(tick_count * frequency_scaling_factor);
-            for(int i = 0; i < scaled_tick_count; i++)
-            {
-               ramulator_memory_system->tick();
-            }
-            if_debug("Advanced Ramulator2 by %d cycles (scaled from %d)\n", scaled_tick_count, tick_count);
-
-            // Drain pending writes that were queued when Ramulator's buffer was full.
-            // Now that we've ticked, there may be space in the write buffer.
-            while(!pending_ramulator_writes.empty())
-            {
-               ptr_t pending_addr = pending_ramulator_writes.front();
-               auto wr_callback = [this, pending_addr](Ramulator::Request& /*request*/) {
-                  if_debug("Ramulator2 queued write completed for addr " PTR_FORMAT "\n", pending_addr);
-               };
-               if(ramulator_frontend->receive_external_requests(1, pending_addr, 0, wr_callback))
-               {
-                  pending_ramulator_writes.pop();
-                  if_debug("Ramulator2 queued write submitted for addr " PTR_FORMAT "\n", pending_addr);
-               }
-               else
-               {
-                  break; // Still full, try again on next state() call
-               }
-            }
-
-            // Resubmit any reads that were rejected earlier (buffer full).
-            drain_pending_ramulator_reads();
-         }
-#endif
-      }
-      return (int)outstanding_requests.size();
+      return static_cast<int>(outstanding_requests.size());
    }
 
    int read_request(uint16_t bitsize, ptr_t addr, signed char cmd)
    {
+      ++reads_issued;
       int tag = next_tag++;
       req_data_t req = {tag, bitsize, addr, cmd, current_cycle};
       outstanding_requests[tag] = req;
@@ -1110,6 +1103,7 @@ class mem_interface_ramulator : public mem_interface
 
       delete[] completion.data;
       outstanding_requests.erase(completion.tag);
+      ++reads_completed;
       return completion.tag;
    }
 
@@ -1141,6 +1135,7 @@ class mem_interface_ramulator : public mem_interface
             memcpy(__addr, data, byte_size);
          }
          written_addresses.insert(addr);
+         ++writes_issued;
 
 #ifdef HAVE_RAMULATOR2
          if(ramulator_initialized && ramulator_frontend)
@@ -1151,14 +1146,10 @@ class mem_interface_ramulator : public mem_interface
             bool success = ramulator_frontend->receive_external_requests(1, addr, 0, callback);
             if(!success)
             {
-               // Buffer full: queue for retry during state() ticks.
-               // Data is already safe in host memory (memcpy above).
-               // We must NOT return 0 here because bambu's bus controller
-               // does not support write back-pressure — it would stall the
-               // DUT indefinitely, preventing state() from being called,
-               // which prevents Ramulator from draining its buffers (deadlock).
+               // Preserve the current posted-write contract: host data is
+               // already updated; retry the timing request on memory ticks.
                pending_ramulator_writes.push(addr);
-               if_debug("Ramulator2 write queued for addr " PTR_FORMAT " (buffer full, will retry during state)\n", addr);
+               if_debug("Ramulator2 write queued for addr " PTR_FORMAT " (buffer full, will retry on memory tick)\n", addr);
             }
             else
             {
@@ -1181,6 +1172,16 @@ class mem_interface_ramulator : public mem_interface
          for(int i = 0; i < scaled; i++)
          {
             ramulator_memory_system->tick();
+            ++dram_ticks;
+         }
+         while(!pending_ramulator_writes.empty())
+         {
+            const auto addr = pending_ramulator_writes.front();
+            if(!ramulator_frontend->receive_external_requests(1, addr, 0, [](Ramulator::Request&) {}))
+            {
+               break;
+            }
+            pending_ramulator_writes.pop();
          }
          drain_pending_ramulator_reads();
       }
@@ -1229,8 +1230,8 @@ class mem_interface_ramulator : public mem_interface
       size_t expected_size = original_req.bitsize / 8;
       uint64_t latency = current_cycle - original_req.request_cycle;
 
-      if_info("[MDPI-PROFILE] CYCLE=%lu,OP=READ,ADDR=0x%lx,BITSIZE=%d,LATENCY=%lu\n",
-              (unsigned long)current_cycle, (unsigned long)addr, original_req.bitsize, (unsigned long)latency);
+      if_info("[MDPI-PROFILE] ID=%u,CYCLE=%lu,OP=READ,ADDR=0x%lx,BITSIZE=%d,LATENCY=%lu\n",
+              (unsigned)_idx, (unsigned long)current_cycle, (unsigned long)addr, original_req.bitsize, (unsigned long)latency);
 
       completion_data_t completion;
       completion.tag = tag;
@@ -1891,6 +1892,16 @@ static void* __m_driver_loop(void*)
                   debug_append("state (data: %u).\n", __m_ipc_operation.payload.interface.info);
                   __m_ipc_operation.payload.interface.info = __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                                                                  ->state(__m_ipc_operation.payload.interface.info);
+               }
+            }
+            __ipc_response();
+            break;
+         case MDPI_OP_TYPE_MEM_TICK:
+            for(const auto& iface : __m_interfaces)
+            {
+               if(auto* memory = dynamic_cast<mem_interface_ramulator*>(iface.get()))
+               {
+                  memory->advance_to(__m_ipc_operation.payload.interface.addr);
                }
             }
             __ipc_response();

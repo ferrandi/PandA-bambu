@@ -23,12 +23,16 @@ MODES = {
     "banked-minimal": (1, 0, 0, 0),
     "banked-axi": (1, 1, 0, 4),
     "axi-dedicated": (0, 1, 1, 3),
+    "mixed-axi": (0, 1, 2, 2),
+    "mixed-banked-minimal": (1, 0, 2, 1),
+    "mixed-banked-axi": (1, 1, 2, 5),
 }
-SMOKE_CASES = [f"{kernel}/{mode}" for kernel in KERNELS for mode in MODES]
+SMOKE_CASES = [f"{kernel}/{mode}" for kernel in KERNELS for mode in MODES if not mode.startswith("mixed-")]
 HBM_SIZES = {"hbm-gather": 4096, "hbm-scatter": 4096, "hbm-chase": 2048}
 HBM_CASES = [f"{kernel}/{mode}" for kernel in HBM_SIZES
              for mode in ("banked-minimal", "banked-axi")]
-CASES = SMOKE_CASES + HBM_CASES
+ISOLATION_CASES = ["add/mixed-axi", "add/mixed-banked-minimal", "add/mixed-banked-axi"]
+CASES = SMOKE_CASES + HBM_CASES + ISOLATION_CASES
 HBM_SEED = 0x504E4E4C
 
 
@@ -110,6 +114,30 @@ def parallelism(path, banks=4, minimum_parallel=2, minimum_banks=2):
     return result
 
 
+def memory_isolation(log, expected_active, accelerator_cycles=None):
+    """Require independent backend activity and one shared accelerator time base."""
+    pattern = (r"\[MDPI-MEMORY\] ID=(\d+),CYCLES=(\d+),DRAM_TICKS=(\d+),"
+               r"READS=(\d+),COMPLETED=(\d+),WRITES=(\d+)")
+    memories = [dict(zip(("id", "cycles", "dram_ticks", "reads", "completed", "writes"),
+                         map(int, match))) for match in re.findall(pattern, log)]
+    if not memories or len({m["id"] for m in memories}) != len(memories):
+        raise ValueError("missing or duplicate independent memory backend summaries")
+    initialized = list(map(int, re.findall(r"Ramulator2 successfully initialized for interface (\d+)", log)))
+    if sorted(initialized) != sorted(m["id"] for m in memories):
+        raise ValueError("memory initialization and backend summaries disagree")
+    active = [m for m in memories if m["reads"] or m["writes"]]
+    if len(active) != expected_active or any(m["reads"] and m["completed"] == 0 for m in active):
+        raise ValueError(f"expected {expected_active} independent active memories with completed reads or writes: {memories}")
+    if len({m["cycles"] for m in memories}) != 1 or memories[0]["cycles"] <= 0:
+        raise ValueError(f"independent memories do not share accelerator time: {memories}")
+    if accelerator_cycles is not None and not 0 <= accelerator_cycles - memories[0]["cycles"] <= 2:
+        raise ValueError(f"memory time disagrees with simulated accelerator cycles: {memories}")
+    # The smoke DDR4 configuration uses three DRAM ticks per accelerator cycle.
+    if any(m["dram_ticks"] != 3 * m["cycles"] for m in memories):
+        raise ValueError(f"memory clock advanced incorrectly: {memories}")
+    return memories
+
+
 def validate(directory, expected_axi, banked, cycle_limit, banks=4, hbm=False):
     result = ET.parse(directory / "bambu_results.xml").getroot()
     simulation = result.find("timing/simulation")
@@ -144,7 +172,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--list", action="store_true")
     parser.add_argument("--case", action="append", choices=CASES)
-    parser.add_argument("--group", choices=("all", "smoke", "hbm"), default="all")
+    parser.add_argument("--group", choices=("all", "smoke", "hbm", "isolation"), default="all")
     parser.add_argument("--bambu", type=Path)
     parser.add_argument("--out", type=Path, default=ROOT / "out_ramulator_ci")
     parser.add_argument("--timeout", type=int, default=180, help="wall seconds per case, including compilation")
@@ -153,7 +181,7 @@ def main():
     parser.add_argument("--hbm-timeout", type=int, default=600)
     args = parser.parse_args()
     if args.list:
-        print("\n".join(SMOKE_CASES if args.group == "smoke" else HBM_CASES if args.group == "hbm" else CASES))
+        print("\n".join(SMOKE_CASES if args.group == "smoke" else HBM_CASES if args.group == "hbm" else ISOLATION_CASES if args.group == "isolation" else CASES))
         return 0
     if not args.bambu or not os.environ.get("BAMBU_HLS"):
         parser.error("source the Bambu installation settings.sh and provide --bambu")
@@ -177,7 +205,7 @@ def main():
     env.pop("LD_LIBRARY_PATH", None)
     records = []
     suite = ET.Element("testsuite", name="bambu-ramulator")
-    selected = args.case or (SMOKE_CASES if args.group == "smoke" else HBM_CASES if args.group == "hbm" else CASES)
+    selected = args.case or (SMOKE_CASES if args.group == "smoke" else HBM_CASES if args.group == "hbm" else ISOLATION_CASES if args.group == "isolation" else CASES)
     for name in selected:
         kernel, mode = name.split("/")
         banked, axi, dedicated, axi_models = MODES[mode]
@@ -190,6 +218,8 @@ def main():
         directory = out / name
         directory.mkdir(parents=True)
         source, inputs = HERE / "kernel.cpp", HERE / "input.xml"
+        if mode.startswith("mixed-banked-"):
+            source = HERE / "mixed_banked.cpp"
         case_env = env.copy()
         if hbm:
             source, inputs = HERE / f"{kernel.replace('-', '_')}.cpp", directory / "input.xml"
@@ -234,6 +264,9 @@ def main():
             if returncode:
                 raise ValueError(f"Bambu exited with {returncode}; see {directory / 'run.log'}")
             record.update(validate(directory, axi_models, banked, cycles_limit, banks, hbm))
+            if dedicated:
+                record["memories"] = memory_isolation((directory / "run.log").read_text(errors="replace"),
+                                                       3 if dedicated == 1 else 2, record["cycles"])
             if banked:
                 # Successful cases keep measured evidence; retain full waveforms only
                 # on failure, especially for the larger 32-thread circuits.

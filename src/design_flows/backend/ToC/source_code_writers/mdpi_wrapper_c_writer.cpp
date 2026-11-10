@@ -713,6 +713,18 @@ void MdpiWrapperCWriter::InternalWriteFile()
       indented_output_stream->Append("m_interface_bank_offset(&bank_offset);\n");
    }
 
+   if(Param->getOption<bool>(OPT_enable_ramulator))
+   {
+      // Keep the bank-offset interface in its existing slot immediately after
+      // the bus. Dedicated memories follow all pre-existing MDPI interfaces.
+      const auto dedicated_memories = func_arch->DedicatedMemoryIndices(
+          static_cast<unsigned int>(param_idx + 1 + (global_use_banked ? 1 : 0)));
+      for(size_t i = 0; i < dedicated_memories.size(); ++i)
+      {
+         indented_output_stream->Append("__m_interface_mem(" + std::to_string(clock_period) + ", 1);\n");
+      }
+   }
+
    indented_output_stream->Append("\n__m_sim_start();\n\n");
    indented_output_stream->Append("#ifndef BAMBU_SKIP_VERIFICATION\n");
    indented_output_stream->Append(gold_call);
