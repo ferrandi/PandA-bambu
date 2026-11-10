@@ -170,6 +170,7 @@ function(_panda_add_clang_plugins ver)
    if(NOT _clang_cxxflags)
       return()
    endif()
+   set(PANDA_CLANG${ver}_LLVM_CONFIG "${_test_llvmconfig}" PARENT_SCOPE)
    # llvm-config may inject its own -std flag (e.g. c++14 for clang-10/11/12/13).
    # Keep clang-4 on C++14, force newer toolchains to C++17 by appending a final override.
    set(_plugin_std_override "-std=gnu++17")
@@ -399,6 +400,7 @@ add_custom_target(panda_clang_plugins ALL)
 
 foreach(ver IN ITEMS 4 5 6 7 8 9 10 11 12 13 16 19)
    _panda_add_clang_plugins(${ver})
+   set(PANDA_CLANG${ver}_LLVM_CONFIG "${PANDA_CLANG${ver}_LLVM_CONFIG}" PARENT_SCOPE)
    if(TARGET panda_clang_plugins_${ver})
       add_dependencies(panda_clang_plugins panda_clang_plugins_${ver})
    endif()

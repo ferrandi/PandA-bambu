@@ -28,7 +28,7 @@ esac
 # Concurrent Starter simulations can fail on the periodic license lock-file
 # check, so serialize them on a per-user lock.
 case "$(vsim -version 2>&1)" in
-  *"STARTER EDITION"*)
+  *"STARTER EDITION"*|*"Starter Edition"*)
     OPT_FLAGS=""
     if ! command -v flock >/dev/null 2>&1; then
       echo "ModelSim Starter simulations require flock (util-linux)." >&2

@@ -15,6 +15,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--opt', required=True)
     parser.add_argument('--clang', required=True)
+    parser.add_argument('--llvm-config', required=True)
     parser.add_argument('--plugin-dir', required=True, type=Path)
     parser.add_argument('--cxx', default='c++')
     args = parser.parse_args()
@@ -126,9 +127,8 @@ def main():
                     raise RuntimeError(f'Incorrect task detection for {name}/{bits}')
 
         root = Path(__file__).resolve().parents[3]
-        config = Path(args.opt).with_name('llvm-config-19')
         flags = shlex.split(subprocess.check_output(
-            [str(config), '--cxxflags', '--ldflags', '--libs', 'support', '--system-libs'], text=True))
+            [args.llvm_config, '--cxxflags', '--ldflags', '--libs', 'support', '--system-libs'], text=True))
         topology = work / 'topology'
         subprocess.run([args.cxx, '-DPANDA_CLANG_MAJOR=19', '-DNDEBUG',
                         '-I' + str(root / 'etc/clang_plugin'), '-I' + str(root / 'src/constants'), '-I' + str(root / 'ext/pugixml/src'),
