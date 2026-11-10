@@ -62,3 +62,10 @@ documentation/tmp/
 /build*/
 **/obj/
 /panda_dist*/
+
+# Generated AXI-annotated copy of the PolyBenchC submodule (see examples/PolyBench/add_axi_pragmas.py)
+/examples/PolyBench/PolyBenchC_AXI/
+
+# Generated Ramulator smoke-example outputs.
+/examples/cpp_examples/vector_add_axi_ramulator_test/vector_add_axi_ram_*ch/
+/examples/cpp_examples/vector_add_ramulator_cr_test/vector_add_axi_ram_*ch/

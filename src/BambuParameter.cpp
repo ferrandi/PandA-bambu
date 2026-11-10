@@ -23,6 +23,7 @@
  * @brief This file contains the implementation of some methods for parameter parsing in Bambu tool
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
@@ -988,6 +989,8 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
+      {"enable-ramulator", no_argument, nullptr, 0},
+      {"enable-ramulator-integrated", no_argument, nullptr, 0},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
@@ -2188,6 +2191,16 @@ int BambuParameter::Exec()
             if(strcmp(long_options[option_index].name, "assert-debug") == 0)
             {
                setOption(OPT_assert_debug, true);
+               break;
+            }
+            if(strcmp(long_options[option_index].name, "enable-ramulator") == 0)
+            {
+               setOption(OPT_enable_ramulator, true);
+               break;
+            }
+            if(strcmp(long_options[option_index].name, "enable-ramulator-integrated") == 0)
+            {
+               setOption(OPT_enable_ramulator_integrated, true);
                break;
             }
             /// scheduling options
@@ -3435,6 +3448,9 @@ void BambuParameter::SetDefaults()
    setOption(OPT_memory_mapped_top, false);
 
    setOption(OPT_tb_queue_size, 4);
+
+   setOption(OPT_enable_ramulator, false);
+   setOption(OPT_enable_ramulator_integrated, false);
 
    /// -- Memory allocation -- //
    setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);

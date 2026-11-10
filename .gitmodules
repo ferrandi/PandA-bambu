@@ -1,7 +1,7 @@
 [submodule "MachSuite"]
 	path = examples/MachSuite/MachSuite
-	url = https://github.com/ferrandi/MachSuite.git
-	branch = dev/panda-hls
+	url = https://github.com/jesunsahariar/MachSuite.git
+	branch = feature/ramulator-noc
 [submodule "CHStone"]
 	path = examples/CHStone/CHStone
 	url = https://github.com/ferrandi/CHStone.git
@@ -20,8 +20,8 @@
 	url = https://github.com/zeux/pugixml.git
 [submodule "GAPBS"]
 	path = examples/OpenMP/GAPBS/gapbs
-	url = https://github.com/ferrandi/gapbs.git
-	branch = dev/panda-hls
+	url = https://github.com/jesunsahariar/gapbs.git
+	branch = feature/ramulator-noc
 [submodule "ext/gcem"]
 	path = ext/gcem
 	url = https://github.com/kthohr/gcem.git
@@ -39,3 +39,6 @@
 [submodule "abseil-cpp"]
 	path = ext/abseil/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
+[submodule "ramulator2-no-spdlog"]
+	path = ext/ramulator2-no-spdlog
+	url = https://github.com/jesunsahariar/Ramulator-no-spdlog.git

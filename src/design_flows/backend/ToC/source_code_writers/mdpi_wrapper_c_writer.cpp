@@ -23,6 +23,7 @@
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 #include "mdpi_wrapper_c_writer.hpp"
@@ -608,7 +609,10 @@ void MdpiWrapperCWriter::InternalWriteFile()
    }
    args_map = "char args_map[" + std::to_string(args_decl_size) + "]" + args_map + "};\n";
    banked_args_map = "char banked_args_map[" + std::to_string(banked_args_decl_size) + "]" + banked_args_map + "};\n";
-   args_set += "__m_interface_mem();\n";
+   const auto clock_period = Param->getOption<double>(OPT_clock_period);
+   const auto channels_number =
+       Param->isOption(OPT_channels_number) ? Param->getOption<unsigned int>(OPT_channels_number) : 1u;
+   args_set += "__m_interface_mem(" + std::to_string(clock_period) + ", " + std::to_string(channels_number) + ");\n";
    top_decl += ")\n";
    gold_decl += ");\n";
    pp_decl += ");\n";

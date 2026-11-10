@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //    author Michele Fiorito <michele.fiorito@polimi.it>
+//    author Jesun Firoz <jesun.firoz@pnnl.gov>
 //
 
 #ifndef __MDPI_DRIVER_H
@@ -32,7 +33,7 @@ extern "C"
    void __m_interface_array_csroa(void* base, uint16_t bitsize, uint8_t align, uint64_t size,
                                   partition_desc_t* part_desc, uint64_t* dim_sizes, uint64_t dim_count);
    void __m_interface_fifo(void* base, uint16_t bitsize, uint8_t align, uint64_t size);
-   void __m_interface_mem();
+   void __m_interface_mem(double clock_period_ns, uint8_t channels_number);
    void __m_interface_fini();
 
    void __m_memmap_init(int map_mode);

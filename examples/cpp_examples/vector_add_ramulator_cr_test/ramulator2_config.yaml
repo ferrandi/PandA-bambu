@@ -1,0 +1,36 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# Ramulator2 configuration for the candidate-release AXI + Ramulator2 smoke test.
+# DDR4-2400, single channel.  clock_ratio scales Ramulator's DRAM clock relative
+# to the DUT clock (set via --clock-period in the test script).
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 3
+
+  DRAM:
+    impl: DDR4
+    org:
+      preset: DDR4_8Gb_x8
+      channel: 1
+      rank: 1
+    timing:
+      preset: DDR4_2400R
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

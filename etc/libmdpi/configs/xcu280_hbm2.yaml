@@ -1,0 +1,63 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# Ramulator2 config modelling an HBM2 stack for the SPARTA NoC + HBM study,
+# targeting the Alveo U280 (xcu280).
+#
+# UNLIKE the xcu250_hbm2.yaml preset (which models HBM "as if" attached to a
+# board that has NONE), the Alveo U280 carries REAL HBM2: two 4-Hi HBM2 stacks,
+# 8 GB total, 32 pseudochannels exposed to the fabric. So on U280 this preset
+# is a faithful memory model of the shipping board, not a what-if. (The U55C
+# xcu55c-2Lfsvh2892 is similar with 16 GB / 8-Hi stacks.)
+#
+# HBM2 organization (Ramulator2 HBM2 preset HBM2_4Gb):
+#   org fields = {density_Mb, dq, [channel, pseudochannel, bankgroup, bank, row, column]}
+#   HBM2_4Gb => 4 Gb/channel, 128-bit dq, 2 pseudochannels, 4 bankgroups, 4 banks.
+#   A full HBM2 stack exposes up to 8 channels x 2 pseudochannels. 'channel: 8'
+#   documents an 8-channel stack; bambu OVERRIDES this at runtime with
+#   --channels-number, so to actually exercise N memory channels you must also
+#   pass --channels-number=N (the NoC driver sets this from the core count).
+#
+# Frequency pairing (DRAM/accel ratio):
+#   HBM2-2Gbps => 2000 MT/s => DRAM command clock 1000 MHz.
+#   clock_ratio = 5 pairs with a 200 MHz accelerator (--clock-period=5.0) for a
+#   wall-clock-accurate match. The DSE driver selects --clock-period=5.0
+#   automatically for this preset; override with CLOCK_PERIOD=<ns> (and keep
+#   clock_ratio = round(1000 / accel_MHz)).
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 5
+
+  DRAM:
+    impl: HBM2
+    org:
+      preset: HBM2_4Gb
+      channel: 8
+    timing:
+      preset: HBM2_2Gbps
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    # NOTE: HBM2 has no "rank" level (its hierarchy is
+    # channel/pseudochannel/bankgroup/bank/row/column). Ramulator2's
+    # ClosedRowPolicy::setup does an UNCHECKED m_dram->m_levels("rank"),
+    # which throws std::out_of_range ("unordered_map::at") for HBM2 and
+    # aborts Ramulator init -- the MDPI driver then runs with Ramulator
+    # DISABLED, so no read ever completes and the NoC co-sim deadlocks on
+    # the first outstanding load. OpenRowPolicy has an empty setup (no rank
+    # lookup) and is safe. DDR4 configs keep ClosedRowPolicy because DDR4
+    # DOES have a rank level.
+    RowPolicy:
+      impl: OpenRowPolicy
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

@@ -24,6 +24,7 @@
  * Objects can represent items at different level of abstraction: logic, RTL and TLM.
  *
  * @author Matteo Barbati <mbarbati@gmail.com>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
@@ -1508,6 +1509,14 @@ class module_o : public structural_object
    unsigned int get_in_port_size() const;
 
    /**
+    * Return all in ports.
+    */
+   const std::vector<structural_objectRef>& get_in_ports() const
+   {
+      return in_ports;
+   }
+
+   /**
     * Add an output port.
     * @param p is the port .
     */
@@ -1518,6 +1527,14 @@ class module_o : public structural_object
     * @param n is the index of the port
     */
    const structural_objectRef get_out_port(unsigned int n) const;
+
+   /**
+    * Return all out ports.
+    */
+   const std::vector<structural_objectRef>& get_out_ports() const
+   {
+      return out_ports;
+   }
 
    /**
     * Return the number of output ports.
@@ -1535,6 +1552,14 @@ class module_o : public structural_object
     * @param n is the index of the port.
     */
    const structural_objectRef get_in_out_port(unsigned int n) const;
+
+   /**
+    * Return all in_out ports.
+    */
+   const std::vector<structural_objectRef>& get_in_out_ports() const
+   {
+      return in_out_ports;
+   }
 
    /**
     * Return the number of output ports.

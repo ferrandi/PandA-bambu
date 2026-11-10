@@ -3026,5 +3026,2034 @@ end
         </module_o>
       </circuit>
     </cell>
+    <cell>
+      <name>TestbenchMEMRamulator</name>
+      <circuit>
+        <module_o id="TestbenchMEMRamulator">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY - Ramulator Memory Profiling Version</description>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
+          <authors>Jesun Firoz &lt;jesun.firoz@pnnl.gov&gt;</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="TestbenchMEMRamulator"/>
+          <parameter name="index">0</parameter>
+          <parameter name="MEM_DELAY_READ">2</parameter>
+          <parameter name="MEM_DELAY_WRITE">1</parameter>
+          <parameter name="base_addr">1073741824</parameter>
+          <parameter name="MEM_DUMP">0</parameter>
+          <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_PROFILE">1</parameter>
+          <parameter name="RAMULATOR_PROFILE_FILE">&quot;&quot;ramulator_profile.csv&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_DEBUG">1</parameter>
+          <parameter name="RAMULATOR_DEBUG_FILE">&quot;&quot;ramulator_debug.log&quot;&quot;</parameter>
+          <parameter name="QUEUE_SIZE">4</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="if_utils"
+            LIBRARY="TestbenchMEMRamulator index MEM_DELAY_READ MEM_DELAY_WRITE base_addr MEM_DUMP MEM_DUMP_FILE RAMULATOR_PROFILE RAMULATOR_PROFILE_FILE RAMULATOR_DEBUG RAMULATOR_DEBUG_FILE QUEUE_SIZE M_DataRdy M_Rdata_ram Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            VERILOG_PROVIDED="
+function automatic integer log2;
+  input integer value;
+  `ifdef _SIM_HAVE_CLOG2
+    log2 = $clog2(value);
+  `else
+    automatic integer temp_value = value-1;
+    for (log2=0; temp_value &gt; 0; log2=log2+1)
+      temp_value = temp_value &gt;&gt; 1;
+  `endif
+endfunction
+
+localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+  ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
+  ACTIVE_WRITE= MEM_DELAY_WRITE &gt; 1 ? (MEM_DELAY_WRITE-2) : 0,
+  CHANNELS_NUMBER=BITSIZE_Mout_oe_ram,
+  BITSIZE_oe=1,
+  BITSIZE_we=1,
+  BITSIZE_addr=BITSIZE_Mout_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_Wsize=BITSIZE_Mout_data_ram_size/CHANNELS_NUMBER,
+  BITSIZE_Wdata=BITSIZE_Mout_Wdata_ram/CHANNELS_NUMBER,
+  BITSIZE_ready=1,
+  BITSIZE_Rdata=BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
+  BITSIZE_item=BITSIZE_Wdata+BITSIZE_Wsize+BITSIZE_addr+BITSIZE_we+BITSIZE_oe,
+  OFFSET_oe=0,
+  OFFSET_we=OFFSET_oe+BITSIZE_oe,
+  OFFSET_addr=OFFSET_we+BITSIZE_we,
+  OFFSET_Wsize=OFFSET_addr+BITSIZE_addr,
+  OFFSET_Wdata=OFFSET_Wsize+BITSIZE_Wsize,
+  BITSIZE_S_Rdata=BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
+  BITSIZE_S_ready=1,
+  SLAVE_VALID=BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
+  QUEUE_BITSIZE=QUEUE_SIZE &gt; 1 ? log2(QUEUE_SIZE) : 1;
+
+genvar i;
+integer dump_file, ramulator_profile_file, ramulator_debug_file;
+wire [BITSIZE_M_DataRdy-1:0] _M_DataRdy, _M_DataRdy_reg;
+wire [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
+
+assign S_oe_ram = Mout_oe_ram;
+assign S_we_ram = Mout_we_ram;
+assign S_addr_ram = Mout_addr_ram;
+assign S_data_ram_size = Mout_data_ram_size;
+assign S_Wdata_ram = Mout_Wdata_ram;
+assign M_DataRdy = _M_DataRdy;
+assign M_Rdata_ram = _M_Rdata_ram;
+
+// Ramulator profiling and debug files
+generate
+  if(RAMULATOR_PROFILE)
+  begin
+    initial
+    begin
+      ramulator_profile_file = $fopen(RAMULATOR_PROFILE_FILE, &quot;w&quot;);
+      $fwrite(ramulator_profile_file, &quot;Cycle,Channel,Operation,Address,Bitwidth,Data,Latency\n&quot;);
+    end
+  end
+
+  if(RAMULATOR_DEBUG)
+  begin
+    initial
+    begin
+      ramulator_debug_file = $fopen(RAMULATOR_DEBUG_FILE, &quot;w&quot;);
+      $fwrite(ramulator_debug_file, &quot;[RAMULATOR] Testbench initialized for memory profiling\n&quot;);
+      $display(&quot;[RAMULATOR] Memory profiling enabled, debug file: %s&quot;, RAMULATOR_DEBUG_FILE);
+    end
+  end
+
+  if(MEM_DUMP)
+  begin
+    initial
+    begin
+      dump_file = $fopen(MEM_DUMP_FILE, &quot;w&quot;);
+      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data\n&quot;);
+    end
+
+    always@(posedge clock)
+    begin
+      if(done_port)
+      begin
+        $fflush(dump_file);
+        if(RAMULATOR_PROFILE)
+        begin
+          $fflush(ramulator_profile_file);
+        end
+        if(RAMULATOR_DEBUG)
+        begin
+          $fwrite(ramulator_debug_file, &quot;[RAMULATOR] Simulation completed\n&quot;);
+          $fflush(ramulator_debug_file);
+        end
+      end
+    end
+  end
+endgenerate
+
+if_utils #(index, BITSIZE_Rdata) m_utils();
+
+generate
+  for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
+  begin : channel
+    wire [MEM_DELAY_MAX*BITSIZE_item-1:0] queue_next;
+    wire [BITSIZE_oe-1:0] oe;
+    wire [BITSIZE_we-1:0] we;
+    ptr_t Waddr, Raddr;
+    shortint unsigned Wsize;
+    wire [BITSIZE_Wdata-1:0] Wdata;
+    reg [BITSIZE_ready-1:0] Wready, Rready, Wready_reg;
+    reg [BITSIZE_Rdata-1:0] Rdata;
+
+    reg [QUEUE_BITSIZE-1:0] queue_counter;
+    wire [QUEUE_BITSIZE-1:0] queue_counter_next;
+
+    // Ramulator profiling counters
+    reg [63:0] cycle_counter;
+    reg [31:0] read_count, write_count;
+
+    if(MEM_DELAY_WRITE == 1)
+    begin
+      always@(posedge clock)
+      begin
+        Wready_reg &lt;= Wready;
+      end
+    end
+    else
+    begin
+      assign Wready_reg = Wready;
+    end
+    if(QUEUE_SIZE &gt; 1)
+    begin
+      assign Mout_back_pressure[i] = queue_counter == 0 ? 0 : (queue_counter - _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready]) == (QUEUE_SIZE - 1);
+    end
+    else
+    begin
+      assign Mout_back_pressure[i] = queue_counter &amp;&amp; !_M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready];
+    end
+
+    always @(posedge clock)
+    begin
+      if(1RESET_VALUE)
+      begin
+        queue_counter &lt;= 0;
+        cycle_counter &lt;= 0;
+        read_count &lt;= 0;
+        write_count &lt;= 0;
+      end
+      else
+      begin
+        queue_counter &lt;= queue_counter_next;
+        cycle_counter &lt;= cycle_counter + 1;
+
+        // Update Ramulator profiling counters
+        if(oe &amp;&amp; base_addr &lt;= Raddr)
+        begin
+          read_count &lt;= read_count + 1;
+        end
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          write_count &lt;= write_count + 1;
+        end
+      end
+    end
+
+    if(QUEUE_SIZE &gt; 1)
+    begin
+      assign queue_counter_next = queue_counter + (((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp; base_addr &lt;= Mout_addr_ram[i*BITSIZE_addr +: BITSIZE_addr]) &amp;&amp; (queue_counter == 0 ? 1 : ((queue_counter  - _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready]) &lt; (QUEUE_SIZE - 1)))) - _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready];
+    end
+    else
+    begin
+      assign queue_counter_next = ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp; base_addr &lt;= Mout_addr_ram[i*BITSIZE_addr +: BITSIZE_addr]) || (queue_counter &amp;&amp; !_M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready]);
+    end
+
+
+    if(MEM_DELAY_MAX &gt; 1)
+    begin : requests_queue
+      reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue;
+      wire [BITSIZE_item-1:0] new_elem;
+
+            assign new_elem = Mout_back_pressure[i] ? {BITSIZE_item{1&apos;b0}} :
+                        {Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata],
+                        Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
+                        Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
+                        Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
+                        Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]};
+
+            assign queue_next = {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0],new_elem};
+
+      always@(posedge clock)
+      begin
+        if(1RESET_VALUE)
+        begin
+          queue &lt;= 0;
+        end
+        else
+        begin
+          queue &lt;= queue_next;
+        end
+      end
+    end
+    else
+    begin
+      assign queue_next = {Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata],
+        Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
+        Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],
+        Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],
+        Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]};
+    end
+
+    assign oe = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_oe+:BITSIZE_oe];
+    assign Raddr = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
+    assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1);
+    assign _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready] = Wready_reg | Rready; // Used to update at posedge clock of the queue_counter;
+    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1}});
+
+    if(MEM_DELAY_READ &gt; 1)
+    begin : read_channel
+      always@(posedge clock)
+      begin : read_channel
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        Rready &lt;= 0;
+        Rdata &lt;= 0;
+        if(oe &amp;&amp; base_addr &lt;= Raddr)
+        begin
+          data = m_utils.read_a(Raddr);
+          Rdata &lt;= data;
+          Rready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+          end
+          if(RAMULATOR_PROFILE)
+          begin
+            $fwrite(ramulator_profile_file, &quot;%0d,%0d,r,%0X,%0d,%0X,%0d\n&quot;, cycle_counter, i, Raddr, BITSIZE_Rdata, data, MEM_DELAY_READ);
+          end
+          if(RAMULATOR_DEBUG)
+          begin
+            $fwrite(ramulator_debug_file, &quot;[RAMULATOR] Cycle %0d: READ  Ch:%0d Addr:0x%0X Size:%0d Data:0x%0X\n&quot;, cycle_counter, i, Raddr, BITSIZE_Rdata, data);
+          end
+        end
+      end
+    end
+    else
+    begin
+      always@(negedge clock)
+      begin : read_channel
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        Rready &lt;= 0;
+        Rdata &lt;= 0;
+        if(oe &amp;&amp; base_addr &lt;= Raddr)
+        begin
+          data = m_utils.read_a(Raddr);
+          Rdata &lt;= data;
+          Rready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+          end
+          if(RAMULATOR_PROFILE)
+          begin
+            $fwrite(ramulator_profile_file, &quot;%0d,%0d,r,%0X,%0d,%0X,%0d\n&quot;, cycle_counter, i, Raddr, BITSIZE_Rdata, data, MEM_DELAY_READ);
+          end
+          if(RAMULATOR_DEBUG)
+          begin
+            $fwrite(ramulator_debug_file, &quot;[RAMULATOR] Cycle %0d: READ  Ch:%0d Addr:0x%0X Size:%0d Data:0x%0X\n&quot;, cycle_counter, i, Raddr, BITSIZE_Rdata, data);
+          end
+        end
+      end
+    end
+
+    assign we = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_we+:BITSIZE_we];
+    assign Waddr = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
+    assign Wsize = {{16-BITSIZE_Wsize{1&apos;b0}}, queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_Wsize+:BITSIZE_Wsize]};
+    assign Wdata = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_Wdata+:BITSIZE_Wdata];
+
+    if(MEM_DELAY_WRITE &gt; 1)
+    begin : write_channel
+      always@(posedge clock)
+      begin : write_channel
+        Wready &lt;= 0;
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          void'(m_utils.write_sa(Wdata, Wsize, Waddr));
+          Wready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, Waddr, Wsize, Wdata);
+          end
+          if(RAMULATOR_PROFILE)
+          begin
+            $fwrite(ramulator_profile_file, &quot;%0d,%0d,w,%0X,%0d,%0X,%0d\n&quot;, cycle_counter, i, Waddr, Wsize, Wdata, MEM_DELAY_WRITE);
+          end
+          if(RAMULATOR_DEBUG)
+          begin
+            $fwrite(ramulator_debug_file, &quot;[RAMULATOR] Cycle %0d: WRITE Ch:%0d Addr:0x%0X Size:%0d Data:0x%0X\n&quot;, cycle_counter, i, Waddr, Wsize, Wdata);
+          end
+        end
+      end
+    end
+    else
+    begin
+      always@(negedge clock)
+      begin : write_channel
+        Wready &lt;= 0;
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          void'(m_utils.write_sa(Wdata, Wsize, Waddr));
+          Wready &lt;= 1;
+          if(MEM_DUMP)
+          begin
+            $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, Waddr, Wsize, Wdata);
+          end
+          if(RAMULATOR_PROFILE)
+          begin
+            $fwrite(ramulator_profile_file, &quot;%0d,%0d,w,%0X,%0d,%0X,%0d\n&quot;, cycle_counter, i, Waddr, Wsize, Wdata, MEM_DELAY_WRITE);
+          end
+          if(RAMULATOR_DEBUG)
+          begin
+            $fwrite(ramulator_debug_file, &quot;[RAMULATOR] Cycle %0d: WRITE Ch:%0d Addr:0x%0X Size:%0d Data:0x%0X\n&quot;, cycle_counter, i, Waddr, Wsize, Wdata);
+          end
+        end
+      end
+    end
+
+    always @(posedge clock)
+    begin
+      if (we &amp; oe)
+      begin
+        $display(&quot;ERROR - Mout_we_ram and Mout_oe_ram both enabled on channel %0d!&quot;, i);
+        $finish;
+      end
+    end
+
+    // Ramulator debug output for simulation progress
+    if(RAMULATOR_DEBUG)
+    begin
+      always @(posedge clock)
+      begin
+        if(cycle_counter % 10000 == 0 &amp;&amp; cycle_counter > 0)
+        begin
+          $fwrite(ramulator_debug_file, &quot;[RAMULATOR] Progress: Cycle %0d, Ch:%0d Reads:%0d Writes:%0d\n&quot;, cycle_counter, i, read_count, write_count);
+        end
+      end
+    end
+  end
+endgenerate"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchMEMRamulatorIntegrated</name>
+      <circuit>
+        <module_o id="TestbenchMEMRamulatorIntegrated">
+          <description>Testbench for Ramulator2 integration with realistic memory timing</description>
+          <copyright>Copyright (C) 2023-2024 Politecnico di Milano</copyright>
+          <authors>Jesun Firoz &lt;jesun.firoz@pnnl.gov&gt;</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="TestbenchMEMRamulatorIntegrated"/>
+          <parameter name="index">0</parameter>
+          <parameter name="MEM_DELAY_READ">2</parameter>
+          <parameter name="MEM_DELAY_WRITE">1</parameter>
+          <parameter name="EMULATE_BRAM">0</parameter>
+          <parameter name="base_addr">1073741824</parameter>
+          <parameter name="MEM_DUMP">0</parameter>
+          <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_PROFILE">1</parameter>
+          <parameter name="RAMULATOR_PROFILE_FILE">&quot;&quot;ramulator_profile.csv&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_DEBUG">1</parameter>
+          <parameter name="RAMULATOR_DEBUG_FILE">&quot;&quot;ramulator_debug.log&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_MODE">1</parameter>
+          <parameter name="QUEUE_SIZE">4</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_tag" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_tag" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="if_utils"
+            LIBRARY="TestbenchMEMRamulatorIntegrated index MEM_DELAY_READ MEM_DELAY_WRITE EMULATE_BRAM base_addr MEM_DUMP MEM_DUMP_FILE RAMULATOR_PROFILE RAMULATOR_PROFILE_FILE RAMULATOR_DEBUG RAMULATOR_DEBUG_FILE RAMULATOR_MODE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            VERILOG_PROVIDED="
+import &quot;DPI-C&quot; function int m_read_request (input byte unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete (input byte unsigned id, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_read_complete_ch (input byte unsigned id, input byte unsigned channel, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_write_request (input byte unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+
+function automatic integer log2;
+  input integer value;
+  `ifdef _SIM_HAVE_CLOG2
+    log2 = $clog2(value);
+  `else
+    automatic integer temp_value = value-1;
+    for (log2=0; temp_value &gt; 0; log2=log2+1)
+      temp_value = temp_value &gt;&gt; 1;
+  `endif
+endfunction
+
+localparam
+  CHANNELS_NUMBER = BITSIZE_Mout_oe_ram,
+  BITSIZE_oe = 1,
+  BITSIZE_we = 1,
+  BITSIZE_addr = BITSIZE_Mout_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_Wsize = BITSIZE_Mout_data_ram_size/CHANNELS_NUMBER,
+  BITSIZE_Wdata = BITSIZE_Mout_Wdata_ram/CHANNELS_NUMBER,
+  BITSIZE_ready = 1,
+  BITSIZE_Rdata = BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
+  BITSIZE_tag = BITSIZE_Mout_tag/CHANNELS_NUMBER,
+  BITSIZE_S_Rdata = BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
+  BITSIZE_S_ready = 1,
+  SLAVE_VALID = BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram;
+
+genvar i;
+integer dump_file, ramulator_profile_file, ramulator_debug_file;
+wire [BITSIZE_M_DataRdy-1:0] _M_DataRdy, _M_DataRdy_reg;
+wire [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
+wire [BITSIZE_M_tag-1:0] _M_tag;
+
+assign S_oe_ram = Mout_oe_ram;
+assign S_we_ram = Mout_we_ram;
+assign S_addr_ram = Mout_addr_ram;
+assign S_data_ram_size = Mout_data_ram_size;
+assign S_Wdata_ram = Mout_Wdata_ram;
+assign M_DataRdy = _M_DataRdy;
+assign M_Rdata_ram = _M_Rdata_ram;
+assign M_tag = _M_tag;
+
+generate
+  if(RAMULATOR_PROFILE)
+  begin
+    initial
+    begin
+      ramulator_profile_file = $fopen(RAMULATOR_PROFILE_FILE, &quot;w&quot;);
+      $fwrite(ramulator_profile_file, &quot;Cycle,Channel,Operation,Address,Bitwidth,Data,Latency,Mode\n&quot;);
+    end
+  end
+
+  if(RAMULATOR_DEBUG)
+  begin
+    initial
+    begin
+      ramulator_debug_file = $fopen(RAMULATOR_DEBUG_FILE, &quot;w&quot;);
+      $fwrite(ramulator_debug_file, &quot;[RAMULATOR_INTEGRATED] Enhanced testbench initialized\n&quot;);
+      $fwrite(ramulator_debug_file, &quot;[RAMULATOR_INTEGRATED] Mode: Realistic (Ramulator)\n&quot;);
+      $display(&quot;[RAMULATOR_INTEGRATED] Memory simulation mode: Realistic (Ramulator)&quot;);
+    end
+  end
+
+  if(MEM_DUMP)
+  begin
+    initial
+    begin
+      dump_file = $fopen(MEM_DUMP_FILE, &quot;w&quot;);
+      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data,Mode\n&quot;);
+    end
+
+    always@(posedge clock)
+    begin
+      if(done_port)
+      begin
+        $fflush(dump_file);
+        if(RAMULATOR_PROFILE) $fflush(ramulator_profile_file);
+        if(RAMULATOR_DEBUG)
+        begin
+          $fwrite(ramulator_debug_file, &quot;[RAMULATOR_INTEGRATED] Simulation completed\n&quot;);
+          $fflush(ramulator_debug_file);
+        end
+      end
+    end
+  end
+endgenerate
+
+if_utils #(index, BITSIZE_Rdata) m_utils();
+
+// Ramulator2 clock synchronization - advance memory system on each clock
+reg [63:0] ramulator_cycle_counter = 0;
+always @(posedge clock) begin
+  if(reset == 1'b0) begin
+    ramulator_cycle_counter &lt;= 0;
+  end
+  else begin
+    ramulator_cycle_counter &lt;= ramulator_cycle_counter + 1;
+  end
+end
+
+generate
+  for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
+  begin : channel
+    wire [BITSIZE_oe-1:0] oe;
+    wire [BITSIZE_we-1:0] we;
+    ptr_t Waddr, Raddr;
+    shortint unsigned Wsize;
+    wire [BITSIZE_Wdata-1:0] Wdata;
+    reg [BITSIZE_ready-1:0] Wready, Rready, Wready_reg;
+    reg [BITSIZE_Rdata-1:0] Rdata;
+    reg [63:0] cycle_counter;
+    reg [31:0] read_count, write_count;
+
+    // Monotonic counters for outstanding request tracking (no blocking assignment needed)
+    reg [15:0] total_issued, total_completed;
+    wire [15:0] outstanding_count;
+    assign outstanding_count = total_issued - total_completed;
+    reg [63:0] idle_cycles;  // Count cycles when no requests outstanding
+
+    // Tag-based tracking for accurate per-request latency with multiple outstanding requests
+    reg [63:0] issue_cycles [0:65535];  // Map tag[15:0] -> cycle when request was issued
+    reg [BITSIZE_addr-1:0] issue_addrs [0:65535];  // Map tag[15:0] -> request address
+
+    // Bus tag echo: save request tag, return it with response (for pipelined multi-thread support)
+    reg [BITSIZE_tag-1:0] Rtag, Wtag;
+
+    // Tag map: maps driver tag[15:0] -> DUT bus tag for outstanding Ramulator requests.
+    // Ramulator may reorder completions, so we index by driver tag (not FIFO).
+    // Driver tags are GLOBAL (shared across all channels) and monotonically
+    // increasing: 8-bit indexing aliased two same-channel reads outstanding more
+    // than 256 global issues apart, misrouting the response (wrong dest/selector)
+    // and losing the thread wakeup. 16 bits makes aliasing impossible in practice
+    // (a read never stays outstanding across 65536 global issues).
+    reg [BITSIZE_tag-1:0] tag_map [0:65535];
+    wire [BITSIZE_tag-1:0] ch_M_tag;
+    assign ch_M_tag = Wtag | Rtag;
+    assign _M_tag[BITSIZE_tag*i+:BITSIZE_tag] = ch_M_tag;
+
+    if(MEM_DELAY_WRITE == 1)
+    begin
+      always@(posedge clock)
+      begin
+        Wready_reg &lt;= Wready;
+      end
+    end
+    else
+    begin
+      assign Wready_reg = Wready;
+    end
+
+    // MDPI non-blocking interface: always accept requests, no back-pressure
+    assign Mout_back_pressure[i] = 1'b0;
+
+    // Statistics tracking block - only manages counters it exclusively owns
+    always @(posedge clock)
+    begin
+      if(1RESET_VALUE)
+      begin
+        cycle_counter &lt;= 0;
+        read_count &lt;= 0;
+        write_count &lt;= 0;
+      end
+      else
+      begin
+        cycle_counter &lt;= cycle_counter + 1;
+        if(oe &amp;&amp; base_addr &lt;= Raddr) read_count &lt;= read_count + 1;
+        if(we &amp;&amp; base_addr &lt;= Waddr) write_count &lt;= write_count + 1;
+      end
+    end
+
+    // Direct connection - no queue needed for MDPI non-blocking interface
+    assign oe = Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe];
+    assign Raddr = Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr];
+
+    assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1'b1);
+    assign _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready] = Wready_reg | Rready;
+    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1'b1}});
+
+    begin : read_channel
+      // Cycle-accurate Ramulator2 timing: separate request issuance from completion
+      always@(posedge clock)
+      begin : read_channel_always
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        automatic logic [4095:0] dpi_data;
+        automatic int request_result;
+        automatic int completed_driver_tag;
+
+        // One-cycle pulse: reset every cycle, set when completion arrives
+        Rready &lt;= 0;
+        Rdata &lt;= 0;
+        Rtag &lt;= 0;
+
+        if(1RESET_VALUE)
+        begin
+          total_issued &lt;= 0;
+          total_completed &lt;= 0;
+          idle_cycles &lt;= 0;
+        end
+        else
+        begin
+          // Count idle cycles only when truly idle (no outstanding reads AND no active writes)
+          // When has_any_activity is true, the global state() tick already advances Ramulator
+          if(outstanding_count == 0 &amp;&amp; !has_any_activity)
+            idle_cycles &lt;= idle_cycles + 1;
+
+          // Issue new read request (accept every cycle oe is high - pipelined bus protocol)
+          if(oe &amp;&amp; base_addr &lt;= Raddr)
+          begin
+            if(outstanding_count == 0 &amp;&amp; idle_cycles &gt; 0 &amp;&amp; !has_any_activity)
+            begin
+              // Fast-forward idle cycles only when NO channels have any activity
+              void'(m_utils.state(32'h80000000 | idle_cycles));
+              idle_cycles &lt;= 0;
+            end
+
+            request_result = m_read_request(index, BITSIZE_Rdata, Raddr, i[7:0]);
+            if(request_result &gt; 0)
+            begin
+              total_issued &lt;= total_issued + 1;
+
+              // Map driver tag -> DUT bus tag (Ramulator may reorder completions)
+              tag_map[request_result[15:0]] &lt;= Mout_tag[BITSIZE_tag*i+:BITSIZE_tag];
+
+              // Store timing info by tag for accurate latency calculation
+              issue_cycles[request_result[15:0]] &lt;= cycle_counter;
+              issue_addrs[request_result[15:0]] &lt;= Raddr;
+
+              if(RAMULATOR_DEBUG)
+              begin
+                $fwrite(ramulator_debug_file, &quot;[RAMULATOR_INTEGRATED] Cycle %0d: Issued read request tag %0d to addr 0x%h\n&quot;,
+                       cycle_counter, request_result, Raddr);
+              end
+            end
+            else
+            begin
+              if(RAMULATOR_DEBUG)
+              begin
+                $fwrite(ramulator_debug_file, &quot;[RAMULATOR_INTEGRATED] Cycle %0d: Read request rejected (Ramulator2 buffer full)\n&quot;, cycle_counter);
+              end
+            end
+          end
+
+          // Check for completion of outstanding request (every cycle)
+          // Skip polling when a write is active: both Wready and Rready in
+          // the same cycle would corrupt M_tag (ch_M_tag = Wtag | Rtag).
+          // The completion stays in the driver's queue until next cycle.
+          if(outstanding_count &gt; 0 &amp;&amp; !(we &amp;&amp; base_addr &lt;= Waddr))
+          begin
+            completed_driver_tag = m_read_complete_ch(index, i[7:0], dpi_data);
+            if(completed_driver_tag &gt; 0)
+            begin
+              data = dpi_data[BITSIZE_Rdata-1:0];
+              Rdata &lt;= data;
+              Rready &lt;= 1;
+              Rtag &lt;= tag_map[completed_driver_tag[15:0]];  // Look up DUT tag by driver tag
+              total_completed &lt;= total_completed + 1;
+
+              if(RAMULATOR_PROFILE) $fwrite(ramulator_profile_file, &quot;%0d,%0d,READ,0x%X,%0d,0x%X,-,REALISTIC\n&quot;, cycle_counter, i, Raddr, BITSIZE_Rdata, data);
+              if(RAMULATOR_DEBUG)
+              begin
+                $fwrite(ramulator_debug_file, &quot;[RAMULATOR_INTEGRATED] Cycle %0d: Read completed (driver_tag=%0d), data=0x%X\n&quot;,
+                       cycle_counter, completed_driver_tag, data);
+              end
+            end
+          end
+        end
+      end
+    end
+
+    // Direct write connections for MDPI
+    assign we = Mout_we_ram[BITSIZE_we*i+:BITSIZE_we];
+    assign Waddr = Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr];
+    assign Wsize = {{16-BITSIZE_Wsize{1'b0}}, Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize]};
+    assign Wdata = Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata];
+
+    // MDPI write channel - Ramulator DPI-C write request
+    begin : write_channel
+      always@(posedge clock)
+      begin : write_channel_always
+        automatic logic [4095:0] dpi_data;
+        Wready &lt;= 0;
+        Wtag &lt;= 0;
+        if(we &amp;&amp; base_addr &lt;= Waddr)
+        begin
+          dpi_data = {{4096-BITSIZE_Wdata{1'b0}}, Wdata};
+          if(m_write_request(index, dpi_data, BITSIZE_Wdata, Waddr, 0) &gt; 0)
+          begin
+            Wready &lt;= 1;
+            Wtag &lt;= Mout_tag[BITSIZE_tag*i+:BITSIZE_tag];
+            if(MEM_DUMP) $fwrite(dump_file, &quot;%0d,w,0x%X,%0d,0x%X,REALISTIC\n&quot;, i, Waddr, Wsize, Wdata);
+            if(RAMULATOR_PROFILE) $fwrite(ramulator_profile_file, &quot;%0d,%0d,WRITE,0x%X,%0d,0x%X,-,REALISTIC\n&quot;, cycle_counter, i, Waddr, Wsize, Wdata);
+          end
+        end
+      end
+    end
+
+    always @(posedge clock)
+    begin
+      if (we &amp; oe)
+      begin
+        $display(&quot;ERROR - Mout_we_ram and Mout_oe_ram both enabled on channel %0d!&quot;, i);
+        $finish;
+      end
+    end
+
+    if(RAMULATOR_DEBUG)
+    begin
+      always @(posedge clock)
+      begin
+        if(cycle_counter % 10000 == 0 &amp;&amp; cycle_counter &gt; 0)
+        begin
+          $fwrite(ramulator_debug_file, &quot;[RAMULATOR_INTEGRATED] Progress: Cycle %0d, Ch:%0d Reads:%0d Writes:%0d Mode:Realistic\n&quot;, cycle_counter, i, read_count, write_count);
+        end
+      end
+    end
+  end
+endgenerate
+
+// Global multi-channel coordination (prevents race conditions)
+wire has_any_outstanding;
+wire has_any_writing;
+wire has_any_activity;
+reg global_idle_consumed;
+
+// Simple scalable approach using packed array and reduction operators
+wire [CHANNELS_NUMBER-1:0] channel_busy;
+wire [CHANNELS_NUMBER-1:0] channel_writing;
+genvar j;
+generate
+  for(j = 0; j &lt; CHANNELS_NUMBER; j++) begin : check_busy
+    assign channel_busy[j] = (channel[j].outstanding_count &gt; 0);
+    assign channel_writing[j] = (channel[j].we &amp;&amp; base_addr &lt;= channel[j].Waddr);
+  end
+endgenerate
+
+// Clean reduction OR - works for any number of channels automatically
+assign has_any_outstanding = |channel_busy;
+assign has_any_writing = |channel_writing;
+assign has_any_activity = has_any_outstanding | has_any_writing;
+
+// Global clock coordination - exactly one state() call per cycle
+// Must advance Ramulator during both read AND write phases to prevent deadlock:
+// Without ticking during write-only bursts, Ramulator's internal buffers fill up,
+// writes get rejected, and the hardware stalls indefinitely.
+always @(posedge clock) begin
+  global_idle_consumed &lt;= 1'b0;  // Reset flag each cycle
+
+  if(has_any_activity) begin
+    // Active requests or writes: advance Ramulator exactly 1 cycle
+    void'(m_utils.state(32'h80000001));  // Single coordinated tick
+  end
+end
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchMEMRamulatorIntegratedNoC</name>
+      <circuit>
+        <module_o id="TestbenchMEMRamulatorIntegratedNoC">
+          <description>Testbench for Ramulator2 with NoC banked memory (M_back_pressure aware)</description>
+          <copyright>Copyright (C) 2023-2025 Politecnico di Milano</copyright>
+          <authors>Jesun Firoz &lt;jesun.firoz@pnnl.gov&gt;</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="TestbenchMEMRamulatorIntegratedNoC"/>
+          <parameter name="index">0</parameter>
+          <parameter name="MEM_DELAY_READ">2</parameter>
+          <parameter name="MEM_DELAY_WRITE">1</parameter>
+          <parameter name="EMULATE_BRAM">0</parameter>
+          <parameter name="base_addr">1073741824</parameter>
+          <parameter name="MEM_DUMP">0</parameter>
+          <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_PROFILE">1</parameter>
+          <parameter name="RAMULATOR_PROFILE_FILE">&quot;&quot;ramulator_profile.csv&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_DEBUG">1</parameter>
+          <parameter name="RAMULATOR_DEBUG_FILE">&quot;&quot;ramulator_debug.log&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_MODE">1</parameter>
+          <parameter name="QUEUE_SIZE">4</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="done_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="M_DataRdy" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_Rdata_ram" dir="OUT" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="M_back_pressure" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="M_tag" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_oe_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_we_ram" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_addr_ram" dir="IN" is_memory="1" is_master="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_data_ram_size" dir="IN" is_memory="1" is_master="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="Mout_Wdata_ram" dir="IN" is_memory="1" is_master="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="Mout_back_pressure" dir="OUT" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Mout_tag" dir="IN" is_memory="1" is_master="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="if_utils"
+            LIBRARY="TestbenchMEMRamulatorIntegratedNoC index MEM_DELAY_READ MEM_DELAY_WRITE EMULATE_BRAM base_addr MEM_DUMP MEM_DUMP_FILE RAMULATOR_PROFILE RAMULATOR_PROFILE_FILE RAMULATOR_DEBUG RAMULATOR_DEBUG_FILE RAMULATOR_MODE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            VERILOG_PROVIDED="
+import &quot;DPI-C&quot; function int m_read_request (input byte unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete (input byte unsigned id, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_read_complete_ch (input byte unsigned id, input byte unsigned channel, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_write_request (input byte unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+
+function automatic integer log2;
+  input integer value;
+  `ifdef _SIM_HAVE_CLOG2
+    log2 = $clog2(value);
+  `else
+    automatic integer temp_value = value-1;
+    for (log2=0; temp_value &gt; 0; log2=log2+1)
+      temp_value = temp_value &gt;&gt; 1;
+  `endif
+endfunction
+
+localparam
+  CHANNELS_NUMBER = BITSIZE_Mout_oe_ram,
+  BITSIZE_oe = 1,
+  BITSIZE_we = 1,
+  BITSIZE_addr = BITSIZE_Mout_addr_ram/CHANNELS_NUMBER,
+  BITSIZE_Wsize = BITSIZE_Mout_data_ram_size/CHANNELS_NUMBER,
+  BITSIZE_Wdata = BITSIZE_Mout_Wdata_ram/CHANNELS_NUMBER,
+  BITSIZE_ready = 1,
+  BITSIZE_Rdata = BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
+  BITSIZE_tag = BITSIZE_Mout_tag/CHANNELS_NUMBER,
+  BITSIZE_S_Rdata = BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
+  BITSIZE_S_ready = 1,
+  SLAVE_VALID = BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram;
+
+genvar i;
+integer dump_file, ramulator_profile_file, ramulator_debug_file;
+wire [BITSIZE_M_DataRdy-1:0] _M_DataRdy, _M_DataRdy_reg;
+wire [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
+wire [BITSIZE_M_tag-1:0] _M_tag;
+
+assign S_oe_ram = Mout_oe_ram;
+assign S_we_ram = Mout_we_ram;
+assign S_addr_ram = Mout_addr_ram;
+assign S_data_ram_size = Mout_data_ram_size;
+assign S_Wdata_ram = Mout_Wdata_ram;
+assign M_DataRdy = _M_DataRdy;
+assign M_Rdata_ram = _M_Rdata_ram;
+assign M_tag = _M_tag;
+
+generate
+  if(RAMULATOR_PROFILE)
+  begin
+    initial
+    begin
+      ramulator_profile_file = $fopen(RAMULATOR_PROFILE_FILE, &quot;w&quot;);
+      $fwrite(ramulator_profile_file, &quot;Cycle,Channel,Operation,Address,Bitwidth,Data,Latency,Mode\n&quot;);
+    end
+  end
+
+  if(RAMULATOR_DEBUG)
+  begin
+    initial
+    begin
+      ramulator_debug_file = $fopen(RAMULATOR_DEBUG_FILE, &quot;w&quot;);
+      $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Enhanced testbench initialized\n&quot;);
+      $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Mode: Realistic (Ramulator) with NoC back-pressure\n&quot;);
+      $display(&quot;[RAMULATOR_NOC] Memory simulation mode: Realistic (Ramulator) with NoC back-pressure&quot;);
+    end
+  end
+
+  if(MEM_DUMP)
+  begin
+    initial
+    begin
+      dump_file = $fopen(MEM_DUMP_FILE, &quot;w&quot;);
+      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data,Mode\n&quot;);
+    end
+
+    always@(posedge clock)
+    begin
+      if(done_port)
+      begin
+        $fflush(dump_file);
+        if(RAMULATOR_PROFILE) $fflush(ramulator_profile_file);
+        if(RAMULATOR_DEBUG)
+        begin
+          $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Simulation completed\n&quot;);
+          $fflush(ramulator_debug_file);
+        end
+      end
+    end
+  end
+endgenerate
+
+if_utils #(index, BITSIZE_Rdata) m_utils();
+
+// Ramulator2 clock synchronization - advance memory system on each clock
+reg [63:0] ramulator_cycle_counter = 0;
+always @(posedge clock) begin
+  if(reset == 1'b0) begin
+    ramulator_cycle_counter &lt;= 0;
+  end
+  else begin
+    ramulator_cycle_counter &lt;= ramulator_cycle_counter + 1;
+  end
+end
+
+generate
+  for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
+  begin : channel
+    wire [BITSIZE_oe-1:0] oe;
+    wire [BITSIZE_we-1:0] we;
+    ptr_t Waddr, Raddr;
+    shortint unsigned Wsize;
+    wire [BITSIZE_Wdata-1:0] Wdata;
+    reg [BITSIZE_ready-1:0] Wready, Rready, Wready_reg;
+    reg [BITSIZE_Rdata-1:0] Rdata;
+    reg [63:0] cycle_counter;
+    reg [31:0] read_count, write_count;
+
+    // Monotonic counters for outstanding request tracking (no blocking assignment needed)
+    reg [15:0] total_issued, total_completed;
+    wire [15:0] outstanding_count;
+    assign outstanding_count = total_issued - total_completed;
+    reg [63:0] idle_cycles;  // Count cycles when no requests outstanding
+
+    // Tag-based tracking for accurate per-request latency with multiple outstanding requests
+    reg [63:0] issue_cycles [0:65535];  // Map tag[15:0] -> cycle when request was issued
+    reg [BITSIZE_addr-1:0] issue_addrs [0:65535];  // Map tag[15:0] -> request address
+
+    // Bus tag echo: save request tag, return it with response (for pipelined multi-thread support)
+    reg [BITSIZE_tag-1:0] Rtag, Wtag;
+
+    // Tag map: maps driver tag[15:0] -> DUT bus tag for outstanding Ramulator requests.
+    // Ramulator may reorder completions, so we index by driver tag (not FIFO).
+    // Driver tags are GLOBAL (shared across all channels) and monotonically
+    // increasing: 8-bit indexing aliased two same-channel reads outstanding more
+    // than 256 global issues apart, misrouting the response (wrong dest/selector)
+    // and losing the thread wakeup. 16 bits makes aliasing impossible in practice
+    // (a read never stays outstanding across 65536 global issues).
+    reg [BITSIZE_tag-1:0] tag_map [0:65535];
+    wire [BITSIZE_tag-1:0] ch_M_tag;
+    assign ch_M_tag = Wtag | Rtag;
+    assign _M_tag[BITSIZE_tag*i+:BITSIZE_tag] = ch_M_tag;
+
+    // Response buffering: M_back_pressure[i] is the response NoC's input
+    // back-pressure (noc_from_memory i_bp). When high, the response NoC
+    // can't accept data — pushing valid data when i_bp is high causes the
+    // io_node6 to silently drop it. We must buffer completed reads/writes
+    // and only assert Rready/Wready when M_back_pressure[i] is low.
+    // Response delivery FIFOs (depth 256). Read data and write acks both travel
+    // the bufferless response NoC, which silently drops anything pushed while
+    // M_back_pressure[i] is high. We therefore NEVER stall the request path on
+    // response state; every completed read / accepted write ack is queued here
+    // and drained at most one per cycle when the response NoC can accept it.
+    // 256 = the 8-bit driver-tag space, so at most 256 reads can be outstanding
+    // and the read FIFO can never overflow; the write FIFO matches. These are
+    // behavioral (sim-only) FIFOs — this is a co-sim testbench, not synthesized.
+    localparam RFIFO_DEPTH = 256;
+    reg [BITSIZE_Rdata-1:0] rfifo_data [0:RFIFO_DEPTH-1];
+    reg [BITSIZE_tag-1:0]   rfifo_tag  [0:RFIFO_DEPTH-1];
+    reg [7:0] rfifo_head, rfifo_tail;
+    reg [8:0] rfifo_count;
+    reg [BITSIZE_tag-1:0]   wfifo_tag  [0:RFIFO_DEPTH-1];
+    reg [7:0] wfifo_head, wfifo_tail;
+    reg [8:0] wfifo_count;
+
+    // Skid-buffer delivery discipline against the response NoC's COMBINATIONAL
+    // inject back-pressure (io_node6: i_bp = i_valid &amp;&amp; ...). M_back_pressure[i]
+    // means &quot;the flit presented THIS cycle is rejected&quot;; it can only be high
+    // while we assert Rready/Wready. The registered Rready/Rdata/Rtag/Wready/
+    // Wtag outputs form the skid stage: on rejection they are HELD unchanged and
+    // re-presented next cycle (lossless retry); a FIFO head is advanced only
+    // when a new flit is loaded into the free output stage, so nothing is ever
+    // dequeued before the NoC has accepted the previous flit. Write acks take
+    // priority (reads wait) so Rready and Wready — which share
+    // ch_M_tag = Wtag|Rtag and M_DataRdy — can never assert in the same cycle.
+    // M_back_pressure[i] is consumed ONLY inside sequential always blocks, so no
+    // combinational i_bp &lt;-&gt; i_valid loop is created.
+    wire out_valid = (Rready != 0) || (Wready != 0);
+    wire rejected  = out_valid &amp;&amp; M_back_pressure[i];
+    wire wack_load = !rejected &amp;&amp; (wfifo_count != 0);
+    wire rd_load   = !rejected &amp;&amp; !wack_load &amp;&amp; (rfifo_count != 0);
+
+    if(MEM_DELAY_WRITE == 1)
+    begin
+      always@(posedge clock)
+      begin
+        Wready_reg &lt;= Wready;
+      end
+    end
+    else
+    begin
+      assign Wready_reg = Wready;
+    end
+
+    // Request-path back-pressure: held at 0 (always accept requests from the
+    // request NoC). The response FIFOs above can never overflow — the read FIFO
+    // is bounded by the 256-entry driver-tag space and the write FIFO matches —
+    // so the request path never needs to stall on response state. Decoupling
+    // request acceptance from response drain is exactly what prevents the
+    // multi-channel deadlock: tying Mout_back_pressure to a pending-response flag
+    // couples the request NoC to the response NoC, and because the DUT core gates
+    // its own request injection on response acceptance, that closes a circular
+    // wait (request held -> core can't inject -> core won't drain the response
+    // NoC -> M_back_pressure[i] stays high -> request stays held, forever).
+    // M_back_pressure[i] (the response NoC i_bp) still affects DELIVERY only:
+    // a rejected flit is held in the registered skid stage and retried, so
+    // io_node6 never silently drops a response.
+    assign Mout_back_pressure[i] = 1'b0;
+
+    // Statistics tracking block - only manages counters it exclusively owns
+    always @(posedge clock)
+    begin
+      if(1RESET_VALUE)
+      begin
+        cycle_counter &lt;= 0;
+        read_count &lt;= 0;
+        write_count &lt;= 0;
+      end
+      else
+      begin
+        cycle_counter &lt;= cycle_counter + 1;
+        if(oe &amp;&amp; base_addr &lt;= Raddr) read_count &lt;= read_count + 1;
+        if(we &amp;&amp; base_addr &lt;= Waddr) write_count &lt;= write_count + 1;
+      end
+    end
+
+    // Direct connection - no queue needed for MDPI non-blocking interface
+    assign oe = Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe];
+    assign Raddr = Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr];
+
+    assign _M_DataRdy[BITSIZE_ready*i+:BITSIZE_ready] = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1'b1);
+    assign _M_DataRdy_reg[BITSIZE_ready*i+:BITSIZE_ready] = Wready_reg | Rready;
+    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1'b1}});
+
+    begin : read_channel
+      // Cycle-accurate Ramulator2 timing. Issuance and completion are fully
+      // decoupled from delivery: requests are accepted and completions are
+      // polled EVERY cycle (never gated on response-buffer state, so a request
+      // can never be dropped). Each completed read is queued in rfifo (or, when
+      // the FIFO is empty and the output stage is free, bypassed straight into
+      // it) and drained one per cycle by the arbiter (rd_load) when the skid
+      // output stage is free to take a new flit.
+      always@(posedge clock)
+      begin : read_channel_always
+        automatic reg [BITSIZE_Rdata-1:0] data;
+        automatic logic [4095:0] dpi_data;
+        automatic int request_result;
+        automatic int completed_driver_tag;
+        automatic reg do_push;
+        do_push = 1'b0;
+
+        // Skid output stage: when this cycle's flit is rejected (rejected==1),
+        // HOLD Rready/Rdata/Rtag unchanged so the same flit is re-presented next
+        // cycle. Otherwise default-clear and (re)load below.
+        if(!rejected)
+        begin
+          Rready &lt;= 0;
+          Rdata &lt;= 0;
+          Rtag &lt;= 0;
+        end
+
+        if(1RESET_VALUE)
+        begin
+          total_issued &lt;= 0;
+          total_completed &lt;= 0;
+          idle_cycles &lt;= 0;
+          rfifo_head &lt;= 0;
+          rfifo_tail &lt;= 0;
+          rfifo_count &lt;= 0;
+          Rready &lt;= 0;
+          Rdata &lt;= 0;
+          Rtag &lt;= 0;
+        end
+        else
+        begin
+          // Count idle cycles only when truly idle: no outstanding reads, no
+          // active write, and nothing queued for delivery (has_any_activity
+          // includes the FIFOs). The global state() tick advances Ramulator
+          // whenever has_any_activity is true.
+          if(outstanding_count == 0 &amp;&amp; !has_any_activity)
+            idle_cycles &lt;= idle_cycles + 1;
+
+          // Issue new read request (accept every cycle oe is high - pipelined bus protocol)
+          if(oe &amp;&amp; base_addr &lt;= Raddr)
+          begin
+            if(outstanding_count == 0 &amp;&amp; idle_cycles &gt; 0 &amp;&amp; !has_any_activity)
+            begin
+              // Fast-forward idle cycles only when NO channels have any activity
+              void'(m_utils.state(32'h80000000 | idle_cycles));
+              idle_cycles &lt;= 0;
+            end
+
+            request_result = m_read_request(index, BITSIZE_Rdata, Raddr, i[7:0]);
+            if(request_result &gt; 0)
+            begin
+              total_issued &lt;= total_issued + 1;
+
+              // Map driver tag -> DUT bus tag (Ramulator may reorder completions)
+              tag_map[request_result[15:0]] &lt;= Mout_tag[BITSIZE_tag*i+:BITSIZE_tag];
+
+              // Store timing info by tag for accurate latency calculation
+              issue_cycles[request_result[15:0]] &lt;= cycle_counter;
+              issue_addrs[request_result[15:0]] &lt;= Raddr;
+
+              if(RAMULATOR_DEBUG)
+              begin
+                $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Cycle %0d: Issued read request tag %0d to addr 0x%h\n&quot;,
+                       cycle_counter, request_result, Raddr);
+              end
+            end
+            else
+            begin
+              if(RAMULATOR_DEBUG)
+              begin
+                $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Cycle %0d: Read request rejected (Ramulator2 buffer full)\n&quot;, cycle_counter);
+              end
+            end
+          end
+
+          // Poll for completion every cycle and ENQUEUE it for delivery. Polling
+          // no longer needs to skip write-active cycles: it only pushes to the
+          // FIFO (never asserts Rready), and the arbiter below guarantees Rready
+          // and Wready never coincide.
+          if(outstanding_count &gt; 0)
+          begin
+            completed_driver_tag = m_read_complete_ch(index, i[7:0], dpi_data);
+            if(completed_driver_tag &gt; 0)
+            begin
+              data = dpi_data[BITSIZE_Rdata-1:0];
+              total_completed &lt;= total_completed + 1;
+
+              if(!rejected &amp;&amp; !wack_load &amp;&amp; rfifo_count == 0)
+              begin
+                // Empty-FIFO bypass: the skid output stage is free this edge and
+                // nothing is queued ahead of us, so hand the fresh completion
+                // straight to the registered output stage (still one registered
+                // stage - never a same-cycle combinational handoff).
+                Rdata &lt;= data;
+                Rready &lt;= 1;
+                Rtag &lt;= tag_map[completed_driver_tag[15:0]];
+              end
+              else
+              begin
+                if(rfifo_count == RFIFO_DEPTH)
+                begin
+                  $display(&quot;ERROR - read response FIFO overflow on channel %0d&quot;, i);
+                  $finish;
+                end
+                rfifo_data[rfifo_tail] &lt;= data;
+                rfifo_tag[rfifo_tail]  &lt;= tag_map[completed_driver_tag[15:0]];
+                rfifo_tail &lt;= rfifo_tail + 8'd1;
+                do_push = 1'b1;
+              end
+
+              if(RAMULATOR_PROFILE) $fwrite(ramulator_profile_file, &quot;%0d,%0d,READ,0x%X,%0d,0x%X,-,REALISTIC\n&quot;, cycle_counter, i, Raddr, BITSIZE_Rdata, data);
+              if(RAMULATOR_DEBUG)
+              begin
+                $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Cycle %0d: Read completed (driver_tag=%0d), data=0x%X\n&quot;,
+                       cycle_counter, completed_driver_tag, data);
+              end
+            end
+          end
+
+          // Load one queued read response into the free skid output stage.
+          // rd_load requires !rejected (output stage free next edge) and
+          // rfifo_count != 0 (registered), so the head is advanced only when the
+          // flit moves into the output register - a rejected flit is never lost
+          // and a queued flit is never skipped (head != tail while count &gt; 0, so
+          // the pop read and a concurrent push write hit different entries).
+          if(rd_load)
+          begin
+            Rdata &lt;= rfifo_data[rfifo_head];
+            Rready &lt;= 1;
+            Rtag &lt;= rfifo_tag[rfifo_head];
+            rfifo_head &lt;= rfifo_head + 8'd1;
+            if(RAMULATOR_DEBUG)
+              $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Cycle %0d: Delivered read response, data=0x%X\n&quot;,
+                     cycle_counter, rfifo_data[rfifo_head]);
+          end
+
+          // Net occupancy update (a push and a pop may both happen this cycle).
+          rfifo_count &lt;= rfifo_count + (do_push ? 9'd1 : 9'd0) - (rd_load ? 9'd1 : 9'd0);
+        end
+      end
+    end
+
+    // Direct write connections for MDPI
+    assign we = Mout_we_ram[BITSIZE_we*i+:BITSIZE_we];
+    assign Waddr = Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr];
+    assign Wsize = {{16-BITSIZE_Wsize{1'b0}}, Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize]};
+    assign Wdata = Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata];
+
+    // MDPI write channel. The DPI write commits the data immediately; only the
+    // ack travels the response NoC. Writes are accepted EVERY cycle we is high
+    // (never stalled on response state) and their acks are queued in wfifo,
+    // drained one per cycle by wack_load, which has priority over read
+    // delivery so Rready/Wready never coincide.
+    begin : write_channel
+      always@(posedge clock)
+      begin : write_channel_always
+        automatic logic [4095:0] dpi_data;
+        automatic reg do_wpush;
+        do_wpush = 1'b0;
+        // Skid discipline: if the presented flit was rejected this cycle, HOLD
+        // Wready/Wtag (skip the default clears) and retry next cycle.
+        if(!rejected)
+        begin
+          Wready &lt;= 0;
+          Wtag &lt;= 0;
+        end
+
+        if(1RESET_VALUE)
+        begin
+          Wready &lt;= 0;
+          Wtag &lt;= 0;
+          wfifo_head &lt;= 0;
+          wfifo_tail &lt;= 0;
+          wfifo_count &lt;= 0;
+        end
+        else
+        begin
+          // Accept a write every cycle we is high; commit it and queue its ack.
+          if(we &amp;&amp; base_addr &lt;= Waddr)
+          begin
+            dpi_data = {{4096-BITSIZE_Wdata{1'b0}}, Wdata};
+            // Use the actual access size (Mout_data_ram_size), not the full channel
+            // width: sub-word stores (e.g. byte writes) must not clobber neighbours.
+            if(m_write_request(index, dpi_data, Wsize, Waddr, 0) &gt; 0)
+            begin
+              if(wfifo_count == RFIFO_DEPTH)
+              begin
+                $display(&quot;ERROR - write ack FIFO overflow on channel %0d&quot;, i);
+                $finish;
+              end
+              wfifo_tag[wfifo_tail] &lt;= Mout_tag[BITSIZE_tag*i+:BITSIZE_tag];
+              wfifo_tail &lt;= wfifo_tail + 8'd1;
+              do_wpush = 1'b1;
+              if(RAMULATOR_DEBUG) $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Cycle %0d: Write accepted ch=%0d tag=%0d addr=0x%h wfifo_count=%0d bp=%0d\n&quot;, cycle_counter, i, Mout_tag[BITSIZE_tag*i+:BITSIZE_tag], Waddr, wfifo_count, M_back_pressure[i]);
+              if(MEM_DUMP) $fwrite(dump_file, &quot;%0d,w,0x%X,%0d,0x%X,REALISTIC\n&quot;, i, Waddr, Wsize, Wdata);
+              if(RAMULATOR_PROFILE) $fwrite(ramulator_profile_file, &quot;%0d,%0d,WRITE,0x%X,%0d,0x%X,-,REALISTIC\n&quot;, cycle_counter, i, Waddr, Wsize, Wdata);
+            end
+          end
+
+          // Load one queued write ack into the free skid output stage (write
+          // acks have priority over read delivery so Rready/Wready never
+          // coincide). wack_load requires !rejected, so the head advances only
+          // when the ack moves into the output register - a rejected ack is
+          // held and retried, never lost.
+          if(wack_load)
+          begin
+            Wready &lt;= 1;
+            Wtag &lt;= wfifo_tag[wfifo_head];
+            wfifo_head &lt;= wfifo_head + 8'd1;
+            if(RAMULATOR_DEBUG) $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Cycle %0d: Write ack delivered ch=%0d tag=%0d wfifo_count=%0d\n&quot;, cycle_counter, i, wfifo_tag[wfifo_head], wfifo_count);
+          end
+
+          wfifo_count &lt;= wfifo_count + (do_wpush ? 9'd1 : 9'd0) - (wack_load ? 9'd1 : 9'd0);
+        end
+      end
+    end
+
+    always @(posedge clock)
+    begin
+      if (we &amp; oe)
+      begin
+        $display(&quot;ERROR - Mout_we_ram and Mout_oe_ram both enabled on channel %0d!&quot;, i);
+        $finish;
+      end
+    end
+
+    if(RAMULATOR_DEBUG)
+    begin
+      always @(posedge clock)
+      begin
+        if(cycle_counter % 10000 == 0 &amp;&amp; cycle_counter &gt; 0)
+        begin
+          $fwrite(ramulator_debug_file, &quot;[RAMULATOR_NOC] Progress: Cycle %0d, Ch:%0d Reads:%0d Writes:%0d bp=%0d rfifo=%0d wfifo=%0d outst=%0d Mode:Realistic\n&quot;, cycle_counter, i, read_count, write_count, M_back_pressure[i], rfifo_count, wfifo_count, outstanding_count);
+        end
+      end
+    end
+  end
+endgenerate
+
+// Global multi-channel coordination (prevents race conditions)
+wire has_any_outstanding;
+wire has_any_writing;
+wire has_any_pending;
+wire has_any_activity;
+reg global_idle_consumed;
+
+// Simple scalable approach using packed array and reduction operators
+wire [CHANNELS_NUMBER-1:0] channel_busy;
+wire [CHANNELS_NUMBER-1:0] channel_writing;
+wire [CHANNELS_NUMBER-1:0] channel_pending;
+genvar j;
+generate
+  for(j = 0; j &lt; CHANNELS_NUMBER; j++) begin : check_busy
+    assign channel_busy[j] = (channel[j].outstanding_count &gt; 0);
+    assign channel_writing[j] = (channel[j].we &amp;&amp; base_addr &lt;= channel[j].Waddr);
+    assign channel_pending[j] = (channel[j].rfifo_count != 0) | (channel[j].wfifo_count != 0);
+  end
+endgenerate
+
+// Clean reduction OR - works for any number of channels automatically
+assign has_any_outstanding = |channel_busy;
+assign has_any_writing = |channel_writing;
+assign has_any_pending = |channel_pending;
+assign has_any_activity = has_any_outstanding | has_any_writing | has_any_pending;
+
+// Global clock coordination - exactly one state() call per cycle
+// Must advance Ramulator during both read AND write phases to prevent deadlock:
+// Without ticking during write-only bursts, Ramulator's internal buffers fill up,
+// writes get rejected, and the hardware stalls indefinitely.
+// Also tick while pending responses wait for back-pressure to clear.
+always @(posedge clock) begin
+  global_idle_consumed &lt;= 1'b0;  // Reset flag each cycle
+
+  if(has_any_activity) begin
+    // Active requests or writes: advance Ramulator exactly 1 cycle
+    void'(m_utils.state(32'h80000001));  // Single coordinated tick
+  end
+end
+"/>
+        </module_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>TestbenchMEMAXIRamulatorIntegrated</name>
+      <circuit>
+        <module_o id="TestbenchMEMAXIRamulatorIntegrated">
+          <description>AXI4 testbench with Ramulator2 integration for realistic memory timing (burst=1)</description>
+          <copyright>Copyright (C) 2023-2025 Politecnico di Milano</copyright>
+          <authors>Jesun Firoz &lt;jesun.firoz@pnnl.gov&gt;</authors>
+          <license>MIT</license>
+          <structural_type_descriptor id_type="TestbenchMEMAXIRamulatorIntegrated"/>
+          <parameter name="index">0</parameter>
+          <parameter name="AXI_PORT_ID">0</parameter>
+          <parameter name="QUEUE_SIZE">4</parameter>
+          <parameter name="RAMULATOR_PROFILE">1</parameter>
+          <parameter name="RAMULATOR_PROFILE_FILE">&quot;&quot;ramulator_axi_profile.csv&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_DEBUG">1</parameter>
+          <parameter name="RAMULATOR_DEBUG_FILE">&quot;&quot;ramulator_axi_debug.log&quot;&quot;</parameter>
+          <parameter name="RAMULATOR_MODE">1</parameter>
+          <parameter name="base_addr">1073741824</parameter>
+          <parameter name="MEM_DUMP">0</parameter>
+          <parameter name="MEM_DUMP_FILE">&quot;&quot;memdump.csv&quot;&quot;</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="arid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="araddr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="arlen" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="arsize" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="arburst" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="arlock" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="arcache" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="arprot" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="arqos" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="arregion" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="aruser" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="arvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="arready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="rid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="rdata" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="rresp" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="ruser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="rlast" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="rvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="rready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="awid" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="awaddr" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="awlen" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="awsize" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="awburst" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="awlock" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="awcache" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="awprot" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="3"/>
+          </port_o>
+          <port_o id="awqos" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="awregion" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
+          </port_o>
+          <port_o id="awuser" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="awvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="awready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wdata" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wstrb" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="wlast" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wvalid" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wready" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wuser" dir="IN">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="bid" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+          </port_o>
+          <port_o id="bresp" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="buser" dir="OUT">
+            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="2"/>
+          </port_o>
+          <port_o id="bvalid" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="bready" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality
+            IP_COMPONENT="if_utils"
+            LIBRARY="TestbenchMEMAXIRamulatorIntegrated index AXI_PORT_ID QUEUE_SIZE RAMULATOR_PROFILE RAMULATOR_PROFILE_FILE RAMULATOR_DEBUG RAMULATOR_DEBUG_FILE RAMULATOR_MODE base_addr MEM_DUMP MEM_DUMP_FILE arid araddr arlen arsize arburst arlock arcache arprot arqos arregion aruser rid rdata rresp ruser awid awaddr awlen awsize awburst awlock awcache awprot awqos awregion awuser wdata wstrb wuser bid bresp buser"
+            VERILOG_PROVIDED="
+import &quot;DPI-C&quot; function int m_read_request (input byte unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete (input byte unsigned id, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_read_complete_ch (input byte unsigned id, input byte unsigned channel, output logic [4095:0] data);
+import &quot;DPI-C&quot; function int m_write_request (input byte unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+
+function automatic integer log2;
+  input integer value;
+  `ifdef _SIM_HAVE_CLOG2
+    log2 = $clog2(value);
+  `else
+    automatic integer temp_value = value-1;
+    for (log2=0; temp_value &gt; 0; log2=log2+1)
+      temp_value = temp_value &gt;&gt; 1;
+  `endif
+endfunction
+
+localparam BITSIZE_data = BITSIZE_rdata,
+  BITSIZE_addr = BITSIZE_araddr,
+  BITSIZE_id = BITSIZE_arid;
+
+integer dump_file, ramulator_profile_file, ramulator_debug_file;
+
+if_utils #(index, BITSIZE_data) m_utils();
+
+// Output registers
+reg arready_reg;
+reg [BITSIZE_rid-1:0] rid_reg;
+reg [BITSIZE_rdata-1:0] rdata_reg;
+reg [BITSIZE_rresp-1:0] rresp_reg;
+reg [BITSIZE_ruser-1:0] ruser_reg;
+reg rlast_reg;
+reg rvalid_reg;
+
+reg awready_reg;
+reg wready_reg;
+reg [BITSIZE_bid-1:0] bid_reg;
+reg [BITSIZE_bresp-1:0] bresp_reg;
+reg [BITSIZE_buser-1:0] buser_reg;
+reg bvalid_reg;
+
+assign arready = arready_reg;
+assign rid = rid_reg;
+assign rdata = rdata_reg;
+assign rresp = rresp_reg;
+assign ruser = ruser_reg;
+assign rlast = rlast_reg;
+assign rvalid = rvalid_reg;
+assign awready = awready_reg;
+assign wready = wready_reg;
+assign bid = bid_reg;
+assign bresp = bresp_reg;
+assign buser = buser_reg;
+assign bvalid = bvalid_reg;
+
+// Monotonic counters for outstanding read tracking
+reg [15:0] total_issued, total_completed;
+wire [15:0] outstanding_count;
+assign outstanding_count = total_issued - total_completed;
+reg [63:0] idle_cycles;
+reg [63:0] cycle_counter;
+reg [31:0] read_count, write_count;
+
+// Tag map: maps driver tag[15:0] -&gt; AXI transaction ID for outstanding Ramulator requests.
+// Driver tags are global and monotonically increasing; 16-bit indexing avoids the
+// aliasing that 8-bit indexing allowed for long-outstanding reads.
+reg [BITSIZE_id-1:0] tag_map [0:65535];
+reg [63:0] issue_cycles [0:65535];
+reg [BITSIZE_addr-1:0] issue_addrs [0:65535];
+
+// Pending read response buffer (AXI requires holding RVALID until RREADY)
+reg pending_rvalid;
+reg [BITSIZE_data-1:0] pending_rdata;
+reg [BITSIZE_id-1:0] pending_rid;
+
+// Pending write response buffer (AXI requires holding BVALID until BREADY)
+reg pending_bvalid;
+reg [BITSIZE_id-1:0] pending_bid;
+
+// Activity tracking for Ramulator clock coordination
+wire has_any_outstanding;
+wire has_any_writing;
+wire has_any_pending;
+wire has_any_activity;
+assign has_any_outstanding = (outstanding_count &gt; 0);
+assign has_any_writing = (awvalid &amp;&amp; wvalid &amp;&amp; awready_reg &amp;&amp; wready_reg);
+assign has_any_pending = pending_rvalid | pending_bvalid;
+assign has_any_activity = has_any_outstanding | has_any_writing | has_any_pending;
+
+// Profiling and debug file initialization
+generate
+  if(RAMULATOR_PROFILE)
+  begin
+    initial
+    begin
+      ramulator_profile_file = $fopen(RAMULATOR_PROFILE_FILE, &quot;w&quot;);
+      $fwrite(ramulator_profile_file, &quot;Cycle,Channel,Operation,Address,Bitwidth,Data,Latency,Mode\n&quot;);
+    end
+  end
+
+  if(RAMULATOR_DEBUG)
+  begin
+    initial
+    begin
+      ramulator_debug_file = $fopen(RAMULATOR_DEBUG_FILE, &quot;w&quot;);
+      $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Testbench initialized\n&quot;);
+      $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Mode: Realistic (Ramulator) via AXI4\n&quot;);
+      $display(&quot;[AXI_RAMULATOR] Memory simulation mode: Realistic (Ramulator) via AXI4&quot;);
+    end
+  end
+
+  if(MEM_DUMP)
+  begin
+    initial
+    begin
+      dump_file = $fopen(MEM_DUMP_FILE, &quot;w&quot;);
+      $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data,Mode\n&quot;);
+    end
+
+    final
+    begin
+      $fflush(dump_file);
+      if(RAMULATOR_PROFILE) $fflush(ramulator_profile_file);
+      if(RAMULATOR_DEBUG)
+      begin
+        $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Simulation completed\n&quot;);
+        $fflush(ramulator_debug_file);
+      end
+    end
+  end
+endgenerate
+
+// Cycle counter
+always @(posedge clock) begin
+  if(reset == 1&apos;b0) begin
+    cycle_counter &lt;= 0;
+    read_count &lt;= 0;
+    write_count &lt;= 0;
+  end
+  else begin
+    cycle_counter &lt;= cycle_counter + 1;
+  end
+end
+
+// ============================================================
+// READ PATH: AR channel accept -&gt; m_read_request -&gt; m_read_complete_ch -&gt; R channel
+// ============================================================
+always @(posedge clock) begin : read_path
+  automatic logic [4095:0] dpi_data;
+  automatic int request_result;
+  automatic int completed_driver_tag;
+  automatic reg [BITSIZE_data-1:0] data;
+
+  if(1RESET_VALUE) begin
+    arready_reg &lt;= 0;
+    rvalid_reg &lt;= 0;
+    rdata_reg &lt;= 0;
+    rid_reg &lt;= 0;
+    rresp_reg &lt;= 0;
+    ruser_reg &lt;= 0;
+    rlast_reg &lt;= 0;
+    total_issued &lt;= 0;
+    total_completed &lt;= 0;
+    idle_cycles &lt;= 0;
+    pending_rvalid &lt;= 0;
+    pending_rdata &lt;= 0;
+    pending_rid &lt;= 0;
+  end
+  else begin
+    // -------- R channel: clear when master accepts current response --------
+    if(rvalid_reg &amp;&amp; rready) begin
+      rvalid_reg &lt;= 1&apos;b0;
+      rdata_reg  &lt;= 0;
+      rid_reg    &lt;= 0;
+      rlast_reg  &lt;= 1&apos;b0;
+    end
+
+    // -------- Promote pending buffer to R channel when channel is free -----
+    if(pending_rvalid &amp;&amp; (!rvalid_reg || rready)) begin
+      rvalid_reg     &lt;= 1&apos;b1;
+      rdata_reg      &lt;= pending_rdata;
+      rid_reg        &lt;= pending_rid;
+      rlast_reg      &lt;= 1&apos;b1;
+      rresp_reg      &lt;= 2&apos;b00;
+      pending_rvalid &lt;= 1&apos;b0;
+    end
+
+    // ------- Poll Ramulator for read completions -------
+    // Issue #3 fix: previous guard `!rvalid_reg` was redundant with the same
+    // term in an inner if, making the pending_rvalid buffer branch dead
+    // code. Guarding on `!pending_rvalid` instead makes both routes
+    // reachable: live R channel when free, buffer when master is holding.
+    if(outstanding_count &gt; 0 &amp;&amp; !pending_rvalid) begin
+      // Channel-collision fix: MEM-channel testbenches use driver channels
+      // 0..CHANNELS_NUMBER-1 on the same interface id; sharing channel 0 with
+      // AXI_PORT_ID=0 makes both TBs pop each other's completions from the
+      // shared per-channel FIFO (lost read -> DUT deadlock). Offset the AXI
+      // port into a disjoint channel namespace (0x80 | port).
+      completed_driver_tag = m_read_complete_ch(index, (8'h80 | AXI_PORT_ID[7:0]), dpi_data);
+      if(completed_driver_tag &gt; 0) begin
+        data = dpi_data[BITSIZE_data-1:0];
+        // Issue #2 fix: guard against underflow on a spurious completion.
+        if(total_completed != total_issued)
+          total_completed &lt;= total_completed + 1;
+
+        if(!rvalid_reg || rready) begin
+          // R channel free (or accepted this cycle) -- drive directly
+          rvalid_reg &lt;= 1&apos;b1;
+          rdata_reg  &lt;= data;
+          rid_reg    &lt;= tag_map[completed_driver_tag[15:0]];
+          rlast_reg  &lt;= 1&apos;b1;
+          rresp_reg  &lt;= 2&apos;b00;
+        end
+        else begin
+          // R channel held by master -- stage in pending buffer
+          pending_rvalid &lt;= 1&apos;b1;
+          pending_rdata  &lt;= data;
+          pending_rid    &lt;= tag_map[completed_driver_tag[15:0]];
+        end
+
+        if(RAMULATOR_PROFILE) $fwrite(ramulator_profile_file, &quot;%0d,0,READ,0x%X,%0d,0x%X,-,REALISTIC\n&quot;, cycle_counter, issue_addrs[completed_driver_tag[15:0]], BITSIZE_data, data);
+        if(RAMULATOR_DEBUG) $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Cycle %0d: Read completed (driver_tag=%0d), data=0x%X\n&quot;, cycle_counter, completed_driver_tag, data);
+      end
+    end
+
+    // ------- Accept new AR requests -------
+    if(outstanding_count == 0 &amp;&amp; !has_any_activity)
+      idle_cycles &lt;= idle_cycles + 1;
+
+    // Issue #1 fix: single-source assignment of arready_reg from a complete
+    // decision tree, replacing the previous default-then-override pattern
+    // that drove arready_reg twice within this always block.
+    if(arvalid &amp;&amp; arready_reg) begin
+      if(outstanding_count == 0 &amp;&amp; idle_cycles &gt; 0 &amp;&amp; !has_any_activity) begin
+        void&apos;(m_utils.state(32&apos;h80000000 | idle_cycles));
+        idle_cycles &lt;= 0;
+      end
+
+      request_result = m_read_request(index, BITSIZE_data, araddr, (8'h80 | AXI_PORT_ID[7:0]));
+      if(request_result &gt; 0) begin
+        total_issued &lt;= total_issued + 1;
+        read_count   &lt;= read_count + 1;
+        tag_map[request_result[15:0]]      &lt;= arid;
+        issue_cycles[request_result[15:0]] &lt;= cycle_counter;
+        issue_addrs[request_result[15:0]]  &lt;= araddr;
+        arready_reg &lt;= (outstanding_count &lt; QUEUE_SIZE);
+
+        if(RAMULATOR_DEBUG) $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Cycle %0d: Issued read request tag %0d to addr 0x%h\n&quot;, cycle_counter, request_result, araddr);
+      end
+      else begin
+        // Ramulator buffer full -- deassert arready to stall master next cycle
+        arready_reg &lt;= 1&apos;b0;
+        if(RAMULATOR_DEBUG) $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Cycle %0d: Read request rejected (Ramulator buffer full)\n&quot;, cycle_counter);
+      end
+    end
+    else begin
+      // No AR handshake this cycle -- decide arready purely on queue capacity
+      arready_reg &lt;= (outstanding_count &lt; QUEUE_SIZE);
+    end
+  end
+end
+
+// ============================================================
+// WRITE PATH: AW+W channel accept -&gt; m_write_request -&gt; B channel
+// ============================================================
+always @(posedge clock) begin : write_path
+  automatic logic [4095:0] dpi_data;
+  automatic integer strobe_offset;
+  automatic integer strobe_count;
+  automatic reg [BITSIZE_wdata/8-1:0] strobe_tmp;
+  automatic ptr_t write_addr;
+  automatic shortint unsigned write_bitsize;
+
+  if(1RESET_VALUE) begin
+    awready_reg &lt;= 0;
+    wready_reg &lt;= 0;
+    bvalid_reg &lt;= 0;
+    bid_reg &lt;= 0;
+    bresp_reg &lt;= 0;
+    buser_reg &lt;= 0;
+    pending_bvalid &lt;= 0;
+    pending_bid &lt;= 0;
+  end
+  else begin
+    // ------- B channel handshake and pending delivery -------
+    if(bready &amp;&amp; bvalid_reg) begin
+      // Current response accepted by DUT
+      if(pending_bvalid) begin
+        // Immediately drive pending response on B channel
+        bvalid_reg &lt;= 1;
+        bid_reg &lt;= pending_bid;
+        bresp_reg &lt;= 2&apos;b00;
+        pending_bvalid &lt;= 0;
+      end
+      else begin
+        // No pending, clear B channel
+        bvalid_reg &lt;= 0;
+        bid_reg &lt;= 0;
+      end
+    end
+    else if(!bvalid_reg &amp;&amp; pending_bvalid) begin
+      // B channel free, drive pending response
+      bvalid_reg &lt;= 1;
+      bid_reg &lt;= pending_bid;
+      bresp_reg &lt;= 2&apos;b00;
+      pending_bvalid &lt;= 0;
+    end
+    // Otherwise: hold B channel stable (AXI protocol requires
+    // bvalid/bid/bresp unchanged until bready handshake)
+
+    // AW+W ready: accept when not holding an undelivered B response
+    // For burst=1, we accept AW and W together
+    awready_reg &lt;= !pending_bvalid &amp;&amp; !(bvalid_reg &amp;&amp; !bready);
+    wready_reg &lt;= !pending_bvalid &amp;&amp; !(bvalid_reg &amp;&amp; !bready);
+
+    // ------- Accept AW+W and issue write to Ramulator -------
+    if(awvalid &amp;&amp; awready_reg &amp;&amp; wvalid &amp;&amp; wready_reg) begin
+      // Apply wstrb to determine actual byte lanes (like write_strobe in TestbenchMEMAXI)
+      strobe_tmp = wstrb;
+      strobe_offset = 0;
+      strobe_count = 0;
+      // Find first set byte lane
+      while(strobe_offset &lt; BITSIZE_wdata/8 &amp;&amp; !strobe_tmp[0]) begin
+        strobe_offset = strobe_offset + 1;
+        strobe_tmp = strobe_tmp &gt;&gt; 1;
+      end
+      // Count contiguous set byte lanes
+      while(strobe_count + strobe_offset &lt; BITSIZE_wdata/8 &amp;&amp; strobe_tmp[0]) begin
+        strobe_count = strobe_count + 1;
+        strobe_tmp = strobe_tmp &gt;&gt; 1;
+      end
+      write_addr = awaddr + strobe_offset;
+      write_bitsize = strobe_count * 8;
+      dpi_data = {{4096-BITSIZE_wdata{1&apos;b0}}, (wdata &gt;&gt; (strobe_offset * 8))};
+      if(write_bitsize &gt; 0 &amp;&amp; m_write_request(index, dpi_data, write_bitsize, write_addr, 0) &gt; 0) begin
+        write_count &lt;= write_count + 1;
+
+        // Drive B channel response
+        if(!bvalid_reg || bready) begin
+          bvalid_reg &lt;= 1;
+          bid_reg &lt;= awid;
+          bresp_reg &lt;= 2&apos;b00;
+        end
+        else begin
+          // B channel busy, buffer
+          pending_bvalid &lt;= 1;
+          pending_bid &lt;= awid;
+        end
+
+        if(MEM_DUMP) $fwrite(dump_file, &quot;0,w,0x%X,%0d,0x%X,REALISTIC\n&quot;, write_addr, write_bitsize, wdata &gt;&gt; (strobe_offset * 8));
+        if(RAMULATOR_PROFILE) $fwrite(ramulator_profile_file, &quot;%0d,0,WRITE,0x%X,%0d,0x%X,-,REALISTIC\n&quot;, cycle_counter, write_addr, write_bitsize, wdata &gt;&gt; (strobe_offset * 8));
+        if(RAMULATOR_DEBUG) $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Cycle %0d: Write to addr 0x%h, data=0x%X (wstrb=0x%h)\n&quot;, cycle_counter, write_addr, wdata &gt;&gt; (strobe_offset * 8), wstrb);
+      end
+    end
+  end
+end
+
+// ============================================================
+// Global clock coordination - advance Ramulator each active cycle
+// ============================================================
+always @(posedge clock) begin
+  if(has_any_activity) begin
+    void&apos;(m_utils.state(32&apos;h80000001));
+  end
+end
+
+// Debug progress reporting
+generate
+  if(RAMULATOR_DEBUG)
+  begin
+    always @(posedge clock)
+    begin
+      if(cycle_counter % 10000 == 0 &amp;&amp; cycle_counter &gt; 0)
+      begin
+        $fwrite(ramulator_debug_file, &quot;[AXI_RAMULATOR] Progress: Cycle %0d, Reads:%0d Writes:%0d Outstanding:%0d Mode:Realistic\n&quot;, cycle_counter, read_count, write_count, outstanding_count);
+      end
+    end
+  end
+endgenerate
+"/>
+        </module_o>
+      </circuit>
+    </cell>
   </library>
 </technology>

@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //    author Michele Fiorito <michele.fiorito@polimi.it>
+//    author Jesun Firoz <jesun.firoz@pnnl.gov>
 //
 
 
@@ -40,8 +41,19 @@
 #include <unistd.h>
 #include <vector>
 
+#include <queue>
+#include <set>
+#include <string>
+
 #ifdef BAMBU_CONCURRENT_COSIM
 #include <pthread.h>
+#endif
+
+// Conditional Ramulator2 includes for memory simulation
+#ifdef HAVE_RAMULATOR2
+#include "base/config.h"
+#include "frontend/frontend.h"
+#include "memory_system/memory_system.h"
 #endif
 
 #define FORCE_INLINE __attribute__((always_inline)) inline
@@ -205,11 +217,30 @@ namespace
             mmu_base = mmu_it;
             --mmu_base;
          }
+         error("Address " PTR_FORMAT " is not mapped to any memory space.\n", sim_addr);
          error("Nearest memory space is [" PTR_FORMAT ", " PTR_FORMAT "] -> [" BPTR_FORMAT ", " BPTR_FORMAT
                "] (%zu bytes).\n",
                mmu_base->first, mmu_it->first, bptr_to_int(mmu_base->second + mmu_base->first),
                bptr_to_int(mmu_base->second + mmu_it->first), static_cast<size_t>(mmu_it->first - mmu_base->first));
          return 0;
+      }
+
+      size_t region_avail(ptr_t sim_addr) override
+      {
+         std::map<ptr_t, bptr_t>::const_iterator it = --__m_mmu.upper_bound(sim_addr);
+         if(it == __m_mmu.begin() || !it->second)
+         {
+            // Unmapped here; addrmap already flags it. Don't clamp.
+            return static_cast<size_t>(-1);
+         }
+         std::map<ptr_t, bptr_t>::const_iterator nxt = it;
+         ++nxt;
+         if(nxt == __m_mmu.end())
+         {
+            return static_cast<size_t>(-1);
+         }
+         // Bytes from sim_addr to the next region boundary (this buffer's end).
+         return static_cast<size_t>(nxt->first - sim_addr);
       }
 
       ptr_t mapaddr(const bptr_t addr) override
@@ -821,9 +852,15 @@ namespace
                snprintf(&hex_data[i * 2], 3, "%02X", data[i]);
             }
 #endif
-            memcpy(__addr, data, floor_bytes);
+            // Clamp to the target buffer's end (see write_request / region_avail).
+            const size_t avail = __m_mapper->region_avail(addr);
+            const size_t wr_bytes = (floor_bytes > avail) ? avail : floor_bytes;
+            if(wr_bytes)
+            {
+               memcpy(__addr, data, wr_bytes);
+            }
             auto spare = bitsize % 8;
-            if(spare)
+            if(spare && floor_bytes < avail)
             {
                const byte_t mask = 0xFF << spare;
 #if __M_OUT_LVL > 4
@@ -842,11 +879,627 @@ namespace
          return IF_OK;
       }
    };
+
+class mem_interface_ramulator : public mem_interface
+{
+ private:
+   typedef struct
+   {
+      int tag;
+      uint16_t bitsize;
+      ptr_t addr;
+      signed char cmd;
+      uint64_t request_cycle;
+   } req_data_t;
+
+   typedef struct
+   {
+      int tag;
+      ptr_t addr;
+      uint16_t bitsize;
+      uint8_t* data;
+      size_t data_size;
+   } completion_data_t;
+
+   std::map<int, req_data_t> outstanding_requests;
+   std::map<uint8_t, std::queue<completion_data_t>> completed_requests;
+   std::set<ptr_t> written_addresses;
+
+#ifdef HAVE_RAMULATOR2
+   Ramulator::IFrontEnd* ramulator_frontend;
+   Ramulator::IMemorySystem* ramulator_memory_system;
+   std::string ramulator_config_path;
+   bool ramulator_initialized;
+   YAML::Node ramulator_config_node;
+
+   double clock_period_ns;
+   double ramulator_clock_ratio;
+   double accelerator_frequency_mhz;
+   double frequency_scaling_factor;
+
+   // Queue of write addresses that Ramulator rejected due to full buffers.
+   // Data is already safe in host memory (memcpy), but Ramulator needs to
+   // track these for cycle-accurate timing. Drained during state() ticks.
+   std::queue<ptr_t> pending_ramulator_writes;
+
+   // Queue of reads (tag, addr) that Ramulator rejected due to a full read
+   // buffer. Unlike the drop-on-reject behaviour, we KEEP the
+   // outstanding_requests entry and return the valid tag to the caller, then
+   // resubmit the request to Ramulator once its buffer drains (during tick()/
+   // state()). This makes the read path lossless: at high thread counts the
+   // request buffer can momentarily fill, and silently dropping a read used to
+   // strand a thread's load forever, deadlocking the NoC co-sim. This only ever
+   // does work when a read was actually rejected, so the common (buffer not
+   // full) path is unchanged.
+   std::queue<std::pair<int, ptr_t>> pending_ramulator_reads;
+#endif
+
+   int next_tag;
+   uint64_t current_cycle;
+   uint8_t m_channels_number;
+
+ public:
+   mem_interface_ramulator(uint8_t idx, double clock_period_ns_val, uint8_t channels_number_val = 1)
+       : mem_interface(idx), next_tag(1), current_cycle(0), m_channels_number(channels_number_val)
+   {
+#ifdef HAVE_RAMULATOR2
+      ramulator_frontend = nullptr;
+      ramulator_memory_system = nullptr;
+      ramulator_initialized = false;
+      this->clock_period_ns = clock_period_ns_val;
+      ramulator_clock_ratio = 3.0;
+      accelerator_frequency_mhz = 100.0;
+      frequency_scaling_factor = 1.0;
+
+      if_info("Ramulator2 interface created for interface %d - initializing...\n", (int)_idx);
+      if(!initialize_ramulator2())
+      {
+         if_error("Failed to initialize Ramulator2 for interface %d\n", (int)_idx);
+      }
+      else
+      {
+         if_info("Ramulator2 successfully initialized for interface %d\n", (int)_idx);
+      }
+#else
+      (void)clock_period_ns_val;
+      if_debug("Basic memory interface for interface %d (Ramulator2 not compiled)\n", (int)_idx);
+#endif
+   }
+
+   int read(bptr_t data, uint16_t bitsize, ptr_t addr, int cmd) override
+   {
+#ifdef HAVE_RAMULATOR2
+      if(ramulator_initialized)
+      {
+         int tag = read_request(bitsize, addr, 0);
+         if(tag > 0)
+         {
+            while(read_complete(data, bitsize) == 0)
+            {
+               tick(0);
+            }
+            return IF_OK;
+         }
+      }
+#endif
+      return mem_interface::read(data, bitsize, addr, cmd);
+   }
+
+   int write(bptr_t data, uint16_t bitsize, ptr_t addr, int cmd) override
+   {
+#ifdef HAVE_RAMULATOR2
+      if(ramulator_initialized)
+      {
+         int result = write_request(data, bitsize, addr);
+         if(result > 0)
+         {
+            return IF_OK;
+         }
+      }
+#endif
+      return mem_interface::write(data, bitsize, addr, cmd);
+   }
+
+   int state(int data) override
+   {
+      if(data & 0x80000000)
+      {
+         int tick_count = data & 0x7FFFFFFF;
+         current_cycle += tick_count;
+         if_debug("Advanced %d cycles, current cycle: %lu\n", tick_count, (unsigned long)current_cycle);
+
+#ifdef HAVE_RAMULATOR2
+         if(ramulator_initialized && ramulator_memory_system)
+         {
+            int scaled_tick_count = (int)(tick_count * frequency_scaling_factor);
+            for(int i = 0; i < scaled_tick_count; i++)
+            {
+               ramulator_memory_system->tick();
+            }
+            if_debug("Advanced Ramulator2 by %d cycles (scaled from %d)\n", scaled_tick_count, tick_count);
+
+            // Drain pending writes that were queued when Ramulator's buffer was full.
+            // Now that we've ticked, there may be space in the write buffer.
+            while(!pending_ramulator_writes.empty())
+            {
+               ptr_t pending_addr = pending_ramulator_writes.front();
+               auto wr_callback = [this, pending_addr](Ramulator::Request& /*request*/) {
+                  if_debug("Ramulator2 queued write completed for addr " PTR_FORMAT "\n", pending_addr);
+               };
+               if(ramulator_frontend->receive_external_requests(1, pending_addr, 0, wr_callback))
+               {
+                  pending_ramulator_writes.pop();
+                  if_debug("Ramulator2 queued write submitted for addr " PTR_FORMAT "\n", pending_addr);
+               }
+               else
+               {
+                  break; // Still full, try again on next state() call
+               }
+            }
+
+            // Resubmit any reads that were rejected earlier (buffer full).
+            drain_pending_ramulator_reads();
+         }
+#endif
+      }
+      return (int)outstanding_requests.size();
+   }
+
+   int read_request(uint16_t bitsize, ptr_t addr, signed char cmd)
+   {
+      int tag = next_tag++;
+      req_data_t req = {tag, bitsize, addr, cmd, current_cycle};
+      outstanding_requests[tag] = req;
+
+#ifdef HAVE_RAMULATOR2
+      if(ramulator_initialized && ramulator_frontend)
+      {
+         auto callback = [this, tag](Ramulator::Request& request) {
+            this->ramulator_read_completion_callback(tag, request);
+         };
+         bool success = ramulator_frontend->receive_external_requests(0, addr, 0, callback);
+         if(!success)
+         {
+            // Buffer full: DO NOT drop the request. Keep the outstanding_requests
+            // entry (so the completion callback can find it) and queue the
+            // (tag, addr) pair for resubmission once Ramulator's read buffer
+            // drains. Return the valid tag so the testbench treats the read as
+            // accepted and polls for its completion normally. Dropping the read
+            // here (returning 0) used to strand the requesting thread's load
+            // forever and deadlock the NoC co-sim at high thread counts.
+            pending_ramulator_reads.push(std::make_pair(tag, addr));
+            if_debug("Ramulator2 read request tag %d queued for addr " PTR_FORMAT " (buffer full, will retry)\n", tag, addr);
+            return tag;
+         }
+         if_debug("Issued Ramulator2 read request tag %d for addr " PTR_FORMAT "\n", tag, addr);
+      }
+#endif
+      return tag;
+   }
+
+   int read_complete(bptr_t data, uint16_t& bitsize, uint8_t channel = 0)
+   {
+      auto it = completed_requests.find(channel);
+      if(it == completed_requests.end() || it->second.empty())
+      {
+         return 0;
+      }
+
+      completion_data_t completion = it->second.front();
+      it->second.pop();
+
+      // The polling side (m_read_complete/_ch) does NOT set the shared IPC
+      // struct's bitsize field, so the incoming value is a stale leftover from
+      // whichever operation last touched the struct (e.g. an 8-bit level[]
+      // byte write interleaved between a 32-bit read request and its
+      // completion poll). Using it here silently truncated completions
+      // (0x120 -> 0x20). Report the completion's own bitsize back through the
+      // reference so both the copy below and the SV-side unpack use the size
+      // the read was actually issued with.
+      bitsize = completion.bitsize;
+
+      if(completion.data && data)
+      {
+         size_t byte_size = (bitsize + 7) / 8;
+         for(size_t i = 0; i < byte_size && i < completion.data_size; i++)
+         {
+            reinterpret_cast<uint8_t*>(data)[i] = completion.data[i];
+         }
+         if_debug("Read completed for addr " PTR_FORMAT ", tag %d\n", completion.addr, completion.tag);
+      }
+
+      delete[] completion.data;
+      outstanding_requests.erase(completion.tag);
+      return completion.tag;
+   }
+
+   int write_request(bptr_t data, uint16_t bitsize, ptr_t addr)
+   {
+      bptr_t __addr = __m_mapper->addrmap(addr);
+      if(!__addr)
+      {
+         if_error("Write request to non-mapped address " PTR_FORMAT ".\n", addr);
+         return IF_ERROR;
+      }
+
+      if(data)
+      {
+         size_t byte_size = (bitsize + 7) / 8;
+         // Clamp to the target buffer's end. The async write port streams bytes
+         // (addr += 1) while reporting the 32-bit bus width as bitsize, so an
+         // unclamped memcpy of ceil(bitsize/8) bytes overruns the last byte of a
+         // buffer into the physically-adjacent one, corrupting a neighbouring
+         // parameter. region_avail() returns SIZE_MAX when no boundary applies,
+         // so this is a no-op for genuine word-aligned writes.
+         const size_t avail = __m_mapper->region_avail(addr);
+         if(byte_size > avail)
+         {
+            byte_size = avail;
+         }
+         if(byte_size)
+         {
+            memcpy(__addr, data, byte_size);
+         }
+         written_addresses.insert(addr);
+
+#ifdef HAVE_RAMULATOR2
+         if(ramulator_initialized && ramulator_frontend)
+         {
+            auto callback = [this, addr](Ramulator::Request& /*request*/) {
+               if_debug("Ramulator2 write completed for addr " PTR_FORMAT "\n", addr);
+            };
+            bool success = ramulator_frontend->receive_external_requests(1, addr, 0, callback);
+            if(!success)
+            {
+               // Buffer full: queue for retry during state() ticks.
+               // Data is already safe in host memory (memcpy above).
+               // We must NOT return 0 here because bambu's bus controller
+               // does not support write back-pressure — it would stall the
+               // DUT indefinitely, preventing state() from being called,
+               // which prevents Ramulator from draining its buffers (deadlock).
+               pending_ramulator_writes.push(addr);
+               if_debug("Ramulator2 write queued for addr " PTR_FORMAT " (buffer full, will retry during state)\n", addr);
+            }
+            else
+            {
+               if_debug("Issued Ramulator2 write request for addr " PTR_FORMAT "\n", addr);
+            }
+         }
+#endif
+      }
+      return 1;
+   }
+
+ private:
+   void tick(int count)
+   {
+      current_cycle += count ? count : 1;
+#ifdef HAVE_RAMULATOR2
+      if(ramulator_initialized && ramulator_memory_system)
+      {
+         int scaled = (int)((count ? count : 1) * frequency_scaling_factor);
+         for(int i = 0; i < scaled; i++)
+         {
+            ramulator_memory_system->tick();
+         }
+         drain_pending_ramulator_reads();
+      }
+#endif
+   }
+
+#ifdef HAVE_RAMULATOR2
+   // Resubmit reads that were rejected earlier because Ramulator's read buffer
+   // was full. Called after every tick so a stranded read is retried as soon as
+   // the buffer drains. No-op when the queue is empty (the common case), so
+   // tests that never hit a full buffer are unaffected.
+   void drain_pending_ramulator_reads()
+   {
+      while(!pending_ramulator_reads.empty())
+      {
+         int pending_tag = pending_ramulator_reads.front().first;
+         ptr_t pending_addr = pending_ramulator_reads.front().second;
+         auto callback = [this, pending_tag](Ramulator::Request& request) {
+            this->ramulator_read_completion_callback(pending_tag, request);
+         };
+         if(ramulator_frontend->receive_external_requests(0, pending_addr, 0, callback))
+         {
+            pending_ramulator_reads.pop();
+            if_debug("Ramulator2 queued read tag %d resubmitted for addr " PTR_FORMAT "\n", pending_tag, pending_addr);
+         }
+         else
+         {
+            break; // Still full, try again on next tick
+         }
+      }
+   }
+#endif
+
+#ifdef HAVE_RAMULATOR2
+   void ramulator_read_completion_callback(int tag, Ramulator::Request& request)
+   {
+      ptr_t addr = request.addr;
+      auto req_it = outstanding_requests.find(tag);
+      if(req_it == outstanding_requests.end())
+      {
+         if_error("Completion callback for unknown request tag %d\n", tag);
+         return;
+      }
+
+      req_data_t& original_req = req_it->second;
+      size_t expected_size = original_req.bitsize / 8;
+      uint64_t latency = current_cycle - original_req.request_cycle;
+
+      if_info("[MDPI-PROFILE] CYCLE=%lu,OP=READ,ADDR=0x%lx,BITSIZE=%d,LATENCY=%lu\n",
+              (unsigned long)current_cycle, (unsigned long)addr, original_req.bitsize, (unsigned long)latency);
+
+      completion_data_t completion;
+      completion.tag = tag;
+      completion.addr = addr;
+      completion.bitsize = original_req.bitsize;
+      completion.data_size = expected_size;
+      completion.data = new uint8_t[expected_size];
+
+      bptr_t __addr = __m_mapper->addrmap(addr);
+      if(__addr)
+      {
+         memcpy(completion.data, __addr, expected_size);
+      }
+      else
+      {
+         // Diagnostic: distinguish "DUT issued a garbage address" from
+         // "Ramulator returned a different addr than was issued".
+         if_error("Read completion for UNMAPPED address: tag=%d, completed addr=" PTR_FORMAT
+                  ", issued addr=" PTR_FORMAT ", bitsize=%u, channel=%d, cycle=%llu\n",
+                  tag, addr, original_req.addr, (unsigned)original_req.bitsize, (int)original_req.cmd,
+                  (unsigned long long)current_cycle);
+         memset(completion.data, 0, expected_size);
+      }
+
+      uint8_t channel = static_cast<uint8_t>(original_req.cmd);
+      completed_requests[channel].push(completion);
+
+      // Show actual data value for verification
+      if(expected_size <= 8)
+      {
+         uint64_t value = 0;
+         for(size_t i = 0; i < expected_size; i++)
+         {
+            value |= (uint64_t)completion.data[i] << (i * 8);
+         }
+         if_debug("Read data: addr=" PTR_FORMAT " -> 0x%llx (%llu)\n", addr, (unsigned long long)value, (unsigned long long)value);
+      }
+
+      outstanding_requests.erase(tag);
+
+      if_debug("Ramulator2 read completion: tag=%d, addr=" PTR_FORMAT ", size=%zu\n", tag, addr, expected_size);
+   }
+
+   bool initialize_ramulator2(const std::string& config_path = "")
+   {
+      if(ramulator_initialized)
+      {
+         return true;
+      }
+
+      try
+      {
+         std::string config_file = config_path.empty() ? get_default_config_path() : config_path;
+         ramulator_config_path = config_file;
+
+         if_info("Initializing Ramulator2 with config: %s\n", config_file.c_str());
+
+         ramulator_config_node = Ramulator::Config::parse_config_file(config_file, {});
+
+         // By default, Ramulator's YAML channel count is authoritative (it
+         // models the physical DRAM topology — e.g. 4 channels on xcu250).
+         // Bambu's --channels-number controls the number of AXI ports on the
+         // HW side; requests from all ports funnel through the single GEM5
+         // frontend and Ramulator's address mapper distributes them across
+         // however many DRAM channels the YAML specifies.
+         //
+         // Set RAMULATOR_OVERRIDE_CHANNELS=1 to force Ramulator's channel
+         // count to match Bambu's --channels-number (1:1 port-to-channel).
+         {
+            const char* override_env = std::getenv("RAMULATOR_OVERRIDE_CHANNELS");
+            bool force_override = (override_env && override_env[0] == '1');
+            int yaml_channels = 1;
+            try
+            {
+               if(ramulator_config_node["MemorySystem"]["DRAM"]["org"]["channel"])
+               {
+                  yaml_channels = ramulator_config_node["MemorySystem"]["DRAM"]["org"]["channel"].as<int>();
+               }
+            }
+            catch(...)
+            {
+            }
+
+            if(force_override && m_channels_number > 0)
+            {
+               ramulator_config_node["MemorySystem"]["DRAM"]["org"]["channel"] = (int)m_channels_number;
+               if_info("Overriding Ramulator2 DRAM channel count to %d (RAMULATOR_OVERRIDE_CHANNELS=1)\n",
+                       (int)m_channels_number);
+            }
+            else
+            {
+               if_info("Ramulator2 using %d DRAM channel(s) from config (Bambu AXI ports: %d)\n",
+                       yaml_channels, (int)m_channels_number);
+            }
+         }
+
+         ramulator_frontend = Ramulator::Factory::create_frontend(ramulator_config_node);
+         ramulator_memory_system = Ramulator::Factory::create_memory_system(ramulator_config_node);
+
+         if(!ramulator_frontend || !ramulator_memory_system)
+         {
+            if_error("Failed to create Ramulator2 components for interface %d\n", (int)_idx);
+            return false;
+         }
+
+         ramulator_frontend->connect_memory_system(ramulator_memory_system);
+         ramulator_memory_system->connect_frontend(ramulator_frontend);
+
+         ramulator_initialized = true;
+         configure_frequency_scaling();
+         return true;
+      }
+      catch(const std::exception& e)
+      {
+         if_error("Ramulator2 initialization failed for interface %d: %s\n", (int)_idx, e.what());
+         return false;
+      }
+   }
+
+   void configure_frequency_scaling()
+   {
+      // Read DRAM-to-accelerator tick ratio from the loaded YAML
+      // (MemorySystem.clock_ratio). Fall back to 3 when absent, and warn if
+      // the user picked a value above 6 (simulation gets very slow).
+      ramulator_clock_ratio = 3.0;
+      try
+      {
+         if(ramulator_config_node["MemorySystem"] && ramulator_config_node["MemorySystem"]["clock_ratio"])
+         {
+            ramulator_clock_ratio = ramulator_config_node["MemorySystem"]["clock_ratio"].as<double>();
+         }
+      }
+      catch(const std::exception& e)
+      {
+         if_info("Could not parse MemorySystem.clock_ratio from YAML (%s), using default=3\n", e.what());
+         ramulator_clock_ratio = 3.0;
+      }
+      if(ramulator_clock_ratio < 1.0)
+      {
+         ramulator_clock_ratio = 1.0;
+      }
+      if(ramulator_clock_ratio > 6.0)
+      {
+         if_info("Ramulator clock_ratio=%.1f exceeds recommended cap of 6 — "
+                 "simulation will be slow. Consider lowering or using a faster accelerator clock.\n",
+                 ramulator_clock_ratio);
+      }
+
+      if(clock_period_ns > 0.0)
+      {
+         accelerator_frequency_mhz = 1000.0 / clock_period_ns;
+      }
+      else
+      {
+         accelerator_frequency_mhz = 100.0;
+      }
+
+      frequency_scaling_factor = ramulator_clock_ratio;
+
+      if_info("Ramulator frequency scaling: clock_ratio=%.1f, accel=%.1f MHz, effective DRAM tick=%.1f MHz\n",
+              ramulator_clock_ratio, accelerator_frequency_mhz,
+              accelerator_frequency_mhz * frequency_scaling_factor);
+   }
+
+   std::string get_default_config_path()
+   {
+      // Honor an explicit override from the environment before touching the
+      // cwd-based search paths. Benchmark scripts set RAMULATOR2_CONFIG to
+      // pick one of etc/libmdpi/configs/*.yaml.
+      if(const char* env_cfg = std::getenv("RAMULATOR2_CONFIG"))
+      {
+         if(env_cfg[0] != '\0')
+         {
+            FILE* file = fopen(env_cfg, "r");
+            if(file)
+            {
+               fclose(file);
+               if_info("Using Ramulator2 config from RAMULATOR2_CONFIG env var: %s\n", env_cfg);
+               return std::string(env_cfg);
+            }
+            if_info("RAMULATOR2_CONFIG=%s not readable, falling back to search paths\n", env_cfg);
+         }
+      }
+
+      std::vector<std::string> search_paths = {"./ramulator2_config.yaml",
+                                               "../../../etc/libmdpi/configs/default_ddr4.yaml",
+                                               "/usr/share/bambu/libmdpi/configs/default_ddr4.yaml",
+                                               "/tmp/ramulator2_default.yaml"};
+
+      for(const auto& path : search_paths)
+      {
+         FILE* file = fopen(path.c_str(), "r");
+         if(file)
+         {
+            fclose(file);
+            if_debug("Found default config at: %s\n", path.c_str());
+            return path;
+         }
+      }
+
+      if_info("No default Ramulator2 config found, creating minimal config\n");
+      return create_minimal_config();
+   }
+
+   std::string create_minimal_config()
+   {
+      std::string minimal_config =
+          "# Ramulator2 Configuration for External Simulator Integration\n"
+          "\n"
+          "Frontend:\n"
+          "  impl: GEM5\n"
+          "\n"
+          "MemorySystem:\n"
+          "  impl: GenericDRAM\n"
+          "  clock_ratio: 3\n"
+          "\n"
+          "  DRAM:\n"
+          "    impl: DDR4\n"
+          "    org:\n"
+          "      preset: DDR4_8Gb_x8\n"
+          "      channel: " +
+          std::to_string(m_channels_number > 0 ? m_channels_number : 1) +
+          "\n"
+          "      rank: 1\n"
+          "    timing:\n"
+          "      preset: DDR4_2400R\n"
+          "\n"
+          "  Controller:\n"
+          "    impl: Generic\n"
+          "    Scheduler:\n"
+          "      impl: FRFCFS\n"
+          "    RefreshManager:\n"
+          "      impl: AllBank\n"
+          "    RowPolicy:\n"
+          "      impl: ClosedRowPolicy\n"
+          "      cap: 4\n"
+          "    plugins:\n"
+          "\n"
+          "  AddrMapper:\n"
+          "    impl: RoBaRaCoCh\n";
+
+      std::string config_path_str = "/tmp/mdpi_ramulator2_minimal.yaml";
+      FILE* file = fopen(config_path_str.c_str(), "w");
+      if(file)
+      {
+         fputs(minimal_config.c_str(), file);
+         fclose(file);
+         if_debug("Created minimal config at: %s\n", config_path_str.c_str());
+         return config_path_str;
+      }
+
+      if_error("Failed to create minimal config file\n");
+      return "";
+   }
+#endif
+};
+
 } // namespace
 
-void __m_interface_mem()
+void __m_interface_mem(double clock_period_ns, uint8_t channels_number)
 {
+#ifdef HAVE_RAMULATOR2
+   debug("Creating Ramulator2-enhanced memory interface with %u DRAM channels\n", channels_number);
+   __m_interface_set(new mem_interface_ramulator(__m_interface_idx_next(), clock_period_ns, channels_number));
+#else
+   (void)clock_period_ns;
+   (void)channels_number;
    __m_interface_set(new mem_interface(__m_interface_idx_next()));
+#endif
 }
 
 static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
@@ -1238,6 +1891,65 @@ static void* __m_driver_loop(void*)
                   debug_append("state (data: %u).\n", __m_ipc_operation.payload.interface.info);
                   __m_ipc_operation.payload.interface.info = __m_interfaces.at(__m_ipc_operation.payload.interface.id)
                                                                  ->state(__m_ipc_operation.payload.interface.info);
+               }
+            }
+            __ipc_response();
+            break;
+         case MDPI_OP_TYPE_IF_READ_REQUEST:
+         case MDPI_OP_TYPE_IF_READ_COMPLETE:
+         case MDPI_OP_TYPE_IF_WRITE_REQUEST:
+            if(__m_interfaces.empty())
+            {
+               error("Non-blocking operation on uninitialized interfaces' list.\n");
+               __m_ipc_operation.payload.interface.id = MDPI_IF_IDX_EMPTY;
+            }
+            else if(__m_interfaces.size() <= __m_ipc_operation.payload.interface.id)
+            {
+               error("Interface id out of bounds: %u.\n", __m_ipc_operation.payload.interface.id);
+               __m_ipc_operation.payload.interface.id = MDPI_IF_IDX_OUT_OF_BOUNDS;
+            }
+            else
+            {
+               auto* ramulator_if = dynamic_cast<mem_interface_ramulator*>(
+                   __m_interfaces.at(__m_ipc_operation.payload.interface.id).get());
+               if(!ramulator_if)
+               {
+                  error("Non-blocking operation on non-ramulator interface %u.\n",
+                        __m_ipc_operation.payload.interface.id);
+                  error("The RTL testbench requires Ramulator2 support, but this MDPI driver was compiled "
+                        "without it: RAMULATOR2_DIR did not point to a Ramulator2 installation prefix "
+                        "when the driver was compiled. Build and install Ramulator2, export RAMULATOR2_DIR "
+                        "and re-run.\n");
+                  __ipc_abort();
+               }
+               else if(__m_ipc_operation.type == MDPI_OP_TYPE_IF_READ_REQUEST)
+               {
+                  debug("Interface %u read_request at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.id,
+                        __m_ipc_operation.payload.interface.addr);
+                  __m_ipc_operation.payload.interface.info = ramulator_if->read_request(
+                      __m_ipc_operation.payload.interface.bitsize, __m_ipc_operation.payload.interface.addr,
+                      (signed char)__m_ipc_operation.payload.interface.info);
+               }
+               else if(__m_ipc_operation.type == MDPI_OP_TYPE_IF_READ_COMPLETE)
+               {
+                  uint8_t channel = (uint8_t)__m_ipc_operation.payload.interface.info;
+                  debug("Interface %u read_complete (channel %u).\n", __m_ipc_operation.payload.interface.id, channel);
+                  // Local copy: the struct is packed (no reference binding) and the
+                  // incoming field value is stale anyway (pollers never set it).
+                  // read_complete overwrites it with the completion's true bitsize,
+                  // which must be stored back so the SV unpack reads the right size.
+                  uint16_t completion_bitsize = __m_ipc_operation.payload.interface.bitsize;
+                  __m_ipc_operation.payload.interface.info = ramulator_if->read_complete(
+                      __m_ipc_operation.payload.interface.buffer, completion_bitsize, channel);
+                  __m_ipc_operation.payload.interface.bitsize = completion_bitsize;
+               }
+               else
+               {
+                  debug("Interface %u write_request at " PTR_FORMAT ".\n", __m_ipc_operation.payload.interface.id,
+                        __m_ipc_operation.payload.interface.addr);
+                  __m_ipc_operation.payload.interface.info = ramulator_if->write_request(
+                      __m_ipc_operation.payload.interface.buffer, __m_ipc_operation.payload.interface.bitsize,
+                      __m_ipc_operation.payload.interface.addr);
                }
             }
             __ipc_response();

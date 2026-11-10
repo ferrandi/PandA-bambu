@@ -1,0 +1,60 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# HYPOTHETICAL: Ramulator2 config for Xilinx Alveo U250 (xcu250) topology
+# but with DDR5-3200 instead of DDR4-2400. UltraScale+ has no DDR5 PHY;
+# DDR5 first appears on Xilinx Versal Premium. This is a forward-looking
+# "what-if" sensitivity study that holds the FPGA fabric constant and
+# swaps only the external DRAM technology.
+#
+# Topology (matches U250 card layout):
+#   - 4 independent DDR5 channels on the card
+#   - 16 GB per channel (1 rank x 8 chips x 16Gb x8 = 16 GB)
+#   - DDR5_3200C is the only DDR5 timing preset Ramulator2 ships.
+#     It is the entry-level DDR5 JEDEC bin (CL-tRCD-tRP = 28-28-28).
+#     Real DDR5 parts run at 4800-7200+ MT/s; this is a conservative
+#     lower bound on DDR5 performance.
+#
+# Note: DDR5 internally splits each "channel" into two 32-bit
+# sub-channels, but Ramulator2's DDR5 model treats the whole 64-bit bus
+# as one channel. The 4 configured channels therefore correspond to 4
+# physical DIMM slots / MIG instances, same as the DDR4 baseline.
+#
+# Frequency scaling (DDR/accel <= 6 cap):
+#   DDR5-3200 real DRAM clock = 1600 MHz, tCK = 0.625 ns.
+#   clock_ratio = 6 requires accelerator clock ~= 267 MHz
+#   (--clock-period=3.75) for a cycle-accurate wall-clock match. This is
+#   an aggressive Fmax target for xcu250 that may not close timing in
+#   real synthesis for complex kernels, but is legal in simulation.
+#   The benchmark scripts auto-select --clock-period=3.75 when this
+#   preset is chosen; override with CLOCK_PERIOD=<ns> if needed.
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 6
+
+  DRAM:
+    impl: DDR5
+    org:
+      preset: DDR5_16Gb_x8
+      channel: 4
+      rank: 1
+    timing:
+      preset: DDR5_3200C
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

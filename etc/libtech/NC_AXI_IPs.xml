@@ -644,7 +644,13 @@ begin
   end
 end
 
-assign M_Rdata_ram = m_axi_rvalid &amp; m_axi_rready ? m_axi_rdata : M_Rdata_ram_reg;
+// Drive zeros when idle: the multi-channel response merge in
+// Arbiter_connection_interface ORs each channel's M_Rdata_ram into the port
+// selected by M_tag[.. ] regardless of M_DataRdy, so a stale non-zero value
+// held here would corrupt port 0 (idle M_tag == 0) whenever another channel
+// delivers a response. Only keep M_Rdata_ram_reg while a held answer is being
+// delivered (M_DataRdy_reg: back-pressure hold or double-answer second).
+assign M_Rdata_ram = m_axi_rvalid &amp; m_axi_rready ? m_axi_rdata : (M_DataRdy_reg ? M_Rdata_ram_reg : {BITSIZE_M_Rdata_ram{1'b0}});
 
 reg m_axi_bready_reg;
 reg m_axi_rready_reg;

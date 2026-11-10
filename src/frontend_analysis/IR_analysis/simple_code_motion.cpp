@@ -23,6 +23,7 @@
  * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 #include "simple_code_motion.hpp"
@@ -145,6 +146,21 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
                   "-->Checking if " + STR(ns->index) + " - " + ns->ToString() + " can be moved in BB" + STR(bb_index));
    if(is_call_stmt)
    {
+      /* OpenMP runtime primitives (__kmp_bambu_critical/__kmp_bambu_end_critical/barrier/...) act on shared
+       * synchronization state and their FUs have no predicate port: a call hoisted out of its guarding branch
+       * executes unconditionally in RTL, e.g. a double lock acquire that deadlocks the accelerator. Never move
+       * them. */
+      const auto fn_op = gc->fn->get_kind() == addr_node_K ? GetPointerS<const unary_node>(gc->fn)->op : gc->fn;
+      if(fn_op && fn_op->get_kind() == function_val_node_K)
+      {
+         const auto called_fname = ir_helper::GetFunctionName(fn_op);
+         if(called_fname.find("__kmp_bambu_") == 0)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "<--No because it is an OpenMP runtime primitive (" + called_fname + ")");
+            return FunctionFrontendFlowStep_Movable::UNMOVABLE;
+         }
+      }
       if(schedule)
       {
          auto movable = schedule->CanBeMoved(gc->index, bb_index);

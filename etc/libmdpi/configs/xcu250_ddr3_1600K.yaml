@@ -1,0 +1,50 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# HYPOTHETICAL: Ramulator2 config for Xilinx Alveo U250 (xcu250) topology
+# but with DDR3-1600K instead of DDR4-2400. U250's MIG does not support
+# DDR3; this is a "what-if" sensitivity study that holds the FPGA fabric
+# constant and swaps only the external DRAM technology.
+#
+# Topology (matches U250 card layout):
+#   - 4 independent DDR3 channels on the card
+#   - 16 GB per channel (2 ranks x 8 chips x 8Gb x8 = 16 GB)
+#   - DDR3 maxes out at 8Gb per chip, so we use 2 ranks to hit 16 GB/channel
+#   - DDR3-1600K is the tightest JEDEC 1600 MT/s bin (CL-tRCD-tRP = 11-11-11)
+#
+# Frequency scaling (DDR/accel <= 6 cap):
+#   DDR3-1600 real DRAM clock = 800 MHz, tCK = 1.25 ns.
+#   clock_ratio = 6 requires accelerator clock ~= 133 MHz
+#   (--clock-period=7.5) for a cycle-accurate wall-clock match.
+#   The benchmark scripts auto-select --clock-period=7.5 when this
+#   preset is chosen; override with CLOCK_PERIOD=<ns> if needed.
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 6
+
+  DRAM:
+    impl: DDR3
+    org:
+      preset: DDR3_8Gb_x8
+      channel: 4
+      rank: 2
+    timing:
+      preset: DDR3_1600K
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

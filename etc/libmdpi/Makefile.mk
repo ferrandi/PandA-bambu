@@ -71,6 +71,16 @@ DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++14 -fno-exceptions
 
+# RAMULATOR2_DIR is a standard installation prefix, not a source directory.
+# Source checkouts default to the in-tree submodule's local installation.
+# Installed Bambu users can select any prefix through RAMULATOR2_DIR.
+RAMULATOR2_DIR ?= $(abspath $(libmdpi_root)/../../ext/ramulator2-no-spdlog/install)
+RAMULATOR2_LIBDIR ?= $(patsubst %/,%,$(dir $(firstword $(wildcard $(RAMULATOR2_DIR)/lib/libramulator.so $(RAMULATOR2_DIR)/lib64/libramulator.so $(RAMULATOR2_DIR)/lib/*/libramulator.so))))
+ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
+	DRIVER_CFLAGS := $(filter-out -fno-exceptions -std=c++14,$(DRIVER_CFLAGS))
+	DRIVER_CFLAGS += -DHAVE_RAMULATOR2 -I$(RAMULATOR2_DIR)/include/ramulator -I$(RAMULATOR2_DIR)/include -std=c++20 -fexceptions
+endif
+
 WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++14 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
@@ -92,7 +102,12 @@ DRIVER_LDFLAGS += $(shell if basename $(CC) | grep -v '++' | grep -q 'clang'; th
 DRIVER_LDFLAGS += $(shell if basename $(CC) | grep -v '++' | grep -qv 'clang'; then echo -lstdc++; fi)
 DRIVER_LDFLAGS += -lpthread -lm -ldl
 
-LIB_LDFLAGS := 
+# Ramulator2 link flags
+ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
+	DRIVER_LDFLAGS += -L$(RAMULATOR2_LIBDIR) -Wl,-rpath,$(RAMULATOR2_LIBDIR) -lramulator
+endif
+
+LIB_LDFLAGS :=
 ifeq ($(BEH_CC),xsc)
 	LIB_CFLAGS := $(addprefix -gcc_compile_options=, $(LIB_CFLAGS))
 	LIB_LDFLAGS := -work $(shell realpath --relative-to $(libmdpi_root) $(BEH_DIR)) $(addprefix -gcc_link_options=, $(LIB_LDFLAGS))

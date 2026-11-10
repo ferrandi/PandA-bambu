@@ -23,6 +23,7 @@
  * @brief Generate HDL testbench for the top-level kernel testing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
@@ -245,9 +246,20 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
    if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
       interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating TestbenchMEMMinimal...");
+      std::string mem_component = "TestbenchMEMMinimal";
+      if(parameters->isOption(OPT_enable_ramulator_integrated) &&
+         parameters->getOption<bool>(OPT_enable_ramulator_integrated))
+      {
+         mem_component = is_banked ? "TestbenchMEMRamulatorIntegratedNoC" : "TestbenchMEMRamulatorIntegrated";
+      }
+      else if(parameters->isOption(OPT_enable_ramulator) &&
+              parameters->getOption<bool>(OPT_enable_ramulator))
+      {
+         mem_component = "TestbenchMEMRamulator";
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating " + mem_component + "...");
       tb_mem =
-          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
+          tb_top->add_module_from_technology_library("SystemMEM", mem_component, LIBRARY_STD, tb_cir, TechM);
       const auto emulate_bram = parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
                                     MemoryAllocation_Policy::ALL_BRAM ||
                                 parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==

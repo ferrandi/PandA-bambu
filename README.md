@@ -151,6 +151,43 @@ etc/scripts/generate_bambu_parameter_registry.py \
   --sync-metadata
 ```
 
+# Ramulator2 co-simulation
+
+Jesun Firoz (PNNL) contributed the Ramulator2 memory timing integration.
+The `ext/ramulator2-no-spdlog` submodule pins the spdlog-free Ramulator2 fork;
+its source and license are maintained independently of Bambu.
+
+Build Ramulator2 with a C++20 compiler before running integrated co-simulation:
+
+```bash
+git submodule update --init --recursive
+cmake -S ext/ramulator2-no-spdlog -B ext/ramulator2-no-spdlog/build -DCMAKE_BUILD_TYPE=Release
+cmake --build ext/ramulator2-no-spdlog/build -j
+cmake --install ext/ramulator2-no-spdlog/build --prefix "$PWD/ext/ramulator2-no-spdlog/install"
+export RAMULATOR2_DIR="$PWD/ext/ramulator2-no-spdlog/install"
+export RAMULATOR2_CONFIG="$PWD/etc/libmdpi/configs/default_ddr4.yaml"
+```
+
+Build and install Bambu as described above, then source `install/settings.sh`. Add `--enable-ramulator-integrated`
+and `-m64` to an HDL co-simulation command to use the 64-bit Ramulator2 library. `--enable-ramulator`
+selects the memory profiling testbench. `--channels-number` controls Bambu AXI ports;
+the YAML preset controls DRAM channels. Set `RAMULATOR_OVERRIDE_CHANNELS=1` to
+match the DRAM channel count to Bambu. Memory presets are installed under
+`share/panda/libmdpi/configs`; `RAMULATOR2_CONFIG` selects a YAML preset.
+Keep `RAMULATOR2_DIR` set when using an installed Bambu so its MDPI driver can
+find the installed `include/ramulator` headers and shared library under `lib`
+(or `lib64`/a multiarch library directory). Any installation prefix is supported;
+the examples honor an explicit `RAMULATOR2_DIR` and otherwise use the local
+submodule installation. The MDPI driver records the library directory in its
+runtime search path, so `LD_LIBRARY_PATH` is unnecessary.
+
+A vector-add smoke example supports one or multiple AXI channels:
+
+```bash
+BAMBU_BIN="$PWD/install/bin/bambu" bash examples/cpp_examples/vector_add_axi_ramulator_test/test_axi_ramulator.sh 1
+BAMBU_BIN="$PWD/install/bin/bambu" bash examples/cpp_examples/vector_add_axi_ramulator_test/test_axi_ramulator.sh 2
+```
+
 # Contacts
 Issues, patches, and pull requests are welcome at https://github.com/ferrandi/PandA-bambu.<br>
 For further information send an e-mail to panda-info@polimi.it, visit [PandA website](https://panda.dei.polimi.it/).
