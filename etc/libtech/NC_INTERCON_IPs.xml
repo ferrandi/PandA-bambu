@@ -3057,10 +3057,22 @@ assign out1 = valid ? ~selector : 0;"/>
               <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
                 <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
               </port_o>
-              <NP_functionality LIBRARY="bus_request_filter EXTERNAL_ADDR Mout_addr_ram_in Mout_addr_ram" VERILOG_PROVIDED="
+              <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+                <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+              </port_o>
+              <NP_functionality LIBRARY="bus_request_filter EXTERNAL_ADDR Mout_addr_ram_in Mout_addr_ram S_addr_ram" VERILOG_PROVIDED="
 assign Mout_oe_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? 0 : Mout_oe_ram_in;
 assign Mout_we_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? 0 : Mout_we_ram_in;
-assign Mout_addr_ram = Mout_addr_ram_in;"/>
+assign Mout_addr_ram = Mout_addr_ram_in;
+assign S_oe_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? Mout_oe_ram_in : 0;
+assign S_we_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? Mout_we_ram_in : 0;
+assign S_addr_ram = Mout_addr_ram_in;"/>
           </module_o>
         </circuit>
     </cell>

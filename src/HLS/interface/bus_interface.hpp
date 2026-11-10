@@ -107,15 +107,12 @@ class bus_interface : public module_interface
                                        const structural_managerRef SM);
 
    void create_iob_caches(const structural_objectRef noc_module, const structural_objectRef wrappedObj,
-                          const structural_managerRef SM, const std::vector<structural_objectRef>& filters = {});
+                          const structural_managerRef SM);
 
    void create_axi_adapter(const structural_objectRef noc_module, const structural_objectRef wrappedObj,
-                           const structural_managerRef SM, const std::vector<structural_objectRef>& filters = {});
+                           const structural_managerRef SM);
 
    void add_profiling_modules(const structural_managerRef SM);
-
-   std::vector<structural_objectRef> add_request_filter_modules(const structural_managerRef SM,
-                                                                const structural_objectRef wrappedObj);
 
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 };

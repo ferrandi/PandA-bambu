@@ -33,7 +33,6 @@
 #include "call_graph_manager.hpp"
 #include "copyrights_strings.hpp"
 #include "dbgPrintHelper.hpp"
-#include "fu_binding.hpp"
 #include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
@@ -206,13 +205,11 @@ DesignFlowStep_Status bus_interface::InternalExec()
       }
       else if(bi.use_caches)
       {
-         const auto& filters = add_request_filter_modules(SM_bus_interface, wrappedObj);
-         create_iob_caches(wrappedObj, wrappedObj, SM_bus_interface, filters);
+         create_iob_caches(wrappedObj, wrappedObj, SM_bus_interface);
       }
       else if(bi.use_axi)
       {
-         const auto filters = add_request_filter_modules(SM_bus_interface, wrappedObj);
-         create_axi_adapter(wrappedObj, wrappedObj, SM_bus_interface, filters);
+         create_axi_adapter(wrappedObj, wrappedObj, SM_bus_interface);
       }
 
       memory::propagate_memory_parameters(HLS->top->get_circ(), SM_bus_interface);
@@ -711,7 +708,7 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
 }
 
 void bus_interface::create_iob_caches(const structural_objectRef input_module, const structural_objectRef wrappedObj,
-                                      const structural_managerRef SM, const std::vector<structural_objectRef>& filters)
+                                      const structural_managerRef SM)
 {
    const structural_objectRef circuit = SM->get_circ();
    const std::vector<std::tuple<std::string, std::string, unsigned int>> noc_adapter_ports = {
@@ -825,7 +822,7 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
          }
          for(const auto& p : filter_ports)
          {
-            connect_port(p, i, SM, filters.at(i), adapter_module);
+            connect_port(p, i, SM, input_module, adapter_module);
          }
          if(is_bus_pipelined)
          {
@@ -1082,7 +1079,7 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
 }
 
 void bus_interface::create_axi_adapter(const structural_objectRef input_module, const structural_objectRef wrappedObj,
-                                       const structural_managerRef SM, const std::vector<structural_objectRef>& filters)
+                                       const structural_managerRef SM)
 {
    const structural_objectRef circuit = SM->get_circ();
    const std::vector<std::tuple<std::string, std::string, unsigned int>> noc_adapter_ports = {
@@ -1204,7 +1201,7 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
          }
          for(const auto& p : filter_ports)
          {
-            connect_port(p, i, SM, filters.at(i), adapter_module);
+            connect_port(p, i, SM, input_module, adapter_module);
          }
          if(has_tag_ports)
          {
@@ -1428,61 +1425,6 @@ void bus_interface::add_profiling_modules(const structural_managerRef SM)
           circuit->find_member("sig_out_Mout_back_pressure_out_" + STR(i), signal_o_K, circuit);
       SM->add_connection(Mout_back_pressure_port, Mout_back_pressure_signal);
    }
-}
-
-std::vector<structural_objectRef> bus_interface::add_request_filter_modules(const structural_managerRef SM,
-                                                                            const structural_objectRef wrappedObj)
-{
-   auto filters = std::vector<structural_objectRef>();
-   const structural_objectRef circuit = SM->get_circ();
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding filter modules in the bus interface");
-   THROW_ASSERT(bi.bank_number == 0, "Request filter modules are not needed with banked memories");
-
-   structural_objectRef wrapped_addr_ram_port = wrappedObj->find_member("Mout_addr_ram", port_vector_o_K, wrappedObj);
-   THROW_ASSERT(wrapped_addr_ram_port, "Mout_addr_ram port must be present in " + wrappedObj->get_path());
-   const auto wrapped_addr_ram_port_o = GetPointer<port_o>(wrapped_addr_ram_port);
-
-   structural_objectRef wrapped_oe_ram_port = wrappedObj->find_member("Mout_oe_ram", port_vector_o_K, wrappedObj);
-   THROW_ASSERT(wrapped_oe_ram_port, "Mout_oe_ram_size port must be present in " + wrappedObj->get_path());
-   const auto wrapped_oe_ram_port_o = GetPointer<port_o>(wrapped_oe_ram_port);
-
-   structural_objectRef wrapped_we_ram_port = wrappedObj->find_member("Mout_we_ram", port_vector_o_K, wrappedObj);
-   THROW_ASSERT(wrapped_we_ram_port, "Mout_we_ram_size port must be present in " + wrappedObj->get_path());
-   const auto wrapped_we_ram_port_o = GetPointer<port_o>(wrapped_we_ram_port);
-
-   // Mout_addr_ram does not need to pass through bus_request_filter (it does not modify it) but it is easier to
-   // connect it this way. It does not add any overhead to the final logic.
-   for(unsigned int i = 0; i < bi.channel_number; i++)
-   {
-      std::string filter_name = "request_filter_" + STR(i);
-      std::string filter_library = HLS->HLS_D->get_technology_manager()->get_library("bus_request_filter");
-      structural_objectRef filter_module = SM->add_module_from_technology_library(
-          filter_name, "bus_request_filter", filter_library, circuit, HLS->HLS_D->get_technology_manager());
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiate bus_request_filter_" + STR(i));
-      filters.push_back(filter_module);
-      auto filter_module_mod = GetPointer<module_o>(filter_module);
-      filter_module_mod->SetParameter("EXTERNAL_ADDR",
-                                      STR(parameters->getOption<unsigned long long int>(OPT_base_address)));
-
-      const auto filter_addr_port = filter_module->find_member("Mout_addr_ram_in", port_vector_o_K, filter_module);
-      port_o::resize_std_port(bi.addr_bus_bitsize, 0U, 0, filter_addr_port);
-      const auto filter_addr_port_out = filter_module->find_member("Mout_addr_ram", port_vector_o_K, filter_module);
-      port_o::resize_std_port(bi.addr_bus_bitsize, 0U, 0, filter_addr_port_out);
-      fu_binding::add_smart_connection(
-          filter_addr_port, bi.channel_number > 1 ? wrapped_addr_ram_port_o->get_port(i) : wrapped_addr_ram_port, i,
-          circuit, SM);
-
-      const auto filter_oe_port = filter_module->find_member("Mout_oe_ram_in", port_vector_o_K, filter_module);
-      fu_binding::add_smart_connection(filter_oe_port,
-                                       bi.channel_number > 1 ? wrapped_oe_ram_port_o->get_port(i) : wrapped_oe_ram_port,
-                                       i, circuit, SM);
-
-      const auto filter_we_port = filter_module->find_member("Mout_we_ram_in", port_vector_o_K, filter_module);
-      fu_binding::add_smart_connection(filter_we_port,
-                                       bi.channel_number > 1 ? wrapped_we_ram_port_o->get_port(i) : wrapped_we_ram_port,
-                                       i, circuit, SM);
-   }
-   return filters;
 }
 
 void bus_interface::instantiate_noc(const structural_managerRef SM, const structural_objectRef wrappedObj)
