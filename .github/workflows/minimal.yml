@@ -1634,6 +1634,7 @@ jobs:
   success:
     if: ${{ !cancelled() }}
     needs:
+      - ramulator
       - gcc_regression_simple
       - gcc_regression_simple-vhdl
       - gcc_regression_simple-pretty_print
@@ -1728,6 +1729,17 @@ jobs:
       - name: Check 'PandA benchmarks for OpenROAD 2' status
         if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
         run: exit 1
+      - name: Check 'Ramulator' status
+        if: ${{ needs.ramulator.result != 'success' }}
+        run: exit 1
+
+  ramulator:
+    name: Ramulator
+    needs: [build]
+    uses: ./.github/workflows/reusable-ramulator.yml
+    with:
+      package-name: ${{ needs.build.outputs.package-name }}
+    secrets: inherit
 
   OpenMP-task-support:
     needs: [build]

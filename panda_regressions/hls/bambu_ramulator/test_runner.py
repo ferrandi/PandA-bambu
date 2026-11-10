@@ -3,11 +3,43 @@
 from pathlib import Path
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 
-from run_tests import parallelism, validate
+from run_tests import hbm_input, parallelism, validate
 
 
 class EvidenceChecks(unittest.TestCase):
+    def test_hbm_indices_are_reproducible_race_free_permutations(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            first, second = Path(temporary) / 'first.xml', Path(temporary) / 'second.xml'
+            hbm_input(first, 256)
+            hbm_input(second, 256)
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            encoded = ET.parse(first).getroot().find('testbench').get('indices')
+            indices = list(map(int, encoded.strip('{}').split(',')))
+            self.assertEqual(sorted(indices), list(range(256)))
+            self.assertNotEqual(indices, sorted(indices))
+
+    def test_hbm_requires_more_than_four_concurrent_requesters(self):
+        header = ('$scope module bench $end\n$scope module system $end\n'
+                  '$var wire 1 C clock $end\n$scope module DUT $end\n'
+                  '$var wire 32 B Mout_oe_ram [31:0] $end\n$scope module top $end\n')
+        header += ''.join(f'$var wire 1 A{i} sig_in_Mout_oe_ram_{i} $end\n' for i in range(32))
+        header += '$upscope $end\n' * 4 + '$enddefinitions $end\n#0\n0C\n'
+        header += ''.join(f'0A{i}\n' for i in range(32))
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / 'trace.vcd'
+            for active in (4, 32):
+                path.write_text(header + '#5\n' + ''.join(f'1A{i}\n' for i in range(active))
+                                + 'b' + '1' * 32 + ' B\n1C\n#10\n0C\n')
+                if active == 4:
+                    with self.assertRaisesRegex(ValueError, 'insufficient parallel'):
+                        parallelism(path, 32, 8, 32)
+                else:
+                    evidence = parallelism(path, 32, 8, 32)
+                    self.assertEqual(evidence['peak_parallel_requests'], 32)
+                    self.assertEqual(evidence['active_banks'], list(range(32)))
+
     def test_success_without_real_ramulator_activity_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

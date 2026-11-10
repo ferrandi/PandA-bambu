@@ -1,0 +1,96 @@
+name: Reusable Ramulator co-simulation
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: Bambu distribution built by the calling workflow
+        required: true
+        type: string
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  co-simulation:
+    name: Ramulator integration (21 cases)
+    runs-on: [self-hosted]
+    container: ubuntu:24.04
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install test tools
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends -y \
+            ca-certificates git curl xz-utils build-essential cmake python3 verilator
+      - name: Checkout Bambu
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+      - name: Check result and parallelism guards
+        run: python3 -B -m unittest discover -s panda_regressions/hls/bambu_ramulator -p test_runner.py -v
+      - name: Build and install pinned Ramulator once
+        env:
+          RAMULATOR_BUILD_JOBS: '4'
+        run: |
+          bash panda_regressions/hls/bambu_ramulator/prepare_ramulator.sh \
+            "$RUNNER_TEMP/ramulator-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" --checkout
+      - name: Download matching Bambu distribution
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{ inputs.package-name }}
+          storage-url: ${{ secrets.CI_STORAGE_URL }}
+          username: ${{ secrets.CI_STORAGE_USER }}
+          password: ${{ secrets.CI_STORAGE_TOKEN }}
+      # Deliberately one job and one suite invocation: a per-case job matrix
+      # would rebuild/reinstall Ramulator for every test.
+      - name: Download Clang 13 when not bundled
+        run: |
+          bash .devcontainer/library-scripts/compiler-download.sh \
+            "$PWD/panda_dist/compilers" clang-13 "${LOCAL_COMPILERS_BACKUP:-}"
+      - name: Run smoke and 32-bank HBM groups
+        run: |
+          source panda_dist/settings.sh
+          export RAMULATOR2_DIR="$RUNNER_TEMP/ramulator-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/install"
+          python3 panda_regressions/hls/bambu_ramulator/run_tests.py \
+            --bambu "$PWD/panda_dist/bin/bambu" --out "$PWD/out_ramulator_ci" \
+            --max-cycles 5000 --timeout 180 --hbm-max-cycles 12000 --hbm-timeout 600
+      - name: Publish test summary
+        if: ${{ !cancelled() }}
+        run: |
+          if [[ -f out_ramulator_ci/summary.md ]]; then
+            cat out_ramulator_ci/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload results and dependency build logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ramulator-results-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: warn
+          path: |
+            out_ramulator_ci/junit.xml
+            out_ramulator_ci/summary.*
+            out_ramulator_ci/**/run.log
+            out_ramulator_ci/**/command.txt
+            out_ramulator_ci/**/input.xml
+            out_ramulator_ci/**/evidence.json
+            out_ramulator_ci/**/bambu_results*.xml
+            ${{ runner.temp }}/ramulator-${{ github.run_id }}-${{ github.run_attempt }}/*.log
+            ${{ runner.temp }}/ramulator-${{ github.run_id }}-${{ github.run_attempt }}/provenance.json
+      - name: Upload banked traces on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ramulator-failure-traces-${{ github.run_id }}-${{ github.run_attempt }}
+          if-no-files-found: ignore
+          path: out_ramulator_ci/**/test.vcd
