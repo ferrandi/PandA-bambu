@@ -747,6 +747,7 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
                       join_module->find_member(CLOCK_PORT_NAME, port_o_K, join_module));
    SM->add_connection(circuit->find_member(RESET_PORT_NAME, port_o_K, circuit),
                       join_module->find_member(RESET_PORT_NAME, port_o_K, join_module));
+   const auto adapter_number = is_banked ? bi.bank_number : bi.channel_number;
    auto join_input_port = join_module->find_member("in1", port_o_K, join_module);
    THROW_ASSERT(join_input_port, "Must be present.\n");
    auto join_input_port_o = GetPointer<port_o>(join_input_port);
