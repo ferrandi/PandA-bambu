@@ -23,7 +23,6 @@
  * @brief Class to generate the interface for the bus
  *
  * @author Giovanni Gozzi <giovanni.gozzi@polimi.it>
- * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 #include "bus_interface.hpp"
@@ -90,36 +89,6 @@ structural_objectRef bus_interface::get_smart_signal(const structural_managerRef
    return result ? result :
                    (port_type == signal_o_K ? SM->add_sign(name, circuit, type) :
                                               SM->add_sign_vector(name, vector_size, circuit, type));
-}
-
-void bus_interface::connect_port(const std::tuple<std::string, std::string, unsigned int>& p, unsigned int i,
-                                 structural_managerRef SM, structural_objectRef input_module,
-                                 structural_objectRef output_module)
-{
-   const auto& pname_input = std::get<0>(p);
-   const auto& pname_output = std::get<1>(p);
-   const auto size = std::get<2>(p);
-   const auto circuit = SM->get_circ();
-
-   structural_objectRef input_port = input_module->find_member(pname_input, port_vector_o_K, input_module);
-   THROW_ASSERT(input_port, pname_input + " port must be present");
-
-   const auto input_port_o = GetPointer<port_o>(input_port);
-
-   if((i == 0) && (bi.bank_number > 0))
-   {
-      // NOC output ports must be resized
-      input_port_o->add_n_ports(bi.noc_nodes, input_port);
-      port_o::resize_std_port(size, 0U, 0, input_port);
-   }
-
-   structural_objectRef output_port = output_module->find_member(pname_output, port_o_K, output_module);
-   THROW_ASSERT(output_port, pname_output + " port must be present");
-   port_o::resize_std_port(size, 0U, 0, output_port);
-
-   auto sig = SM->add_sign("sig_out_" + pname_input + "_" + STR(i), circuit, output_port->get_typeRef());
-   SM->add_connection(sig, (input_port_o->get_kind() == port_vector_o_K ? input_port_o->get_port(i) : input_port));
-   SM->add_connection(sig, output_port);
 }
 
 DesignFlowStep_Status bus_interface::InternalExec()
@@ -725,19 +694,14 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
        {"M_tag", "M_tag", bi.context_bus_bitsize + bi.noc_id_size}};
 
    const std::vector<std::tuple<std::string, std::string, unsigned int>> minimal_adapter_ports = {
+       {"Mout_oe_ram", "Mout_oe_ram", 1U},
+       {"Mout_we_ram", "Mout_we_ram", 1U},
+       {"Mout_addr_ram", "Mout_addr_ram", bi.addr_banked_bitsize},
        {"Mout_Wdata_ram", "Mout_Wdata_ram", bi.data_bus_bitsize},
        {"Mout_data_ram_size", "Mout_data_ram_size", bi.size_bus_bitsize},
        {"Mout_back_pressure", "Mout_back_pressure", 1U},
        {"M_DataRdy", "M_DataRdy", 1U},
        {"M_Rdata_ram", "M_Rdata_ram", bi.data_bus_bitsize}};
-
-   const std::vector<std::tuple<std::string, std::string, unsigned int>> filter_ports = {
-       {"Mout_oe_ram", "Mout_oe_ram", 1U},
-       {"Mout_we_ram", "Mout_we_ram", 1U},
-       {"Mout_addr_ram", "Mout_addr_ram", bi.addr_bus_bitsize}};
-
-   const std::vector<std::tuple<std::string, std::string, unsigned int>> tag_ports = {
-       {"Mout_tag", "Mout_tag", bi.context_bus_bitsize}, {"M_tag", "M_tag", bi.context_bus_bitsize}};
 
    const std::vector<std::tuple<std::string, std::string, unsigned int>> adapter_cache_ports = {
        {"dirty", "dirty", 1U},
@@ -756,6 +720,14 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
                         "channels is not supported");
    }
    const auto adapter_number = is_banked ? bi.bank_number : bi.channel_number;
+   const bool is_bus_pipelined =
+       parameters->isOption(OPT_bus_pipelined) && parameters->getOption<bool>(OPT_bus_pipelined);
+   auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
+   if(!is_banked && is_bus_pipelined)
+   {
+      adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
+      adapter_ports.emplace_back("M_tag", "M_tag", bi.context_bus_bitsize);
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "Creating IOB caches for" + STR(is_banked ? " banked" : "") + " bus with " +
                       STR(is_banked ? bi.bank_number : bi.channel_number) + " channels");
@@ -793,9 +765,6 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
    SM->add_connection(done_output_sig, join_output_port);
    SM->add_connection(done_output_sig, done_external_port);
 
-   const bool is_bus_pipelined =
-       parameters->isOption(OPT_bus_pipelined) && parameters->getOption<bool>(OPT_bus_pipelined);
-
    for(unsigned int i = 0; i < adapter_number; i = i + 1)
    {
       std::string adapter_name = "adapter_" + STR(i);
@@ -807,30 +776,29 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
       SM->add_connection(circuit->find_member(RESET_PORT_NAME, port_o_K, circuit),
                          adapter_module->find_member(RESET_PORT_NAME, port_o_K, adapter_module));
 
-      if(is_banked)
+      for(const auto& p : adapter_ports)
       {
-         for(const auto& p : noc_adapter_ports)
+         const auto pname_input = std::get<0>(p);
+         const auto pname_adapter = std::get<1>(p);
+         const auto size = std::get<2>(p);
+
+         structural_objectRef input_port = input_module->find_member(pname_input, port_vector_o_K, input_module);
+         THROW_ASSERT(input_port, pname_input + " port must be present");
+         const auto input_port_o = GetPointer<port_o>(input_port);
+         if((i == 0) && is_banked)
          {
-            connect_port(p, i, SM, input_module, adapter_module);
+            // Noc output ports must be resized
+            input_port_o->add_n_ports(bi.noc_nodes, input_port);
+            port_o::resize_std_port(size, 0U, 0, input_port);
          }
-      }
-      else
-      {
-         for(const auto& p : minimal_adapter_ports)
-         {
-            connect_port(p, i, SM, input_module, adapter_module);
-         }
-         for(const auto& p : filter_ports)
-         {
-            connect_port(p, i, SM, input_module, adapter_module);
-         }
-         if(is_bus_pipelined)
-         {
-            for(const auto& p : tag_ports)
-            {
-               connect_port(p, i, SM, input_module, adapter_module);
-            }
-         }
+
+         structural_objectRef adapter_port = adapter_module->find_member(pname_adapter, port_o_K, adapter_module);
+         THROW_ASSERT(adapter_port, pname_adapter + " port must be present");
+         port_o::resize_std_port(size, 0U, 0, adapter_port);
+
+         auto sig = SM->add_sign("sig_out_" + pname_input + "_" + STR(i), circuit, adapter_port->get_typeRef());
+         SM->add_connection(sig, (adapter_number > 1 ? input_port_o->get_port(i) : input_port));
+         SM->add_connection(sig, adapter_port);
       }
 
       if(!is_banked)
@@ -1096,23 +1064,24 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
        {"M_tag", "M_tag", bi.context_bus_bitsize + bi.noc_id_size}};
 
    const std::vector<std::tuple<std::string, std::string, unsigned int>> minimal_adapter_ports = {
+       {"Mout_oe_ram", "Mout_oe_ram", 1U},
+       {"Mout_we_ram", "Mout_we_ram", 1U},
+       {"Mout_addr_ram", "Mout_addr_ram", bi.addr_banked_bitsize},
        {"Mout_Wdata_ram", "Mout_Wdata_ram", bi.data_bus_bitsize},
        {"Mout_data_ram_size", "Mout_data_ram_size", bi.size_bus_bitsize},
        {"Mout_back_pressure", "Mout_back_pressure", 1U},
        {"M_DataRdy", "M_DataRdy", 1U},
        {"M_Rdata_ram", "M_Rdata_ram", bi.data_bus_bitsize}};
 
-   const std::vector<std::tuple<std::string, std::string, unsigned int>> filter_ports = {
-       {"Mout_oe_ram", "Mout_oe_ram", 1U},
-       {"Mout_we_ram", "Mout_we_ram", 1U},
-       {"Mout_addr_ram", "Mout_addr_ram", bi.addr_bus_bitsize}};
-
-   const std::vector<std::tuple<std::string, std::string, unsigned int>> tag_ports = {
-       {"Mout_tag", "Mout_tag", bi.context_bus_bitsize}, {"M_tag", "M_tag", bi.context_bus_bitsize}};
-
    const bool is_banked = bi.bank_number > 0;
    const bool has_tag_ports = input_module->find_member("Mout_tag", port_vector_o_K, input_module) &&
                               input_module->find_member("M_tag", port_vector_o_K, input_module);
+   auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
+   if(!is_banked && has_tag_ports)
+   {
+      adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
+      adapter_ports.emplace_back("M_tag", "M_tag", bi.context_bus_bitsize);
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "Creating AXI adapter for" + STR(is_banked ? " banked" : "") + " bus with " +
                       STR(is_banked ? bi.bank_number : bi.channel_number) + " channels");
@@ -1186,30 +1155,28 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
       auto adapter_module_mod = GetPointer<module_o>(adapter_module);
       adapter_module_mod->SetParameter("BURST_TYPE", STR(axi_burst_type));
 
-      if(is_banked)
+      for(const auto& p : adapter_ports)
       {
-         for(const auto& p : noc_adapter_ports)
+         const auto pname_input = std::get<0>(p);
+         const auto pname_adapter = std::get<1>(p);
+         const auto size = std::get<2>(p);
+
+         structural_objectRef input_port = input_module->find_member(pname_input, port_vector_o_K, input_module);
+         THROW_ASSERT(input_port, pname_input + " port must be present");
+         const auto input_port_o = GetPointer<port_o>(input_port);
+         if((i == 0) && is_banked)
          {
-            connect_port(p, i, SM, input_module, adapter_module);
+            input_port_o->add_n_ports(bi.noc_nodes, input_port);
+            port_o::resize_std_port(size, 0U, 0, input_port);
          }
-      }
-      else
-      {
-         for(const auto& p : minimal_adapter_ports)
-         {
-            connect_port(p, i, SM, input_module, adapter_module);
-         }
-         for(const auto& p : filter_ports)
-         {
-            connect_port(p, i, SM, input_module, adapter_module);
-         }
-         if(has_tag_ports)
-         {
-            for(const auto& p : tag_ports)
-            {
-               connect_port(p, i, SM, input_module, adapter_module);
-            }
-         }
+
+         structural_objectRef adapter_port = adapter_module->find_member(pname_adapter, port_o_K, adapter_module);
+         THROW_ASSERT(adapter_port, pname_adapter + " port must be present");
+         port_o::resize_std_port(size, 0U, 0, adapter_port);
+
+         auto sig = SM->add_sign("sig_out_" + pname_input + "_" + STR(i), circuit, adapter_port->get_typeRef());
+         SM->add_connection(sig, (adapter_number > 1 ? input_port_o->get_port(i) : input_port));
+         SM->add_connection(sig, adapter_port);
       }
 
       if(!is_banked)

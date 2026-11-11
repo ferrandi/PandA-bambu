@@ -23,7 +23,6 @@
  * @brief Class to generate the interface for the context switch project
  *
  * @author Giovanni Gozzi <giovanni.gozzi@polimi.it>
- * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 #ifndef BUS_INTERFACE_H
@@ -90,18 +89,6 @@ class bus_interface : public module_interface
 
    structural_objectRef get_smart_signal(const structural_managerRef SM, std::string name, so_kind port_type,
                                          const structural_type_descriptorRef& type, unsigned int vector_size);
-
-   /**
-    * @brief connect the specified port from input module to output_module. If the input port is a vector, connect the
-    * i-th element to the output module
-    * @param p the name of the port to connect
-    * @param input_module the source module
-    * @param i the index of the port to connect
-    * @param output_module the destination module
-    * @param SM the structural manager
-    */
-   void connect_port(const std::tuple<std::string, std::string, unsigned int>& p, unsigned int i,
-                     structural_managerRef SM, structural_objectRef input_module, structural_objectRef output_module);
 
    void create_noc_memory_mapping_unit(const structural_objectRef noc_module, const structural_objectRef wrappedObj,
                                        const structural_managerRef SM);
