@@ -829,15 +829,20 @@ endgenerate"/>
           <parameter name="BANK_START">0</parameter>
           <parameter name="BANK_END">0</parameter>
           <parameter name="BANK_COUNT">1</parameter>
+          <parameter name="FULL_ADDRESS">0</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="noc_addr_adapter BUNDLE_START BUNDLE_END BANK_START BANK_END BANK_COUNT in1 out1" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="noc_addr_adapter FULL_ADDRESS BUNDLE_START BUNDLE_END BANK_START BANK_END BANK_COUNT in1 out1" VERILOG_PROVIDED="
 generate
-  if(BANK_COUNT &gt; 1 &amp;&amp; BANK_COUNT != (1 &lt;&lt; (BANK_START - BANK_END)))
+  if(FULL_ADDRESS)
+  begin
+    assign out1 = in1;
+  end
+  else if(BANK_COUNT &gt; 1 &amp;&amp; BANK_COUNT != (1 &lt;&lt; (BANK_START - BANK_END)))
   begin
     localparam EXTRA_SELECTORS = (1 &lt;&lt; (BANK_START - BANK_END)) - BANK_COUNT;
     wire [BANK_START-BANK_END-1:0] bank_selector = in1[BANK_START-1:BANK_END];

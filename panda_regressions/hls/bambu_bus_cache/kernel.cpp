@@ -4,7 +4,9 @@
 #pragma HLS interface port = a mode = bus
 #pragma HLS interface port = b mode = bus
 #pragma HLS interface port = c mode = bus
-#if BANKED
+#if BANKED && USE_AXI
+#pragma HLS bus bank_number = 4 chunk_size = 8 mode = m_axi
+#elif BANKED
 #pragma HLS bus bank_number = 4 chunk_size = 8 mode = minimal
 #elif USE_CACHE
 #pragma HLS bus mode = minimal

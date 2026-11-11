@@ -351,7 +351,10 @@ void bus_interface::initialize_bmi(const structural_objectRef wrappedObj)
 
    structural_objectRef wrapped_tag_port = wrappedObj->find_member("Mout_tag", port_vector_o_K, wrappedObj);
    bi.context_bus_bitsize = wrapped_tag_port ? wrapped_tag_port->get_typeRef()->vector_size : 1U;
-   bi.addr_banked_bitsize = bi.addr_bus_bitsize - bi.bank_index_bits_used;
+   bi.addr_banked_bitsize =
+       parameters->getOption<std::string>(OPT_banked_memory_address_size) == "FULL" ?
+           bi.addr_bus_bitsize :
+           bi.addr_bus_bitsize - bi.bank_index_bits_used;
 }
 
 void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef noc_module,
@@ -649,6 +652,9 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
             structural_objectRef noc_addr_adapter_module = SM->add_module_from_technology_library(
                 noc_addr_adapter_name, "noc_addr_adapter", noc_addr_adapter_library, circuit,
                 HLS->HLS_D->get_technology_manager());
+            noc_addr_adapter_module->SetParameter(
+                "FULL_ADDRESS",
+                STR(parameters->getOption<std::string>(OPT_banked_memory_address_size) == "FULL" ? 1 : 0));
             noc_addr_adapter_module->SetParameter("BANK_START", STR(bi.bank_index + bundle_bank_bitsize));
             noc_addr_adapter_module->SetParameter("BANK_END", STR(bi.bank_index));
             noc_addr_adapter_module->SetParameter("BANK_COUNT", STR(bundle_bank_number));

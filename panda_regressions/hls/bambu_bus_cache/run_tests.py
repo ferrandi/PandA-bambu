@@ -6,6 +6,7 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import re
 import shlex
 import shutil
 import subprocess
@@ -42,7 +43,17 @@ def main():
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
 
-    def run(case):
+    tasks = [(case, None, not case[1]) for case in cases()]
+    for name, cache, axi, pipelined in (
+            ("full-banked-cache-ordinary", True, False, False),
+            ("full-banked-cache-pipelined", True, False, True),
+            ("full-banked-minimal", False, False, True),
+            ("full-banked-axi", False, True, True)):
+        tasks.append(((name, cache, True, "MEM_ACC_NN", 2, pipelined, False), "FULL", axi))
+    tasks.append((("resized-banked-cache", True, True, "MEM_ACC_NN", 2, False, False), "RESIZED", False))
+
+    def run(task):
+        case, address_mode, axi = task
         name, cache, banked, channels_type, channels, pipelined, rejected = case
         directory = out / name
         directory.mkdir(exist_ok=False)
@@ -51,8 +62,10 @@ def main():
                    "--compiler=I386_CLANG13", "--simulator=VERILATOR", "--simulate",
                    "--generate-interface=INFER", "--memory-allocation-policy=NO_BRAM",
                    "--clock-period=10", "--max-sim-cycles=5000", "-m64", "-lm",
-                   f"-DUSE_CACHE={int(cache)}", f"-DBANKED={int(banked)}",
+                   f"-DUSE_CACHE={int(cache)}", f"-DBANKED={int(banked)}", f"-DUSE_AXI={int(axi)}",
                    f"--channels-type={channels_type}", f"--channels-number={channels}"]
+        if address_mode:
+            command.append(f"--banked-memory-address-size={address_mode}")
         if pipelined:
             command.append("--bus-pipelined")
         (directory / "command.txt").write_text(shlex.join(command) + "\n")
@@ -68,6 +81,16 @@ def main():
                     error = "Expected rejection for missing cache coherence"
             elif result.returncode != 0:
                 error = f"Co-simulation failed with exit code {result.returncode}"
+            elif address_mode:
+                testbench = (directory / "HLS_output/simulation/bambu_testbench.v").read_text()
+                has_adapters = "TBBankAd" in testbench
+                if has_adapters != (address_mode == "RESIZED"):
+                    error = "Unexpected presence or absence of testbench bank adapters"
+                rtl = (directory / "bus_cache_kernel.v").read_text()
+                widths = {int(w) for w in re.findall(r"\.BITSIZE_Mout_addr_ram_out\((\d+)\)", rtl)}
+                expected_width = 64 if address_mode == "FULL" else 62  # Four banks, 64-bit accelerator.
+                if widths != {expected_width}:
+                    error = f"Unexpected bank address widths: {widths}, expected {expected_width}"
         except subprocess.TimeoutExpired:
             error = "Bambu exceeded the 180-second timeout"
         elapsed = time.monotonic() - start
@@ -75,7 +98,7 @@ def main():
         return name, elapsed, error, directory
 
     with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        results = list(pool.map(run, cases()))
+        results = list(pool.map(run, tasks))
     failures = sum(error is not None for _, _, error, _ in results)
     suite = ET.Element("testsuite", name="bambu-bus-cache", tests=str(len(results)),
                        failures=str(failures), time=f"{sum(r[1] for r in results):.3f}")

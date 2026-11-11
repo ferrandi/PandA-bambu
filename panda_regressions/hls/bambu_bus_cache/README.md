@@ -5,7 +5,7 @@ its Bambu distribution. All kernels are sequential: no `-fopenmp` is passed.
 The existing `OpenMP-support/banked_cache` job covers parallel banked caches.
 These tests use the fixed-latency AXI memory model and do not need Ramulator.
 
-The 12 cases cover:
+The 17 cases cover:
 
 - Nonbanked caches with `MEM_ACC_11` (one channel) and `MEM_ACC_N1` (two direct
   channels, one indirect channel), each with and without `--bus-pipelined`.
@@ -18,6 +18,14 @@ The 12 cases cover:
   parameter checking normalizes these to `MEM_ACC_11`, so they remain valid.
 - Uncached AXI bus adapters using `MEM_ACC_N1` and `MEM_ACC_NN`, each configured
   with two channels.
+
+Five additional banked cases select the address mode explicitly:
+
+- `RESIZED` retains bank-local addresses and the testbench bank adapters.
+- `FULL` preserves the accelerator address and omits those
+  adapters. Coverage includes caches with and without `--bus-pipelined`, plus
+  uncached minimal and AXI interfaces. The host memory mapping uses the same
+  complete addresses.
 
 Successful cases must complete co-simulation and match the C reference within
 5,000 cycles. The cache kernel reads and updates arrays across cache-line and

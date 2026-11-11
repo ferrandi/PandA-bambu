@@ -90,7 +90,7 @@ class xml_element;
        verilator)(verilator_timescale_override)(synopsys_vcs_root)(synopsys_vcs_home)(altera_root)(quartus_settings)(  \
        quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(shared_input_registers)(           \
        inline_functions)(function_constraints)(resource_constraints)(axi_burst_type)(generate_components)(             \
-       bus_pipelined)(bus_arbiter_type)(bus_architecture)(backend_pipeline)(priority_encoder)(                         \
+       bus_pipelined)(banked_memory_address_size)(bus_arbiter_type)(bus_architecture)(backend_pipeline)(priority_encoder)(                         \
        task_resource_duplication)
 
 #define FRAMEWORK_OPTIONS                                                                                          \

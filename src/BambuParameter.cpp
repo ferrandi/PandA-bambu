@@ -204,6 +204,7 @@
 #define OPT_BUS_PIPELINED (1 + OPT_GENERATE_COMPONENTS)
 #define OPT_BUS_ARBITER_TYPE (1 + OPT_BUS_PIPELINED)
 #define OPT_BUS_ARCHITECTURE (1 + OPT_BUS_ARBITER_TYPE)
+#define OPT_BANKED_MEMORY_ADDRESS_SIZE (1 + OPT_BUS_ARCHITECTURE)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -434,6 +435,12 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when STORE are performed (default 1).\n\n"
       << "   --bus-pipelined\n"
       << "        Allows concurrent requests on the bus.\n\n"
+      << "   --banked-memory-address-size=<mode>\n"
+      << "        Select the address size exposed by banked memory interfaces.\n"
+      << "        Possible values for <mode> are:\n"
+      << "            RESIZED - use the bank-local address, removing bank selector bits (default).\n"
+      << "            FULL - preserve the entire accelerator address.\n"
+      << "        FULL connects memories directly without testbench bank adapters.\n\n"
       << "   --enable-ramulator\n"
       << "        Enable Ramulator memory timing in native bus and AXI testbenches.\n\n"
       << "   --tb-queue-size=value\n"
@@ -1005,6 +1012,7 @@ int BambuParameter::Exec()
       {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
       {"bus-pipelined", optional_argument, nullptr, OPT_BUS_PIPELINED},
+      {"banked-memory-address-size", required_argument, nullptr, OPT_BANKED_MEMORY_ADDRESS_SIZE},
       {"bus-arbiter-type", optional_argument, nullptr, OPT_BUS_ARBITER_TYPE},
       {"bus-architecture", optional_argument, nullptr, OPT_BUS_ARCHITECTURE},
       {"AXI-burst-type", optional_argument, nullptr, OPT_AXI_BURST_TYPE},
@@ -1862,6 +1870,17 @@ int BambuParameter::Exec()
          case OPT_BUS_PIPELINED:
          {
             setOption(OPT_bus_pipelined, true);
+            break;
+         }
+         case OPT_BANKED_MEMORY_ADDRESS_SIZE:
+         {
+            const std::string mode(optarg);
+            if(mode != "RESIZED" && mode != "FULL")
+            {
+               THROW_ERROR_USAGE("Invalid banked memory address size '" + mode +
+                                 "'. Supported values are RESIZED and FULL.");
+            }
+            setOption(OPT_banked_memory_address_size, mode);
             break;
          }
          case OPT_BUS_ARBITER_TYPE:
@@ -3457,6 +3476,7 @@ void BambuParameter::SetDefaults()
 
    /// -- Bus options -- //
    setOption(OPT_bus_pipelined, false);
+   setOption(OPT_banked_memory_address_size, "RESIZED");
    setOption(OPT_bus_arbiter_type, "RR");
    setOption(OPT_bus_architecture, "ALL_TO_ALL");
 

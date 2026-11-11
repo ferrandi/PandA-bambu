@@ -1089,6 +1089,9 @@ void MdpiWrapperCWriter::WriteSimulatorBankedMemory(const unsigned int function_
    indented_output_stream->Append("#define WR_BANK_OBJ_NUMBER (WR_BANK_MEM_VAR_NUMBER + WR_BANK_ARG_NUMBER)\n");
    indented_output_stream->Append("#define WR_BUNDLE_NUMBER " + STR(bundle_number) + "u\n");
    indented_output_stream->Append("#define WR_BANK_NUMBER " + STR(bank_number) + "u\n");
+   indented_output_stream->Append(
+       "#define WR_FULL_ADDRESS " +
+       STR(Param->getOption<std::string>(OPT_banked_memory_address_size) == "FULL" ? 1 : 0) + "\n");
    indented_output_stream->Append("#define WR_CHUNK_SIZE " + STR(chunk_size) + "u\n");
    indented_output_stream->Append("#define WR_BANK_ALIGN " + STR(bank_alignment) + "u\n");
 
@@ -1274,6 +1277,7 @@ abort();
 bank_pointers[j*WR_BANK_NUMBER + i] = (char*)malloc(chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i] * WR_CHUNK_SIZE);
 info("bank %u: allocated %zu chunks for bundle %u\n", i, chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i], j);
 unsigned int* target_bundle = bi[j].banks;
+if(!WR_FULL_ADDRESS)
 error |= __m_memmap(base_addr + i * bank_distance + j*bundle_distance_on_banks, (void*) (bank_pointers[j*WR_BANK_NUMBER + i]), chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i] * WR_CHUNK_SIZE);
 info("Mapped %zu bytes for bank %u at bank address " PTR_FORMAT " to bank pointer " PTR_FORMAT " \n", chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i] * WR_CHUNK_SIZE, i, base_addr + i * bank_distance + j*bundle_distance_on_banks, (ptr_t)(bank_pointers[j*WR_BANK_NUMBER + i]));
 }
@@ -1314,6 +1318,9 @@ else
 {
 info("Mem var: %u has internal address " PTR_FORMAT "\n", index, bank_map[index].internal_addr);
 }
+if(WR_FULL_ADDRESS &&
+   __m_memmap(bank_map[index].internal_addr, bank_map[index].external_addr, bank_map[index].size))
+   abort();
 const unsigned int bundle = bundle_map[index];
 __m_banked_transfer(memory_size, memory_size - mem_diff, bank_map[index].external_addr,
                     bank_pointers + bundle * WR_BANK_NUMBER, target_bundle, bundle_size, WR_CHUNK_SIZE,
@@ -1325,6 +1332,8 @@ __m_banked_transfer(memory_size, memory_size - mem_diff, bank_map[index].externa
    indented_output_stream->Append(R"(  
 static void copy_back_memory_from_banks(size_t memory_size, unsigned int index, size_t mem_diff, char** bank_pointers, unsigned int * last_chunk_space_used_on_bundles, unsigned int* last_bank_selector_on_bundles, size_t* space_used_on_banks_by_bundles)
 {
+if(WR_FULL_ADDRESS)
+   return;
 const unsigned int bundle = bundle_map[index];
 __m_banked_transfer(memory_size, memory_size - mem_diff, bank_map[index].external_addr,
                     bank_pointers + bundle * WR_BANK_NUMBER, bi[bundle].banks, bi[bundle].size, WR_CHUNK_SIZE,

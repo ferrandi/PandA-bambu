@@ -241,6 +241,8 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
          is_banked = std::stoul((bus_if.find(FunctionArchitecture::iface_bank_number)->second)) > 0U;
       }
    }
+   const bool full_banked_address =
+       parameters->getOption<std::string>(OPT_banked_memory_address_size) == "FULL";
    bool is_bus_pipelined = parameters->isOption(OPT_bus_pipelined) && parameters->getOption<bool>(OPT_bus_pipelined);
 
    if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
@@ -610,7 +612,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
 
             // Adds the bankadapter components for axi tb
             interface_index += 1;
-            for(unsigned int i = 0; i < bank_number; i++)
+            for(unsigned int i = 0; i < (full_banked_address ? 0ULL : bank_number); i++)
             {
                const auto tb_bank_adapter = tb_top->add_module_from_technology_library(
                    "TBBankAdpater_" + STR(i), "TestbenchBankAdapterAXI", LIBRARY_STD, tb_cir, TechM);
@@ -694,7 +696,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                tb_top->add_connection(sig_m_axi_araddr, tb_m_axi_araddr);
             }
          }
-         else if(is_banked)
+         else if(is_banked && !full_banked_address)
          {
             // Adds the bankadapter components for minimal tb
             const auto tb_bank_adapter = tb_top->add_module_from_technology_library(
