@@ -41,4 +41,4 @@
 	url = https://github.com/abseil/abseil-cpp.git
 [submodule "ramulator2-no-spdlog"]
 	path = ext/ramulator2-no-spdlog
-	url = https://github.com/jesunsahariar/Ramulator-no-spdlog.git
+	url = https://github.com/ferrandi/ramulator2.git
