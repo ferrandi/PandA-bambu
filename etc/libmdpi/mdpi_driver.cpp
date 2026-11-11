@@ -917,20 +917,6 @@ class mem_interface_ramulator : public mem_interface
    double accelerator_frequency_mhz;
    double frequency_scaling_factor;
 
-   // Queue of write addresses that Ramulator rejected due to full buffers.
-   // Data is already safe in host memory (memcpy), but Ramulator needs to
-   // track these for cycle-accurate timing. Drained during memory clock ticks.
-   std::queue<ptr_t> pending_ramulator_writes;
-
-   // Queue of reads (tag, addr) that Ramulator rejected due to a full read
-   // buffer. Unlike the drop-on-reject behaviour, we KEEP the
-   // outstanding_requests entry and return the valid tag to the caller, then
-   // resubmit the request to Ramulator once its buffer drains during tick(). This makes the read path lossless: at high thread counts the
-   // request buffer can momentarily fill, and silently dropping a read used to
-   // strand a thread's load forever, deadlocking the NoC co-sim. This only ever
-   // does work when a read was actually rejected, so the common (buffer not
-   // full) path is unchanged.
-   std::queue<std::pair<int, ptr_t>> pending_ramulator_reads;
 #endif
 
    int next_tag;
@@ -1003,7 +989,11 @@ class mem_interface_ramulator : public mem_interface
 #ifdef HAVE_RAMULATOR2
       if(ramulator_initialized)
       {
-         int tag = read_request(bitsize, addr, 0);
+         int tag;
+         while((tag = read_request(bitsize, addr, 0)) == 0)
+         {
+            tick(1);
+         }
          if(tag > 0)
          {
             while(read_complete(data, bitsize) == 0)
@@ -1022,7 +1012,11 @@ class mem_interface_ramulator : public mem_interface
 #ifdef HAVE_RAMULATOR2
       if(ramulator_initialized)
       {
-         int result = write_request(data, bitsize, addr);
+         int result;
+         while((result = write_request(data, bitsize, addr)) == 0)
+         {
+            tick(1);
+         }
          if(result > 0)
          {
             return IF_OK;
@@ -1039,34 +1033,23 @@ class mem_interface_ramulator : public mem_interface
 
    int read_request(uint16_t bitsize, ptr_t addr, signed char cmd)
    {
-      ++reads_issued;
-      int tag = next_tag++;
-      req_data_t req = {tag, bitsize, addr, cmd, current_cycle};
-      outstanding_requests[tag] = req;
-
+      const int tag = next_tag;
 #ifdef HAVE_RAMULATOR2
       if(ramulator_initialized && ramulator_frontend)
       {
          auto callback = [this, tag](Ramulator::Request& request) {
-            this->ramulator_read_completion_callback(tag, request);
+            ramulator_read_completion_callback(tag, request);
          };
-         bool success = ramulator_frontend->receive_external_requests(0, addr, 0, callback);
-         if(!success)
+         if(!ramulator_frontend->receive_external_requests(0, addr, 0, callback))
          {
-            // Buffer full: DO NOT drop the request. Keep the outstanding_requests
-            // entry (so the completion callback can find it) and queue the
-            // (tag, addr) pair for resubmission once Ramulator's read buffer
-            // drains. Return the valid tag so the testbench treats the read as
-            // accepted and polls for its completion normally. Dropping the read
-            // here (returning 0) used to strand the requesting thread's load
-            // forever and deadlock the NoC co-sim at high thread counts.
-            pending_ramulator_reads.push(std::make_pair(tag, addr));
-            if_debug("Ramulator2 read request tag %d queued for addr " PTR_FORMAT " (buffer full, will retry)\n", tag, addr);
-            return tag;
+            // The caller owns the finite request queue and retries this request.
+            return 0;
          }
-         if_debug("Issued Ramulator2 read request tag %d for addr " PTR_FORMAT "\n", tag, addr);
       }
 #endif
+      ++next_tag;
+      ++reads_issued;
+      outstanding_requests.emplace(tag, req_data_t{tag, bitsize, addr, cmd, current_cycle});
       return tag;
    }
 
@@ -1116,6 +1099,17 @@ class mem_interface_ramulator : public mem_interface
          return IF_ERROR;
       }
 
+#ifdef HAVE_RAMULATOR2
+      if(ramulator_initialized && ramulator_frontend && data)
+      {
+         if(!ramulator_frontend->receive_external_requests(1, addr, 0, [](Ramulator::Request&) {}))
+         {
+            // Do not commit host data or acknowledge a rejected write.
+            return 0;
+         }
+      }
+#endif
+
       if(data)
       {
          size_t byte_size = (bitsize + 7) / 8;
@@ -1136,27 +1130,6 @@ class mem_interface_ramulator : public mem_interface
          }
          written_addresses.insert(addr);
          ++writes_issued;
-
-#ifdef HAVE_RAMULATOR2
-         if(ramulator_initialized && ramulator_frontend)
-         {
-            auto callback = [this, addr](Ramulator::Request& /*request*/) {
-               if_debug("Ramulator2 write completed for addr " PTR_FORMAT "\n", addr);
-            };
-            bool success = ramulator_frontend->receive_external_requests(1, addr, 0, callback);
-            if(!success)
-            {
-               // Preserve the current posted-write contract: host data is
-               // already updated; retry the timing request on memory ticks.
-               pending_ramulator_writes.push(addr);
-               if_debug("Ramulator2 write queued for addr " PTR_FORMAT " (buffer full, will retry on memory tick)\n", addr);
-            }
-            else
-            {
-               if_debug("Issued Ramulator2 write request for addr " PTR_FORMAT "\n", addr);
-            }
-         }
-#endif
       }
       return 1;
    }
@@ -1174,46 +1147,9 @@ class mem_interface_ramulator : public mem_interface
             ramulator_memory_system->tick();
             ++dram_ticks;
          }
-         while(!pending_ramulator_writes.empty())
-         {
-            const auto addr = pending_ramulator_writes.front();
-            if(!ramulator_frontend->receive_external_requests(1, addr, 0, [](Ramulator::Request&) {}))
-            {
-               break;
-            }
-            pending_ramulator_writes.pop();
-         }
-         drain_pending_ramulator_reads();
       }
 #endif
    }
-
-#ifdef HAVE_RAMULATOR2
-   // Resubmit reads that were rejected earlier because Ramulator's read buffer
-   // was full. Called after every tick so a stranded read is retried as soon as
-   // the buffer drains. No-op when the queue is empty (the common case), so
-   // tests that never hit a full buffer are unaffected.
-   void drain_pending_ramulator_reads()
-   {
-      while(!pending_ramulator_reads.empty())
-      {
-         int pending_tag = pending_ramulator_reads.front().first;
-         ptr_t pending_addr = pending_ramulator_reads.front().second;
-         auto callback = [this, pending_tag](Ramulator::Request& request) {
-            this->ramulator_read_completion_callback(pending_tag, request);
-         };
-         if(ramulator_frontend->receive_external_requests(0, pending_addr, 0, callback))
-         {
-            pending_ramulator_reads.pop();
-            if_debug("Ramulator2 queued read tag %d resubmitted for addr " PTR_FORMAT "\n", pending_tag, pending_addr);
-         }
-         else
-         {
-            break; // Still full, try again on next tick
-         }
-      }
-   }
-#endif
 
 #ifdef HAVE_RAMULATOR2
    void ramulator_read_completion_callback(int tag, Ramulator::Request& request)
