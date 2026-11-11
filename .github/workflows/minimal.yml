@@ -418,6 +418,14 @@ jobs:
           python3 -B panda_regressions/hls/bambu_bus_cache/run_tests.py \
             --out out_bambu_bus_cache --jobs 2 \
             --junit "${{env.report-dir}}/bus-cache.xml"
+      - name: OpenMP hardware predication regressions
+        if: ${{ matrix.simulator == 'VERILATOR' }}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          python3 -B panda_regressions/hls/bambu_omp_predication/run_tests.py \
+            --out out_bambu_omp_predication --jobs 2 \
+            --junit "${{env.report-dir}}/omp-predication.xml"
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash

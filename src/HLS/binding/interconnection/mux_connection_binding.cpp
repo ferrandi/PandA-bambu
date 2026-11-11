@@ -1090,9 +1090,12 @@ void mux_connection_binding::create_connections()
       }
       const auto op_node_id = node_info.GetNodeId();
       const auto op_node = (op_node_id && op_node_id != INFINITE_UINT) ? IRM->GetIRNode(op_node_id) : ir_nodeConstRef{};
-      const auto call_predicate =
-          ((node_info.node_type & TYPE_EXTERNAL) && op_node) ? getDynamicCallPredicate(op_node) : ir_nodeConstRef{};
       auto fu = HLS->Rfu->get_assign(op);
+      const auto fu_cm = GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->CM;
+      const auto native_predicate =
+          fu_cm && fu_cm->get_circ() && fu_cm->get_circ()->find_member("predicate", port_o_K, fu_cm->get_circ());
+      const auto call_predicate = ((node_info.node_type & TYPE_EXTERNAL) || native_predicate) && op_node ?
+                                      getDynamicCallPredicate(op_node) : ir_nodeConstRef{};
       auto idx = HLS->Rfu->get_index(op);
       auto n_channels = HLS->allocation_information->get_number_channels(fu);
 

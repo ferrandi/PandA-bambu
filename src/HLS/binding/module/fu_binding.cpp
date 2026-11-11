@@ -3325,7 +3325,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    {
       structural_objectRef port = fu_module->get_in_port(i);
       if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME || port->get_id() == START_PORT_NAME ||
-         port->get_id() == STALL_PORT_NAME)
+         port->get_id() == STALL_PORT_NAME || port->get_id() == "predicate")
       {
          continue;
       }
