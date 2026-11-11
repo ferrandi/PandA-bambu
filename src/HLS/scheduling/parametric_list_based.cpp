@@ -375,7 +375,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
     bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
     bool& cannotBeChained3, bool& MultiCond0, bool& MultiCond1, bool& LoadStoreFunctionConflict,
     bool& FunctionLoadStoreConflict, bool& proxyFunCond, bool unbounded_RW, bool seeMulticycle,
-    bool is_current_vertex_bounded)
+    bool capture_protected_result, bool is_current_vertex_bounded)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() &&
                       current_ASAP.find(current_vertex)->second > current_cycle;
@@ -437,7 +437,8 @@ void parametric_list_based::CheckSchedulabilityConditions(
    {
       return;
    }
-   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded)) || (seeMulticycle && !is_current_vertex_bounded) ||
+   MultiCond0 = (n_cycles > 1 && (unbounded_RW || unbounded) && !capture_protected_result) ||
+                (seeMulticycle && !is_current_vertex_bounded) ||
                 ((!is_pipelined && n_cycles > 0 && current_starting_time > ccst) &&
                  current_ending_time - (n_cycles - 1) * clock_cycle + setup_hold_time + phi_extra_time +
                          (complex_op ? scheduling_mux_margins : 0) >
@@ -448,7 +449,7 @@ void parametric_list_based::CheckSchedulabilityConditions(
    }
    MultiCond1 = current_ending_time + setup_hold_time + phi_extra_time + (complex_op ? scheduling_mux_margins : 0) >
                     current_cycle_ending_time &&
-                unbounded && is_current_vertex_bounded;
+                unbounded && is_current_vertex_bounded && !capture_protected_result;
    if(MultiCond1)
    {
       return;
@@ -1098,13 +1099,22 @@ bool parametric_list_based::exec(
       while(live_vertex_it != live_vertices.end())
       {
          const auto& live_info = flow_graph.CGetNodeInfo(*live_vertex_it);
-         if(ending_time.find(*live_vertex_it)->second > current_cycle_ending_time)
+         auto fu_name = res_binding->get_assign(*live_vertex_it);
+         const auto II = HLS->allocation_information->get_initiation_time(fu_name, *live_vertex_it);
+         const bool result_pending = ending_time.find(*live_vertex_it)->second > current_cycle_ending_time;
+         bool capture_protected_result = false;
+         if(result_pending && LPBB_predicate &&
+            HLS->allocation_information->is_capture_protected_result(flow_graph, *live_vertex_it, fu_name))
+         {
+            capture_protected_result = true;
+         }
+         if(result_pending && !capture_protected_result)
          {
             seeMulticycle = true;
             auto& attrib = used_resources.getRefAttribute();
             attrib = attrib | ResourceAttribute::SEEMULTICYCLE;
          }
-         if(ending_time.find(*live_vertex_it)->second <= current_cycle_starting_time)
+         if(ending_time.at(*live_vertex_it) <= current_cycle_starting_time)
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                           "            Vertex " + live_info.vertex_name + " dies");
@@ -1114,15 +1124,14 @@ bool parametric_list_based::exec(
          else
          {
             auto live_vertex_type = live_info.node_type;
+            const auto is_bounded =
+                HLS->allocation_information->is_operation_bounded(flow_graph, *live_vertex_it, fu_name);
+            const auto latency = HLS->allocation_information->GetCycleLatency(*live_vertex_it);
             if(live_vertex_type & TYPE_STORE)
             {
                cstep_has_RET_conflict = true;
             }
 
-            auto fu_name = res_binding->get_assign(*live_vertex_it);
-            const auto II = HLS->allocation_information->get_initiation_time(fu_name, *live_vertex_it);
-            auto is_bounded = HLS->allocation_information->is_operation_bounded(flow_graph, *live_vertex_it, fu_name);
-            auto latency = HLS->allocation_information->GetCycleLatency(*live_vertex_it);
             if(LPBB_predicate && (II > LP_II || (is_bounded && II == 0 && latency > LP_II)))
             {
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_VERY_PEDANTIC, output_level,
@@ -1516,9 +1525,12 @@ bool parametric_list_based::exec(
                const bool RWFunctions = attrib & ResourceAttribute::RW_F;
                const auto LoadStoreOp = attrib & ResourceAttribute::LOAD_STORE_OP;
                const auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
+               const auto current_vertex_II = HLS->allocation_information->get_initiation_time(fu_type, current_vertex);
                auto local_unbounded = unbounded;
                auto local_unbounded_RW = unbounded_RW;
-               if(LPBB_predicate && n_cycles > 1)
+               const bool capture_protected_result = LPBB_predicate &&
+                  HLS->allocation_information->is_capture_protected_result(flow_graph, current_vertex, fu_type);
+               if(LPBB_predicate && n_cycles > 1 && !capture_protected_result)
                {
                   for(auto it_current_cycle = current_cycle; it_current_cycle < current_cycle + n_cycles;
                       ++it_current_cycle)
@@ -1536,7 +1548,7 @@ bool parametric_list_based::exec(
                    LoadStoreOp, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding,
                    schedule, predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1,
                    asyncCond, cannotBeChained2, cannotBeChained3, MultiCond0, MultiCond1, LoadStoreFunctionConflict,
-                   FunctionLoadStoreConflict, proxyFunCond, local_unbounded_RW, seeMulticycle,
+                   FunctionLoadStoreConflict, proxyFunCond, local_unbounded_RW, seeMulticycle, capture_protected_result,
                    is_current_vertex_bounded);
 
                /// checking if predecessors have finished
@@ -1881,11 +1893,31 @@ bool parametric_list_based::exec(
                    current_vertex,
                    current_cycle + static_cast<unsigned int>(floor(ending_time[current_vertex] / clock_cycle) -
                                                              double(current_cycle)));
-               /// check if we have operations taking more than one cycle
-               if(is_current_vertex_bounded && ending_time[current_vertex] > current_cycle_ending_time)
+               if(is_current_vertex_bounded && ending_time[current_vertex] > current_cycle_ending_time &&
+                  !capture_protected_result)
                {
-                  seeMulticycle = true;
-                  attrib_update = attrib_update | ResourceAttribute::SEEMULTICYCLE;
+                  if(!LPBB_predicate)
+                  {
+                     attrib_update = attrib_update | ResourceAttribute::SEEMULTICYCLE;
+                  }
+                  else if(current_vertex_II == 0U)
+                  {
+                     for(auto c = current_cycle; ending_time[current_vertex] > double(c + 1) * clock_cycle; ++c)
+                     {
+                        auto& pending_attrib = used_resources.getRefAttribute(c - initialCycle);
+                        pending_attrib = pending_attrib | ResourceAttribute::SEEMULTICYCLE;
+                     }
+                  }
+                  else
+                  {
+                     for(auto c = current_cycle + 1; ending_time[current_vertex] > double(c + 1) * clock_cycle; ++c)
+                     {
+                        auto& future_attrib = used_resources.getRefAttribute(c - initialCycle);
+                        future_attrib = future_attrib | ResourceAttribute::SEEMULTICYCLE;
+                     }
+                  }
+                  seeMulticycle = seeMulticycle || ((used_resources.getRefAttribute() | attrib_update) &
+                                                    ResourceAttribute::SEEMULTICYCLE);
                }
 
                if(phi_extra_time > 0.0)
@@ -2267,7 +2299,8 @@ unsigned parametric_list_based::computeLatestStep(
                {
                   number_fu = HLS->allocation_information->get_number_fu(fu_id);
                }
-               if(number_fu == INFINITE_UINT)
+               if(number_fu == INFINITE_UINT &&
+                  HLS->allocation_information->is_operation_bounded(opDFG, target, HLS->Rfu->get_assign(target)))
                {
                   auto currentCSTarget = schedule.get_cstep(target).second;
                   auto latestCSTarget =

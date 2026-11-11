@@ -815,7 +815,8 @@ unsigned FSMInfo::GetStepPhiIn(const OpGraph& data, operation_descriptor op, uns
       }
       else
       {
-         return bb2max.at(def_op_BB_index) + (BB_src != BB_src_state || def_op_BB_index != BB_src_state ? 1 : 0);
+         return bb2max.at(def_op_BB_index) +
+                (BB_src != BB_src_state || def_op_BB_index != BB_src_state || getState(src_state).isDummy ? 1 : 0);
       }
    }
    return 0;

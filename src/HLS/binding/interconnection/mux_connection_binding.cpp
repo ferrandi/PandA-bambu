@@ -68,6 +68,8 @@
 #include "technology_node.hpp"
 #include "utility.hpp"
 
+#include <set>
+
 #define USE_ALIGNMENT_INFO 1
 
 namespace
@@ -557,7 +559,8 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
          if((data.CGetNodeInfo(def_op).node_type & TYPE_PHI) == 0 &&
             def_op_ending_states.find(state_src) != def_op_ending_states.end())
          {
-            const generic_objRef fu_src_obj = HLS->Rfu->get(def_op);
+            const auto timed_capture = HLS->Rconn->get_timed_capture(def_op);
+            const generic_objRef fu_src_obj = timed_capture ? timed_capture : HLS->Rfu->get(def_op);
             HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                           data_transfer(ir_var, precision, state_src, state_tgt, op));
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -631,7 +634,8 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
             }
             if(def_op_ending_states.find(state_src) != def_op_ending_states.end() && same_stage)
             {
-               const auto fu_src_obj = HLS->Rfu->get(def_op);
+               const auto timed_capture = HLS->Rconn->get_timed_capture(def_op);
+               const auto fu_src_obj = timed_capture ? timed_capture : HLS->Rfu->get(def_op);
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                              data_transfer(ir_var, precision, state_src, state_tgt, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -823,6 +827,209 @@ void mux_connection_binding::create_connections()
    const auto data = FB->GetOpGraph(FunctionBehavior::FDFG);
    const auto bus_addr_bitsize = HLSMgr->get_address_bitsize();
    HLS->Rconn = conn_bindingRef(conn_binding::create_conn_binding(HLSMgr, HLS, BH, parameters));
+
+   // FRP advances pipeline stages outside the dummy-state FSM selector.
+   const bool fsm_stall_supported = !FB->is_function_pipelined() || FB->is_stp();
+   generic_objRef stall_selector;
+   if(fsm_stall_supported)
+   {
+      for(const auto fu_type : HLS->Rfu->get_allocation_list())
+      {
+         if(!HLS->allocation_information->is_stallable(fu_type))
+         {
+            continue;
+         }
+         for(unsigned int fu_num = 0; fu_num < HLS->Rfu->get_number(fu_type); ++fu_num)
+         {
+            const auto fu_unit = HLS->Rfu->get(fu_type, fu_num);
+            const auto fu_stall_selector = HLS->Rconn->bind_stallable_fu_input(fu_unit);
+            THROW_ASSERT(!stall_selector || stall_selector == fu_stall_selector,
+                         "Stallable functional units must share one pipeline-stall selector");
+            stall_selector = fu_stall_selector;
+         }
+      }
+      if(stall_selector)
+      {
+         for(const auto state : HLS->fsm_info->vertices())
+         {
+            if(HLS->fsm_info->getState(state).isDummy)
+            {
+               GetPointer<commandport_obj>(stall_selector)
+                   ->add_activation(commandport_obj::transition(
+                       state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+            }
+         }
+      }
+   }
+
+   std::vector<generic_objRef> input_hold_units;
+   for(const auto op : data.vertices())
+   {
+      const auto fu_type = HLS->Rfu->get_assign(op);
+      if(HLS->allocation_information->is_operation_bounded(data, op, fu_type) &&
+         HLS->allocation_information->get_initiation_time(fu_type, op) > 1U)
+      {
+         const auto fu_unit = HLS->Rfu->get(op);
+         if(std::find(input_hold_units.begin(), input_hold_units.end(), fu_unit) == input_hold_units.end())
+         {
+            input_hold_units.push_back(fu_unit);
+         }
+      }
+   }
+
+   for(const auto& fu_unit : input_hold_units)
+   {
+      THROW_ASSERT(GetPointer<funit_obj>(fu_unit), "Pipelined resource assignment is not a functional unit instance");
+      const auto group_name = "input_hold_" + fu_unit->get_string();
+      const auto group = generic_objRef(new generic_obj(generic_obj::CONNECTION_ELEMENT, group_name));
+      HLS->Rconn->bind_input_hold_group(group, fu_unit);
+      const auto launch = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, group, 0);
+
+      for(const auto op : data.vertices())
+      {
+         if(HLS->Rfu->get(op) != fu_unit)
+         {
+            continue;
+         }
+         for(const auto state : HLS->fsm_info->vertices())
+         {
+            const auto& state_info = HLS->fsm_info->getState(state);
+            if(!state_info.isDummy &&
+               std::find(state_info.startingOperations.begin(), state_info.startingOperations.end(), op) !=
+                   state_info.startingOperations.end())
+            {
+               GetPointer<commandport_obj>(launch)->add_activation(commandport_obj::transition(
+                   state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+            }
+         }
+      }
+   }
+
+   // Buffer every pipelined result in a loop BB that can wait on an unbounded command.
+   std::set<unsigned int> pipelined_wait_bbs;
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      if(state_info.isDummy && state_info.isPipelinedState && HLS->Rsch->IsLoopPipelined(state_info.bbId))
+      {
+         pipelined_wait_bbs.insert(state_info.bbId);
+      }
+   }
+
+   // Preserve capture for any bounded result launched alongside an unbounded operation, including outside LP loops.
+   const auto is_unbounded_command = [&](const auto op) {
+      const auto fu_type = HLS->Rfu->get_assign(op);
+      const auto fu = GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu_type));
+      const auto fu_module = fu->CM ? fu->CM->get_circ() : structural_objectRef{};
+      const bool has_start_port = fu_module && fu_module->find_member(START_PORT_NAME, port_o_K, fu_module);
+      return !HLS->allocation_information->is_operation_bounded(data, op, fu_type) || has_start_port;
+   };
+
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      if(state_info.isDummy)
+      {
+         continue;
+      }
+      const bool co_starts_unbounded =
+          std::any_of(state_info.startingOperations.begin(), state_info.startingOperations.end(), is_unbounded_command);
+      for(const auto op : state_info.startingOperations)
+      {
+         if(!co_starts_unbounded && pipelined_wait_bbs.find(data.CGetNodeInfo(op).bb_index) == pipelined_wait_bbs.end())
+         {
+            continue;
+         }
+         const auto fu_type = HLS->Rfu->get_assign(op);
+         const auto latency = HLS->Rsch->get_cstep_end(op).second - HLS->Rsch->get_cstep(op).second;
+         const auto var_written = HLSMgr->get_produced_value(HLS->functionId, op);
+         if(HLS->Rconn->is_stallable_fu_bound(HLS->Rfu->get(op)))
+         {
+            continue;
+         }
+         if(!HLS->allocation_information->is_capture_protected_result(data, op, fu_type) || latency == 0)
+         {
+            continue;
+         }
+         const auto bitsize =
+             static_cast<unsigned int>(object_bitsize(IRM, HLS_manager::io_binding_type(var_written, 0)));
+         // At most one result per scheduled cycle can complete after the FSM enters its wait state.
+         const auto capacity = latency + 1U;
+         const bool new_adapter = !HLS->Rconn->get_timed_capture(op);
+         const auto adapter =
+             HLS->Rconn->bind_timed_capture(op, latency, capacity, bitsize, data.CGetNodeInfo(op).vertex_name);
+         const auto selector = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 0);
+         if(new_adapter)
+         {
+            HLS->Rconn->add_data_transfer(selector, adapter, 0, 0,
+                                          data_transfer(0, 1, state, FSMInfo::invalidState, OpGraph::null_vertex()));
+            const auto consume_selector =
+                HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 1);
+            HLS->Rconn->add_data_transfer(consume_selector, adapter, 1, 0,
+                                          data_transfer(0, 1, state, FSMInfo::invalidState, OpGraph::null_vertex()));
+            HLS->Rconn->add_data_transfer(HLS->Rfu->get(op), adapter, 2, 0,
+                                          data_transfer(var_written, bitsize, state, FSMInfo::invalidState, op));
+         }
+      }
+   }
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      if(state_info.isDummy)
+      {
+         continue;
+      }
+      const bool co_starts_unbounded =
+          std::any_of(state_info.startingOperations.begin(), state_info.startingOperations.end(), is_unbounded_command);
+      for(const auto op : state_info.startingOperations)
+      {
+         const auto bb_id = data.CGetNodeInfo(op).bb_index;
+         if(!co_starts_unbounded && pipelined_wait_bbs.find(bb_id) == pipelined_wait_bbs.end())
+         {
+            continue;
+         }
+         const auto fu_type = HLS->Rfu->get_assign(op);
+         const auto delay = HLS->Rsch->get_cstep_end(op).second - HLS->Rsch->get_cstep(op).second;
+         if(delay == 0 || !HLS->allocation_information->is_capture_protected_result(data, op, fu_type) ||
+            HLS->Rconn->is_stallable_fu_bound(HLS->Rfu->get(op)) || HLS->Rconn->get_timed_capture(op))
+         {
+            continue;
+         }
+         THROW_ERROR("Pipelined result has neither stall nor capture: " + data.CGetNodeInfo(op).vertex_name +
+                     " on " + HLS->allocation_information->get_fu_name(fu_type).first + " in BB" + STR(bb_id));
+      }
+   }
+   // The adapter is used at every normal start and completion state of this static operation.
+   for(const auto state : HLS->fsm_info->vertices())
+   {
+      const auto& state_info = HLS->fsm_info->getState(state);
+      if(state_info.isDummy)
+      {
+         continue;
+      }
+      for(const auto op : state_info.startingOperations)
+      {
+         const auto adapter = HLS->Rconn->get_timed_capture(op);
+         if(!adapter)
+         {
+            continue;
+         }
+         const auto selector = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 0);
+         GetPointer<commandport_obj>(selector)->add_activation(commandport_obj::transition(
+             state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+      }
+      for(const auto op : state_info.endingOperations)
+      {
+         const auto adapter = HLS->Rconn->get_timed_capture(op);
+         if(!adapter)
+         {
+            continue;
+         }
+         const auto consume = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::SELECTOR, adapter, 1);
+         GetPointer<commandport_obj>(consume)->add_activation(commandport_obj::transition(
+             state, FSMInfo::invalidState, commandport_obj::data_operation_pair(0, OpGraph::null_vertex())));
+      }
+   }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");
 
@@ -1329,8 +1536,10 @@ void mux_connection_binding::create_connections()
                          HLS->storage_value_information->get_storage_value_index(s_out, var_written, step_write);
                      auto r_index = HLS->Rreg->get_register(storage_value);
                      auto tgt_reg_obj = HLS->Rreg->get(r_index);
+                     const auto timed_capture = HLS->Rconn->get_timed_capture(op);
+                     const auto result_obj = timed_capture ? timed_capture : fu_obj;
                      HLS->Rconn->add_data_transfer(
-                         fu_obj, tgt_reg_obj, 0, 0,
+                         result_obj, tgt_reg_obj, 0, 0,
                          data_transfer(var_written, ir_helper::Size(IRM->GetIRNode(var_written)), estate, s_out, op));
                      PRINT_DBG_MEX(
                          DEBUG_LEVEL_PEDANTIC, debug_level,

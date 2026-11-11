@@ -37,6 +37,8 @@ foreach port [get_bd_ports ] {
    }
 }
 save_bd_design
+generate_target all [get_files "${vip_name}.bd"]
+update_compile_order -fileset sim_1
 close_bd_design [get_bd_designs $vip_name]
 # Set compilation and simulation options
 set_property top clocked_bambu_testbench [get_filesets sim_1]

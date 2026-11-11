@@ -411,17 +411,35 @@ static void pushCallerMemories(Argument* arg, const std::set<Function*>& tracked
    }
 }
 
-/// The architecture.xml entry describing the parameter bound to `arg`
+size_t getOrigIndex(const Function& F, unsigned argNo)
+{
+#if PANDA_LLVM_CLANG_MAJOR >= 5
+   const auto attr = F.getAttributes().getParamAttr(argNo, "bambu.orig_index");
+#else
+   const auto attr = F.getAttributes().getAttribute(argNo + 1, "bambu.orig_index");
+#endif
+   size_t index;
+   // getAsInteger returns true on error (empty value, trailing characters)
+   if(!attr.isStringAttribute() || attr.getValueAsString().getAsInteger(10, index))
+   {
+      return argNo;
+   }
+   return index;
+}
+
+/// The architecture.xml entry describing the parameter bound to `arg`. The parameters are listed with their
+/// position in the source signature: when an earlier pass removed some arguments (DeadArgumentElimination), that
+/// position is the one recorded in the bambu.orig_index attribute, not the current argument number.
 static pugi::xml_node getParamNode(const ArrPartCtx& arrPartCtx, const Argument* arg)
 {
    const std::string fnName = arg->getParent()->getName().str();
+   const auto paramIndex = std::to_string(getOrigIndex(*arg->getParent(), arg->getArgNo()));
    auto nodeFn = arrPartCtx.doc->child("module").find_child_by_attribute("function", "symbol", fnName.c_str());
-   auto nodeParam = nodeFn.child("parameters")
-                        .find_child_by_attribute("parameter", "index", std::to_string(arg->getArgNo()).c_str());
+   auto nodeParam = nodeFn.child("parameters").find_child_by_attribute("parameter", "index", paramIndex.c_str());
    if(nodeParam.empty())
    {
-      REPORT_FATAL_ERROR_WITH_REPORT("Parameter " + Twine(arg->getArgNo()) + " of " + fnName +
-                                     " not found in architecture.xml");
+      REPORT_FATAL_ERROR_WITH_REPORT("Parameter " + Twine(paramIndex) + " (argument " + Twine(arg->getArgNo()) +
+                                     ") of " + fnName + " not found in architecture.xml");
    }
    return nodeParam;
 }

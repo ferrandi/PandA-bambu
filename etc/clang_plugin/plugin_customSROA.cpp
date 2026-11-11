@@ -41,6 +41,7 @@
 #endif
 // #undef NDEBUG
 #include "ArrPart.hpp"
+#include "DFConstArgPass.hpp"
 #include "ScalarizeArrayOfFifo.hpp"
 #include "PointerResolutionPass.hpp"
 #include "ScalarizeSingletonBanks.hpp"
@@ -90,6 +91,7 @@
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/IR/Dominators.h>
+#include <map>
 #include <numeric>
 #include <optional>
 #include <set>
@@ -2276,14 +2278,45 @@ namespace
       // Note: fnPartInfo.args has already been remapped onto fnPartitionedWithDupl, so the lookup key is the
       // argument of that function; the attributes still have to be read from fnOriginal, since the clones
       // only inherit the function-level ones.
-      for(size_t i = 0, itFinal = 0; i < fnPartInfo.fnOriginal->arg_size(); ++i)
+      // The bambu.orig_index of the final arguments refers to the architecture.xml entry written for the
+      // partitioned function (createFnPartNode): its parameters follow the source signature, one entry per
+      // partition, and still include the parameters an earlier pass removed from the LLVM signature.
+      const auto sourceIndex = [&](size_t i) -> uint64_t {
+         return getOrigIndex(*fnPartInfo.fnOriginal, static_cast<unsigned>(i));
+      };
+      std::map<uint64_t, uint64_t> partitionsBySourceIndex;
+      for(size_t i = 0; i < fnPartInfo.fnOriginal->arg_size(); ++i)
       {
          auto argPartInfoIt = findPartInfoInContainer(GET_ARG_PT(fnPartitionedWithDupl, i), fnPartInfo.args);
          if(isArgPartitioned(argPartInfoIt, fnPartInfo.args))
          {
+            partitionsBySourceIndex[sourceIndex(i)] = argPartInfoIt->getNumPartitions();
+         }
+      }
+      const auto partitionedIndex = [&](uint64_t srcIndex) {
+         uint64_t index = 0;
+         for(uint64_t p = 0; p < srcIndex; ++p)
+         {
+            const auto it = partitionsBySourceIndex.find(p);
+            index += it != partitionsBySourceIndex.end() ? it->second : 1;
+         }
+         return index;
+      };
+      for(size_t i = 0, itFinal = 0; i < fnPartInfo.fnOriginal->arg_size(); ++i)
+      {
+         auto argPartInfoIt = findPartInfoInContainer(GET_ARG_PT(fnPartitionedWithDupl, i), fnPartInfo.args);
+         const auto origName = fnPartInfo.fnOriginal->getAttributes().getParamAttr(i, "bambu.orig_name");
+         const auto firstIndex = partitionedIndex(sourceIndex(i));
+         if(isArgPartitioned(argPartInfoIt, fnPartInfo.args))
+         {
             for(uint64_t numPartition = 0; numPartition < argPartInfoIt->getNumPartitions(); ++numPartition, ++itFinal)
             {
-               GET_ARG_PT(fnPartitioned, itFinal)->addAttr(llvm::Attribute::NoAlias);
+               auto* argFinal = GET_ARG_PT(fnPartitioned, itFinal);
+               argFinal->addAttr(llvm::Attribute::NoAlias);
+               argFinal->addAttr(llvm::Attribute::get(M.getContext(), "bambu.orig_index",
+                                                      std::to_string(firstIndex + numPartition)));
+               argFinal->addAttr(llvm::Attribute::get(M.getContext(), "bambu.orig_name",
+                                                      argPartInfoIt->argName + "_" + std::to_string(numPartition)));
             }
          }
          else
@@ -2294,6 +2327,11 @@ namespace
             {
                argFinal->addAttr(llvm::Attribute::NoAlias);
             }
+            if(origName.isStringAttribute())
+            {
+               argFinal->addAttr(origName);
+            }
+            argFinal->addAttr(llvm::Attribute::get(M.getContext(), "bambu.orig_index", std::to_string(firstIndex)));
             ++itFinal;
          }
       }
@@ -2747,8 +2785,11 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM_Early)));
 
                  // Constant globals passed as parameters (hls4ml weights/biases) must be folded into the
-                 // callee and the now unused parameters dropped, otherwise they reach CSROA as bare
-                 // non-partitioned pointers.
+                 // callee, otherwise they reach CSROA as bare non-partitioned pointers. IPSCCP does it for the
+                 // internal functions, DFConstArgPass for the dataflow modules, which topfname keeps
+                 // external: there the folding happens inside the module, the parameter stays in the signature
+                 // and the call sites pass null, which DeadArgumentElimination then replaces with poison.
+                 MPM.addPass(llvm::DFConstArgPass(topFunctionName_CSROA, pandaTempPath));
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
                  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(llvm::PromotePass()));
@@ -2831,6 +2872,7 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  // MPM.addPass(llvm::PrintModulePass());
 
                  // Fold again what inlining exposed at module scope.
+                 MPM.addPass(llvm::DFConstArgPass(topFunctionName_CSROA, pandaTempPath));
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
                  MPM.addPass(llvm::DeadArgumentEliminationPass());

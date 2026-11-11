@@ -110,6 +110,13 @@ DesignFlowStep_Status OMPLowering::InternalExec()
    }
 
    const auto omp_info = function_behavior->GetOMPInfo();
+   const auto check_task_thread_query = [&](const std::string& name) {
+      if(omp_info && omp_info->task_id &&
+         (name == "omp_get_thread_num" || name == TOSTRING(KMP_CS_GET_GTID) || name == TOSTRING(KMP_CS_GET_TID)))
+      {
+         THROW_ERROR_USAGE("OpenMP tasks do not support thread ID queries (" + name + ") in task bodies or callees");
+      }
+   };
    if(omp_info)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Fork call id : " + STR(omp_info->fork_call_id));
@@ -146,6 +153,7 @@ DesignFlowStep_Status OMPLowering::InternalExec()
             const auto gc = GetPointerS<const call_stmt>(stmt);
             const auto called_fnode = extract_fnode(gc->fn);
             const auto called_fname = ir_helper::GetFunctionName(called_fnode);
+            check_task_thread_query(called_fname);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analizing call_stmt_K " + called_fname);
             const auto replace_call = [&](const ir_nodeRef& version_fnode, const std::vector<ir_nodeRef>& args) {
                const auto version_call = ir_man->create_call_stmt(version_fnode, args, function_id, BUILTIN_LOCINFO);
@@ -242,6 +250,7 @@ DesignFlowStep_Status OMPLowering::InternalExec()
             {
                const auto called_fnode = extract_fnode(ce->fn);
                const auto called_fname = ir_helper::GetFunctionName(called_fnode);
+               check_task_thread_query(called_fname);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analizing assign_stmt_K " + called_fname);
                const auto replace_call = [&] {
                   const auto version_fnode = ForkFunction(called_fname, omp_info);

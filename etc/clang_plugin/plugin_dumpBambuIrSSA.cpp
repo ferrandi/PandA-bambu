@@ -28,8 +28,8 @@
 #ifndef NDEBUG
 #define NDEBUG
 #endif
-#include "plugin_includes.hpp"
 #include "PointerResolutionPass.hpp"
+#include "plugin_includes.hpp"
 
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringExtras.h>
@@ -147,6 +147,9 @@ namespace llvm
                                 cl::value_desc("filename path"), cl::OneOrMore, cl::CommaSeparated);
    cl::opt<std::string> CostTable("panda-cost-table", cl::desc("Specify the cost per operation"),
                                   cl::value_desc("cost table"));
+
+   cl::opt<bool> TaskGraphInput("panda-task-graph", cl::desc("Input contains an extracted OpenMP task graph"),
+                                cl::init(false), cl::Hidden);
 
    static constexpr const char* BAMBU_ORIG_NAME_ATTR = "bambu.orig_name";
    static constexpr const char* BAMBU_ORIG_INDEX_ATTR = "bambu.orig_index";
@@ -835,7 +838,12 @@ llvm::PassPluginLibraryInfo getdumpSSAPluginInfo()
                 llvm::LoopPassManager LPM2;
                 LPM2.addPass(llvm::LoopRotatePass());
 #if PANDA_LLVM_CLANG_MAJOR >= 16
-                LPM2.addPass(llvm::LoopFlattenPass());
+                // Flattening the extracted task graph can introduce overflow
+                // intrinsics that cannot be serialized to the PandA IR.
+                if(!llvm::TaskGraphInput)
+                {
+                   LPM2.addPass(llvm::LoopFlattenPass());
+                }
 #endif
                 LPM2.addPass(llvm::IndVarSimplifyPass());
                 LPM2.addPass(llvm::LoopDeletionPass());

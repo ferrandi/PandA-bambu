@@ -100,6 +100,9 @@ bus_vector_add.cpp --benchmark-name=axi_vector_add_int --top-fname=vector_add_in
 bus_vector_add.cpp --benchmark-name=axi_vector_add_int_pipelined --bus-pipelined --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_int_none --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DNONE=1 -DBUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_int_pointer --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_int_pointer_bus_cache --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM --channels-type=MEM_ACC_11 --channels-number=1 -DBUS_AXI=1 -DCACHES=1
+bus_vector_add.cpp --benchmark-name=axi_vector_add_int_pointer_bus_cache_pipelined --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM --channels-type=MEM_ACC_11 --channels-number=1 --bus-pipelined -DBUS_AXI=1 -DCACHES=1
+BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=Non-banked.bus.caches.require.exactly.one.memory.channel bus_vector_add.cpp --benchmark-name=axi_bus_cache_multichannel_expected_failure --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml --memory-allocation-policy=NO_BRAM --channels-type=MEM_ACC_NN --channels-number=2 -DBUS_AXI=1 -DCACHES=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_array --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_array_inferred --top-fname=vector_add_array --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DINFERRED=1 -DBUS_AXI=1
 bus_vector_add.cpp --benchmark-name=axi_vector_add_fifo --top-fname=vector_add --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DFIFO=1 -DBUS_AXI=1
@@ -127,6 +130,8 @@ axi_wb_single_line.cpp --top-fname=kernel --generate-interface=INFER --generate-
 axi_misaligned_struct_cache.cpp --top-fname=misaligned_struct_axi --generate-tb=BENCHMARKS_ROOT/axi_misaligned_struct_cache.cpp --benchmark-name=axi_misaligned_struct_cache
 axi_mixed_arrays_cache.cpp --top-fname=mixed_arrays_axi --generate-tb=BENCHMARKS_ROOT/axi_mixed_arrays_cache.cpp --benchmark-name=axi_mixed_arrays
 axi_mixed_arrays_cache.cpp --top-fname=mixed_arrays_axi --generate-tb=BENCHMARKS_ROOT/axi_mixed_arrays_cache.cpp -DUSE_CACHE --benchmark-name=axi_mixed_arrays_cache
+axi_legacy_8bit_size.cpp --top-fname=copy_bytes --generate-tb=BENCHMARKS_ROOT/axi_legacy_8bit_size.cpp --benchmark-name=axi_legacy_8bit_size --generate-vcd --no-clean --max-sim-cycles=1000 BENCHMARK_ENV="MANTIS_POST_CHECK=python3 'BENCHMARKS_ROOT/check_axi_legacy_8bit_size.py'"
+axi_legacy_burst_hint.cpp --top-fname=copy_bytes --generate-tb=BENCHMARKS_ROOT/axi_legacy_burst_hint.cpp --benchmark-name=axi_legacy_burst_hint --generate-vcd --no-clean --max-sim-cycles=1000 BENCHMARK_ENV="MANTIS_POST_CHECK=python3 'BENCHMARKS_ROOT/check_axi_legacy_8bit_size.py'"
 BENCHMARK_ENV=MANTIS_EXPECT_FAILURE=1,MANTIS_EXPECT_FAILURE_REGEX=unknown.interface.bundle axi_cache_unknown_bundle.c --top-fname=kernel --generate-tb=x="{1}" --benchmark-name=axi_cache_unknown_bundle_expected_failure
 2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUFFER --benchmark-name=2mm_cache_big_buffer
 2mm.c --top-fname=mmult --generate-tb=BENCHMARKS_ROOT/2mm.c -DBIG_BUS --benchmark-name=2mm_cache_big_bus

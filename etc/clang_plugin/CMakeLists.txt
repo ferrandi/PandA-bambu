@@ -12,6 +12,11 @@ set(COMPILER_SSA_PLUGIN "dumpBambuIrSSA")
 set(COMPILER_SSA_PLUGINCPP "dumpBambuIrSSACpp")
 set(COMPILER_TOPFNAME_PLUGIN "topfname")
 set(COMPILER_EXPANDMEMOPS_PLUGIN "expandMemOps")
+set(COMPILER_OPENMP_TASK_PLUGIN "openmpTask")
+set(COMPILER_ADD_FULL_UNROLL_META_PLUGIN "addFullUnrollMetadata")
+set(COMPILER_DCE_PLUGIN "deadCodeElimination")
+set(COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN "openmpTaskdeadArgAndOutlinedSimplify")
+set(COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN "deduplicateLoadInst")
 set(COMPILER_OPENMP_PLUGIN "openmpBambu")
 set(COMPILER_ASTANALYZER_PLUGIN "ASTAnalyzer")
 set(COMPILER_CHANNELCTOR_PLUGIN "channelCtorCleanup")
@@ -32,6 +37,8 @@ set(_panda_plugin_common_includes
    "${_panda_plugin_sources_dir}"
    "${CMAKE_SOURCE_DIR}/etc/libopenmp"
    "${CMAKE_SOURCE_DIR}/src/IR"
+   "${CMAKE_SOURCE_DIR}/src/constants"
+   "${CMAKE_SOURCE_DIR}/src/utility"
 )
 
 set(_panda_plugin_buddy_lib "")
@@ -163,6 +170,7 @@ function(_panda_add_clang_plugins ver)
    if(NOT _clang_cxxflags)
       return()
    endif()
+   set(PANDA_CLANG${ver}_LLVM_CONFIG "${_test_llvmconfig}" PARENT_SCOPE)
    # llvm-config may inject its own -std flag (e.g. c++14 for clang-10/11/12/13).
    # Keep clang-4 on C++14, force newer toolchains to C++17 by appending a final override.
    set(_plugin_std_override "-std=gnu++17")
@@ -225,6 +233,7 @@ function(_panda_add_clang_plugins ver)
    set(_hardekopf_src "${_src_base}/HardekopfLin_AA.cpp")
    set(_customsroa_sources
       "${_src_base}/ArrPart.cpp"
+      "${_src_base}/DFConstArgPass.cpp"
       "${_src_base}/loopUnrollArrPartPass.cpp"
       "${_src_base}/ScalarizeArrayOfFifo.cpp"
       "${_src_base}/ScalarizeSingletonBanks.cpp"
@@ -255,6 +264,20 @@ function(_panda_add_clang_plugins ver)
    _panda_make_plugin(clang_plugin_${ver}_opt_openmp       "opt_${COMPILER_OPENMP_PLUGIN}"        0 "${_src_base}/plugin_openmp.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_ast          "opt_${COMPILER_ASTANALYZER_PLUGIN}"   0 "${_src_base}/plugin_ASTAnalyzer.cpp")
    _panda_make_plugin(clang_plugin_${ver}_opt_channelctor  "opt_${COMPILER_CHANNELCTOR_PLUGIN}" 0 "${_src_base}/plugin_channelCtorCleanup.cpp")
+
+   # Task extraction relies on the LLVM 19 pass API.
+   if(ver GREATER_EQUAL 19)
+      _panda_make_plugin(clang_plugin_${ver}_openmp_task "${COMPILER_OPENMP_TASK_PLUGIN}" 1 "${_src_base}/TaskCallGraphPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_openmp_task "opt_${COMPILER_OPENMP_TASK_PLUGIN}" 0 "${_src_base}/TaskCallGraphPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_add_full_unroll_meta "${COMPILER_ADD_FULL_UNROLL_META_PLUGIN}" 1 "${_src_base}/AddFullUnrollMetadataPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_add_full_unroll_meta "opt_${COMPILER_ADD_FULL_UNROLL_META_PLUGIN}" 0 "${_src_base}/AddFullUnrollMetadataPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_dce "${COMPILER_DCE_PLUGIN}" 1 "${_src_base}/DcePass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_dce "opt_${COMPILER_DCE_PLUGIN}" 0 "${_src_base}/DcePass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_openmp_argument_simplify "${COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN}" 1 "${_src_base}/DeadArgAndSimplifyPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_openmp_argument_simplify "opt_${COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN}" 0 "${_src_base}/DeadArgAndSimplifyPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_deduplicate_load_inst "${COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN}" 1 "${_src_base}/DeduplicateLoadPass.cpp")
+      _panda_make_plugin(clang_plugin_${ver}_opt_deduplicate_load_inst "opt_${COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN}" 0 "${_src_base}/DeduplicateLoadPass.cpp")
+   endif()
 
    # Test seam classification and cross-iteration AA with each detected LLVM.
    if(_test_llvmconfig)
@@ -336,7 +359,21 @@ function(_panda_add_clang_plugins ver)
       )
    endif()
 
+   if(ver GREATER_EQUAL 19)
+      list(APPEND _all_plugins
+         clang_plugin_${ver}_openmp_task clang_plugin_${ver}_opt_openmp_task
+         clang_plugin_${ver}_add_full_unroll_meta clang_plugin_${ver}_opt_add_full_unroll_meta
+         clang_plugin_${ver}_dce clang_plugin_${ver}_opt_dce
+         clang_plugin_${ver}_openmp_argument_simplify clang_plugin_${ver}_opt_openmp_argument_simplify
+         clang_plugin_${ver}_deduplicate_load_inst clang_plugin_${ver}_opt_deduplicate_load_inst
+      )
+   endif()
    if(_all_plugins)
+      set(_plugin_outputs)
+      foreach(_plugin IN LISTS _all_plugins)
+         get_target_property(_plugin_output ${_plugin} PLUGIN_OUTPUT)
+         list(APPEND _plugin_outputs "${_plugin_output}")
+      endforeach()
       install(TARGETS ${_all_plugins}
               LIBRARY DESTINATION "${PANDA_LIB_INSTALLDIR_REL}/${_plugin_dir}")
       # Strip installed plugin shared objects to reduce size.
@@ -355,6 +392,7 @@ function(_panda_add_clang_plugins ver)
       ")
    endif()
    add_custom_target(panda_clang_plugins_${ver} ALL DEPENDS ${_all_plugins})
+   set_target_properties(panda_clang_plugins_${ver} PROPERTIES PLUGIN_OUTPUTS "${_plugin_outputs}")
 endfunction()
 
 # Aggregate target to ensure all detected plugin variants build by default.
@@ -362,6 +400,7 @@ add_custom_target(panda_clang_plugins ALL)
 
 foreach(ver IN ITEMS 4 5 6 7 8 9 10 11 12 13 16 19)
    _panda_add_clang_plugins(${ver})
+   set(PANDA_CLANG${ver}_LLVM_CONFIG "${PANDA_CLANG${ver}_LLVM_CONFIG}" PARENT_SCOPE)
    if(TARGET panda_clang_plugins_${ver})
       add_dependencies(panda_clang_plugins panda_clang_plugins_${ver})
    endif()

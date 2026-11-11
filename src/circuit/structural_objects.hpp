@@ -69,6 +69,7 @@ class simple_indent;
 #define CLOCK_PORT_NAME "clock"
 #define WENABLE_PORT_NAME "wenable"
 #define START_PORT_NAME "start_port"
+#define STALL_PORT_NAME "stall_port"
 #define RESET_PORT_NAME "reset"
 #define CACHE_RESET_PORT_NAME "cache_reset"
 #define DONE_PORT_NAME "done_port"

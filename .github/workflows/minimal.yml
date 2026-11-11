@@ -37,8 +37,6 @@ env:
   storage-url: "${{secrets.CI_STORAGE_URL}}"
   storage-user: "${{secrets.CI_STORAGE_USER}}"
   storage-token: "${{secrets.CI_STORAGE_TOKEN}}"
-  host_jobs: $J
-  host_threads: $OMP_NUM_THREADS
   dist-dir: panda_dist
   CI_COMPILERS: clang-4.0,clang-6.0,clang-7,clang-11,clang-13,clang-16,clang-19
 
@@ -78,8 +76,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> $GITHUB_OUTPUT
-          echo "threads=${{env.host_threads}}" >> $GITHUB_OUTPUT
+          echo "jobs=${J:-1}" >> $GITHUB_OUTPUT
+          echo "threads=${OMP_NUM_THREADS:-1}" >> $GITHUB_OUTPUT
           cat > docker_exec.sh << EOF
           #!/bin/bash -e
           # Remove generated sources from compilation database
@@ -92,7 +90,7 @@ jobs:
       - name: Run CPPCheck
         uses: ./.github/actions/codechecks-runner
         with:
-          command: ./docker_exec.sh -j${{env.host_jobs}}
+          command: ./docker_exec.sh -j${{steps.host.outputs.jobs}}
           jobs: ${{steps.host.outputs.jobs}}
           threads: ${{steps.host.outputs.threads}}
       - name: Upload CPPCheck HTML report
@@ -105,6 +103,15 @@ jobs:
         id: error
         shell: bash
         run: |
+          python3 - "${{env.cppcheck-dir}}/cppcheck.xml" <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+          for error in ET.parse(sys.argv[1]).findall('.//error'):
+              if error.get('severity') == 'error':
+                  location = error.find('location')
+                  where = f"{location.get('file')}:{location.get('line')}" if location is not None else 'cppcheck'
+                  print(f"{where}: {error.get('id')}: {error.get('msg')}")
+          PY
           echo "count=$(grep -o -i severity=\"error\" ${{env.cppcheck-dir}}/cppcheck.xml | wc -l)" >> $GITHUB_OUTPUT
       - name: CPPCheck found some errors
         uses: actions/github-script@v8
@@ -256,8 +263,9 @@ jobs:
         run: |
           set -eo pipefail
           source ${{env.dist-dir}}/settings.sh
-          mkdir -p "$GITHUB_WORKSPACE/documentation/tmp" "${{env.report-dir}}"
-          export TMPDIR="$GITHUB_WORKSPACE/documentation/tmp" TMP="$GITHUB_WORKSPACE/documentation/tmp" TEMP="$GITHUB_WORKSPACE/documentation/tmp"
+          tmp_dir="$GITHUB_WORKSPACE/out_vector_frontend_test_tmp"
+          mkdir -p "$tmp_dir" "${{env.report-dir}}"
+          export TMPDIR="$tmp_dir" TMP="$tmp_dir" TEMP="$tmp_dir"
           export OMP_NUM_THREADS=1 CMAKE_BUILD_PARALLEL_LEVEL=1
           python3 -B panda_unit/IR/test_vector_mask_scalable.py --bambu="$(command -v bambu)" | tee "${{env.report-dir}}/vector-scalable.log"
           frontend_pids=()
@@ -298,7 +306,7 @@ jobs:
         shell: bash
         run: ./panda_regressions/hls/bambu_simulation_logging_test.sh
 
-  vector-test:
+  vector-and-loop-pipeline-test:
     needs: [build]
     if: ${{!cancelled() && needs.build.result == 'success' }}
     runs-on: [self-hosted, mentor]
@@ -308,11 +316,13 @@ jobs:
         simulator: [MODELSIM, VERILATOR]
     env:
       script: ./panda_regressions/hls/bambu_vector_test.sh
-      args: -j4 --timeout=20m -c=--simulator=${{matrix.simulator}}
+      args: --timeout=20m -c=--simulator=${{matrix.simulator}}
+      J: 4
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
       - name: Setup repository + distribution
+        id: setup
         uses: ./.github/actions/panda-setup
         with:
           package-name: ${{ needs.build.outputs.package-name }}
@@ -320,15 +330,29 @@ jobs:
           username: ${{ env.storage-user }}
           password: ${{ env.storage-token }}
           submodules: "false"
+      - name: Check the loop-pipelining launcher offline
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && matrix.simulator == 'MODELSIM' }}
+        shell: bash
+        run: python3 -B panda_regressions/hls/bambu_lp_array_channel/test_lp_array_channel.py
       - name: Launch Bambu vector test ${{matrix.simulator}}
         shell: bash
         run: |
           source ${{env.dist-dir}}/settings.sh
-          mkdir -p "$GITHUB_WORKSPACE/documentation/tmp"
-          export TMPDIR="$GITHUB_WORKSPACE/documentation/tmp" TMP="$GITHUB_WORKSPACE/documentation/tmp" TEMP="$GITHUB_WORKSPACE/documentation/tmp"
+          tmp_dir="$GITHUB_WORKSPACE/out_bambu_vector_test_tmp"
+          mkdir -p "$tmp_dir"
+          export TMPDIR="$tmp_dir" TMP="$tmp_dir" TEMP="$tmp_dir"
           export OMP_NUM_THREADS=1 CMAKE_BUILD_PARALLEL_LEVEL=1
           mkdir -p ${{env.report-dir}}
           ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Launch Bambu loop-pipelining array/channel test
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' && matrix.simulator == 'MODELSIM' }}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          tmp_dir="$GITHUB_WORKSPACE/out_bambu_lp_array_channel_MODELSIM_tmp"
+          mkdir -p "$tmp_dir" "${{env.report-dir}}/lp-array-channel"
+          export TMPDIR="$tmp_dir" TMP="$tmp_dir" TEMP="$tmp_dir"
+          ./panda_regressions/hls/bambu_lp_array_channel.sh ${{env.NO_CLEAN_ARG}} --returnfail -j${{env.J}} --timeout=40m --junitdir="${{env.report-dir}}/lp-array-channel"
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
@@ -409,6 +433,102 @@ jobs:
         uses: ./.github/actions/artifact-upload
         with:
           name: bambu_interface_test${{matrix.simulator}}
+          path: ${{env.report-dir}}
+      - name: Clean post-mortem workdirs
+        if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
+        shell: bash
+        run: ./.github/scripts/cleanup-post-mortem-workdirs.sh "${{env.dist-dir}}"
+
+  verilog-axi-burst:
+    needs: [build]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted, mentor]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Run AXI master and component RTL tests
+        shell: bash
+        run: |
+          source "${{env.dist-dir}}/settings.sh"
+          bash panda_regressions/verilog/axi_burst.sh "${{env.report-dir}}/verilog-axi-burst"
+      - name: Upload Verilog component reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: ./.github/actions/artifact-upload
+        with:
+          name: verilog_axi_burst
+          path: ${{env.report-dir}}/verilog-axi-burst
+
+  bambu-axi-burst:
+    needs: [build]
+    if: ${{!cancelled() && needs.build.result == 'success' }}
+    runs-on: [self-hosted, mentor]
+    env:
+      script: ./panda_regressions/hls/bambu_axi_burst.sh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Setup repository + distribution
+        uses: ./.github/actions/panda-setup
+        with:
+          package-name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ env.storage-url }}
+          username: ${{ env.storage-user }}
+          password: ${{ env.storage-token }}
+          submodules: "false"
+      - name: Launch AXI burst regression
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          source etc/libtech/backend/simulation/modelsim/tool_lookup.sh
+          if ! bambu_modelsim_resolve; then
+            echo "::error title=ModelSim not found::vsim is absent from PATH and BAMBU_HLS_BACKEND_PATH"
+            exit 1
+          fi
+          export PATH="$BAMBU_MODELSIM_BIN${PATH:+:$PATH}"
+          printf 'ModelSim lookup source: %s\n' "$BAMBU_MODELSIM_SOURCE"
+          printf 'ModelSim selected bin: %s\n' "$BAMBU_MODELSIM_BIN"
+          mkdir -p "${{env.report-dir}}"
+          for tool in vsim vlib vmap vlog; do
+            tool_path="$BAMBU_MODELSIM_BIN/$tool"
+            if [[ ! -x "$tool_path" ]]; then
+              echo "::error title=Missing ModelSim tool::$tool is not available beside selected vsim at $BAMBU_MODELSIM_BIN"
+              exit 1
+            fi
+            printf 'ModelSim tool %s: %s\n' "$tool" "$tool_path"
+          done
+          output="${{env.report-dir}}/axi-burst-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          ${{env.script}} --group=all --no-clean --output="$output" --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" -c=--simulator=MODELSIM
+      - name: Collect post-mortem data
+        if: ${{ failure() }}
+        shell: bash
+        run: ./.github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Compare results
+        id: perf-check
+        uses: ./.github/actions/perf-check
+        with:
+          test-id: bambu_axi_burst
+          new-results: ${{env.report-dir}}/perf.xml
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Add performance results
+        if: ${{ steps.perf-check.outputs.compare-csv != '' }}
+        shell: bash
+        run: mv ${{ steps.perf-check.outputs.compare-csv }} ${{env.report-dir}}
+      - name: Upload test reports
+        id: upload-test-reports
+        if: ${{ !cancelled() && env.upload-artifacts == '1' }}
+        uses: ./.github/actions/artifact-upload
+        with:
+          name: bambu_axi_burst
           path: ${{env.report-dir}}
       - name: Clean post-mortem workdirs
         if: ${{ !cancelled() && (steps.upload-test-reports.outcome == 'success' || steps.upload-test-reports.outcome == 'skipped') }}
@@ -669,8 +789,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
-          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
+          echo "jobs=${J:-1}" >> "$GITHUB_OUTPUT"
+          echo "threads=${OMP_NUM_THREADS:-1}" >> "$GITHUB_OUTPUT"
       - name: Verify SoftFloat implementation
         uses: ./.github/actions/base-runner
         with:
@@ -745,8 +865,8 @@ jobs:
         id: host
         shell: bash
         run: |
-          echo "jobs=${{env.host_jobs}}" >> "$GITHUB_OUTPUT"
-          echo "threads=${{env.host_threads}}" >> "$GITHUB_OUTPUT"
+          echo "jobs=${J:-1}" >> "$GITHUB_OUTPUT"
+          echo "threads=${OMP_NUM_THREADS:-1}" >> "$GITHUB_OUTPUT"
       - name: Verify LibM functions implementation
         uses: ./.github/actions/base-runner
         with:
@@ -1519,8 +1639,10 @@ jobs:
       - gcc_regression_simple-pretty_print
       - interface-test
       - simulation-logging-test
-      - vector-test
+      - vector-and-loop-pipeline-test
       - vector-frontend-test
+      - verilog-axi-burst
+      - bambu-axi-burst
       - bambu2hls4ml
       - libm-tests
       - discrepancy-test
@@ -1549,11 +1671,20 @@ jobs:
       - name: Check 'Interface Test' status
         if: ${{ needs['interface-test'].result != 'success' }}
         run: exit 1
-      - name: Check 'Vector Test' status
-        if: ${{ needs['vector-test'].result != 'success' }}
+      - name: Check 'Simulation Logging Test' status
+        if: ${{ needs['simulation-logging-test'].result != 'success' }}
+        run: exit 1
+      - name: Check 'Vector and Loop Pipeline Test' status
+        if: ${{ needs['vector-and-loop-pipeline-test'].result != 'success' }}
         run: exit 1
       - name: Check 'Vector Frontend Test' status
         if: ${{ needs['vector-frontend-test'].result != 'success' }}
+        run: exit 1
+      - name: Check 'Verilog AXI burst components' status
+        if: ${{ needs['verilog-axi-burst'].result != 'success' }}
+        run: exit 1
+      - name: Check 'AXI burst HLS' status
+        if: ${{ needs['bambu-axi-burst'].result != 'success' }}
         run: exit 1
       - name: Check 'Bambu hls4ml regression' status
         if: ${{ needs['bambu2hls4ml'].result != 'success' }}
@@ -1597,3 +1728,12 @@ jobs:
       - name: Check 'PandA benchmarks for OpenROAD 2' status
         if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
         run: exit 1
+
+  OpenMP-task-support:
+    needs: [build]
+    uses: ./.github/workflows/reusable-openmp-task.yml
+    with:
+      package-name: ${{needs.build.outputs.package-name}}
+      no-clean: ${{inputs.no-clean || false}}
+      runner-labels: '["self-hosted", "mentor"]'
+    secrets: inherit

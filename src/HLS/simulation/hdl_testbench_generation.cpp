@@ -304,7 +304,10 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                                            parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
                                                "2" :
                                                parameters->getOption<std::string>(OPT_mem_delay_write));
-   tb_mem->SetParameter("base_addr", STR(HLSMgr->base_address));
+   // The testbench is Verilog even when the kernel uses another HDL. ModelSim
+   // rejects unsized decimal literals that exceed 32 bits.
+   tb_mem->SetParameter("base_addr",
+                        (HLSMgr->base_address > 0xffffffffULL ? "64'd" : "") + STR(HLSMgr->base_address));
    tb_mem->SetParameter("index",
                         std::to_string(top_bh->GetParameters().size() + (top_bh->GetFunctionReturnType() != 0)));
    if_modules.push_back(tb_mem);
@@ -477,6 +480,17 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                    axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
                if_port->SetParameter("index", tb_mem->GetParameter("index"));
+               if_port->SetParameter("READ_DELAY", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                                       "3" :
+                                                   parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                                       "4" :
+                                                       parameters->getOption<std::string>(OPT_mem_delay_read));
+               // The AXI model needs at least one cycle between a write and its response.
+               if_port->SetParameter("WRITE_DELAY", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                                        "2" :
+                                                    parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                                        "2" :
+                                                        parameters->getOption<std::string>(OPT_mem_delay_write));
             }
             const auto if_port = tb_top->add_module_from_technology_library("if_addr_" + arg_name, "IF_PORT_IN",
                                                                             LIBRARY_STD, tb_cir, TechM);

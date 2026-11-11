@@ -41,7 +41,9 @@
 #include <limits>
 #include <list>
 #include <map>
+#include <string>
 #include <utility>
+#include <vector>
 
 class funit_obj;
 class memory;

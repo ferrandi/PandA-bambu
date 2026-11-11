@@ -702,6 +702,13 @@ bool AllocationInformation::is_operation_bounded(const OpGraph& g, OpGraph::vert
    return GetPointerS<operation>(op_node)->is_bounded();
 }
 
+bool AllocationInformation::is_capture_protected_result(const OpGraph& g, OpGraph::vertex_descriptor op,
+                                                         unsigned int fu_type) const
+{
+   return is_operation_bounded(g, op, fu_type) && get_initiation_time(fu_type, op) != 0U &&
+          hls_manager->get_produced_value(hls->functionId, op) != 0U && GetCycleLatency(op) > 0U;
+}
+
 bool AllocationInformation::is_operation_bounded(const unsigned int index, unsigned int fu_type) const
 {
    const technology_nodeRef node = get_fu(fu_type);
@@ -711,6 +718,25 @@ bool AllocationInformation::is_operation_bounded(const unsigned int index, unsig
    THROW_ASSERT(op_node, get_fu_name(fu_type).first + " cannot execute " + op_string);
    THROW_ASSERT(GetPointer<operation>(op_node), "Op node is not an operation: " + op_string);
    return GetPointerS<operation>(op_node)->is_bounded();
+}
+
+bool AllocationInformation::is_stallable(unsigned int fu_name) const
+{
+   const auto* fu = GetPointerS<const functional_unit>(get_fu(fu_name));
+   const functional_unit* template_fu = nullptr;
+   if(!fu->fu_template_name.empty())
+   {
+      const auto TM = HLS_D->get_technology_manager();
+      const auto library = TM->get_library(fu->fu_template_name);
+      const auto template_node = TM->get_fu(fu->fu_template_name, library);
+      THROW_ASSERT(template_node, "Missing template " + fu->fu_template_name + " for " + fu->functional_unit_name);
+      const auto* fu_template = GetPointer<const functional_unit_template>(template_node);
+      THROW_ASSERT(fu_template && fu_template->FU,
+                   "Malformed functional unit template " + fu->fu_template_name + " for " + fu->functional_unit_name);
+      template_fu = GetPointer<const functional_unit>(fu_template->FU);
+      THROW_ASSERT(template_fu, "Template backing node is not a functional unit: " + fu->fu_template_name);
+   }
+   return fu->is_stallable(template_fu);
 }
 
 bool AllocationInformation::is_operation_PI_registered(const OpGraph& g, OpGraph::vertex_descriptor op,
