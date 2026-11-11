@@ -300,6 +300,13 @@ void bus_interface::initialize_bmi(const structural_objectRef wrappedObj)
       bi.bank_index = ceil_log2(static_cast<unsigned int>(chunk_size));
    }
 
+   if(bi.use_caches && bi.bank_number == 0 &&
+      HLSMgr->CGetFunctionBehavior(funId)->GetChannelsType() == MemoryAllocation_ChannelsType::MEM_ACC_NN)
+   {
+      THROW_ERROR_USAGE("Non-banked bus caches do not support MEM_ACC_NN: there is no coherence between caches. "
+                        "Use MEM_ACC_11 or MEM_ACC_N1, or configure banked memory.");
+   }
+
    // Count external request channels, not direct-access memory ports. In
    // particular, MEM_ACC_N1 can configure multiple direct ports while exposing
    // a single indirect channel. OpenMP may expose multiple replicated channels.

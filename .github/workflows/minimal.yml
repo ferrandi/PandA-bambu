@@ -410,6 +410,14 @@ jobs:
           source ${{env.dist-dir}}/settings.sh
           mkdir -p ${{env.report-dir}}
           ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Sequential bus and cache regressions
+        if: ${{ matrix.simulator == 'VERILATOR' }}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          python3 -B panda_regressions/hls/bambu_bus_cache/run_tests.py \
+            --out out_bambu_bus_cache --jobs 2 \
+            --junit "${{env.report-dir}}/bus-cache.xml"
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
