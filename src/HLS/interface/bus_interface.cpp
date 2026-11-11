@@ -300,7 +300,14 @@ void bus_interface::initialize_bmi(const structural_objectRef wrappedObj)
       bi.bank_index = ceil_log2(static_cast<unsigned int>(chunk_size));
    }
 
-   bi.channel_number = parameters->getOption<unsigned int>(OPT_channels_number);
+   // Count external request channels, not direct-access memory ports. In
+   // particular, MEM_ACC_N1 can configure multiple direct ports while exposing
+   // a single indirect channel. OpenMP may expose multiple replicated channels.
+   const auto request_port = wrappedObj->find_member("Mout_oe_ram", port_vector_o_K, wrappedObj);
+   THROW_ASSERT(request_port, "Mout_oe_ram port must be present in " + wrappedObj->get_path());
+   bi.channel_number = request_port->get_kind() == port_vector_o_K ?
+                           GetPointerS<port_o>(request_port)->get_ports_size() :
+                           1U;
    bi.bank_index_bits_used = bi.bank_number > 0 ? ceil_log2(bi.bank_number) : 0;
    bi.noc_nodes = bi.bank_number > 0 ? std::max(bi.channel_number, bi.bank_number) : 0;
 
