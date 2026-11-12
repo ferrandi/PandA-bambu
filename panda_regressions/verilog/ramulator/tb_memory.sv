@@ -23,30 +23,21 @@ module tb_memory #(parameter DEPTH = 2);
   reg pending [0:1][0:255];
   reg [31:0] expected [0:1][0:255];
   reg reading [0:1][0:255];
-  integer local_phase = 0;
-  reg checking_external = 1;
-  reg [1:0] slave_ready = 0;
-  reg [63:0] slave_data = 0;
 
   TestbenchMEMRamulatorIntegrated #(.index(0), .QUEUE_SIZE(DEPTH),
     .BITSIZE_Mout_oe_ram(2), .BITSIZE_Mout_we_ram(2),
     .BITSIZE_Mout_addr_ram(128), .BITSIZE_Mout_Wdata_ram(64), .BITSIZE_Mout_data_ram_size(12),
     .BITSIZE_Mout_tag(16), .BITSIZE_M_tag(16), .BITSIZE_M_DataRdy(2), .BITSIZE_M_Rdata_ram(64),
-    .BITSIZE_M_back_pressure(2), .BITSIZE_Mout_back_pressure(2),
-    .BITSIZE_Sout_DataRdy(2), .BITSIZE_Sout_Rdata_ram(64),
-    .BITSIZE_S_oe_ram(2), .BITSIZE_S_we_ram(2), .BITSIZE_S_addr_ram(128),
-    .BITSIZE_S_data_ram_size(12), .BITSIZE_S_Wdata_ram(64)) memory(
+    .BITSIZE_M_back_pressure(2), .BITSIZE_Mout_back_pressure(2)) memory(
     .clock(clock), .reset(reset), .setup_port(setup_port), .done_port(done_port),
     .Mout_oe_ram(oe), .Mout_we_ram(we), .Mout_addr_ram(addr), .Mout_Wdata_ram(wdata),
     .Mout_data_ram_size(size), .Mout_tag(tag), .Mout_back_pressure(request_bp),
-    .M_DataRdy(ready), .M_Rdata_ram(rdata), .M_tag(rtag), .M_back_pressure(bp),
-    .Sout_DataRdy(slave_ready), .Sout_Rdata_ram(slave_data), .S_oe_ram(), .S_we_ram(),
-    .S_addr_ram(), .S_data_ram_size(), .S_Wdata_ram());
+    .M_DataRdy(ready), .M_Rdata_ram(rdata), .M_tag(rtag), .M_back_pressure(bp));
 
   always @(posedge clock)
   begin : scoreboard
     integer channel, t;
-    if(!reset && checking_external)
+    if(!reset)
     begin
       cycle = cycle + 1;
       for(channel = 0; channel < 2; channel = channel + 1)
@@ -114,18 +105,6 @@ module tb_memory #(parameter DEPTH = 2);
         tag[channel*8+:8] = sent[channel];
       end
     end
-    if(local_phase == 1 || local_phase == 2)
-    begin
-      oe = 1;
-      addr[63:0] = 64'h1000;
-      slave_ready = local_phase == 2 ? 1 : 0;
-      slave_data = 64'h5a5a1234;
-    end
-    else
-    begin
-      slave_ready = 0;
-      slave_data = 0;
-    end
   end
 
   initial
@@ -146,17 +125,6 @@ module tb_memory #(parameter DEPTH = 2);
     #1; traffic_running = 1;
     wait(completed[0] == 200 && completed[1] == 200);
     repeat(5) @(negedge clock);
-    checking_external = 0;
-    #1; local_phase = 1;
-    @(negedge clock); #2;
-    if(memory.S_oe_ram[0] != 1 || memory.S_addr_ram[63:0] != 64'h1000)
-      $fatal(1, "minimal internal memory request routing");
-    local_phase = 2;
-    @(negedge clock); #2;
-    if(!ready[0] || rdata[31:0] != 32'h5a5a1234 || rtag[7:0] != 0)
-      $fatal(1, "minimal internal memory response merge");
-    local_phase = 3;
-    @(negedge clock); #2;
     done_port = 1;
     if(stalled_requests == 0 || stalled_responses == 0) $fatal(1, "missing minimal saturation coverage");
     if(DEPTH == 64 && out_of_order == 0) $fatal(1, "missing out-of-order response coverage");

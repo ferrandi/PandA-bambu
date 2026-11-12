@@ -3299,29 +3299,8 @@ end
           <port_o id="Mout_tag" dir="IN" is_memory="1" is_master="1">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <port_o id="Sout_DataRdy" dir="IN" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="Sout_Rdata_ram" dir="IN" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-          </port_o>
-          <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="S_data_ram_size" dir="OUT" is_memory="1" is_slave="1" is_size_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="4"/>
-          </port_o>
-          <port_o id="S_Wdata_ram" dir="OUT" is_memory="1" is_slave="1" is_data_bus="1">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="8"/>
-          </port_o>
           <NP_functionality
-            LIBRARY="TestbenchMEMRamulatorIntegrated index base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
+            LIBRARY="TestbenchMEMRamulatorIntegrated index base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag"
             VERILOG_PROVIDED="import &quot;DPI-C&quot; function int m_read_request
     (input shortint unsigned id,
      input shortint unsigned bitsize,
@@ -3346,15 +3325,7 @@ localparam CHANNELS_NUMBER = BITSIZE_Mout_oe_ram,
            BITSIZE_Wdata = BITSIZE_Mout_Wdata_ram / CHANNELS_NUMBER,
            BITSIZE_Rdata = BITSIZE_M_Rdata_ram / CHANNELS_NUMBER,
            BITSIZE_tag = BITSIZE_Mout_tag / CHANNELS_NUMBER,
-           BITSIZE_S_Rdata = BITSIZE_Sout_Rdata_ram / BITSIZE_S_oe_ram,
-           SLAVE_VALID = BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
            C_REQUEST = QUEUE_SIZE &gt; 0 ? QUEUE_SIZE : 1, C_RESPONSE = C_REQUEST;
-
-assign S_oe_ram = Mout_oe_ram;
-assign S_we_ram = Mout_we_ram;
-assign S_addr_ram = Mout_addr_ram;
-assign S_data_ram_size = Mout_data_ram_size;
-assign S_Wdata_ram = Mout_Wdata_ram;
 
 initial
 begin
@@ -3448,7 +3419,6 @@ generate
     wire [BITSIZE_tag - 1 : 0] response_tag = response_count_reg != 0
                                                   ? response_tag_reg[response_head_reg]
                                                   : completion_tag_reg;
-    wire slave_ready = Sout_DataRdy[i * SLAVE_VALID] === 1'b1;
 
     assign request_in = {Mout_we_ram[i], address,
                          Mout_data_ram_size[BITSIZE_Wsize * i +: BITSIZE_Wsize],
@@ -3457,11 +3427,8 @@ generate
     assign request_head = request_count_reg != 0 ? request_reg[request_head_reg] : request_in;
     // Response backpressure must not create a combinational cycle through the NoC.
     assign Mout_back_pressure[i] = external_request &amp;&amp; request_count_reg == C_REQUEST;
-    assign M_DataRdy[i] = response_valid || slave_ready;
-    assign M_Rdata_ram[BITSIZE_Rdata * i +: BITSIZE_Rdata] =
-               (response_valid ? response_data : '0) |
-               (Sout_Rdata_ram[BITSIZE_S_Rdata * i * SLAVE_VALID +: BITSIZE_S_Rdata] &amp;
-                {BITSIZE_S_Rdata{slave_ready}});
+    assign M_DataRdy[i] = response_valid;
+    assign M_Rdata_ram[BITSIZE_Rdata * i +: BITSIZE_Rdata] = response_valid ? response_data : '0;
     assign M_tag[BITSIZE_tag * i +: BITSIZE_tag] = response_valid ? response_tag : '0;
 
     always @(posedge clock)

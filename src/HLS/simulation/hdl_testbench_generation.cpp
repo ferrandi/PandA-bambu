@@ -255,6 +255,11 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       {
          mem_component = "TestbenchMEMRamulatorIntegrated";
          ramulator_memory = true;
+         if(parameters->getOption<bool>(OPT_expose_globals) &&
+            dut->find_member("S_oe_ram", port_o_K, dut) && dut->find_member(MOUT_OE_PORT_NAME, port_o_K, dut))
+         {
+            THROW_ERROR("Ramulator requires internal memory feedback inside the accelerator; omit --expose-globals.");
+         }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating " + mem_component + "...");
       tb_mem =
@@ -412,7 +417,11 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
          }
 
          // Merge all matching out signals from memory master modules and testbench memory
-         master_ports.push_front(tb_mem);
+         // Only memory models exposing slave request ports contribute to this bus.
+         if(tb_mem->find_member("S_oe_ram", port_o_K, tb_mem))
+         {
+            master_ports.push_front(tb_mem);
+         }
          for(unsigned int i = 0; i < master_mod->get_out_port_size(); ++i)
          {
             const auto out_port = master_mod->get_out_port(i);

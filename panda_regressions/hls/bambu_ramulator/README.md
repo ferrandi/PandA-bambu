@@ -180,8 +180,11 @@ python3 -B panda_regressions/verilog/ramulator/run_tests.py \
 
 `RAMULATOR2_DIR` must name the standard installation prefix. The suite checks
 real read/write rejection at capacity, including absence of writes on rejection;
-minimal request/response queues of depth 1, 2, 4 and 64; multiple channels and
-internal-memory response merging; and AXI transaction queues of depth 1, 2 and 4.
+minimal request/response queues of depth 1, 2, 4 and 64 with multiple channels;
+and AXI transaction queues of depth 1, 2 and 4. The minimal memory model exposes
+only the external master interface; internal-memory feedback belongs to the DUT.
+Configurations exposing this feedback through `--expose-globals` are rejected;
+omit that option with Ramulator.
 The AXI fixture exercises independent AW/W, FIXED and INCR bursts up to 256 beats,
 sparse and empty strobes, and long independent stalls on R/B. A burst occupies
 one AR/AW slot; response storage reserves all its beats. Minimal responses use
