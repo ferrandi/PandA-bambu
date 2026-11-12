@@ -102,7 +102,6 @@ int main(void)
    assert(m_write_request(0, data, 4097, address, 0) < 0);
    assert(m_write_request(0, data, 32, address, 1) < 0);
    assert(m_write_request(0, NULL, 32, address, 0) < 0);
-   assert(m_read_complete(0, NULL) < 0);
    assert(m_read_request(65000, 32, address, 0) < 0);
    memset(data, 0xff, sizeof(data));
    assert(m_read_complete_ch(0, 99, data) == 0);

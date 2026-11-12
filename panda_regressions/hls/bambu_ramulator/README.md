@@ -187,7 +187,13 @@ Configurations exposing this feedback through `--expose-globals` are rejected;
 omit that option with Ramulator.
 The AXI fixture exercises independent AW/W, FIXED and INCR bursts up to 256 beats,
 sparse and empty strobes, and long independent stalls on R/B. A burst occupies
-one AR/AW slot; response storage reserves all its beats. Minimal responses use
+one AR/AW slot; response storage reserves all its beats. A shared byte-lane
+fixture also checks the classic AXI model with real untimed MDPI and the
+Ramulator AXI model with real Ramulator, at queue depths 1 and 4. It covers
+byte/halfword transfers on nonzero lanes, word boundaries, unaligned first beats,
+FIXED/INCR bursts, neighbouring-byte preservation and stalled responses.
+Completion-polling errors are fatal in MDPI; separate process tests check invalid
+interfaces, a non-Ramulator interface and a null result buffer. Minimal responses use
 full driver tags and a FIFO with bypass. Writes complete on Ramulator acceptance,
 with no additional fixed delay. Rejected requests stay in bounded RTL queues.
 

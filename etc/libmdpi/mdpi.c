@@ -305,7 +305,8 @@ int m_read_complete_ch(mdpi_idx_t id, uint8_t channel, svLogicVecVal* data)
    const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_COMPLETE;
    if(!data)
    {
-      return -1;
+      error("Null data buffer for Ramulator completion polling on interface %u.\n", id);
+      abort();
    }
    memset(data, 0, sizeof(__m_ipc_operation.payload.interface.buffer) / sizeof(data[0].aval) * sizeof(*data));
    __ipc_reserve();
@@ -341,6 +342,11 @@ int m_read_complete_ch(mdpi_idx_t id, uint8_t channel, svLogicVecVal* data)
       }
    }
    __ipc_release();
+   if(retval < 0)
+   {
+      error("Ramulator completion polling failed on interface %u, channel %u: %d.\n", id, channel, retval);
+      abort();
+   }
    return retval;
 }
 

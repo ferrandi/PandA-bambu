@@ -81,7 +81,7 @@ def main():
     results.append(('mdpi-acceptance', time.monotonic()-start, error, directory))
     if not error:
         clients = {}
-        for name in ('memory_contract', 'clock_contract', 'plain_contract'):
+        for name in ('memory_contract', 'clock_contract', 'plain_contract', 'completion_error'):
             clients[name] = directory / name
             execute(['gcc', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                      HERE / f'{name}.c', '-o', clients[name]], directory)
@@ -126,6 +126,12 @@ def main():
             results.append((name, time.monotonic()-start, error, case_dir))
 
         contract('memory-contract', 'memory_contract')
+        contract('completion-null-buffer', 'completion_error', updates={'MDPI_TEST_NULL_COMPLETION': '1'},
+                 failure=True, diagnostic='Null data buffer for Ramulator completion polling')
+        contract('completion-invalid-interface', 'completion_error', failure=True,
+                 diagnostic='Ramulator completion polling failed')
+        contract('completion-plain-interface', 'completion_error', updates={'MDPI_TEST_PLAIN': '1'},
+                 failure=True, diagnostic='Ramulator completion polling failed')
         contract('plain-with-library', 'plain_contract', updates={'MDPI_TEST_PLAIN': '1'},
                  config=directory / 'missing.yaml', plain=True)
         execute(['g++', '-std=c++14', '-fno-exceptions', *common, ROOT / 'etc/libmdpi/mdpi_driver.cpp',
@@ -182,22 +188,26 @@ def main():
     if not error and not args.contract_only:
         models = directory / 'models.sv'
         models.write_text('typedef longint unsigned ptr_t;\n' + extract('TestbenchMEMRamulatorIntegrated') +
-                          extract('TestbenchMEMAXIRamulatorIntegrated'))
+                          extract('TestbenchMEMAXIRamulatorIntegrated') + extract('if_utils') + extract('TestbenchMEMAXI'))
         execute(['gcc', '-c', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                  '-o', directory / 'mdpi.o'], directory)
-        for model in ('memory', 'axi'):
-            for depth in ((1, 2, 4, 64) if model == 'memory' else (1, 2, 4)):
+        for model in ('memory', 'axi', 'axi_lanes', 'classic_axi_lanes'):
+            for depth in ((1, 2, 4, 64) if model == 'memory' else (1, 4) if 'lanes' in model else (1, 2, 4)):
                 name = f'{model}-depth{depth}'
                 case_dir = directory / name
                 case_dir.mkdir()
                 start = time.monotonic()
                 error = None
                 try:
-                    execute([str(verilator), '--binary', '--timing', '-Wno-fatal', '--top-module', f'tb_{model}',
+                    fixture = 'axi_lanes' if 'lanes' in model else model
+                    defines = ['-DCLASSIC_AXI'] if model == 'classic_axi_lanes' else []
+                    execute([str(verilator), *defines, '--binary', '--timing', '-Wno-fatal', '--top-module', f'tb_{fixture}',
                              f'-GDEPTH={depth}', '--Mdir', case_dir / 'obj', models,
-                             HERE / f'tb_{model}.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
+                             HERE / f'tb_{fixture}.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
                     case_env = env.copy()
-                    case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / f'obj/Vtb_{model}')
+                    case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / f'obj/Vtb_{fixture}')
+                    if model == 'classic_axi_lanes':
+                        case_env['MDPI_TEST_PLAIN'] = '1'
                     execute([directory / 'host'], case_dir, env=case_env, timeout=60)
                 except (OSError, subprocess.SubprocessError) as exception:
                     error = str(exception)

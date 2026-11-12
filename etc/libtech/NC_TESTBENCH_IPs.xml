@@ -225,6 +225,7 @@ function automatic int write_strobe(input logic [BITSIZE_data-1:0] data, input l
   begin
     addr = addr + 1;
     strobe = strobe &gt;&gt; 1;
+    data = data &gt;&gt; 8;
   end
   while(strobe[0])
   begin
@@ -1008,6 +1009,7 @@ endgenerate
             IP_COMPONENT="if_utils"
             LIBRARY="TestbenchMEMAXI index QUEUE_SIZE READ_DELAY WRITE_DELAY arid araddr arlen arsize arburst arlock arcache arprot arqos arregion aruser rid rdata rresp ruser awid awaddr awlen awsize awburst awlock awcache awprot awqos awregion awuser wdata wstrb wuser bid bresp buser"
             VERILOG_PROVIDED="localparam integer BITSIZE_data = BITSIZE_rdata;
+localparam integer BYTES_PER_WORD = BITSIZE_data / 8;
 localparam integer BITSIZE_id = BITSIZE_arid;
 localparam integer BITSIZE_addr = BITSIZE_araddr;
 localparam integer BITSIZE_size = BITSIZE_arsize;
@@ -1112,8 +1114,9 @@ wire read_load = (!rvalid_reg || rready) &amp;&amp; (ar_count_reg &gt; (ar_pop ?
                  cycle_count_reg &gt;= ar_time_reg[read_slot] + READ_DELAY - 1;
 wire [BITSIZE_addr - 1 : 0] read_address = ar_burst_reg[read_slot] == 2'b00
                                                ? ar_addr_reg[read_slot]
-                                               : ar_addr_reg[read_slot] +
-                                                     read_beat * (1 &lt;&lt; ar_size_reg[read_slot]);
+                                               : (read_beat == 0 ? ar_addr_reg[read_slot] :
+                                                  (ar_addr_reg[read_slot] / (1 &lt;&lt; ar_size_reg[read_slot]) +
+                                                   read_beat) * (1 &lt;&lt; ar_size_reg[read_slot]));
 
 // AXI4 write data has no ID. Associate it with the oldest incomplete AW,
 // including an AW accepted on this edge when there is no older owner.
@@ -1155,7 +1158,12 @@ wire [31 : 0] write_beats = {1'b0, write_length} + 1;
 wire write_final = write_beat == write_beats - 1;
 wire [BITSIZE_addr - 1 : 0] write_address = write_burst == 2'b00
                                                 ? write_base
-                                                : write_base + write_beat * (1 &lt;&lt; write_size);
+                                                : (write_beat == 0 ? write_base :
+                                                   (write_base / (1 &lt;&lt; write_size) + write_beat) *
+                                                       (1 &lt;&lt; write_size));
+// WSTRB indexes byte lanes within the aligned bus word.
+wire [BITSIZE_addr - 1 : 0] write_word_address =
+    (write_address / BYTES_PER_WORD) * BYTES_PER_WORD;
 wire w_enqueue = w_push &amp;&amp; !(commit_write &amp;&amp; w_is_new);
 wire w_pop = commit_write &amp;&amp; !w_is_new;
 
@@ -1739,7 +1747,7 @@ begin : independent_axi_model
       case(ar_burst_reg[read_slot])
         2'b00, 2'b01:
         begin
-          rdata_reg &lt;= m_utils.read_a(read_address);
+          rdata_reg &lt;= m_utils.read_a((read_address / BYTES_PER_WORD) * BYTES_PER_WORD);
         end
         default:
         begin
@@ -1756,7 +1764,7 @@ begin : independent_axi_model
       case(write_burst)
         2'b00, 2'b01:
         begin
-          void'(m_utils.write_strobe(write_data, write_strobe, write_address));
+          void'(m_utils.write_strobe(write_data, write_strobe, write_word_address));
         end
         default:
         begin
@@ -3758,6 +3766,7 @@ endgenerate
           <NP_functionality
             LIBRARY="TestbenchMEMAXIRamulatorIntegrated index AXI_PORT_ID QUEUE_SIZE arid araddr arlen arsize arburst arlock arcache arprot arqos arregion aruser rid rdata rresp ruser awid awaddr awlen awsize awburst awlock awcache awprot awqos awregion awuser wdata wstrb wuser bid bresp buser"
             VERILOG_PROVIDED="localparam integer BITSIZE_data = BITSIZE_rdata;
+localparam integer BYTES_PER_WORD = BITSIZE_data / 8;
 localparam integer BITSIZE_id = BITSIZE_arid;
 localparam integer BITSIZE_addr = BITSIZE_araddr;
 localparam integer BITSIZE_size = BITSIZE_arsize;
@@ -3878,7 +3887,12 @@ wire [31 : 0] write_beats = {1'b0, write_length} + 1;
 wire write_final = write_beat == write_beats - 1;
 wire [BITSIZE_addr - 1 : 0] write_address = write_burst == 2'b00
                                                 ? write_base
-                                                : write_base + write_beat * (1 &lt;&lt; write_size);
+                                                : (write_beat == 0 ? write_base :
+                                                   (write_base / (1 &lt;&lt; write_size) + write_beat) *
+                                                       (1 &lt;&lt; write_size));
+// WSTRB indexes byte lanes within the aligned bus word.
+wire [BITSIZE_addr - 1 : 0] write_word_address =
+    (write_address / BYTES_PER_WORD) * BYTES_PER_WORD;
 wire w_pop = commit_write;
 
 always @(posedge clock)
@@ -4425,14 +4439,17 @@ begin : ramulator_backend
         end
         2'b01:
         begin
-          address = ar_addr_reg[slot] + beat * (1 &lt;&lt; ar_size_reg[slot]);
+          address = beat == 0 ? ar_addr_reg[slot] :
+                                  (ar_addr_reg[slot] / (1 &lt;&lt; ar_size_reg[slot]) + beat) *
+                                      (1 &lt;&lt; ar_size_reg[slot]);
         end
         default:
         begin
           $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst_reg[slot]);
         end
       endcase
-      result = m_read_request(index, BITSIZE_data, address, AXI_PORT_ID[7 : 0]);
+      result = m_read_request(index, BITSIZE_data,
+                              (address / BYTES_PER_WORD) * BYTES_PER_WORD, AXI_PORT_ID[7 : 0]);
       if(result &gt; 0)
       begin
         ar_driver_tag_reg[slot][beat] = result;
@@ -4470,7 +4487,7 @@ begin : ramulator_backend
       begin
         data = 0;
         data[BITSIZE_data - 1 : 0] = write_data &gt;&gt; (8 * offset);
-        result = m_write_request(index, data, 8 * length, write_address + offset, 0);
+        result = m_write_request(index, data, 8 * length, write_word_address + offset, 0);
         if(result &gt; 0)
         begin
           offset = offset + length;
