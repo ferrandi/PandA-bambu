@@ -180,9 +180,80 @@ jobs:
       test-compiler: I386_CLANG13
     secrets: inherit
 
+  ramulator-long:
+    name: Ramulator long benchmarks
+    needs: [build]
+    runs-on: [self-hosted, long]
+    container: ubuntu:24.04
+    timeout-minutes: 1440
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install test tools
+        run: |
+          apt-get update
+          apt-get install --no-install-recommends -y \
+            ca-certificates git curl xz-utils build-essential cmake python3 \
+            clang verilator binutils gettext-base bc
+      - name: Checkout Bambu
+        uses: actions/checkout@v5
+        with:
+          submodules: false
+      - name: Checkout pinned benchmark collection and its dependencies
+        run: |
+          git submodule update --init -- examples/ramulator-examples
+          git -C examples/ramulator-examples submodule update --init --recursive
+      - name: Build and install pinned Ramulator once
+        env:
+          RAMULATOR_BUILD_JOBS: '4'
+        run: |
+          bash panda_regressions/hls/bambu_ramulator/prepare_ramulator.sh \
+            "$RUNNER_TEMP/ramulator-long-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" --checkout
+      - name: Download matching Bambu distribution
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{ needs.build.outputs.package-name }}
+          storage-url: ${{ secrets.CI_STORAGE_URL }}
+          username: ${{ secrets.CI_STORAGE_USER }}
+          password: ${{ secrets.CI_STORAGE_TOKEN }}
+      - name: Download Clang 13 when not bundled
+        run: |
+          bash .devcontainer/library-scripts/compiler-download.sh \
+            "$PWD/panda_dist/compilers" clang-13 "${LOCAL_COMPILERS_BACKUP:-}"
+      - name: Run all Ramulator benchmark suites
+        run: |
+          set -o pipefail
+          source panda_dist/settings.sh
+          export RAMULATOR2_DIR="$RUNNER_TEMP/ramulator-long-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/install"
+          ./examples/ramulator-examples/run_tests.sh --all --no-compare --tag full-ci \
+            2>&1 | tee ramulator-long.log
+      - name: Upload benchmark results and dependency build logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ramulator-long-results-${{ github.run_id }}-${{ github.run_attempt }}
+          include-hidden-files: true
+          if-no-files-found: warn
+          path: |
+            ramulator-long.log
+            examples/ramulator-examples/.runs/**/batch.json
+            examples/ramulator-examples/.runs/**/metadata.json
+            examples/ramulator-examples/.runs/**/summary.csv
+            examples/ramulator-examples/.runs/**/cases/*.json
+            examples/ramulator-examples/.runs/**/config_snapshot/**/inputs.json
+            examples/ramulator-examples/.runs/**/config_snapshot/**/bambu_flags.json
+            examples/ramulator-examples/.runs/**/config_snapshot/**/*.yaml
+            examples/ramulator-examples/.runs/**/logs/*.gz
+            examples/ramulator-examples/.runs/**/logs/*.xml
+            ${{ runner.temp }}/ramulator-long-${{ github.run_id }}-${{ github.run_attempt }}/*.log
+            ${{ runner.temp }}/ramulator-long-${{ github.run_id }}-${{ github.run_attempt }}/provenance.json
+
   success:
     if: ${{ !cancelled() }}
-    needs: [grs, grs-vhdl, examples]
+    needs: [grs, grs-vhdl, examples, ramulator-long]
     runs-on: [self-hosted]
     steps:
       - name: Check GCC Regression Simple status
@@ -193,4 +264,7 @@ jobs:
         run: exit 1
       - name: Check Examples status
         if: ${{ needs.examples.result != 'success' }}
+        run: exit 1
+      - name: Check Ramulator long benchmarks status
+        if: ${{ needs['ramulator-long'].result != 'success' }}
         run: exit 1
