@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import shlex
 import signal
+import re
+from fractions import Fraction
 import shutil
 import subprocess
 import time
@@ -54,7 +56,7 @@ def main():
     dpi = Path(subprocess.check_output([str(verilator), '-getenv', 'VERILATOR_ROOT'], text=True).strip()) / 'include/vltstd'
     directory = args.out.resolve()
     directory.mkdir(parents=True, exist_ok=False)
-    common = ['-D__M64', '-DBAMBU_CSIM', '-D__M_OUT_LVL=2', f'-I{ROOT / "etc/libmdpi/include"}',
+    common = ['-D__M64', '-DVERILATOR', '-D__M_OUT_LVL=4', f'-I{ROOT / "etc/libmdpi/include"}',
               f'-I{args.bambu_prefix.resolve() / "include/panda"}', f'-I{dpi}']
     start = time.monotonic()
     error = None
@@ -63,7 +65,7 @@ def main():
         execute(['g++', '-std=c++20', *common, '-DHAVE_RAMULATOR2',
                  f'-I{prefix / "include/ramulator"}', f'-I{prefix / "include"}',
                  ROOT / 'etc/libmdpi/mdpi_driver.cpp', HERE / 'host.cpp',
-                 f'-L{libdir}', f'-Wl,-rpath,{libdir}', '-lramulator', '-lyaml-cpp', '-lpthread',
+                 f'-L{libdir}', f'-Wl,-rpath,{libdir}', '-lramulator', '-lpthread',
                  '-o', directory / 'host'], directory)
         execute(['gcc', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                  HERE / 'acceptance.c', '-o', directory / 'acceptance'], directory)
@@ -75,7 +77,104 @@ def main():
         execute([directory / 'host'], directory, env=env, timeout=60)
     except (OSError, subprocess.SubprocessError) as exception:
         error = str(exception)
+    print('FAIL' if error else 'PASS', 'mdpi-acceptance', flush=True)
     results.append(('mdpi-acceptance', time.monotonic()-start, error, directory))
+    if not error:
+        clients = {}
+        for name in ('memory_contract', 'clock_contract', 'plain_contract'):
+            clients[name] = directory / name
+            execute(['gcc', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
+                     HERE / f'{name}.c', '-o', clients[name]], directory)
+
+        def contract(name, client, updates=None, config=None, expected_ratio=None, plain=False, failure=False,
+                     host=None, diagnostic=None):
+            case_dir = directory / name
+            case_dir.mkdir()
+            start = time.monotonic()
+            error = None
+            case_env = env.copy()
+            case_env.pop('RAMULATOR_OVERRIDE_CHANNELS', None)
+            case_env['BAMBU_IPC_SIM_CMD'] = str(clients[client])
+            if updates:
+                case_env.update(updates)
+            if config:
+                case_env['RAMULATOR2_CONFIG'] = str(config)
+            try:
+                try:
+                    execute([host or directory / 'host'], case_dir, env=case_env, timeout=30)
+                except subprocess.CalledProcessError:
+                    if not failure:
+                        raise
+                else:
+                    if failure:
+                        raise ValueError('Invalid configuration unexpectedly succeeded')
+                log = (case_dir / 'run.log').read_text(errors='replace')
+                if failure and (diagnostic or 'Ramulator2 initialization failed') not in log:
+                    raise ValueError('Missing expected initialization diagnostic')
+                if diagnostic and diagnostic not in log:
+                    raise ValueError(f'Missing expected diagnostic: {diagnostic}')
+                if plain and 'Ramulator2 successfully initialized' in log:
+                    raise ValueError('Plain memory unexpectedly initialized Ramulator')
+                if expected_ratio is not None:
+                    ticks = re.findall(r'CYCLES=(\d+),DRAM_TICKS=(\d+)', log)
+                    expected = int(Fraction(str(expected_ratio))*2000)
+                    if ticks != [('2000', str(expected)), ('2000', str(expected))]:
+                        raise ValueError(f'Incorrect independent clock conversion: {ticks}, expected {expected}')
+            except (OSError, subprocess.SubprocessError, ValueError) as exception:
+                error = str(exception)
+            print('FAIL' if error else 'PASS', name, flush=True)
+            results.append((name, time.monotonic()-start, error, case_dir))
+
+        contract('memory-contract', 'memory_contract')
+        contract('plain-with-library', 'plain_contract', updates={'MDPI_TEST_PLAIN': '1'},
+                 config=directory / 'missing.yaml', plain=True)
+        execute(['g++', '-std=c++14', '-fno-exceptions', *common, ROOT / 'etc/libmdpi/mdpi_driver.cpp',
+                 HERE / 'host.cpp', '-lpthread', '-ldl', '-o', directory / 'host_plain'], directory)
+        contract('plain-without-library', 'plain_contract', updates={'MDPI_TEST_PLAIN': '1'},
+                 plain=True, host=directory / 'host_plain')
+        contract('ramulator-without-library', 'clock_contract', host=directory / 'host_plain',
+                 failure=True, diagnostic='MDPI driver has no Ramulator support')
+        default = (ROOT / 'etc/libmdpi/configs/default_ddr4.yaml').read_text()
+        for ratio in ('0.25', '0.3', '1.5', '3.7', '6.5'):
+            config = directory / f'clock-{ratio}.yaml'
+            config.write_text(default.replace('clock_ratio: 3', f'clock_ratio: {ratio}'))
+            contract(f'clock-{ratio}', 'clock_contract', config=config, expected_ratio=ratio,
+                     updates={'MDPI_TEST_MEMORIES': '2'})
+        for config in sorted((ROOT / 'etc/libmdpi/configs').glob('*.yaml')):
+            text = config.read_text()
+            if re.search(r'impl: DDR3\b', text):
+                # The pinned library's ClosedRowPolicy requires bank groups.
+                # Assert the driver reports this failure, without silently changing policy.
+                contract(f'reject-preset-{config.stem}', 'clock_contract', config=config,
+                         failure=True, diagnostic='unordered_map::at')
+                compatible = directory / f'open-{config.name}'
+                compatible.write_text(text.replace('impl: ClosedRowPolicy', 'impl: OpenRowPolicy'))
+                contract(f'ddr3-open-{config.stem}', 'clock_contract', config=compatible)
+            elif re.search(r'impl: DDR5\b', text):
+                # Its multi-channel statistics use duplicate unformatted names.
+                contract(f'reject-preset-{config.stem}', 'clock_contract', config=config,
+                         failure=True, diagnostic='already registered')
+                contract(f'ddr5-single-{config.stem}', 'clock_contract', config=config,
+                         updates={'RAMULATOR_OVERRIDE_CHANNELS': '1'})
+            else:
+                contract(f'preset-{config.stem}', 'clock_contract', config=config)
+        contract('invalid-channel-override', 'clock_contract', config=ROOT / 'etc/libmdpi/configs/default_ddr4.yaml',
+                 updates={'RAMULATOR_OVERRIDE_CHANNELS': 'invalid'}, failure=True,
+                 diagnostic='RAMULATOR_OVERRIDE_CHANNELS must be 0 or 1')
+        include_dir = directory / 'includes'
+        include_dir.mkdir()
+        (include_dir / 'dram.yaml').write_text('impl: DDR4\norg: {preset: DDR4_8Gb_x8, channel: 1, rank: 1}\n'
+                                               'timing: {preset: DDR4_2400R}\n')
+        included = re.sub(r'  DRAM:\n.*?  Controller:', '  DRAM: !include dram.yaml\n  Controller:', default, flags=re.S)
+        (include_dir / 'root.yaml').write_text(included)
+        contract('relative-include', 'clock_contract', config=include_dir / 'root.yaml')
+        contract('missing-config', 'clock_contract', config=directory / 'missing.yaml', failure=True)
+        for ratio in ('0', '-1', '.nan'):
+            config = directory / f'invalid-{ratio}.yaml'
+            config.write_text(default.replace('clock_ratio: 3', f'clock_ratio: {ratio}'))
+            contract(f'invalid-ratio-{ratio}', 'clock_contract', config=config, failure=True)
+        (include_dir / 'cycle.yaml').write_text('!include cycle.yaml\n')
+        contract('cyclic-include', 'clock_contract', config=include_dir / 'cycle.yaml', failure=True)
     if not error and not args.contract_only:
         models = directory / 'models.sv'
         models.write_text('typedef longint unsigned ptr_t;\n' + extract('TestbenchMEMRamulatorIntegrated') +

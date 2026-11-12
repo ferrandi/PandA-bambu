@@ -74,7 +74,11 @@ DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++14 -fno-exceptions
 # RAMULATOR2_DIR is a standard installation prefix, not a source directory.
 # Source checkouts default to the in-tree submodule's local installation.
 # Installed Bambu users can select any prefix through RAMULATOR2_DIR.
-RAMULATOR2_DIR ?= $(abspath $(libmdpi_root)/../../ext/ramulator2-no-spdlog/install)
+ramulator_prefixes := $(abspath $(libmdpi_root)/../../ext/ramulator2-no-spdlog/install)
+ifneq (,$(BAMBU_HLS))
+ramulator_prefixes += $(abspath $(BAMBU_HLS)/../ext/ramulator2-no-spdlog/install)
+endif
+RAMULATOR2_DIR ?= $(firstword $(foreach prefix,$(ramulator_prefixes),$(if $(wildcard $(prefix)/include/ramulator/base/config.h),$(prefix))))
 RAMULATOR2_LIBDIR ?= $(patsubst %/,%,$(dir $(firstword $(wildcard $(RAMULATOR2_DIR)/lib/libramulator.so $(RAMULATOR2_DIR)/lib64/libramulator.so $(RAMULATOR2_DIR)/lib/*/libramulator.so))))
 ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
 	DRIVER_CFLAGS := $(filter-out -fno-exceptions -std=c++14,$(DRIVER_CFLAGS))
@@ -164,17 +168,17 @@ $(PP_OBJ): $(PP_SRC)
 	$(Q)objcopy --keep-global-symbol $(TOP_FNAME) $$(nm $@ | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\n' ' ') $@
 	$(Q)objcopy --redefine-sym $(TOP_FNAME)=$(MPPTOP_FNAME) $@
 
-$(WRAPPER_MDPI_OBJ): $(WRAPPER_MDPI_SRC)
+$(WRAPPER_MDPI_OBJ): $(WRAPPER_MDPI_SRC) $(wildcard $(panda_includes)/mdpi/*.h) $(libmdpi_root)/Makefile.mk
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
 	$(Q)$(CC) $(WRAPPER_CFLAGS) -fPIC -c -o $@ $<
 
-$(WRAPPER_CSROA_OBJ): $(WRAPPER_CSROA_SRC)
+$(WRAPPER_CSROA_OBJ): $(WRAPPER_CSROA_SRC) $(wildcard $(panda_includes)/mdpi/*.h) $(libmdpi_root)/Makefile.mk
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
 	$(Q)$(CC) $(WRAPPER_CFLAGS) -fPIC -c -o $@ $<
 
-$(DRIVER_OBJ): $(DRIVER_SRC)
+$(DRIVER_OBJ): $(DRIVER_SRC) $(wildcard $(panda_includes)/mdpi/*.h) $(libmdpi_root)/Makefile.mk
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
 	$(Q)$(CC) $(DRIVER_CFLAGS) -fPIC -c -o $@ $<

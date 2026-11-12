@@ -16,7 +16,7 @@
 #     This is above the official JEDEC DDR3 limit (1600) and is sometimes
 #     found on enthusiast/server DIMMs.
 #
-# Frequency scaling (DDR/accel <= 6 cap):
+# Frequency scaling (DRAM ticks per accelerator cycle):
 #   DDR3-2133 real DRAM clock ~= 1066 MHz, tCK ~= 0.937 ns.
 #   clock_ratio = 6 requires accelerator clock ~= 178 MHz
 #   (--clock-period=5.625) for a cycle-accurate wall-clock match.

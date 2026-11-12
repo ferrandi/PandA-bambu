@@ -14,13 +14,10 @@
 # Ramulator mapping:
 #   - DDR4_16Gb_x8 organization matches 16 GB per channel, 1 rank
 #   - DDR4_2400R timing preset is the JEDEC CL=16-16-16 2400 MT/s bin
-#   - channel: 4 documents the board; bambu overrides this at runtime with
-#     --channels-number, so to actually exercise 4 channels you must also
-#     pass --channels-number=4 on the bambu command line (the stock
-#     benchmark scripts currently use --channels-number=1, which models a
-#     single U250 channel shared by the accelerator).
+#   - channel: 4 is used as configured. RAMULATOR_OVERRIDE_CHANNELS=1
+#     explicitly replaces it with the accelerator's --channels-number.
 #
-# Frequency scaling (DDR/accel <= 6 cap):
+# Frequency scaling (DRAM ticks per accelerator cycle):
 #   DDR4-2400 real DRAM clock = 1200 MHz.
 #   clock_ratio = 6 requires accelerator clock = 200 MHz (--clock-period=5.0)
 #   for a cycle-accurate wall-clock match of the real xcu250 DRAM. The

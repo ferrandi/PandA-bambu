@@ -13,7 +13,7 @@
 #   - DDR3 maxes out at 8Gb per chip, so we use 2 ranks to hit 16 GB/channel
 #   - DDR3-1600K is the tightest JEDEC 1600 MT/s bin (CL-tRCD-tRP = 11-11-11)
 #
-# Frequency scaling (DDR/accel <= 6 cap):
+# Frequency scaling (DRAM ticks per accelerator cycle):
 #   DDR3-1600 real DRAM clock = 800 MHz, tCK = 1.25 ns.
 #   clock_ratio = 6 requires accelerator clock ~= 133 MHz
 #   (--clock-period=7.5) for a cycle-accurate wall-clock match.

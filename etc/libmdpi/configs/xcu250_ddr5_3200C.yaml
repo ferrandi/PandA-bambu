@@ -21,7 +21,7 @@
 # as one channel. The 4 configured channels therefore correspond to 4
 # physical DIMM slots / MIG instances, same as the DDR4 baseline.
 #
-# Frequency scaling (DDR/accel <= 6 cap):
+# Frequency scaling (DRAM ticks per accelerator cycle):
 #   DDR5-3200 real DRAM clock = 1600 MHz, tCK = 0.625 ns.
 #   clock_ratio = 6 requires accelerator clock ~= 267 MHz
 #   (--clock-period=3.75) for a cycle-accurate wall-clock match. This is
@@ -42,6 +42,8 @@ MemorySystem:
       preset: DDR5_16Gb_x8
       channel: 4
       rank: 1
+    RFM:
+      BRC: 2
     timing:
       preset: DDR5_3200C
 

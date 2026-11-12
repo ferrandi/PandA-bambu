@@ -36,8 +36,6 @@
       exit(EXIT_FAILURE);                                                                                 \
    }
 
-double mdpi_clock_period = 10.0;
-
 static int __fini_trigger = 1;
 static clock_t __m_runtime;
 
@@ -274,6 +272,11 @@ int m_read_request(mdpi_idx_t id, uint16_t bitsize, ptr_t addr, int8_t cmd)
 {
    int retval;
    const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_REQUEST;
+   if(!bitsize || bitsize > sizeof(__m_ipc_operation.payload.interface.buffer) * 8)
+   {
+      error("Invalid asynchronous read size: %u bits.\n", bitsize);
+      return -1;
+   }
    __ipc_reserve();
    __m_ipc_operation.type = op_type;
    __m_ipc_operation.payload.interface.id = id;
@@ -293,51 +296,23 @@ int m_read_request(mdpi_idx_t id, uint16_t bitsize, ptr_t addr, int8_t cmd)
 
 int m_read_complete(mdpi_idx_t id, svLogicVecVal* data)
 {
-   int retval;
-   const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_COMPLETE;
-   __ipc_reserve();
-   __m_ipc_operation.type = op_type;
-   __m_ipc_operation.payload.interface.id = id;
-   __m_ipc_operation.payload.interface.info = 0; // default channel 0
-   __ipc_request();
-   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
-
-   terminate_if_not(op_type);
-
-   retval = __m_ipc_operation.payload.interface.info;
-   debug("Interface %u read_complete state -> %d.\n", id, retval);
-
-   if(retval > 0 && __m_ipc_operation.payload.interface.id == id)
-   {
-      uint16_t i, size = __m_ipc_operation.payload.interface.bitsize / 8 +
-                         ((__m_ipc_operation.payload.interface.bitsize % 8) != 0);
-#pragma unroll(4)
-      for(i = 0; i < size; ++i)
-      {
-         byte_t mem = __m_ipc_operation.payload.interface.buffer[i];
-         if(i % 4)
-         {
-            data[i / 4].aval |= (unsigned int)(mem) << byte_offset(i);
-         }
-         else
-         {
-            data[i / 4].aval = mem;
-            data[i / 4].bval = 0;
-         }
-      }
-   }
-   __ipc_release();
-   return retval;
+   return m_read_complete_ch(id, 0, data);
 }
 
 int m_read_complete_ch(mdpi_idx_t id, uint8_t channel, svLogicVecVal* data)
 {
    int retval;
    const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_COMPLETE;
+   if(!data)
+   {
+      return -1;
+   }
+   memset(data, 0, sizeof(__m_ipc_operation.payload.interface.buffer) / sizeof(data[0].aval) * sizeof(*data));
    __ipc_reserve();
    __m_ipc_operation.type = op_type;
    __m_ipc_operation.payload.interface.id = id;
    __m_ipc_operation.payload.interface.info = channel;
+   __m_ipc_operation.payload.interface.bitsize = 0;
    __ipc_request();
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
 
@@ -375,6 +350,11 @@ int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, uint16_t bitsize, 
    uint16_t i;
    const uint16_t bsize = (bitsize / 8) + ((bitsize % 8) != 0);
    const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_WRITE_REQUEST;
+   if(!data || !bitsize || bsize > sizeof(__m_ipc_operation.payload.interface.buffer) || shift)
+   {
+      error("Invalid asynchronous write size, data or shift: %u bits, shift %u.\n", bitsize, shift);
+      return -1;
+   }
    __ipc_reserve();
    __m_ipc_operation.type = op_type;
    __m_ipc_operation.payload.interface.id = id;

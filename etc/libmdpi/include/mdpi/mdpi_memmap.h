@@ -30,9 +30,9 @@ class memmap
 
    virtual ptr_t mapaddr(const bptr_t addr) = 0;
 
-   // Bytes writable at sim_addr before crossing into the next mapped region.
-   // Used to clamp writes so a transaction addressed inside one buffer can
-   // never spill into a physically-adjacent buffer. Default: no clamp.
+   // Bytes accessible before the next translation boundary, or zero if
+   // unmapped. Wide transfers walk adjacent spans instead of assuming their
+   // host buffers are contiguous. Shared-address mappers may have no bound.
    virtual size_t region_avail(ptr_t /*sim_addr*/)
    {
       return static_cast<size_t>(-1);

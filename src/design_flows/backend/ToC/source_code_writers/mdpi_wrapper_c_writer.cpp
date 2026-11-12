@@ -612,7 +612,15 @@ void MdpiWrapperCWriter::InternalWriteFile()
    const auto clock_period = Param->getOption<double>(OPT_clock_period);
    const auto channels_number =
        Param->isOption(OPT_channels_number) ? Param->getOption<unsigned int>(OPT_channels_number) : 1u;
-   args_set += "__m_interface_mem(" + std::to_string(clock_period) + ", " + std::to_string(channels_number) + ");\n";
+   if(Param->getOption<bool>(OPT_enable_ramulator))
+   {
+      args_set += "__m_interface_mem_ramulator(" + std::to_string(clock_period) + ", " +
+                  std::to_string(channels_number) + ");\n";
+   }
+   else
+   {
+      args_set += "__m_interface_mem();\n";
+   }
    top_decl += ")\n";
    gold_decl += ");\n";
    pp_decl += ");\n";
@@ -721,7 +729,7 @@ void MdpiWrapperCWriter::InternalWriteFile()
           static_cast<unsigned int>(param_idx + 1 + (global_use_banked ? 1 : 0)));
       for(size_t i = 0; i < dedicated_memories.size(); ++i)
       {
-         indented_output_stream->Append("__m_interface_mem(" + std::to_string(clock_period) + ", 1);\n");
+         indented_output_stream->Append("__m_interface_mem_ramulator(" + std::to_string(clock_period) + ", 1);\n");
       }
    }
 

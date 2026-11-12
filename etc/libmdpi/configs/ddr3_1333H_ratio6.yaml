@@ -10,7 +10,6 @@
 #   At --clock-period=10.0 (100 MHz) the effective DRAM tick rate is 600 MHz,
 #   which is ~10% slower than real DDR3-1333 (mildly pessimistic).
 #
-# Cap check: ratio 6 <= 6  OK (at the cap).
 Frontend:
   impl: GEM5
 

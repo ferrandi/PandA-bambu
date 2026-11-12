@@ -187,3 +187,20 @@ sparse and empty strobes, and long independent stalls on R/B. A burst occupies
 one AR/AW slot; response storage reserves all its beats. Minimal responses use
 full driver tags and a FIFO with bypass. Writes complete on Ramulator acceptance,
 with no additional fixed delay. Rejected requests stay in bounded RTL queues.
+
+The MDPI contract checks also cover read-data snapshots, partial-byte writes,
+4096-bit payloads, adjacent mapped arguments, unmapped cache-line padding,
+channel tags, invalid requests and fractional DRAM/accelerator clock ratios.
+The classical backend is checked both with and without the Ramulator library.
+`RAMULATOR2_CONFIG` selects a YAML file; relative `!include` paths resolve from
+the containing file. An explicit invalid configuration fails initialization.
+`MemorySystem.clock_ratio` is the number of DRAM ticks per accelerator cycle,
+including fractional values; there is no upper limit of six.
+
+With the pinned Ramulator revision, the DDR3 presets' `ClosedRowPolicy` fails
+because it assumes a bank-group level absent in DDR3. The suite verifies the
+initialization diagnostic and separately exercises temporary OpenRowPolicy
+variants, without changing the shipped presets. The four-channel DDR5 preset
+also encounters duplicate statistic names in the library; its model is tested
+with the explicit single-channel override. These library limitations require
+Ramulator changes before those original configurations can run unchanged.
