@@ -201,6 +201,6 @@ With the pinned Ramulator revision, the DDR3 presets' `ClosedRowPolicy` fails
 because it assumes a bank-group level absent in DDR3. The suite verifies the
 initialization diagnostic and separately exercises temporary OpenRowPolicy
 variants, without changing the shipped presets. The four-channel DDR5 preset
-also encounters duplicate statistic names in the library; its model is tested
-with the explicit single-channel override. These library limitations require
-Ramulator changes before those original configurations can run unchanged.
+runs unchanged and verifies that formatted per-rank statistics have unique names.
+The DDR3 library limitation requires a Ramulator change before those original
+configurations can run unchanged.

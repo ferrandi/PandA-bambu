@@ -150,12 +150,6 @@ def main():
                 compatible = directory / f'open-{config.name}'
                 compatible.write_text(text.replace('impl: ClosedRowPolicy', 'impl: OpenRowPolicy'))
                 contract(f'ddr3-open-{config.stem}', 'clock_contract', config=compatible)
-            elif re.search(r'impl: DDR5\b', text):
-                # Its multi-channel statistics use duplicate unformatted names.
-                contract(f'reject-preset-{config.stem}', 'clock_contract', config=config,
-                         failure=True, diagnostic='already registered')
-                contract(f'ddr5-single-{config.stem}', 'clock_contract', config=config,
-                         updates={'RAMULATOR_OVERRIDE_CHANNELS': '1'})
             else:
                 contract(f'preset-{config.stem}', 'clock_contract', config=config)
         contract('invalid-channel-override', 'clock_contract', config=ROOT / 'etc/libmdpi/configs/default_ddr4.yaml',
