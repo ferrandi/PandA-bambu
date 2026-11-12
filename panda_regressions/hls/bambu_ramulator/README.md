@@ -197,10 +197,9 @@ the containing file. An explicit invalid configuration fails initialization.
 `MemorySystem.clock_ratio` is the number of DRAM ticks per accelerator cycle,
 including fractional values; there is no upper limit of six.
 
-With the pinned Ramulator revision, the DDR3 presets' `ClosedRowPolicy` fails
-because it assumes a bank-group level absent in DDR3. The suite verifies the
-initialization diagnostic and separately exercises temporary OpenRowPolicy
-variants, without changing the shipped presets. The four-channel DDR5 preset
-runs unchanged and verifies that formatted per-rank statistics have unique names.
-The DDR3 library limitation requires a Ramulator change before those original
-configurations can run unchanged.
+The original DDR3, DDR4, DDR5 and HBM presets run without changing their row
+policies. DDR3 ClosedRowPolicy treats the absent bank-group level as one implicit
+group and uses the model's existing PRE command. Directed row-policy checks
+exercise repeated accesses, row closing and reopening, multiple banks/ranks,
+and counter reset on refresh, without changing DRAM timing tables.
+The four-channel DDR5 preset also guards against duplicate formatted statistic names.

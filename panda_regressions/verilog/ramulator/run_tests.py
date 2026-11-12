@@ -140,18 +140,28 @@ def main():
             config.write_text(default.replace('clock_ratio: 3', f'clock_ratio: {ratio}'))
             contract(f'clock-{ratio}', 'clock_contract', config=config, expected_ratio=ratio,
                      updates={'MDPI_TEST_MEMORIES': '2'})
+        execute(['g++', '-std=c++20', f'-I{prefix / "include/ramulator"}', f'-I{prefix / "include"}',
+                 HERE / 'row_policy.cpp', f'-L{libdir}', f'-Wl,-rpath,{libdir}', '-lramulator',
+                 '-o', directory / 'row_policy'], directory)
         for config in sorted((ROOT / 'etc/libmdpi/configs').glob('*.yaml')):
-            text = config.read_text()
-            if re.search(r'impl: DDR3\b', text):
-                # The pinned library's ClosedRowPolicy requires bank groups.
-                # Assert the driver reports this failure, without silently changing policy.
-                contract(f'reject-preset-{config.stem}', 'clock_contract', config=config,
-                         failure=True, diagnostic='unordered_map::at')
-                compatible = directory / f'open-{config.name}'
-                compatible.write_text(text.replace('impl: ClosedRowPolicy', 'impl: OpenRowPolicy'))
-                contract(f'ddr3-open-{config.stem}', 'clock_contract', config=compatible)
-            else:
-                contract(f'preset-{config.stem}', 'clock_contract', config=config)
+            contract(f'preset-{config.stem}', 'clock_contract', config=config)
+            if config.stem == 'default_ddr4' or re.search(r'impl: DDR[35]\b', config.read_text()):
+                policies = ['ClosedRowPolicy']
+                if config.stem == 'ddr3_1066G_ratio5':
+                    policies.append('OpenRowPolicy')
+                for policy in policies:
+                    name = f'row-policy-{config.stem}-{policy}'
+                    case_dir = directory / name
+                    case_dir.mkdir()
+                    start = time.monotonic()
+                    error = None
+                    try:
+                        execute([directory / 'row_policy', config, case_dir / 'commands.csv', policy],
+                                case_dir, timeout=30)
+                    except (OSError, subprocess.SubprocessError) as exception:
+                        error = str(exception)
+                    print('FAIL' if error else 'PASS', name, flush=True)
+                    results.append((name, time.monotonic()-start, error, case_dir))
         contract('invalid-channel-override', 'clock_contract', config=ROOT / 'etc/libmdpi/configs/default_ddr4.yaml',
                  updates={'RAMULATOR_OVERRIDE_CHANNELS': 'invalid'}, failure=True,
                  diagnostic='RAMULATOR_OVERRIDE_CHANNELS must be 0 or 1')
