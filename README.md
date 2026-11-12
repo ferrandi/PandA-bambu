@@ -153,7 +153,7 @@ etc/scripts/generate_bambu_parameter_registry.py \
 
 # Ramulator2 co-simulation
 
-Jesun Firoz (PNNL) contributed the Ramulator2 memory timing integration.
+[@jesunsahariar](https://github.com/jesunsahariar) contributed the Ramulator2 memory timing integration.
 The `ext/ramulator2-no-spdlog` submodule pins the spdlog-free Ramulator2 fork;
 its source and license are maintained independently of Bambu.
 
@@ -184,12 +184,19 @@ the examples honor an explicit `RAMULATOR2_DIR` and otherwise use the local
 submodule installation. The MDPI driver records the library directory in its
 runtime search path, so `LD_LIBRARY_PATH` is unnecessary.
 
-A vector-add smoke example supports one or multiple AXI channels:
+Longer Ramulator benchmark suites and their scripts are isolated in the
+[`examples/ramulator-examples`](https://github.com/gggg100/ramulator-examples)
+submodule, derived from [@BENfrost-20's collection](https://github.com/BENfrost-20/tests_bambu_ramulator)
+and [@jesunsahariar's integration](https://github.com/jesunsahariar/bambu-ramulator-release).
+They have their own benchmark sources and do not change the historical examples.
+Initialize the collection and follow its README for setup and manual execution:
 
 ```bash
-BAMBU_BIN="$PWD/install/bin/bambu" bash examples/cpp_examples/vector_add_axi_ramulator_test/test_axi_ramulator.sh 1
-BAMBU_BIN="$PWD/install/bin/bambu" bash examples/cpp_examples/vector_add_axi_ramulator_test/test_axi_ramulator.sh 2
+git submodule update --init --recursive examples/ramulator-examples
 ```
+
+The minimal CI keeps its short Ramulator co-simulations and dedicated RTL tests
+under `panda_regressions/`; the longer example suites are run separately.
 
 # Contacts
 Issues, patches, and pull requests are welcome at https://github.com/ferrandi/PandA-bambu.<br>
