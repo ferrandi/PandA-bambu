@@ -125,6 +125,13 @@ DesignFlowStep_Status bus_interface::InternalExec()
                      wrappedObj->get_path() +
                      " does not expose Mout_addr_ram. Check interface pragma analysis and architecture.xml.");
       }
+      initialize_bmi(wrappedObj);
+      // The existing minimal interface already exposes the complete bus and
+      // completion ports. Only wrap it when an adapter or a NoC is required.
+      if(!is_banked && !bi.use_caches && !bi.use_axi)
+      {
+         return DesignFlowStep_Status::SUCCESS;
+      }
       std::string module_name = wrappedObj->get_id();
 
       structural_managerRef SM_bus_interface = structural_managerRef(new structural_manager(parameters));
@@ -148,8 +155,6 @@ DesignFlowStep_Status bus_interface::InternalExec()
       GetPointer<module_o>(interfaceObj)->set_license(GENERATED_LICENSE);
 
       add_parameter_port(SM_bus_interface, interfaceObj, wrappedObj); // add ports to external module
-
-      initialize_bmi(wrappedObj);
 
       if(parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
              MemoryAllocation_Policy::ALL_BRAM ||
