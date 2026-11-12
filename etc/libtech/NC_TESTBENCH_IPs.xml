@@ -3844,8 +3844,7 @@ wire w_push = wvalid &amp;&amp; wready;
 wire b_pop = bvalid &amp;&amp; bready;
 wire r_pop = rvalid &amp;&amp; rready;
 wire ar_pop = r_pop &amp;&amp; rlast;
-// AXI4 write data has no ID. Associate it with the oldest incomplete AW,
-// including an AW accepted on this edge when there is no older owner.
+// AXI4 write data has no ID. Associate queued data with the oldest incomplete AW.
 integer queued_owner;
 always @(*)
 begin : find_write_owner
@@ -3863,27 +3862,24 @@ begin : find_write_owner
   end
 end
 
-wire aw_is_new = 1'b0;
-wire w_is_new = 1'b0;
-wire [31 : 0] write_owner = aw_is_new ? aw_tail_reg : queued_owner;
-wire [BITSIZE_addr - 1 : 0] write_base = aw_is_new ? awaddr : aw_addr_reg[write_owner];
-wire [BITSIZE_size - 1 : 0] write_size = aw_is_new ? awsize : aw_size_reg[write_owner];
-wire [BITSIZE_burst - 1 : 0] write_burst = aw_is_new ? awburst : aw_burst_reg[write_owner];
-wire [BITSIZE_len - 1 : 0] write_length = aw_is_new ? awlen : aw_len_reg[write_owner];
-wire [BITSIZE_data - 1 : 0] write_data = w_is_new ? wdata : w_data_reg[w_head_reg];
-wire [BITSIZE_wstrb - 1 : 0] write_strobe = w_is_new ? wstrb : w_strb_reg[w_head_reg];
-wire write_last = w_is_new ? wlast : w_last_reg[w_head_reg];
+wire [31 : 0] write_owner = queued_owner;
+wire [BITSIZE_addr - 1 : 0] write_base = aw_addr_reg[write_owner];
+wire [BITSIZE_size - 1 : 0] write_size = aw_size_reg[write_owner];
+wire [BITSIZE_burst - 1 : 0] write_burst = aw_burst_reg[write_owner];
+wire [BITSIZE_len - 1 : 0] write_length = aw_len_reg[write_owner];
+wire [BITSIZE_data - 1 : 0] write_data = w_data_reg[w_head_reg];
+wire [BITSIZE_wstrb - 1 : 0] write_strobe = w_strb_reg[w_head_reg];
+wire write_last = w_last_reg[w_head_reg];
 reg write_accepted_reg;
 wire write_available = queued_owner != -1 &amp;&amp; w_count_reg &gt; 0;
 wire commit_write = write_accepted_reg;
-wire [31 : 0] write_beat = aw_is_new ? 0 : aw_committed_reg[write_owner];
+wire [31 : 0] write_beat = aw_committed_reg[write_owner];
 wire [31 : 0] write_beats = {1'b0, write_length} + 1;
 wire write_final = write_beat == write_beats - 1;
 wire [BITSIZE_addr - 1 : 0] write_address = write_burst == 2'b00
                                                 ? write_base
                                                 : write_base + write_beat * (1 &lt;&lt; write_size);
-wire w_enqueue = w_push &amp;&amp; !(commit_write &amp;&amp; w_is_new);
-wire w_pop = commit_write &amp;&amp; !w_is_new;
+wire w_pop = commit_write;
 
 always @(posedge clock)
 begin
@@ -4182,9 +4178,9 @@ begin : update_aw_committed
     end
     if(aw_push)
     begin
-      aw_committed_reg[aw_tail_reg] &lt;= (commit_write &amp;&amp; aw_is_new) ? write_beat + 1 : 0;
+      aw_committed_reg[aw_tail_reg] &lt;= 0;
     end
-    if(commit_write &amp;&amp; !aw_is_new)
+    if(commit_write)
     begin
       aw_committed_reg[write_owner] &lt;= write_beat + 1;
     end
@@ -4209,9 +4205,9 @@ begin : update_aw_complete
     end
     if(aw_push)
     begin
-      aw_complete_reg[aw_tail_reg] &lt;= commit_write &amp;&amp; aw_is_new &amp;&amp; write_final;
+      aw_complete_reg[aw_tail_reg] &lt;= 0;
     end
-    if(commit_write &amp;&amp; !aw_is_new &amp;&amp; write_final)
+    if(commit_write &amp;&amp; write_final)
     begin
       aw_complete_reg[write_owner] &lt;= 1;
     end
@@ -4241,7 +4237,7 @@ begin
   end
   else
   begin
-    if(w_enqueue)
+    if(w_push)
     begin
       w_tail_reg &lt;= (w_tail_reg + 1) % C_W;
     end
@@ -4256,7 +4252,7 @@ begin
   end
   else
   begin
-    case({w_enqueue, w_pop})
+    case({w_push, w_pop})
       2'b10:
       begin
         w_count_reg &lt;= w_count_reg + 1;
@@ -4277,7 +4273,7 @@ always @(posedge clock)
 begin : update_w_data_q
   if(!(1RESET_VALUE))
   begin
-    if(w_enqueue)
+    if(w_push)
     begin
       w_data_reg[w_tail_reg] &lt;= wdata;
     end
@@ -4288,7 +4284,7 @@ always @(posedge clock)
 begin : update_w_strb_q
   if(!(1RESET_VALUE))
   begin
-    if(w_enqueue)
+    if(w_push)
     begin
       w_strb_reg[w_tail_reg] &lt;= wstrb;
     end
@@ -4299,7 +4295,7 @@ always @(posedge clock)
 begin : update_w_last_q
   if(!(1RESET_VALUE))
   begin
-    if(w_enqueue)
+    if(w_push)
     begin
       w_last_reg[w_tail_reg] &lt;= wlast;
     end
