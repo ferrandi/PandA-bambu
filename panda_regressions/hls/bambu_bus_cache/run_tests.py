@@ -4,6 +4,7 @@
 """Sequential bus/cache regressions using the fixed-latency AXI testbench."""
 
 import argparse
+import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import re
@@ -36,9 +37,12 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--junit", type=Path, required=True)
     parser.add_argument("--jobs", type=int, default=1)
+    parser.add_argument("--ramulator", action="store_true", help="Run four cache integration cases with Ramulator")
     args = parser.parse_args()
     if not args.bambu or args.jobs < 1:
         parser.error("bambu must be installed and --jobs must be positive")
+    if args.ramulator and not os.environ.get("RAMULATOR2_DIR"):
+        parser.error("--ramulator requires RAMULATOR2_DIR")
     bambu = str(Path(args.bambu).resolve())
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -52,6 +56,11 @@ def main():
         tasks.append(((name, cache, True, "MEM_ACC_NN", 2, pipelined, False), "FULL", axi))
     tasks.append((("resized-banked-cache", True, True, "MEM_ACC_NN", 2, False, False), "RESIZED", False))
 
+    if args.ramulator:
+        names = {"cache-MEM_ACC_11-ordinary", "cache-MEM_ACC_N1-ordinary",
+                 "banked-cache-ordinary", "banked-cache-pipelined"}
+        tasks = [task for task in tasks if task[0][0] in names]
+
     def run(task):
         case, address_mode, axi = task
         name, cache, banked, channels_type, channels, pipelined, rejected = case
@@ -64,6 +73,8 @@ def main():
                    "--clock-period=10", "--max-sim-cycles=5000", "-m64", "-lm",
                    f"-DUSE_CACHE={int(cache)}", f"-DBANKED={int(banked)}", f"-DUSE_AXI={int(axi)}",
                    f"--channels-type={channels_type}", f"--channels-number={channels}"]
+        if args.ramulator:
+            command.extend(["--enable-ramulator", "-v4"])
         if address_mode:
             command.append(f"--banked-memory-address-size={address_mode}")
         if pipelined:
@@ -81,6 +92,9 @@ def main():
                     error = "Expected rejection for missing cache coherence"
             elif result.returncode != 0:
                 error = f"Co-simulation failed with exit code {result.returncode}"
+            elif args.ramulator and ("Ramulator2 successfully initialized" not in output or
+                                     "OP=READ" not in output):
+                error = "Missing real Ramulator initialization or read completions"
             elif address_mode:
                 testbench = (directory / "HLS_output/simulation/bambu_testbench.v").read_text()
                 has_adapters = "TBBankAd" in testbench

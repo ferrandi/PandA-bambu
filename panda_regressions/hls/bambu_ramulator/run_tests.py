@@ -158,7 +158,7 @@ def validate(directory, expected_axi, banked, cycle_limit, banks=4, hbm=False):
     axi_count = len(re.findall(r"\bTestbenchMEMAXIRamulatorIntegrated\s*#", tb))
     if axi_count != expected_axi:
         raise ValueError(f"expected {expected_axi} AXI memory models, generated {axi_count}")
-    memory = "TestbenchMEMRamulatorIntegratedNoC" if banked else "TestbenchMEMRamulatorIntegrated"
+    memory = "TestbenchMEMRamulatorIntegrated"
     if not re.search(rf"\b{memory}\s*#", tb):
         raise ValueError(f"missing expected {memory} model")
     evidence = {"cycles": cycles, "ramulator_read_completions": len(completions), "axi_models": axi_count}

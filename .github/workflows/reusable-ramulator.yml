@@ -58,6 +58,13 @@ jobs:
         run: |
           bash .devcontainer/library-scripts/compiler-download.sh \
             "$PWD/panda_dist/compilers" clang-13 "${LOCAL_COMPILERS_BACKUP:-}"
+      - name: Run standalone RTL with real MDPI and Ramulator
+        run: |
+          source panda_dist/settings.sh
+          export RAMULATOR2_DIR="$RUNNER_TEMP/ramulator-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/install"
+          python3 -B panda_regressions/verilog/ramulator/run_tests.py \
+            --bambu-prefix "$PWD/panda_dist" --out "$PWD/out_ramulator_rtl" \
+            --junit "$PWD/out_ramulator_rtl/junit.xml"
       - name: Run smoke, memory isolation and 32-bank HBM groups
         run: |
           source panda_dist/settings.sh
@@ -65,6 +72,14 @@ jobs:
           python3 panda_regressions/hls/bambu_ramulator/run_tests.py \
             --bambu "$PWD/panda_dist/bin/bambu" --out "$PWD/out_ramulator_ci" \
             --max-cycles 5000 --timeout 180 --hbm-max-cycles 12000 --hbm-timeout 600
+      - name: Check sequential and banked caches with Ramulator bursts
+        if: ${{ !cancelled() }}
+        run: |
+          source panda_dist/settings.sh
+          export RAMULATOR2_DIR="$RUNNER_TEMP/ramulator-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/install"
+          python3 -B panda_regressions/hls/bambu_bus_cache/run_tests.py --ramulator \
+            --bambu "$PWD/panda_dist/bin/bambu" --out "$PWD/out_ramulator_cache" --jobs 2 \
+            --junit "$PWD/out_ramulator_cache/junit.xml"
       - name: Publish test summary
         if: ${{ !cancelled() }}
         run: |
@@ -78,6 +93,12 @@ jobs:
           name: ramulator-results-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           path: |
+            out_ramulator_cache/junit.xml
+            out_ramulator_cache/**/run.log
+            out_ramulator_cache/**/command.txt
+            out_ramulator_rtl/junit.xml
+            out_ramulator_rtl/**/run.log
+            out_ramulator_rtl/run.log
             out_ramulator_ci/junit.xml
             out_ramulator_ci/summary.*
             out_ramulator_ci/**/run.log

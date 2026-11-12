@@ -228,6 +228,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
    structural_objectRef tb_mem;
+   bool ramulator_memory = false;
    const auto top_fname = top_bh->GetFunctionName();
    const auto function_parameters = top_bh->get_parameters();
    const auto& ifaces = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces;
@@ -252,7 +253,8 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       if(parameters->isOption(OPT_enable_ramulator) &&
          parameters->getOption<bool>(OPT_enable_ramulator))
       {
-         mem_component = is_banked ? "TestbenchMEMRamulatorIntegratedNoC" : "TestbenchMEMRamulatorIntegrated";
+         mem_component = "TestbenchMEMRamulatorIntegrated";
+         ramulator_memory = true;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating " + mem_component + "...");
       tb_mem =
@@ -262,7 +264,10 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                                 parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
                                     MemoryAllocation_Policy::EXT_PIPELINED_BRAM;
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Emulate BRAM: " + std::string(emulate_bram ? "true" : "false"));
-      tb_mem->SetParameter("EMULATE_BRAM", STR(emulate_bram ? 1 : 0));
+      if(!ramulator_memory)
+      {
+         tb_mem->SetParameter("EMULATE_BRAM", STR(emulate_bram ? 1 : 0));
+      }
       tb_mem->SetParameter("QUEUE_SIZE", STR(HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size)));
       const auto oe_port = dut->find_member(MOUT_OE_PORT_NAME, port_o_K, dut);
       if(oe_port)
@@ -303,16 +308,19 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
    {
       THROW_ERROR("Testbench generation for selected interface type is not yet supported.");
    }
-   tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
-                                              "3" :
-                                          parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
-                                              "4" :
-                                              parameters->getOption<std::string>(OPT_mem_delay_read));
-   tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
-                                               "1" :
-                                           parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
-                                               "2" :
-                                               parameters->getOption<std::string>(OPT_mem_delay_write));
+   if(!ramulator_memory)
+   {
+      tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                                 "3" :
+                                             parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                                 "4" :
+                                                 parameters->getOption<std::string>(OPT_mem_delay_read));
+      tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                                  "1" :
+                                              parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                                  "2" :
+                                                  parameters->getOption<std::string>(OPT_mem_delay_write));
+   }
    // The testbench is Verilog even when the kernel uses another HDL. ModelSim
    // rejects unsized decimal literals that exceed 32 bits.
    tb_mem->SetParameter("base_addr",

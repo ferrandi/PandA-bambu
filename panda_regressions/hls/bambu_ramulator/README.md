@@ -66,14 +66,14 @@ Each smoke case must complete RTL-versus-C golden co-simulation with return valu
 zero, within 5000 simulation cycles and a 180-second wall timeout including
 synthesis and simulator compilation. The driver must confirm Ramulator
 initialization, at least 20 real read completions and positive DRAM latency.
-The generated testbench must have the expected native/NoC memory model and
+The generated testbench must have the unified multichannel minimal memory model and
 the expected number of AXI memory model instances (including both bus and dedicated bundles) for the selected interface.
 
 Banked cases additionally emit a VCD. Sampling at rising clock edges must show
 requests on at least two input memory channels simultaneously and activity on
 at least two external banks. This prevents a nominal OpenMP/banked test from
 passing while exercising only serialized memory traffic. The checker uses the
-waveform, not the shared profiling CSV, whose multiple writers can truncate it.
+waveform to measure the actual concurrent traffic.
 Smoke waveforms must expose four banks; HBM waveforms must expose all 32.
 
 Each case has an isolated output directory. A failure does not skip the
@@ -164,3 +164,26 @@ with completed reads where applicable, equal accelerator cycle counts and exactl
 per cycle (the smoke DDR4 configuration). The existing dedicated cases also
 require three active independent backends. Backend summaries are part of the
 normal simulation evidence; missing summaries or a shared backend fail the test.
+
+## Standalone memory-model checks
+
+The same reusable job also runs the production Verilog models against a fake
+RTL accelerator, the production MDPI IPC/driver and the installed Ramulator.
+These tests do not invoke Bambu. Both models are extracted directly from the
+technology library. The dependency is built only once for both suites.
+
+```bash
+python3 -B panda_regressions/verilog/ramulator/run_tests.py \
+  --bambu-prefix "$PWD/install" --out /tmp/ramulator-rtl \
+  --junit /tmp/ramulator-rtl/junit.xml
+```
+
+`RAMULATOR2_DIR` must name the standard installation prefix. The suite checks
+real read/write rejection at capacity, including absence of writes on rejection;
+minimal request/response queues of depth 1, 2, 4 and 64; multiple channels and
+internal-memory response merging; and AXI transaction queues of depth 1, 2 and 4.
+The AXI fixture exercises independent AW/W, FIXED and INCR bursts up to 256 beats,
+sparse and empty strobes, and long independent stalls on R/B. A burst occupies
+one AR/AW slot; response storage reserves all its beats. Minimal responses use
+full driver tags and a FIFO with bypass. Writes complete on Ramulator acceptance,
+with no additional fixed delay. Rejected requests stay in bounded RTL queues.
