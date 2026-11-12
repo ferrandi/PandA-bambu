@@ -185,15 +185,19 @@ submodule installation. The MDPI driver records the library directory in its
 runtime search path, so `LD_LIBRARY_PATH` is unnecessary.
 
 Longer Ramulator benchmark suites and their scripts are isolated in the
-[`examples/ramulator-examples`](https://github.com/gggg100/ramulator-examples)
+[`examples/ramulator-examples`](https://github.com/ferrandi/ramulator-examples)
 submodule, derived from [@BENfrost-20's collection](https://github.com/BENfrost-20/tests_bambu_ramulator)
 and [@jesunsahariar's integration](https://github.com/jesunsahariar/bambu-ramulator-release).
 They have their own benchmark sources and do not change the historical examples.
 Initialize the collection and follow its README for setup and manual execution:
 
 ```bash
-git submodule update --init --recursive examples/ramulator-examples
+git submodule update --init -- examples/ramulator-examples
+git -C examples/ramulator-examples submodule update --init --recursive
 ```
+
+The full CI and the commands above check out the exact collection commit
+recorded in Bambu, including its recorded dependency revisions.
 
 The minimal CI keeps its short Ramulator co-simulations and dedicated RTL tests
 under `panda_regressions/`; the longer example suites are run separately.

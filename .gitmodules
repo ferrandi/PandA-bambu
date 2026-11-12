@@ -44,4 +44,5 @@
 	url = https://github.com/ferrandi/ramulator2.git
 [submodule "examples/ramulator-examples"]
 	path = examples/ramulator-examples
-	url = https://github.com/gggg100/ramulator-examples.git
+	url = https://github.com/ferrandi/ramulator-examples.git
+	branch = main
