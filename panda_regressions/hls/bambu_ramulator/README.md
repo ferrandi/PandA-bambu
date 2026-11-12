@@ -3,7 +3,7 @@
 The dedicated `Ramulator co-simulation` workflow builds Bambu with Clang 13,
 then runs a single test job. The test job checks out the exact Ramulator
 submodule revision, builds and installs it once, and reuses that installation
-for all 24 cases (15 smoke, six intermediate HBM and three memory-isolation cases). The workflow assumes the pinned public Ramulator revision
+for all 26 cases (17 smoke, six intermediate HBM and three memory-isolation cases). The workflow assumes the pinned public Ramulator revision
 provides the standard CMake installation layout. It never patches or overrides
 the submodule revision and does not fall back to a different memory backend.
 
@@ -17,7 +17,7 @@ Bambu.
 
 ## Test list
 
-All inputs contain 20 signed integers, including zero and negative values.
+The following three kernels use 20 signed integers, including zero and negative values.
 Each of these three kernels runs in all five configurations below:
 
 | Kernel | Operation |
@@ -59,6 +59,13 @@ pragmas. MINIMAL is the external protocol. Banked cases explicitly declare
 `bank_number=4`; a channel count alone does not select banked memory.
 For smoke cases, `RAMULATOR_OVERRIDE_CHANNELS=1` matches the DRAM channel count to the selected
 Bambu channel count (four for banked cases, one otherwise).
+
+Two additional sequential smoke cases, `stencil/minimal-2ch` and
+`stencil/minimal-4ch`, use a floating-point stencil with runtime loop bounds,
+SDC scheduling, loop unrolling and `MEM_ACC_NN`. They execute two steps on
+12 elements and select `--generate-interface=MINIMAL`
+without OpenMP, caches or banked memory. The cases check that reads completing
+on different cycles retain their values until the other channels complete.
 
 ## Pass criteria
 

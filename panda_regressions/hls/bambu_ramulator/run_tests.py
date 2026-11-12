@@ -28,6 +28,8 @@ MODES = {
     "mixed-banked-axi": (1, 1, 2, 5),
 }
 SMOKE_CASES = [f"{kernel}/{mode}" for kernel in KERNELS for mode in MODES if not mode.startswith("mixed-")]
+MODES.update({"minimal-2ch": (0, 0, 0, 0), "minimal-4ch": (0, 0, 0, 0)})
+SMOKE_CASES += ["stencil/minimal-2ch", "stencil/minimal-4ch"]
 HBM_SIZES = {"hbm-gather": 4096, "hbm-scatter": 4096, "hbm-chase": 2048}
 HBM_CASES = [f"{kernel}/{mode}" for kernel in HBM_SIZES
              for mode in ("banked-minimal", "banked-axi")]
@@ -211,6 +213,8 @@ def main():
         banked, axi, dedicated, axi_models = MODES[mode]
         hbm = kernel in HBM_SIZES
         banks = 32 if hbm else 4 if banked else 1
+        if kernel == "stencil":
+            banks = 2 if mode == "minimal-2ch" else 4
         cycles_limit = args.hbm_max_cycles if hbm else args.max_cycles
         timeout = args.hbm_timeout if hbm else args.timeout
         if hbm and axi:
@@ -218,6 +222,13 @@ def main():
         directory = out / name
         directory.mkdir(parents=True)
         source, inputs = HERE / "kernel.cpp", HERE / "input.xml"
+        if kernel == "stencil":
+            source = HERE / "stencil.c"
+            inputs = directory / "input.xml"
+            tree = ET.parse(HERE / "input.xml")
+            tree.getroot().find("testbench").attrib.update(n="12", steps="2")
+            del tree.getroot().find("testbench").attrib["c"]
+            tree.write(inputs, encoding="utf-8", xml_declaration=True)
         if mode.startswith("mixed-banked-"):
             source = HERE / "mixed_banked.cpp"
         case_env = env.copy()
@@ -228,12 +239,14 @@ def main():
             case_env["RAMULATOR_OVERRIDE_CHANNELS"] = "0"
         command = [str(bambu), str(source), f"--generate-tb={inputs}",
                    "--top-fname=ramulator_kernel", "--compiler=I386_CLANG13", "--simulator=VERILATOR",
-                   "--simulate", "--generate-interface=INFER", "--enable-ramulator",
+                   "--simulate", f"--generate-interface={'MINIMAL' if kernel == 'stencil' else 'INFER'}", "--enable-ramulator",
                    "--memory-allocation-policy=NO_BRAM", f"--clock-period={5 if hbm else 10}", "-m64", "-lm", "-v4",
                    f"--max-sim-cycles={cycles_limit}", f"-DTEST_KERNEL={KERNELS.get(kernel, 0)}",
                    f"-DBANKED={banked}", f"-DUSE_AXI={axi}", f"-DDEDICATED_AXI={dedicated}",
-                   f"--channels-type={'MEM_ACC_NN' if banked else 'MEM_ACC_11'}",
+                   f"--channels-type={'MEM_ACC_NN' if banks > 1 else 'MEM_ACC_11'}",
                    f"--channels-number={banks}"]
+        if kernel == "stencil":
+            command.extend(["-funroll-loops", "-s"])
         if hbm:
             command.append(f"-DHBM_SIZE={HBM_SIZES[kernel]}")
         if banked or axi:

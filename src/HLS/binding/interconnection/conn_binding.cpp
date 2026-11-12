@@ -237,6 +237,21 @@ generic_objRef conn_binding::get_timed_capture(gc_vertex_descriptor op) const
    return it == timed_captures.end() ? generic_objRef() : it->second;
 }
 
+generic_objRef conn_binding::bind_result_forwarding(gc_vertex_descriptor op, unsigned int reg, unsigned int bitsize,
+                                                    const std::string& operation_name)
+{
+   const auto key = std::make_pair(op, reg);
+   const auto existing = result_forwarding.find(key);
+   if(existing != result_forwarding.end())
+   {
+      return existing->second.first;
+   }
+   const auto adapter = generic_objRef(
+       new generic_obj(generic_obj::CONNECTION_ELEMENT, "result_forwarding_" + operation_name + "_" + STR(reg)));
+   result_forwarding.emplace(key, std::make_pair(adapter, bitsize));
+   return adapter;
+}
+
 void conn_binding::bind_input_hold_group(const generic_objRef selector, const generic_objRef fu_unit)
 {
    THROW_ASSERT(selector, "Input hold group requires a launch selector");
@@ -312,6 +327,20 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
 
    /// add result capture adapters for co-started pipelined operations
    add_timed_captures(HLSMgr, HLS, SM);
+
+   for(const auto& forwarding : result_forwarding)
+   {
+      const auto TM = HLS->HLS_D->get_technology_manager();
+      const auto mux = SM->add_module_from_technology_library(forwarding.second.first->get_string(), MUX2_GATE_STD,
+                                                              TM->get_library(MUX2_GATE_STD), SM->get_circ(), TM);
+      mux->find_member("in1", port_o_K, mux)->type_resize(forwarding.second.second);
+      mux->find_member("in2", port_o_K, mux)->type_resize(forwarding.second.second);
+      mux->find_member("out1", port_o_K, mux)->type_resize(forwarding.second.second);
+      const auto done = activation_ports.at(forwarding.first.first).at(OUT)->get_structural_obj();
+      const auto done_signal = GetPointer<port_o>(done)->find_bounded_object();
+      SM->add_connection(done_signal ? done_signal : done, mux->find_member("sel", port_o_K, mux));
+      forwarding.second.first->set_structural_obj(mux);
+   }
 
    /// add sparse logic
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding sparse logic to the datapath");
