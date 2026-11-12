@@ -739,12 +739,6 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
        {"ready", "ready", 1U}};
 
    const bool is_banked = bi.bank_number > 0;
-   if(!is_banked && bi.channel_number != 1)
-   {
-      THROW_ERROR_USAGE("Non-banked bus caches require exactly one memory channel: cache coherence between "
-                        "channels is not supported");
-   }
-   const auto adapter_number = is_banked ? bi.bank_number : bi.channel_number;
    const bool has_tag_ports = input_module->find_member("Mout_tag", port_vector_o_K, input_module) &&
                               input_module->find_member("M_tag", port_vector_o_K, input_module);
    auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
