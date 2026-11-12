@@ -594,51 +594,47 @@ end"/>
           <NP_functionality
             IP_COMPONENT="if_utils"
             LIBRARY="TestbenchMEMMinimal index MEM_DELAY_READ MEM_DELAY_WRITE EMULATE_BRAM base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
-            VERILOG_PROVIDED="
-function automatic integer log2;
+            VERILOG_PROVIDED="function automatic integer log2;
   input integer value;
-  `ifdef _SIM_HAVE_CLOG2
-    log2 = $clog2(value);
-  `else
-    automatic integer temp_value = value-1;
-    for (log2=0; temp_value &gt; 0; log2=log2+1)
-      temp_value = temp_value &gt;&gt; 1;
-  `endif
+`ifdef _SIM_HAVE_CLOG2
+  log2 = $clog2(value);
+`else
+  automatic integer temp_value = value - 1;
+  for(log2 = 0; temp_value &gt; 0; log2 = log2 + 1)
+  begin
+    temp_value = temp_value &gt;&gt; 1;
+  end
+`endif
 endfunction
 
-localparam MEM_DELAY_MAX= MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
-  ACTIVE_READ= MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ-2) : 0,
-  ACTIVE_WRITE= MEM_DELAY_WRITE &gt; 1 ? (MEM_DELAY_WRITE-2) : 0,
-  CHANNELS_NUMBER=BITSIZE_Mout_oe_ram,
-  BITSIZE_oe=1,
-  BITSIZE_we=1,
-  BITSIZE_addr=BITSIZE_Mout_addr_ram/CHANNELS_NUMBER,
-  BITSIZE_Wsize=BITSIZE_Mout_data_ram_size/CHANNELS_NUMBER,
-  BITSIZE_Wdata=BITSIZE_Mout_Wdata_ram/CHANNELS_NUMBER,
-  BITSIZE_Rdata=BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
-  BITSIZE_tag=BITSIZE_Mout_tag/CHANNELS_NUMBER,
-  BITSIZE_item=BITSIZE_tag+BITSIZE_Wdata+BITSIZE_Wsize+BITSIZE_addr+BITSIZE_we+BITSIZE_oe,
-  OFFSET_oe=0,
-  OFFSET_we=OFFSET_oe+BITSIZE_oe,
-  OFFSET_addr=OFFSET_we+BITSIZE_we,
-  OFFSET_Wsize=OFFSET_addr+BITSIZE_addr,
-  OFFSET_Wdata=OFFSET_Wsize+BITSIZE_Wsize,
-  OFFSET_tag = OFFSET_Wdata+BITSIZE_Wdata,
-  BITSIZE_S_Rdata=BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
-  BITSIZE_S_ready=1,
-  SLAVE_VALID=BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
-  QUEUE_BITSIZE=QUEUE_SIZE > 1 ? log2(QUEUE_SIZE) : 1;
+localparam MEM_DELAY_MAX = MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ : MEM_DELAY_WRITE,
+           ACTIVE_READ = MEM_DELAY_READ &gt; 1 ? (MEM_DELAY_READ - 2) : 0,
+           ACTIVE_WRITE = MEM_DELAY_WRITE &gt; 1 ? (MEM_DELAY_WRITE - 2) : 0,
+           CHANNELS_NUMBER = BITSIZE_Mout_oe_ram, BITSIZE_oe = 1, BITSIZE_we = 1,
+           BITSIZE_addr = BITSIZE_Mout_addr_ram / CHANNELS_NUMBER,
+           BITSIZE_Wsize = BITSIZE_Mout_data_ram_size / CHANNELS_NUMBER,
+           BITSIZE_Wdata = BITSIZE_Mout_Wdata_ram / CHANNELS_NUMBER,
+           BITSIZE_Rdata = BITSIZE_M_Rdata_ram / CHANNELS_NUMBER,
+           BITSIZE_tag = BITSIZE_Mout_tag / CHANNELS_NUMBER,
+           BITSIZE_item = BITSIZE_tag + BITSIZE_Wdata + BITSIZE_Wsize + BITSIZE_addr +
+                          BITSIZE_we + BITSIZE_oe,
+           OFFSET_oe = 0, OFFSET_we = OFFSET_oe + BITSIZE_oe,
+           OFFSET_addr = OFFSET_we + BITSIZE_we, OFFSET_Wsize = OFFSET_addr + BITSIZE_addr,
+           OFFSET_Wdata = OFFSET_Wsize + BITSIZE_Wsize, OFFSET_tag = OFFSET_Wdata + BITSIZE_Wdata,
+           BITSIZE_S_Rdata = BITSIZE_Sout_Rdata_ram / BITSIZE_S_oe_ram, BITSIZE_S_ready = 1,
+           SLAVE_VALID = BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
+           QUEUE_BITSIZE = QUEUE_SIZE &gt; 1 ? log2(QUEUE_SIZE) : 1;
 
 genvar i;
 integer dump_file;
-wire [BITSIZE_M_Rdata_ram-1:0] _M_Rdata_ram;
+wire [BITSIZE_M_Rdata_ram - 1 : 0] response_data;
 
 assign S_oe_ram = Mout_oe_ram;
 assign S_we_ram = Mout_we_ram;
 assign S_addr_ram = Mout_addr_ram;
 assign S_data_ram_size = Mout_data_ram_size;
 assign S_Wdata_ram = Mout_Wdata_ram;
-assign M_Rdata_ram = _M_Rdata_ram;
+assign M_Rdata_ram = response_data;
 
 generate
   if(MEM_DUMP)
@@ -649,7 +645,7 @@ generate
       $fwrite(dump_file, &quot;Channel,Operation,Address,Bitwidth,Data\n&quot;);
     end
 
-    always@(posedge clock)
+    always @(posedge clock)
     begin
       if(done_port)
       begin
@@ -664,71 +660,94 @@ if_utils #(index, BITSIZE_Rdata) m_utils();
 generate
   for(i = 0; i &lt; CHANNELS_NUMBER; i = i + 1)
   begin : channel
-    wire [BITSIZE_item-1:0] new_elem;
-    reg [MEM_DELAY_MAX*BITSIZE_item-1:0] queue;
-    wire [MEM_DELAY_MAX*BITSIZE_item-1:0] queue_next;
-    wire [BITSIZE_oe-1:0] oe;
-    wire [BITSIZE_we-1:0] we;
-    ptr_t Waddr, Raddr;
-    shortint unsigned Wsize;
-    wire [BITSIZE_Wdata-1:0] Wdata;
-    reg Wready, Rready;
-    reg [BITSIZE_Rdata-1:0] Rdata;
+    wire [BITSIZE_item - 1 : 0] request_in;
+    reg [MEM_DELAY_MAX * BITSIZE_item - 1 : 0] request_pipeline_reg;
+    wire [MEM_DELAY_MAX * BITSIZE_item - 1 : 0] request_pipeline_next;
+    wire [BITSIZE_oe - 1 : 0] read_enable;
+    wire [BITSIZE_we - 1 : 0] write_enable;
+    ptr_t write_address, read_address;
+    shortint unsigned write_size;
+    wire [BITSIZE_Wdata - 1 : 0] write_data;
+    reg write_ready_reg, read_ready_reg;
+    reg [BITSIZE_Rdata - 1 : 0] read_data_reg;
 
-    reg [QUEUE_BITSIZE-1:0] queue_counter;
-    wire [QUEUE_BITSIZE-1:0] queue_counter_next;
+    reg [QUEUE_BITSIZE - 1 : 0] request_count_reg;
+    wire [QUEUE_BITSIZE - 1 : 0] request_count_next;
 
-    assign new_elem = Mout_back_pressure[i] ? {BITSIZE_item{1&apos;b0}} : {Mout_tag[BITSIZE_tag*i+:BITSIZE_tag],Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata],Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr],Mout_we_ram[BITSIZE_we*i+:BITSIZE_we],Mout_oe_ram[BITSIZE_oe*i+:BITSIZE_oe]};
-    assign queue_next = M_back_pressure[i] ? queue[MEM_DELAY_MAX*BITSIZE_item-1:0] : {queue[(MEM_DELAY_MAX-1)*BITSIZE_item-1:0],new_elem};
-   
-    always@(posedge clock)
+    assign request_in = Mout_back_pressure[i]
+                            ? {BITSIZE_item{1'b0}}
+                            : {Mout_tag[BITSIZE_tag * i +: BITSIZE_tag],
+                               Mout_Wdata_ram[BITSIZE_Wdata * i +: BITSIZE_Wdata],
+                               Mout_data_ram_size[BITSIZE_Wsize * i +: BITSIZE_Wsize],
+                               Mout_addr_ram[BITSIZE_addr * i +: BITSIZE_addr],
+                               Mout_we_ram[BITSIZE_we * i +: BITSIZE_we],
+                               Mout_oe_ram[BITSIZE_oe * i +: BITSIZE_oe]};
+    assign request_pipeline_next =
+               M_back_pressure[i]
+                   ? request_pipeline_reg[MEM_DELAY_MAX * BITSIZE_item - 1 : 0]
+                   : {request_pipeline_reg[(MEM_DELAY_MAX - 1) * BITSIZE_item - 1 : 0],
+                      request_in};
+
+    always @(posedge clock)
     begin
       if(1RESET_VALUE)
       begin
-        queue &lt;= 0;
+        request_pipeline_reg &lt;= 0;
       end
       else
       begin
-        queue &lt;= queue_next;
+        request_pipeline_reg &lt;= request_pipeline_next;
       end
     end
 
-    assign oe = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_oe+:BITSIZE_oe];
-    assign Raddr = queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
-    assign _M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] = Rdata | (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1}});
+    assign read_enable =
+               request_pipeline_next[ACTIVE_READ * BITSIZE_item + OFFSET_oe +: BITSIZE_oe];
+    assign read_address =
+               request_pipeline_next[ACTIVE_READ * BITSIZE_item + OFFSET_addr +: BITSIZE_addr];
+    assign response_data[BITSIZE_Rdata * i +: BITSIZE_Rdata] =
+               read_data_reg |
+               (Sout_Rdata_ram[BITSIZE_S_Rdata * i * SLAVE_VALID +: BITSIZE_S_Rdata] &amp;
+                {BITSIZE_S_Rdata{
+                    Sout_DataRdy[BITSIZE_S_ready * i * SLAVE_VALID +: BITSIZE_S_ready] ===
+                    1'b1}});
 
-    always@(posedge clock)
+    always @(posedge clock)
     begin : read_channel
-      automatic reg [BITSIZE_Rdata-1:0] data;
-      Rready &lt;= 0;
-      Rdata &lt;= 0;
-      if(oe &amp;&amp; base_addr &lt;= Raddr)
+      automatic reg [BITSIZE_Rdata - 1 : 0] data;
+      read_ready_reg &lt;= 0;
+      read_data_reg &lt;= 0;
+      if(read_enable &amp;&amp; base_addr &lt;= read_address)
       begin
-        data = m_utils.read_a(Raddr);
-        Rdata &lt;= data;
-        Rready &lt;= 1;
+        data = m_utils.read_a(read_address);
+        read_data_reg &lt;= data;
+        read_ready_reg &lt;= 1;
         if(MEM_DUMP)
         begin
-          $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, Raddr, BITSIZE_Rdata, data);
+          $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, read_address, BITSIZE_Rdata, data);
         end
       end
     end
 
-    assign we = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_we+:BITSIZE_we];
-    assign Waddr = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_addr+:BITSIZE_addr];
-    assign Wsize = {{16-BITSIZE_Wsize{1&apos;b0}}, queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_Wsize+:BITSIZE_Wsize]};
-    assign Wdata = queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_Wdata+:BITSIZE_Wdata];
+    assign write_enable =
+               request_pipeline_next[ACTIVE_WRITE * BITSIZE_item + OFFSET_we +: BITSIZE_we];
+    assign write_address =
+               request_pipeline_next[ACTIVE_WRITE * BITSIZE_item + OFFSET_addr +: BITSIZE_addr];
+    assign write_size = {{16 - BITSIZE_Wsize{1'b0}},
+                         request_pipeline_next[ACTIVE_WRITE * BITSIZE_item + OFFSET_Wsize +:
+                                               BITSIZE_Wsize]};
+    assign write_data =
+               request_pipeline_next[ACTIVE_WRITE * BITSIZE_item + OFFSET_Wdata +: BITSIZE_Wdata];
 
-    always@(posedge clock)
+    always @(posedge clock)
     begin : write_channel
-      Wready &lt;= 0;
-      if(we &amp;&amp; base_addr &lt;= Waddr)
+      write_ready_reg &lt;= 0;
+      if(write_enable &amp;&amp; base_addr &lt;= write_address)
       begin
-        void'(m_utils.write_sa(Wdata, Wsize, Waddr));
-        Wready &lt;= 1;
+        void'(m_utils.write_sa(write_data, write_size, write_address));
+        write_ready_reg &lt;= 1;
         if(MEM_DUMP)
         begin
-          $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, Waddr, Wsize, Wdata);
+          $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, write_address, write_size, write_data);
         end
       end
     end
@@ -739,75 +758,98 @@ generate
     end
     else
     begin
-      wire _M_DataRdy, _M_DataRdy_wire;
-      assign M_DataRdy[i] = _M_DataRdy;
-      assign _M_DataRdy = Wready | Rready | (Sout_DataRdy[BITSIZE_S_ready*i*SLAVE_VALID+:BITSIZE_S_ready] === 1&apos;b1);
-      assign _M_DataRdy_wire = Wready | Rready; // Used to update at posedge clock of the queue_counter;
+      wire response_ready, external_response_ready;
+      assign M_DataRdy[i] = response_ready;
+      assign response_ready =
+                 write_ready_reg | read_ready_reg |
+                 (Sout_DataRdy[BITSIZE_S_ready * i * SLAVE_VALID +: BITSIZE_S_ready] === 1'b1);
+      assign external_response_ready =
+                 write_ready_reg |
+                 read_ready_reg; // Updates request_count_reg at the rising edge.
 
       always @(posedge clock)
       begin
         if(1RESET_VALUE)
         begin
-          queue_counter &lt;= 0;
+          request_count_reg &lt;= 0;
         end
         else
         begin
-          queue_counter &lt;= queue_counter_next;
+          request_count_reg &lt;= request_count_next;
         end
       end
 
-      if(QUEUE_SIZE > 1)
+      if(QUEUE_SIZE &gt; 1)
       begin
-        assign queue_counter_next = queue_counter + (((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp; base_addr &lt;= Mout_addr_ram[i*BITSIZE_addr +: BITSIZE_addr]) &amp;&amp; (queue_counter == 0 ? 1 : (queue_counter  - (_M_DataRdy_wire &amp;&amp; !M_back_pressure[i])) &lt; (QUEUE_SIZE - 1))) - (_M_DataRdy_wire &amp;&amp; !M_back_pressure[i]);
+        assign request_count_next =
+                   request_count_reg +
+                   (((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp;
+                     base_addr &lt;= Mout_addr_ram[i * BITSIZE_addr +: BITSIZE_addr]) &amp;&amp;
+                    (request_count_reg == 0
+                         ? 1
+                         : (request_count_reg - (external_response_ready &amp;&amp;
+                                                 !M_back_pressure[i])) &lt; (QUEUE_SIZE - 1))) -
+                   (external_response_ready &amp;&amp; !M_back_pressure[i]);
       end
-      else 
+      else
       begin
-        assign queue_counter_next = ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp; base_addr &lt;= Mout_addr_ram[i*BITSIZE_addr +: BITSIZE_addr]) || (queue_counter &amp;&amp; !_M_DataRdy_wire &amp;&amp; !M_back_pressure[i]);
+        assign request_count_next =
+                   ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp;
+                    base_addr &lt;= Mout_addr_ram[i * BITSIZE_addr +: BITSIZE_addr]) ||
+                   (request_count_reg &amp;&amp; !external_response_ready &amp;&amp; !M_back_pressure[i]);
       end
 
-      if(QUEUE_SIZE > 1)
+      if(QUEUE_SIZE &gt; 1)
       begin
-        assign Mout_back_pressure[i] = M_back_pressure[i] || (queue_counter == 0 ? 0 : (queue_counter - _M_DataRdy_wire) == (QUEUE_SIZE - 1));
+        assign Mout_back_pressure[i] =
+                   M_back_pressure[i] ||
+                   (request_count_reg == 0
+                        ? 0
+                        : (request_count_reg - external_response_ready) == (QUEUE_SIZE - 1));
       end
-      else 
+      else
       begin
-        assign Mout_back_pressure[i] = M_back_pressure[i] || (queue_counter &amp;&amp; !_M_DataRdy_wire);
+        assign Mout_back_pressure[i] =
+                   M_back_pressure[i] || (request_count_reg &amp;&amp; !external_response_ready);
       end
 
-      reg [BITSIZE_tag-1:0] Rtag, Wtag;
-      wire [BITSIZE_tag-1:0] _M_tag;
-      assign _M_tag = Wtag | Rtag;
-      assign M_tag[BITSIZE_tag*i+:BITSIZE_tag] = _M_tag;
+      reg [BITSIZE_tag - 1 : 0] read_tag_reg, write_tag_reg;
+      wire [BITSIZE_tag - 1 : 0] response_tag;
+      assign response_tag = write_tag_reg | read_tag_reg;
+      assign M_tag[BITSIZE_tag * i +: BITSIZE_tag] = response_tag;
 
-      always@(posedge clock)
-      begin 
-        Rtag &lt;= 0;
-        if(oe &amp;&amp; base_addr &lt;= Raddr)
+      always @(posedge clock)
+      begin
+        read_tag_reg &lt;= 0;
+        if(read_enable &amp;&amp; base_addr &lt;= read_address)
         begin
-          Rtag &lt;= queue_next[ACTIVE_READ*BITSIZE_item+OFFSET_tag+:BITSIZE_tag];
+          read_tag_reg &lt;=
+              request_pipeline_next[ACTIVE_READ * BITSIZE_item + OFFSET_tag +: BITSIZE_tag];
         end
       end
 
-      always@(posedge clock)
-      begin 
-        Wtag &lt;= 0;
-        if(we &amp;&amp; base_addr &lt;= Waddr)
+      always @(posedge clock)
+      begin
+        write_tag_reg &lt;= 0;
+        if(write_enable &amp;&amp; base_addr &lt;= write_address)
         begin
-          Wtag &lt;= queue_next[ACTIVE_WRITE*BITSIZE_item+OFFSET_tag+:BITSIZE_tag];
+          write_tag_reg &lt;=
+              request_pipeline_next[ACTIVE_WRITE * BITSIZE_item + OFFSET_tag +: BITSIZE_tag];
         end
       end
     end
 
     always @(posedge clock)
     begin
-      if (we &amp; oe)
+      if(write_enable &amp; read_enable)
       begin
         $display(&quot;ERROR - Mout_we_ram and Mout_oe_ram both enabled on channel %0d!&quot;, i);
         $finish;
       end
     end
   end
-endgenerate"/>
+endgenerate
+"/>
         </module_o>
       </circuit>
     </cell>
@@ -965,8 +1007,7 @@ endgenerate"/>
           <NP_functionality
             IP_COMPONENT="if_utils"
             LIBRARY="TestbenchMEMAXI index QUEUE_SIZE READ_DELAY WRITE_DELAY arid araddr arlen arsize arburst arlock arcache arprot arqos arregion aruser rid rdata rresp ruser awid awaddr awlen awsize awburst awlock awcache awprot awqos awregion awuser wdata wstrb wuser bid bresp buser"
-            VERILOG_PROVIDED="
-localparam integer BITSIZE_data = BITSIZE_rdata;
+            VERILOG_PROVIDED="localparam integer BITSIZE_data = BITSIZE_rdata;
 localparam integer BITSIZE_id = BITSIZE_arid;
 localparam integer BITSIZE_addr = BITSIZE_araddr;
 localparam integer BITSIZE_size = BITSIZE_arsize;
@@ -974,7 +1015,8 @@ localparam integer BITSIZE_burst = BITSIZE_arburst;
 localparam integer BITSIZE_len = BITSIZE_arlen;
 localparam integer C_AR = QUEUE_SIZE - 1;
 localparam integer C_AW = QUEUE_SIZE - 1;
-localparam integer C_W = ((QUEUE_SIZE - 1) &gt; (WRITE_DELAY + 1)) ? (QUEUE_SIZE - 1) : (WRITE_DELAY + 1);
+localparam integer C_W = ((QUEUE_SIZE - 1) &gt; (WRITE_DELAY + 1)) ? (QUEUE_SIZE - 1)
+                                                                : (WRITE_DELAY + 1);
 typedef longint unsigned timestamp_t;
 if_utils #(index, BITSIZE_data) m_utils();
 
@@ -982,60 +1024,66 @@ integer ar_head_reg;
 integer ar_tail_reg;
 integer ar_count_reg;
 integer ar_beat_reg;
-reg [BITSIZE_id-1:0] ar_id_reg [0:C_AR-1];
-reg [BITSIZE_addr-1:0] ar_addr_reg [0:C_AR-1];
-reg [BITSIZE_size-1:0] ar_size_reg [0:C_AR-1];
-reg [BITSIZE_burst-1:0] ar_burst_reg [0:C_AR-1];
-reg [BITSIZE_len-1:0] ar_len_reg [0:C_AR-1];
-reg [BITSIZE_rresp-1:0] ar_resp_reg [0:C_AR-1];
-timestamp_t ar_time_reg [0:C_AR-1];
-reg next_read_resp_valid;
-reg [BITSIZE_rresp-1:0] next_read_resp_value;
+reg [BITSIZE_id - 1 : 0] ar_id_reg[0 : C_AR - 1];
+reg [BITSIZE_addr - 1 : 0] ar_addr_reg[0 : C_AR - 1];
+reg [BITSIZE_size - 1 : 0] ar_size_reg[0 : C_AR - 1];
+reg [BITSIZE_burst - 1 : 0] ar_burst_reg[0 : C_AR - 1];
+reg [BITSIZE_len - 1 : 0] ar_len_reg[0 : C_AR - 1];
+reg [BITSIZE_rresp - 1 : 0] ar_resp_reg[0 : C_AR - 1];
+timestamp_t ar_time_reg[0 : C_AR - 1];
+reg next_read_resp_valid_reg;
+reg [BITSIZE_rresp - 1 : 0] next_read_resp_value_reg;
 integer aw_head_reg;
 integer aw_tail_reg;
 integer aw_count_reg;
-reg [BITSIZE_id-1:0] aw_id_reg [0:C_AW-1];
-reg [BITSIZE_addr-1:0] aw_addr_reg [0:C_AW-1];
-reg [BITSIZE_size-1:0] aw_size_reg [0:C_AW-1];
-reg [BITSIZE_burst-1:0] aw_burst_reg [0:C_AW-1];
-reg [BITSIZE_len-1:0] aw_len_reg [0:C_AW-1];
-reg [BITSIZE_bresp-1:0] aw_resp_reg [0:C_AW-1];
-timestamp_t aw_time_reg [0:C_AW-1];
-reg next_write_resp_valid;
-reg [BITSIZE_bresp-1:0] next_write_resp_value;
-integer aw_committed_reg [0:C_AW-1];
-reg aw_complete_reg [0:C_AW-1];
+reg [BITSIZE_id - 1 : 0] aw_id_reg[0 : C_AW - 1];
+reg [BITSIZE_addr - 1 : 0] aw_addr_reg[0 : C_AW - 1];
+reg [BITSIZE_size - 1 : 0] aw_size_reg[0 : C_AW - 1];
+reg [BITSIZE_burst - 1 : 0] aw_burst_reg[0 : C_AW - 1];
+reg [BITSIZE_len - 1 : 0] aw_len_reg[0 : C_AW - 1];
+reg [BITSIZE_bresp - 1 : 0] aw_resp_reg[0 : C_AW - 1];
+timestamp_t aw_time_reg[0 : C_AW - 1];
+reg next_write_resp_valid_reg;
+reg [BITSIZE_bresp - 1 : 0] next_write_resp_value_reg;
+integer aw_committed_reg[0 : C_AW - 1];
+reg aw_complete_reg[0 : C_AW - 1];
 integer w_head_reg;
 integer w_tail_reg;
 integer w_count_reg;
-reg [BITSIZE_data-1:0] w_data_reg [0:C_W-1];
-reg [BITSIZE_wstrb-1:0] w_strb_reg [0:C_W-1];
-reg w_last_reg [0:C_W-1];
-timestamp_t w_time_reg [0:C_W-1];
+reg [BITSIZE_data - 1 : 0] w_data_reg[0 : C_W - 1];
+reg [BITSIZE_wstrb - 1 : 0] w_strb_reg[0 : C_W - 1];
+reg w_last_reg[0 : C_W - 1];
+timestamp_t w_time_reg[0 : C_W - 1];
 timestamp_t cycle_count_reg;
 reg rvalid_reg;
 reg rlast_reg;
-reg [BITSIZE_id-1:0] rid_reg;
-reg [BITSIZE_data-1:0] rdata_reg;
-reg [BITSIZE_rresp-1:0] rresp_reg;
-reg [BITSIZE_ruser-1:0] ruser_reg;
+reg [BITSIZE_id - 1 : 0] rid_reg;
+reg [BITSIZE_data - 1 : 0] rdata_reg;
+reg [BITSIZE_rresp - 1 : 0] rresp_reg;
+reg [BITSIZE_ruser - 1 : 0] ruser_reg;
 
-task automatic inject_next_read_response(input [BITSIZE_rresp-1:0] response);
-begin
-  if (next_read_resp_valid)
-    $fatal(1, &quot;AXI read response override is already pending&quot;);
-  next_read_resp_value = response;
-  next_read_resp_valid = 1'b1;
-end
+task automatic inject_next_read_response
+    (input [BITSIZE_rresp - 1 : 0] response);
+  begin
+    if(next_read_resp_valid_reg)
+    begin
+      $fatal(1, &quot;AXI read response override is already pending&quot;);
+    end
+    next_read_resp_value_reg = response;
+    next_read_resp_valid_reg = 1'b1;
+  end
 endtask
 
-task automatic inject_next_write_response(input [BITSIZE_bresp-1:0] response);
-begin
-  if (next_write_resp_valid)
-    $fatal(1, &quot;AXI write response override is already pending&quot;);
-  next_write_resp_value = response;
-  next_write_resp_valid = 1'b1;
-end
+task automatic inject_next_write_response
+    (input [BITSIZE_bresp - 1 : 0] response);
+  begin
+    if(next_write_resp_valid_reg)
+    begin
+      $fatal(1, &quot;AXI write response override is already pending&quot;);
+    end
+    next_write_resp_value_reg = response;
+    next_write_resp_valid_reg = 1'b1;
+  end
 endtask
 
 assign arready = ar_count_reg &lt; C_AR;
@@ -1058,12 +1106,14 @@ wire w_push = wvalid &amp;&amp; wready;
 wire b_pop = bvalid &amp;&amp; bready;
 wire r_pop = rvalid_reg &amp;&amp; rready;
 wire ar_pop = r_pop &amp;&amp; rlast_reg;
-wire [31:0] read_slot = ar_pop ? (ar_head_reg + 1) % C_AR : ar_head_reg;
-wire [31:0] read_beat = r_pop ? (rlast_reg ? 0 : ar_beat_reg + 1) : ar_beat_reg;
+wire [31 : 0] read_slot = ar_pop ? (ar_head_reg + 1) % C_AR : ar_head_reg;
+wire [31 : 0] read_beat = r_pop ? (rlast_reg ? 0 : ar_beat_reg + 1) : ar_beat_reg;
 wire read_load = (!rvalid_reg || rready) &amp;&amp; (ar_count_reg &gt; (ar_pop ? 1 : 0)) &amp;&amp;
-    cycle_count_reg &gt;= ar_time_reg[read_slot] + READ_DELAY - 1;
-wire [BITSIZE_addr-1:0] read_address = ar_burst_reg[read_slot] == 2'b00 ?
-    ar_addr_reg[read_slot] : ar_addr_reg[read_slot] + read_beat * (1 &lt;&lt; ar_size_reg[read_slot]);
+                 cycle_count_reg &gt;= ar_time_reg[read_slot] + READ_DELAY - 1;
+wire [BITSIZE_addr - 1 : 0] read_address = ar_burst_reg[read_slot] == 2'b00
+                                               ? ar_addr_reg[read_slot]
+                                               : ar_addr_reg[read_slot] +
+                                                     read_beat * (1 &lt;&lt; ar_size_reg[read_slot]);
 
 // AXI4 write data has no ID. Associate it with the oldest incomplete AW,
 // including an AW accepted on this edge when there is no older owner.
@@ -1074,42 +1124,47 @@ begin : find_write_owner
   integer scan_slot;
   queued_owner = -1;
   scan_slot = 0;
-  for (scan_i = 0; scan_i &lt; aw_count_reg; scan_i = scan_i + 1)
+  for(scan_i = 0; scan_i &lt; aw_count_reg; scan_i = scan_i + 1)
   begin
     scan_slot = (aw_head_reg + scan_i) % C_AW;
-    if (queued_owner == -1 &amp;&amp; !aw_complete_reg[scan_slot])
+    if(queued_owner == -1 &amp;&amp; !aw_complete_reg[scan_slot])
+    begin
       queued_owner = scan_slot;
+    end
   end
 end
 
 wire aw_is_new = queued_owner == -1 &amp;&amp; aw_push;
 wire w_is_new = w_count_reg == 0 &amp;&amp; w_push;
-wire [31:0] write_owner = aw_is_new ? aw_tail_reg : queued_owner;
-wire [BITSIZE_addr-1:0] write_base = aw_is_new ? awaddr : aw_addr_reg[write_owner];
-wire [BITSIZE_size-1:0] write_size = aw_is_new ? awsize : aw_size_reg[write_owner];
-wire [BITSIZE_burst-1:0] write_burst = aw_is_new ? awburst : aw_burst_reg[write_owner];
-wire [BITSIZE_len-1:0] write_length = aw_is_new ? awlen : aw_len_reg[write_owner];
-wire [BITSIZE_data-1:0] write_data = w_is_new ? wdata : w_data_reg[w_head_reg];
-wire [BITSIZE_wstrb-1:0] write_strobe = w_is_new ? wstrb : w_strb_reg[w_head_reg];
+wire [31 : 0] write_owner = aw_is_new ? aw_tail_reg : queued_owner;
+wire [BITSIZE_addr - 1 : 0] write_base = aw_is_new ? awaddr : aw_addr_reg[write_owner];
+wire [BITSIZE_size - 1 : 0] write_size = aw_is_new ? awsize : aw_size_reg[write_owner];
+wire [BITSIZE_burst - 1 : 0] write_burst = aw_is_new ? awburst : aw_burst_reg[write_owner];
+wire [BITSIZE_len - 1 : 0] write_length = aw_is_new ? awlen : aw_len_reg[write_owner];
+wire [BITSIZE_data - 1 : 0] write_data = w_is_new ? wdata : w_data_reg[w_head_reg];
+wire [BITSIZE_wstrb - 1 : 0] write_strobe = w_is_new ? wstrb : w_strb_reg[w_head_reg];
 wire write_last = w_is_new ? wlast : w_last_reg[w_head_reg];
-wire [63:0] write_aw_time = aw_is_new ? cycle_count_reg : aw_time_reg[write_owner];
-wire [63:0] write_w_time = w_is_new ? cycle_count_reg : w_time_reg[w_head_reg];
-wire [63:0] write_eligible_at =
-    (write_aw_time &gt; write_w_time ? write_aw_time : write_w_time) + WRITE_DELAY - 1;
+wire [63 : 0] write_aw_time = aw_is_new ? cycle_count_reg : aw_time_reg[write_owner];
+wire [63 : 0] write_w_time = w_is_new ? cycle_count_reg : w_time_reg[w_head_reg];
+wire [63 : 0] write_eligible_at =
+                  (write_aw_time &gt; write_w_time ? write_aw_time : write_w_time) + WRITE_DELAY - 1;
 wire commit_write = (queued_owner != -1 || aw_is_new) &amp;&amp; (w_count_reg &gt; 0 || w_is_new) &amp;&amp;
-    cycle_count_reg &gt;= write_eligible_at;
-wire [31:0] write_beat = aw_is_new ? 0 : aw_committed_reg[write_owner];
-wire [31:0] write_beats = {1'b0, write_length} + 1;
+                    cycle_count_reg &gt;= write_eligible_at;
+wire [31 : 0] write_beat = aw_is_new ? 0 : aw_committed_reg[write_owner];
+wire [31 : 0] write_beats = {1'b0, write_length} + 1;
 wire write_final = write_beat == write_beats - 1;
-wire [BITSIZE_addr-1:0] write_address = write_burst == 2'b00 ?
-    write_base : write_base + write_beat * (1 &lt;&lt; write_size);
+wire [BITSIZE_addr - 1 : 0] write_address = write_burst == 2'b00
+                                                ? write_base
+                                                : write_base + write_beat * (1 &lt;&lt; write_size);
 wire w_enqueue = w_push &amp;&amp; !(commit_write &amp;&amp; w_is_new);
 wire w_pop = commit_write &amp;&amp; !w_is_new;
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     cycle_count_reg &lt;= 0;
+  end
   else
   begin
     cycle_count_reg &lt;= cycle_count_reg + 1;
@@ -1118,411 +1173,554 @@ end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_head_reg &lt;= 0;
+  end
   else
   begin
-    if (ar_pop)
+    if(ar_pop)
+    begin
       ar_head_reg &lt;= (ar_head_reg + 1) % C_AR;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_tail_reg &lt;= 0;
+  end
   else
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_tail_reg &lt;= (ar_tail_reg + 1) % C_AR;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_count_reg &lt;= 0;
+  end
   else
   begin
-    case ({ar_push, ar_pop})
-      2'b10: ar_count_reg &lt;= ar_count_reg + 1;
-      2'b01: ar_count_reg &lt;= ar_count_reg - 1;
-      default: ar_count_reg &lt;= ar_count_reg;
+    case({ar_push, ar_pop})
+      2'b10:
+      begin
+        ar_count_reg &lt;= ar_count_reg + 1;
+      end
+      2'b01:
+      begin
+        ar_count_reg &lt;= ar_count_reg - 1;
+      end
+      default:
+      begin
+        ar_count_reg &lt;= ar_count_reg;
+      end
     endcase
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_beat_reg &lt;= 0;
+  end
   else
   begin
-    if (r_pop)
+    if(r_pop)
+    begin
       ar_beat_reg &lt;= rlast_reg ? 0 : ar_beat_reg + 1;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_id
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_id_reg[ar_tail_reg] &lt;= arid;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_addr
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_addr_reg[ar_tail_reg] &lt;= araddr;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_size
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_size_reg[ar_tail_reg] &lt;= arsize;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_burst
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_burst_reg[ar_tail_reg] &lt;= arburst;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_len
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_len_reg[ar_tail_reg] &lt;= arlen;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_resp
   integer ar_resp_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    next_read_resp_valid &lt;= 1'b0;
-    next_read_resp_value &lt;= '0;
-    for (ar_resp_i = 0; ar_resp_i &lt; C_AR; ar_resp_i = ar_resp_i + 1)
+    next_read_resp_valid_reg &lt;= 1'b0;
+    next_read_resp_value_reg &lt;= '0;
+    for(ar_resp_i = 0; ar_resp_i &lt; C_AR; ar_resp_i = ar_resp_i + 1)
+    begin
       ar_resp_reg[ar_resp_i] &lt;= '0;
+    end
   end
-  else if (ar_push)
+  else if(ar_push)
   begin
-    ar_resp_reg[ar_tail_reg] &lt;= next_read_resp_valid ? next_read_resp_value : '0;
-    if (next_read_resp_valid)
-      next_read_resp_valid &lt;= 1'b0;
+    ar_resp_reg[ar_tail_reg] &lt;= next_read_resp_valid_reg ? next_read_resp_value_reg : '0;
+    if(next_read_resp_valid_reg)
+    begin
+      next_read_resp_valid_reg &lt;= 1'b0;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_time
   integer ar_time_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    for (ar_time_i = 0; ar_time_i &lt; C_AR; ar_time_i = ar_time_i + 1)
+    for(ar_time_i = 0; ar_time_i &lt; C_AR; ar_time_i = ar_time_i + 1)
+    begin
       ar_time_reg[ar_time_i] &lt;= 0;
+    end
   end
   else
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_time_reg[ar_tail_reg] &lt;= cycle_count_reg;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     rvalid_reg &lt;= 0;
+  end
   else
   begin
-    if (!rvalid_reg || rready)
+    if(!rvalid_reg || rready)
+    begin
       rvalid_reg &lt;= read_load;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     rid_reg &lt;= '0;
+  end
   else
   begin
-    if (read_load)
+    if(read_load)
+    begin
       rid_reg &lt;= ar_id_reg[read_slot];
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     rlast_reg &lt;= '0;
+  end
   else
   begin
-    if (read_load)
+    if(read_load)
+    begin
       rlast_reg &lt;= read_beat == ar_len_reg[read_slot];
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     rresp_reg &lt;= '0;
+  end
   else
   begin
-    if (read_load)
+    if(read_load)
+    begin
       rresp_reg &lt;= ar_resp_reg[read_slot];
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ruser_reg &lt;= '0;
+  end
   else
   begin
-    if (read_load)
+    if(read_load)
+    begin
       ruser_reg &lt;= '0;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     aw_head_reg &lt;= 0;
+  end
   else
   begin
-    if (b_pop)
+    if(b_pop)
+    begin
       aw_head_reg &lt;= (aw_head_reg + 1) % C_AW;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     aw_tail_reg &lt;= 0;
+  end
   else
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_tail_reg &lt;= (aw_tail_reg + 1) % C_AW;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     aw_count_reg &lt;= 0;
+  end
   else
   begin
-    case ({aw_push, b_pop})
-      2'b10: aw_count_reg &lt;= aw_count_reg + 1;
-      2'b01: aw_count_reg &lt;= aw_count_reg - 1;
-      default: aw_count_reg &lt;= aw_count_reg;
+    case({aw_push, b_pop})
+      2'b10:
+      begin
+        aw_count_reg &lt;= aw_count_reg + 1;
+      end
+      2'b01:
+      begin
+        aw_count_reg &lt;= aw_count_reg - 1;
+      end
+      default:
+      begin
+        aw_count_reg &lt;= aw_count_reg;
+      end
     endcase
   end
 end
 
 always @(posedge clock)
 begin : update_aw_id
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_id_reg[aw_tail_reg] &lt;= awid;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_addr
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_addr_reg[aw_tail_reg] &lt;= awaddr;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_size
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_size_reg[aw_tail_reg] &lt;= awsize;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_burst
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_burst_reg[aw_tail_reg] &lt;= awburst;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_len
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_len_reg[aw_tail_reg] &lt;= awlen;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_resp
   integer aw_resp_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    next_write_resp_valid &lt;= 1'b0;
-    next_write_resp_value &lt;= '0;
-    for (aw_resp_i = 0; aw_resp_i &lt; C_AW; aw_resp_i = aw_resp_i + 1)
+    next_write_resp_valid_reg &lt;= 1'b0;
+    next_write_resp_value_reg &lt;= '0;
+    for(aw_resp_i = 0; aw_resp_i &lt; C_AW; aw_resp_i = aw_resp_i + 1)
+    begin
       aw_resp_reg[aw_resp_i] &lt;= '0;
+    end
   end
-  else if (aw_push)
+  else if(aw_push)
   begin
-    aw_resp_reg[aw_tail_reg] &lt;= next_write_resp_valid ? next_write_resp_value : '0;
-    if (next_write_resp_valid)
-      next_write_resp_valid &lt;= 1'b0;
+    aw_resp_reg[aw_tail_reg] &lt;= next_write_resp_valid_reg ? next_write_resp_value_reg : '0;
+    if(next_write_resp_valid_reg)
+    begin
+      next_write_resp_valid_reg &lt;= 1'b0;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_time
   integer aw_time_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    for (aw_time_i = 0; aw_time_i &lt; C_AW; aw_time_i = aw_time_i + 1)
+    for(aw_time_i = 0; aw_time_i &lt; C_AW; aw_time_i = aw_time_i + 1)
+    begin
       aw_time_reg[aw_time_i] &lt;= 0;
+    end
   end
   else
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_time_reg[aw_tail_reg] &lt;= cycle_count_reg;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_committed
   integer aw_committed_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    for (aw_committed_i = 0; aw_committed_i &lt; C_AW; aw_committed_i = aw_committed_i + 1)
+    for(aw_committed_i = 0; aw_committed_i &lt; C_AW; aw_committed_i = aw_committed_i + 1)
+    begin
       aw_committed_reg[aw_committed_i] &lt;= 0;
+    end
   end
   else
   begin
-    if (b_pop)
+    if(b_pop)
+    begin
       aw_committed_reg[aw_head_reg] &lt;= 0;
-    if (aw_push)
+    end
+    if(aw_push)
+    begin
       aw_committed_reg[aw_tail_reg] &lt;= (commit_write &amp;&amp; aw_is_new) ? write_beat + 1 : 0;
-    if (commit_write &amp;&amp; !aw_is_new)
+    end
+    if(commit_write &amp;&amp; !aw_is_new)
+    begin
       aw_committed_reg[write_owner] &lt;= write_beat + 1;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_complete
   integer aw_complete_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    for (aw_complete_i = 0; aw_complete_i &lt; C_AW; aw_complete_i = aw_complete_i + 1)
+    for(aw_complete_i = 0; aw_complete_i &lt; C_AW; aw_complete_i = aw_complete_i + 1)
+    begin
       aw_complete_reg[aw_complete_i] &lt;= 0;
+    end
   end
   else
   begin
-    if (b_pop)
+    if(b_pop)
+    begin
       aw_complete_reg[aw_head_reg] &lt;= 0;
-    if (aw_push)
+    end
+    if(aw_push)
+    begin
       aw_complete_reg[aw_tail_reg] &lt;= commit_write &amp;&amp; aw_is_new &amp;&amp; write_final;
-    if (commit_write &amp;&amp; !aw_is_new &amp;&amp; write_final)
+    end
+    if(commit_write &amp;&amp; !aw_is_new &amp;&amp; write_final)
+    begin
       aw_complete_reg[write_owner] &lt;= 1;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     w_head_reg &lt;= 0;
+  end
   else
   begin
-    if (w_pop)
+    if(w_pop)
+    begin
       w_head_reg &lt;= (w_head_reg + 1) % C_W;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     w_tail_reg &lt;= 0;
+  end
   else
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_tail_reg &lt;= (w_tail_reg + 1) % C_W;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     w_count_reg &lt;= 0;
+  end
   else
   begin
-    case ({w_enqueue, w_pop})
-      2'b10: w_count_reg &lt;= w_count_reg + 1;
-      2'b01: w_count_reg &lt;= w_count_reg - 1;
-      default: w_count_reg &lt;= w_count_reg;
+    case({w_enqueue, w_pop})
+      2'b10:
+      begin
+        w_count_reg &lt;= w_count_reg + 1;
+      end
+      2'b01:
+      begin
+        w_count_reg &lt;= w_count_reg - 1;
+      end
+      default:
+      begin
+        w_count_reg &lt;= w_count_reg;
+      end
     endcase
   end
 end
 
 always @(posedge clock)
 begin : update_w_data_q
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_data_reg[w_tail_reg] &lt;= wdata;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_w_strb_q
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_strb_reg[w_tail_reg] &lt;= wstrb;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_w_last_q
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_last_reg[w_tail_reg] &lt;= wlast;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_w_time_q
   integer w_time_q_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    for (w_time_q_i = 0; w_time_q_i &lt; C_W; w_time_q_i = w_time_q_i + 1)
+    for(w_time_q_i = 0; w_time_q_i &lt; C_W; w_time_q_i = w_time_q_i + 1)
+    begin
       w_time_reg[w_time_q_i] &lt;= 0;
+    end
   end
   else
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_time_reg[w_tail_reg] &lt;= cycle_count_reg;
+    end
   end
 end
 
@@ -1530,24 +1728,40 @@ end
 // the value seen by a read aliasing a write committed on the same edge.
 always @(posedge clock)
 begin : independent_axi_model
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     rdata_reg &lt;= '0;
+  end
   else
   begin
-    if (read_load)
+    if(read_load)
     begin
-      case (ar_burst_reg[read_slot])
-        2'b00, 2'b01: rdata_reg &lt;= m_utils.read_a(read_address);
-        default: $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst_reg[read_slot]);
+      case(ar_burst_reg[read_slot])
+        2'b00, 2'b01:
+        begin
+          rdata_reg &lt;= m_utils.read_a(read_address);
+        end
+        default:
+        begin
+          $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst_reg[read_slot]);
+        end
       endcase
     end
-    if (commit_write)
+    if(commit_write)
     begin
-      if (write_last != write_final)
+      if(write_last != write_final)
+      begin
         $fatal(1, &quot;AXI WLAST mismatch at beat %0d of %0d&quot;, write_beat, write_beats);
-      case (write_burst)
-        2'b00, 2'b01: void'(m_utils.write_strobe(write_data, write_strobe, write_address));
-        default: $fatal(1, &quot;Unsupported AXI write burst type: %0d&quot;, write_burst);
+      end
+      case(write_burst)
+        2'b00, 2'b01:
+        begin
+          void'(m_utils.write_strobe(write_data, write_strobe, write_address));
+        end
+        default:
+        begin
+          $fatal(1, &quot;Unsupported AXI write burst type: %0d&quot;, write_burst);
+        end
       endcase
     end
   end
@@ -3108,21 +3322,33 @@ end
           </port_o>
           <NP_functionality
             LIBRARY="TestbenchMEMRamulatorIntegrated index base_addr MEM_DUMP MEM_DUMP_FILE QUEUE_SIZE M_DataRdy M_Rdata_ram M_back_pressure M_tag Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_data_ram_size Mout_Wdata_ram Mout_back_pressure Mout_tag Sout_DataRdy Sout_Rdata_ram S_oe_ram S_we_ram S_addr_ram S_data_ram_size S_Wdata_ram"
-            VERILOG_PROVIDED="import &quot;DPI-C&quot; function int m_read_request(input shortint unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
-import &quot;DPI-C&quot; function int m_read_complete_ch(input shortint unsigned id, input byte unsigned channel, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_write_request(input shortint unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
-import &quot;DPI-C&quot; function void m_memory_tick(input longint unsigned cycle);
+            VERILOG_PROVIDED="import &quot;DPI-C&quot; function int m_read_request
+    (input shortint unsigned id,
+     input shortint unsigned bitsize,
+     input ptr_t addr,
+     input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete_ch
+    (input shortint unsigned id,
+     input byte unsigned channel,
+     output logic [4095 : 0] data);
+import &quot;DPI-C&quot; function int m_write_request
+    (input shortint unsigned id,
+     input logic [4095 : 0] data,
+     input shortint unsigned bitsize,
+     input ptr_t addr,
+     input byte unsigned shift);
+import &quot;DPI-C&quot; function void m_memory_tick
+    (input longint unsigned cycle);
 
 localparam CHANNELS_NUMBER = BITSIZE_Mout_oe_ram,
-  BITSIZE_addr = BITSIZE_Mout_addr_ram/CHANNELS_NUMBER,
-  BITSIZE_Wsize = BITSIZE_Mout_data_ram_size/CHANNELS_NUMBER,
-  BITSIZE_Wdata = BITSIZE_Mout_Wdata_ram/CHANNELS_NUMBER,
-  BITSIZE_Rdata = BITSIZE_M_Rdata_ram/CHANNELS_NUMBER,
-  BITSIZE_tag = BITSIZE_Mout_tag/CHANNELS_NUMBER,
-  BITSIZE_S_Rdata = BITSIZE_Sout_Rdata_ram/BITSIZE_S_oe_ram,
-  SLAVE_VALID = BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
-  C_REQUEST = QUEUE_SIZE &gt; 0 ? QUEUE_SIZE : 1,
-  C_RESPONSE = C_REQUEST;
+           BITSIZE_addr = BITSIZE_Mout_addr_ram / CHANNELS_NUMBER,
+           BITSIZE_Wsize = BITSIZE_Mout_data_ram_size / CHANNELS_NUMBER,
+           BITSIZE_Wdata = BITSIZE_Mout_Wdata_ram / CHANNELS_NUMBER,
+           BITSIZE_Rdata = BITSIZE_M_Rdata_ram / CHANNELS_NUMBER,
+           BITSIZE_tag = BITSIZE_Mout_tag / CHANNELS_NUMBER,
+           BITSIZE_S_Rdata = BITSIZE_Sout_Rdata_ram / BITSIZE_S_oe_ram,
+           SLAVE_VALID = BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
+           C_REQUEST = QUEUE_SIZE &gt; 0 ? QUEUE_SIZE : 1, C_RESPONSE = C_REQUEST;
 
 assign S_oe_ram = Mout_oe_ram;
 assign S_we_ram = Mout_we_ram;
@@ -3158,28 +3384,28 @@ generate
 endgenerate
 
 // SystemMEM advances every independent backend once, after request issue.
-reg [63:0] memory_cycle = 0;
-reg memory_running = 0;
+reg [63 : 0] memory_cycle_reg = 0;
+reg memory_running_reg = 0;
 always @(negedge clock)
 begin
   if(1RESET_VALUE)
   begin
-    memory_cycle = 0;
-    memory_running = 0;
+    memory_cycle_reg = 0;
+    memory_running_reg = 0;
   end
   else if(setup_port)
   begin
-    memory_cycle = 0;
-    memory_running = 1;
+    memory_cycle_reg = 0;
+    memory_running_reg = 1;
   end
   else if(done_port)
   begin
-    memory_running = 0;
+    memory_running_reg = 0;
   end
-  else if(memory_running)
+  else if(memory_running_reg)
   begin
-    memory_cycle = memory_cycle + 1;
-    m_memory_tick(memory_cycle);
+    memory_cycle_reg = memory_cycle_reg + 1;
+    m_memory_tick(memory_cycle_reg);
   end
 end
 
@@ -3190,52 +3416,57 @@ generate
     typedef struct packed
     {
       logic we;
-      logic [BITSIZE_addr-1:0] addr;
-      logic [BITSIZE_Wsize-1:0] size;
-      logic [BITSIZE_Wdata-1:0] data;
-      logic [BITSIZE_tag-1:0] tag;
+      logic [BITSIZE_addr - 1 : 0] addr;
+      logic [BITSIZE_Wsize - 1 : 0] size;
+      logic [BITSIZE_Wdata - 1 : 0] data;
+      logic [BITSIZE_tag - 1 : 0] tag;
     } request_t;
-    request_t request_reg [0:C_REQUEST-1];
+    request_t request_reg[0 : C_REQUEST - 1];
     request_t request_in;
     request_t request_head;
     integer request_head_reg, request_tail_reg, request_count_reg;
     integer response_head_reg, response_tail_reg, response_count_reg;
     integer response_reserved_reg;
-    reg [BITSIZE_Rdata-1:0] response_data_reg [0:C_RESPONSE-1];
-    reg [BITSIZE_tag-1:0] response_tag_reg [0:C_RESPONSE-1];
+    reg [BITSIZE_Rdata - 1 : 0] response_data_reg[0 : C_RESPONSE - 1];
+    reg [BITSIZE_tag - 1 : 0] response_tag_reg[0 : C_RESPONSE - 1];
     reg completion_valid_reg;
-    reg [BITSIZE_Rdata-1:0] completion_data_reg;
-    reg [BITSIZE_tag-1:0] completion_tag_reg;
-    reg read_valid_reg [0:C_RESPONSE-1];
-    integer read_driver_tag_reg [0:C_RESPONSE-1];
-    reg [BITSIZE_tag-1:0] read_tag_reg [0:C_RESPONSE-1];
-    reg [BITSIZE_addr-1:0] read_addr_reg [0:C_RESPONSE-1];
+    reg [BITSIZE_Rdata - 1 : 0] completion_data_reg;
+    reg [BITSIZE_tag - 1 : 0] completion_tag_reg;
+    reg read_valid_reg[0 : C_RESPONSE - 1];
+    integer read_driver_tag_reg[0 : C_RESPONSE - 1];
+    reg [BITSIZE_tag - 1 : 0] read_tag_reg[0 : C_RESPONSE - 1];
+    reg [BITSIZE_addr - 1 : 0] read_addr_reg[0 : C_RESPONSE - 1];
 
-    wire [BITSIZE_addr-1:0] address = Mout_addr_ram[BITSIZE_addr*i+:BITSIZE_addr];
+    wire [BITSIZE_addr - 1 : 0] address = Mout_addr_ram[BITSIZE_addr * i +: BITSIZE_addr];
     wire external_request = (Mout_oe_ram[i] || Mout_we_ram[i]) &amp;&amp; address &gt;= base_addr;
     wire request_push = external_request &amp;&amp; !Mout_back_pressure[i];
     wire response_valid = response_count_reg != 0 || completion_valid_reg;
     wire response_pop = response_valid &amp;&amp; !M_back_pressure[i];
-    wire [BITSIZE_Rdata-1:0] response_data = response_count_reg != 0 ?
-        response_data_reg[response_head_reg] : completion_data_reg;
-    wire [BITSIZE_tag-1:0] response_tag = response_count_reg != 0 ?
-        response_tag_reg[response_head_reg] : completion_tag_reg;
-    wire slave_ready = Sout_DataRdy[i*SLAVE_VALID] === 1&apos;b1;
+    wire [BITSIZE_Rdata - 1 : 0] response_data = response_count_reg != 0
+                                                     ? response_data_reg[response_head_reg]
+                                                     : completion_data_reg;
+    wire [BITSIZE_tag - 1 : 0] response_tag = response_count_reg != 0
+                                                  ? response_tag_reg[response_head_reg]
+                                                  : completion_tag_reg;
+    wire slave_ready = Sout_DataRdy[i * SLAVE_VALID] === 1'b1;
 
-    assign request_in = {Mout_we_ram[i], address, Mout_data_ram_size[BITSIZE_Wsize*i+:BITSIZE_Wsize],
-                         Mout_Wdata_ram[BITSIZE_Wdata*i+:BITSIZE_Wdata], Mout_tag[BITSIZE_tag*i+:BITSIZE_tag]};
+    assign request_in = {Mout_we_ram[i], address,
+                         Mout_data_ram_size[BITSIZE_Wsize * i +: BITSIZE_Wsize],
+                         Mout_Wdata_ram[BITSIZE_Wdata * i +: BITSIZE_Wdata],
+                         Mout_tag[BITSIZE_tag * i +: BITSIZE_tag]};
     assign request_head = request_count_reg != 0 ? request_reg[request_head_reg] : request_in;
     // Response backpressure must not create a combinational cycle through the NoC.
     assign Mout_back_pressure[i] = external_request &amp;&amp; request_count_reg == C_REQUEST;
     assign M_DataRdy[i] = response_valid || slave_ready;
-    assign M_Rdata_ram[BITSIZE_Rdata*i+:BITSIZE_Rdata] =
-        (response_valid ? response_data : &apos;0) |
-        (Sout_Rdata_ram[BITSIZE_S_Rdata*i*SLAVE_VALID+:BITSIZE_S_Rdata] &amp; {BITSIZE_S_Rdata{slave_ready}});
-    assign M_tag[BITSIZE_tag*i+:BITSIZE_tag] = response_valid ? response_tag : &apos;0;
+    assign M_Rdata_ram[BITSIZE_Rdata * i +: BITSIZE_Rdata] =
+               (response_valid ? response_data : '0) |
+               (Sout_Rdata_ram[BITSIZE_S_Rdata * i * SLAVE_VALID +: BITSIZE_S_Rdata] &amp;
+                {BITSIZE_S_Rdata{slave_ready}});
+    assign M_tag[BITSIZE_tag * i +: BITSIZE_tag] = response_valid ? response_tag : '0;
 
     always @(posedge clock)
     begin : memory_channel
-      automatic logic [4095:0] data;
+      automatic logic [4095 : 0] data;
       automatic integer result;
       automatic integer match_slot;
       automatic integer free_slot;
@@ -3245,8 +3476,8 @@ generate
       automatic integer response_reserved_next;
       automatic reg request_pop;
       automatic reg completion_valid;
-      automatic reg [BITSIZE_Rdata-1:0] completion_data;
-      automatic reg [BITSIZE_tag-1:0] completion_tag;
+      automatic reg [BITSIZE_Rdata - 1 : 0] completion_data;
+      automatic reg [BITSIZE_tag - 1 : 0] completion_tag;
       if(1RESET_VALUE)
       begin
         request_head_reg &lt;= 0;
@@ -3303,7 +3534,7 @@ generate
         end
         if(result != 0)
         begin
-          result = m_read_complete_ch(index, i[7:0], data);
+          result = m_read_complete_ch(index, i[7 : 0], data);
         end
         if(result &gt; 0)
         begin
@@ -3320,12 +3551,13 @@ generate
             $fatal(1, &quot;Unknown Ramulator minimal completion tag %0d&quot;, result);
           end
           completion_valid = 1;
-          completion_data = data[BITSIZE_Rdata-1:0];
+          completion_data = data[BITSIZE_Rdata - 1 : 0];
           completion_tag = read_tag_reg[match_slot];
           read_valid_reg[match_slot] &lt;= 0;
           if(MEM_DUMP)
           begin
-            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, read_addr_reg[match_slot], BITSIZE_Rdata, completion_data);
+            $fwrite(dump_file, &quot;%0d,r,%0X,%0d,%0X\n&quot;, i, read_addr_reg[match_slot], BITSIZE_Rdata,
+                    completion_data);
           end
         end
 
@@ -3342,7 +3574,7 @@ generate
           if(request_head.we &amp;&amp; !completion_valid)
           begin
             data = 0;
-            data[BITSIZE_Wdata-1:0] = request_head.data;
+            data[BITSIZE_Wdata - 1 : 0] = request_head.data;
             result = m_write_request(index, data, request_head.size, request_head.addr, 0);
             if(result &gt; 0)
             begin
@@ -3351,13 +3583,14 @@ generate
               completion_tag = request_head.tag;
               if(MEM_DUMP)
               begin
-                $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, request_head.addr, request_head.size, request_head.data);
+                $fwrite(dump_file, &quot;%0d,w,%0X,%0d,%0X\n&quot;, i, request_head.addr, request_head.size,
+                        request_head.data);
               end
             end
           end
           else if(!request_head.we &amp;&amp; free_slot != -1)
           begin
-            result = m_read_request(index, BITSIZE_Rdata, request_head.addr, i[7:0]);
+            result = m_read_request(index, BITSIZE_Rdata, request_head.addr, i[7 : 0]);
             if(result &gt; 0)
             begin
               request_pop = 1;
@@ -3557,8 +3790,7 @@ endgenerate
           </port_o>
           <NP_functionality
             LIBRARY="TestbenchMEMAXIRamulatorIntegrated index AXI_PORT_ID QUEUE_SIZE arid araddr arlen arsize arburst arlock arcache arprot arqos arregion aruser rid rdata rresp ruser awid awaddr awlen awsize awburst awlock awcache awprot awqos awregion awuser wdata wstrb wuser bid bresp buser"
-            VERILOG_PROVIDED="
-localparam integer BITSIZE_data = BITSIZE_rdata;
+            VERILOG_PROVIDED="localparam integer BITSIZE_data = BITSIZE_rdata;
 localparam integer BITSIZE_id = BITSIZE_arid;
 localparam integer BITSIZE_addr = BITSIZE_araddr;
 localparam integer BITSIZE_size = BITSIZE_arsize;
@@ -3568,70 +3800,76 @@ localparam integer C_AR = QUEUE_SIZE - 1;
 localparam integer C_AW = QUEUE_SIZE - 1;
 localparam integer C_W = QUEUE_SIZE - 1;
 
-
 integer ar_head_reg;
 integer ar_tail_reg;
 integer ar_count_reg;
 integer ar_beat_reg;
-reg [BITSIZE_id-1:0] ar_id_reg [0:C_AR-1];
-reg [BITSIZE_addr-1:0] ar_addr_reg [0:C_AR-1];
-reg [BITSIZE_size-1:0] ar_size_reg [0:C_AR-1];
-reg [BITSIZE_burst-1:0] ar_burst_reg [0:C_AR-1];
-reg [BITSIZE_len-1:0] ar_len_reg [0:C_AR-1];
-reg [BITSIZE_rresp-1:0] ar_resp_reg [0:C_AR-1];
-reg next_read_resp_valid;
-reg [BITSIZE_rresp-1:0] next_read_resp_value;
+reg [BITSIZE_id - 1 : 0] ar_id_reg[0 : C_AR - 1];
+reg [BITSIZE_addr - 1 : 0] ar_addr_reg[0 : C_AR - 1];
+reg [BITSIZE_size - 1 : 0] ar_size_reg[0 : C_AR - 1];
+reg [BITSIZE_burst - 1 : 0] ar_burst_reg[0 : C_AR - 1];
+reg [BITSIZE_len - 1 : 0] ar_len_reg[0 : C_AR - 1];
+reg [BITSIZE_rresp - 1 : 0] ar_resp_reg[0 : C_AR - 1];
+reg next_read_resp_valid_reg;
+reg [BITSIZE_rresp - 1 : 0] next_read_resp_value_reg;
 integer aw_head_reg;
 integer aw_tail_reg;
 integer aw_count_reg;
-reg [BITSIZE_id-1:0] aw_id_reg [0:C_AW-1];
-reg [BITSIZE_addr-1:0] aw_addr_reg [0:C_AW-1];
-reg [BITSIZE_size-1:0] aw_size_reg [0:C_AW-1];
-reg [BITSIZE_burst-1:0] aw_burst_reg [0:C_AW-1];
-reg [BITSIZE_len-1:0] aw_len_reg [0:C_AW-1];
-reg [BITSIZE_bresp-1:0] aw_resp_reg [0:C_AW-1];
-reg next_write_resp_valid;
-reg [BITSIZE_bresp-1:0] next_write_resp_value;
-integer aw_committed_reg [0:C_AW-1];
-reg aw_complete_reg [0:C_AW-1];
+reg [BITSIZE_id - 1 : 0] aw_id_reg[0 : C_AW - 1];
+reg [BITSIZE_addr - 1 : 0] aw_addr_reg[0 : C_AW - 1];
+reg [BITSIZE_size - 1 : 0] aw_size_reg[0 : C_AW - 1];
+reg [BITSIZE_burst - 1 : 0] aw_burst_reg[0 : C_AW - 1];
+reg [BITSIZE_len - 1 : 0] aw_len_reg[0 : C_AW - 1];
+reg [BITSIZE_bresp - 1 : 0] aw_resp_reg[0 : C_AW - 1];
+reg next_write_resp_valid_reg;
+reg [BITSIZE_bresp - 1 : 0] next_write_resp_value_reg;
+integer aw_committed_reg[0 : C_AW - 1];
+reg aw_complete_reg[0 : C_AW - 1];
 integer w_head_reg;
 integer w_tail_reg;
 integer w_count_reg;
-reg [BITSIZE_data-1:0] w_data_reg [0:C_W-1];
-reg [BITSIZE_wstrb-1:0] w_strb_reg [0:C_W-1];
-reg w_last_reg [0:C_W-1];
+reg [BITSIZE_data - 1 : 0] w_data_reg[0 : C_W - 1];
+reg [BITSIZE_wstrb - 1 : 0] w_strb_reg[0 : C_W - 1];
+reg w_last_reg[0 : C_W - 1];
 
-task automatic inject_next_read_response(input [BITSIZE_rresp-1:0] response);
-begin
-  if (next_read_resp_valid)
-    $fatal(1, &quot;AXI read response override is already pending&quot;);
-  next_read_resp_value = response;
-  next_read_resp_valid = 1&apos;b1;
-end
+task automatic inject_next_read_response
+    (input [BITSIZE_rresp - 1 : 0] response);
+  begin
+    if(next_read_resp_valid_reg)
+    begin
+      $fatal(1, &quot;AXI read response override is already pending&quot;);
+    end
+    next_read_resp_value_reg = response;
+    next_read_resp_valid_reg = 1'b1;
+  end
 endtask
 
-task automatic inject_next_write_response(input [BITSIZE_bresp-1:0] response);
-begin
-  if (next_write_resp_valid)
-    $fatal(1, &quot;AXI write response override is already pending&quot;);
-  next_write_resp_value = response;
-  next_write_resp_valid = 1&apos;b1;
-end
+task automatic inject_next_write_response
+    (input [BITSIZE_bresp - 1 : 0] response);
+  begin
+    if(next_write_resp_valid_reg)
+    begin
+      $fatal(1, &quot;AXI write response override is already pending&quot;);
+    end
+    next_write_resp_value_reg = response;
+    next_write_resp_valid_reg = 1'b1;
+  end
 endtask
 
 assign arready = ar_count_reg &lt; C_AR;
 assign awready = aw_count_reg &lt; C_AW;
 assign wready = w_count_reg &lt; C_W;
-assign rvalid = !(1RESET_VALUE) &amp;&amp; ar_count_reg != 0 &amp;&amp; ar_data_valid_reg[ar_head_reg][ar_beat_reg];
+assign rvalid = !(1RESET_VALUE) &amp;&amp; ar_count_reg != 0 &amp;&amp;
+                ar_data_valid_reg[ar_head_reg][ar_beat_reg];
 assign rlast = rvalid &amp;&amp; ar_beat_reg == ar_len_reg[ar_head_reg];
-assign rid = rvalid ? ar_id_reg[ar_head_reg] : &apos;0;
-assign rdata = rvalid ? ar_data_reg[ar_head_reg][ar_beat_reg] : &apos;0;
-assign rresp = rvalid ? ar_resp_reg[ar_head_reg] : &apos;0;
-assign ruser = &apos;0;
+assign rid = rvalid ? ar_id_reg[ar_head_reg] : '0;
+assign rdata = rvalid ? ar_data_reg[ar_head_reg][ar_beat_reg] : '0;
+assign rresp = rvalid ? ar_resp_reg[ar_head_reg] : '0;
+assign ruser = '0;
 assign bvalid = aw_count_reg &gt; 0 &amp;&amp; aw_complete_reg[aw_head_reg];
-assign bid = bvalid ? aw_id_reg[aw_head_reg] : &apos;0;
-assign bresp = bvalid ? aw_resp_reg[aw_head_reg] : &apos;0;
-assign buser = &apos;0;
+assign bid = bvalid ? aw_id_reg[aw_head_reg] : '0;
+assign bresp = bvalid ? aw_resp_reg[aw_head_reg] : '0;
+assign buser = '0;
 
 wire ar_push = arvalid &amp;&amp; arready;
 wire aw_push = awvalid &amp;&amp; awready;
@@ -3648,368 +3886,483 @@ begin : find_write_owner
   integer scan_slot;
   queued_owner = -1;
   scan_slot = 0;
-  for (scan_i = 0; scan_i &lt; aw_count_reg; scan_i = scan_i + 1)
+  for(scan_i = 0; scan_i &lt; aw_count_reg; scan_i = scan_i + 1)
   begin
     scan_slot = (aw_head_reg + scan_i) % C_AW;
-    if (queued_owner == -1 &amp;&amp; !aw_complete_reg[scan_slot])
+    if(queued_owner == -1 &amp;&amp; !aw_complete_reg[scan_slot])
+    begin
       queued_owner = scan_slot;
+    end
   end
 end
 
-wire aw_is_new = 1&apos;b0;
-wire w_is_new = 1&apos;b0;
-wire [31:0] write_owner = aw_is_new ? aw_tail_reg : queued_owner;
-wire [BITSIZE_addr-1:0] write_base = aw_is_new ? awaddr : aw_addr_reg[write_owner];
-wire [BITSIZE_size-1:0] write_size = aw_is_new ? awsize : aw_size_reg[write_owner];
-wire [BITSIZE_burst-1:0] write_burst = aw_is_new ? awburst : aw_burst_reg[write_owner];
-wire [BITSIZE_len-1:0] write_length = aw_is_new ? awlen : aw_len_reg[write_owner];
-wire [BITSIZE_data-1:0] write_data = w_is_new ? wdata : w_data_reg[w_head_reg];
-wire [BITSIZE_wstrb-1:0] write_strobe = w_is_new ? wstrb : w_strb_reg[w_head_reg];
+wire aw_is_new = 1'b0;
+wire w_is_new = 1'b0;
+wire [31 : 0] write_owner = aw_is_new ? aw_tail_reg : queued_owner;
+wire [BITSIZE_addr - 1 : 0] write_base = aw_is_new ? awaddr : aw_addr_reg[write_owner];
+wire [BITSIZE_size - 1 : 0] write_size = aw_is_new ? awsize : aw_size_reg[write_owner];
+wire [BITSIZE_burst - 1 : 0] write_burst = aw_is_new ? awburst : aw_burst_reg[write_owner];
+wire [BITSIZE_len - 1 : 0] write_length = aw_is_new ? awlen : aw_len_reg[write_owner];
+wire [BITSIZE_data - 1 : 0] write_data = w_is_new ? wdata : w_data_reg[w_head_reg];
+wire [BITSIZE_wstrb - 1 : 0] write_strobe = w_is_new ? wstrb : w_strb_reg[w_head_reg];
 wire write_last = w_is_new ? wlast : w_last_reg[w_head_reg];
-reg write_accepted;
+reg write_accepted_reg;
 wire write_available = queued_owner != -1 &amp;&amp; w_count_reg &gt; 0;
-wire commit_write = write_accepted;
-wire [31:0] write_beat = aw_is_new ? 0 : aw_committed_reg[write_owner];
-wire [31:0] write_beats = {1&apos;b0, write_length} + 1;
+wire commit_write = write_accepted_reg;
+wire [31 : 0] write_beat = aw_is_new ? 0 : aw_committed_reg[write_owner];
+wire [31 : 0] write_beats = {1'b0, write_length} + 1;
 wire write_final = write_beat == write_beats - 1;
-wire [BITSIZE_addr-1:0] write_address = write_burst == 2&apos;b00 ?
-    write_base : write_base + write_beat * (1 &lt;&lt; write_size);
+wire [BITSIZE_addr - 1 : 0] write_address = write_burst == 2'b00
+                                                ? write_base
+                                                : write_base + write_beat * (1 &lt;&lt; write_size);
 wire w_enqueue = w_push &amp;&amp; !(commit_write &amp;&amp; w_is_new);
 wire w_pop = commit_write &amp;&amp; !w_is_new;
 
-
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_head_reg &lt;= 0;
+  end
   else
   begin
-    if (ar_pop)
+    if(ar_pop)
+    begin
       ar_head_reg &lt;= (ar_head_reg + 1) % C_AR;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_tail_reg &lt;= 0;
+  end
   else
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_tail_reg &lt;= (ar_tail_reg + 1) % C_AR;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_count_reg &lt;= 0;
+  end
   else
   begin
-    case ({ar_push, ar_pop})
-      2&apos;b10: ar_count_reg &lt;= ar_count_reg + 1;
-      2&apos;b01: ar_count_reg &lt;= ar_count_reg - 1;
-      default: ar_count_reg &lt;= ar_count_reg;
+    case({ar_push, ar_pop})
+      2'b10:
+      begin
+        ar_count_reg &lt;= ar_count_reg + 1;
+      end
+      2'b01:
+      begin
+        ar_count_reg &lt;= ar_count_reg - 1;
+      end
+      default:
+      begin
+        ar_count_reg &lt;= ar_count_reg;
+      end
     endcase
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     ar_beat_reg &lt;= 0;
+  end
   else
   begin
-    if (r_pop)
+    if(r_pop)
+    begin
       ar_beat_reg &lt;= rlast ? 0 : ar_beat_reg + 1;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_id
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_id_reg[ar_tail_reg] &lt;= arid;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_addr
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_addr_reg[ar_tail_reg] &lt;= araddr;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_size
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_size_reg[ar_tail_reg] &lt;= arsize;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_burst
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_burst_reg[ar_tail_reg] &lt;= arburst;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_len
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (ar_push)
+    if(ar_push)
+    begin
       ar_len_reg[ar_tail_reg] &lt;= arlen;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_ar_resp
   integer ar_resp_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    next_read_resp_valid &lt;= 1&apos;b0;
-    next_read_resp_value &lt;= &apos;0;
-    for (ar_resp_i = 0; ar_resp_i &lt; C_AR; ar_resp_i = ar_resp_i + 1)
-      ar_resp_reg[ar_resp_i] &lt;= &apos;0;
+    next_read_resp_valid_reg &lt;= 1'b0;
+    next_read_resp_value_reg &lt;= '0;
+    for(ar_resp_i = 0; ar_resp_i &lt; C_AR; ar_resp_i = ar_resp_i + 1)
+    begin
+      ar_resp_reg[ar_resp_i] &lt;= '0;
+    end
   end
-  else if (ar_push)
+  else if(ar_push)
   begin
-    ar_resp_reg[ar_tail_reg] &lt;= next_read_resp_valid ? next_read_resp_value : &apos;0;
-    if (next_read_resp_valid)
-      next_read_resp_valid &lt;= 1&apos;b0;
+    ar_resp_reg[ar_tail_reg] &lt;= next_read_resp_valid_reg ? next_read_resp_value_reg : '0;
+    if(next_read_resp_valid_reg)
+    begin
+      next_read_resp_valid_reg &lt;= 1'b0;
+    end
   end
 end
 
-
-
-
-
-
-
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     aw_head_reg &lt;= 0;
+  end
   else
   begin
-    if (b_pop)
+    if(b_pop)
+    begin
       aw_head_reg &lt;= (aw_head_reg + 1) % C_AW;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     aw_tail_reg &lt;= 0;
+  end
   else
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_tail_reg &lt;= (aw_tail_reg + 1) % C_AW;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     aw_count_reg &lt;= 0;
+  end
   else
   begin
-    case ({aw_push, b_pop})
-      2&apos;b10: aw_count_reg &lt;= aw_count_reg + 1;
-      2&apos;b01: aw_count_reg &lt;= aw_count_reg - 1;
-      default: aw_count_reg &lt;= aw_count_reg;
+    case({aw_push, b_pop})
+      2'b10:
+      begin
+        aw_count_reg &lt;= aw_count_reg + 1;
+      end
+      2'b01:
+      begin
+        aw_count_reg &lt;= aw_count_reg - 1;
+      end
+      default:
+      begin
+        aw_count_reg &lt;= aw_count_reg;
+      end
     endcase
   end
 end
 
 always @(posedge clock)
 begin : update_aw_id
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_id_reg[aw_tail_reg] &lt;= awid;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_addr
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_addr_reg[aw_tail_reg] &lt;= awaddr;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_size
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_size_reg[aw_tail_reg] &lt;= awsize;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_burst
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_burst_reg[aw_tail_reg] &lt;= awburst;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_len
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (aw_push)
+    if(aw_push)
+    begin
       aw_len_reg[aw_tail_reg] &lt;= awlen;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_resp
   integer aw_resp_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    next_write_resp_valid &lt;= 1&apos;b0;
-    next_write_resp_value &lt;= &apos;0;
-    for (aw_resp_i = 0; aw_resp_i &lt; C_AW; aw_resp_i = aw_resp_i + 1)
-      aw_resp_reg[aw_resp_i] &lt;= &apos;0;
+    next_write_resp_valid_reg &lt;= 1'b0;
+    next_write_resp_value_reg &lt;= '0;
+    for(aw_resp_i = 0; aw_resp_i &lt; C_AW; aw_resp_i = aw_resp_i + 1)
+    begin
+      aw_resp_reg[aw_resp_i] &lt;= '0;
+    end
   end
-  else if (aw_push)
+  else if(aw_push)
   begin
-    aw_resp_reg[aw_tail_reg] &lt;= next_write_resp_valid ? next_write_resp_value : &apos;0;
-    if (next_write_resp_valid)
-      next_write_resp_valid &lt;= 1&apos;b0;
+    aw_resp_reg[aw_tail_reg] &lt;= next_write_resp_valid_reg ? next_write_resp_value_reg : '0;
+    if(next_write_resp_valid_reg)
+    begin
+      next_write_resp_valid_reg &lt;= 1'b0;
+    end
   end
 end
-
 
 always @(posedge clock)
 begin : update_aw_committed
   integer aw_committed_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    for (aw_committed_i = 0; aw_committed_i &lt; C_AW; aw_committed_i = aw_committed_i + 1)
+    for(aw_committed_i = 0; aw_committed_i &lt; C_AW; aw_committed_i = aw_committed_i + 1)
+    begin
       aw_committed_reg[aw_committed_i] &lt;= 0;
+    end
   end
   else
   begin
-    if (b_pop)
+    if(b_pop)
+    begin
       aw_committed_reg[aw_head_reg] &lt;= 0;
-    if (aw_push)
+    end
+    if(aw_push)
+    begin
       aw_committed_reg[aw_tail_reg] &lt;= (commit_write &amp;&amp; aw_is_new) ? write_beat + 1 : 0;
-    if (commit_write &amp;&amp; !aw_is_new)
+    end
+    if(commit_write &amp;&amp; !aw_is_new)
+    begin
       aw_committed_reg[write_owner] &lt;= write_beat + 1;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_aw_complete
   integer aw_complete_i;
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
   begin
-    for (aw_complete_i = 0; aw_complete_i &lt; C_AW; aw_complete_i = aw_complete_i + 1)
+    for(aw_complete_i = 0; aw_complete_i &lt; C_AW; aw_complete_i = aw_complete_i + 1)
+    begin
       aw_complete_reg[aw_complete_i] &lt;= 0;
+    end
   end
   else
   begin
-    if (b_pop)
+    if(b_pop)
+    begin
       aw_complete_reg[aw_head_reg] &lt;= 0;
-    if (aw_push)
+    end
+    if(aw_push)
+    begin
       aw_complete_reg[aw_tail_reg] &lt;= commit_write &amp;&amp; aw_is_new &amp;&amp; write_final;
-    if (commit_write &amp;&amp; !aw_is_new &amp;&amp; write_final)
+    end
+    if(commit_write &amp;&amp; !aw_is_new &amp;&amp; write_final)
+    begin
       aw_complete_reg[write_owner] &lt;= 1;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     w_head_reg &lt;= 0;
+  end
   else
   begin
-    if (w_pop)
+    if(w_pop)
+    begin
       w_head_reg &lt;= (w_head_reg + 1) % C_W;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     w_tail_reg &lt;= 0;
+  end
   else
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_tail_reg &lt;= (w_tail_reg + 1) % C_W;
+    end
   end
 end
 
 always @(posedge clock)
 begin
-  if (1RESET_VALUE)
+  if(1RESET_VALUE)
+  begin
     w_count_reg &lt;= 0;
+  end
   else
   begin
-    case ({w_enqueue, w_pop})
-      2&apos;b10: w_count_reg &lt;= w_count_reg + 1;
-      2&apos;b01: w_count_reg &lt;= w_count_reg - 1;
-      default: w_count_reg &lt;= w_count_reg;
+    case({w_enqueue, w_pop})
+      2'b10:
+      begin
+        w_count_reg &lt;= w_count_reg + 1;
+      end
+      2'b01:
+      begin
+        w_count_reg &lt;= w_count_reg - 1;
+      end
+      default:
+      begin
+        w_count_reg &lt;= w_count_reg;
+      end
     endcase
   end
 end
 
 always @(posedge clock)
 begin : update_w_data_q
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_data_reg[w_tail_reg] &lt;= wdata;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_w_strb_q
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_strb_reg[w_tail_reg] &lt;= wstrb;
+    end
   end
 end
 
 always @(posedge clock)
 begin : update_w_last_q
-  if (!(1RESET_VALUE))
+  if(!(1RESET_VALUE))
   begin
-    if (w_enqueue)
+    if(w_enqueue)
+    begin
       w_last_reg[w_tail_reg] &lt;= wlast;
+    end
   end
 end
-
-
 
 // Each accepted AR reserves its complete burst. The completed head beat drives
 // R directly: no fixed delay or extra response stage. Its slot remains stable
 // until RREADY, while other completed beats accumulate independently. Ramulator
 // may complete out of order; AXI beat order is preserved within each burst.
-reg [BITSIZE_data-1:0] ar_data_reg [0:C_AR-1][0:255];
-reg ar_data_valid_reg [0:C_AR-1][0:255];
-integer ar_driver_tag_reg [0:C_AR-1][0:255];
-integer ar_issued_reg [0:C_AR-1];
+reg [BITSIZE_data - 1 : 0] ar_data_reg[0 : C_AR - 1][0 : 255];
+reg ar_data_valid_reg[0 : C_AR - 1][0 : 255];
+integer ar_driver_tag_reg[0 : C_AR - 1][0 : 255];
+integer ar_issued_reg[0 : C_AR - 1];
 
-
-import &quot;DPI-C&quot; function int m_read_request(input shortint unsigned id, input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
-import &quot;DPI-C&quot; function int m_read_complete_ch(input shortint unsigned id, input byte unsigned channel, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_write_request(input shortint unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte unsigned shift);
+import &quot;DPI-C&quot; function int m_read_request
+    (input shortint unsigned id,
+     input shortint unsigned bitsize,
+     input ptr_t addr,
+     input byte cmd);
+import &quot;DPI-C&quot; function int m_read_complete_ch
+    (input shortint unsigned id,
+     input byte unsigned channel,
+     output logic [4095 : 0] data);
+import &quot;DPI-C&quot; function int m_write_request
+    (input shortint unsigned id,
+     input logic [4095 : 0] data,
+     input shortint unsigned bitsize,
+     input ptr_t addr,
+     input byte unsigned shift);
 
 initial
 begin
@@ -4024,7 +4377,7 @@ end
 integer write_offset_reg;
 always @(negedge clock)
 begin : ramulator_backend
-  automatic logic [4095:0] data;
+  automatic logic [4095 : 0] data;
   automatic integer result;
   automatic integer slot;
   automatic integer beat;
@@ -4036,7 +4389,7 @@ begin : ramulator_backend
   automatic ptr_t address;
   if(1RESET_VALUE)
   begin
-    write_accepted = 0;
+    write_accepted_reg = 0;
     write_offset_reg = 0;
     for(slot = 0; slot &lt; C_AR; slot = slot + 1)
     begin
@@ -4050,7 +4403,7 @@ begin : ramulator_backend
   end
   else
   begin
-    write_accepted = 0;
+    write_accepted_reg = 0;
     data = 0;
     result = 0;
     for(slot = 0; slot &lt; C_AR; slot = slot + 1)
@@ -4065,7 +4418,7 @@ begin : ramulator_backend
     end
     if(result != 0)
     begin
-      result = m_read_complete_ch(index, AXI_PORT_ID[7:0], data);
+      result = m_read_complete_ch(index, AXI_PORT_ID[7 : 0], data);
     end
     if(result &gt; 0)
     begin
@@ -4076,7 +4429,7 @@ begin : ramulator_backend
         begin
           if(ar_driver_tag_reg[slot][beat] == result)
           begin
-            ar_data_reg[slot][beat] = data[BITSIZE_data-1:0];
+            ar_data_reg[slot][beat] = data[BITSIZE_data - 1 : 0];
             ar_data_valid_reg[slot][beat] = 1;
             ar_driver_tag_reg[slot][beat] = 0;
             match_count = match_count + 1;
@@ -4103,11 +4456,20 @@ begin : ramulator_backend
       slot = issue_slot;
       beat = ar_issued_reg[slot];
       case(ar_burst_reg[slot])
-        2&apos;b00: address = ar_addr_reg[slot];
-        2&apos;b01: address = ar_addr_reg[slot] + beat * (1 &lt;&lt; ar_size_reg[slot]);
-        default: $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst_reg[slot]);
+        2'b00:
+        begin
+          address = ar_addr_reg[slot];
+        end
+        2'b01:
+        begin
+          address = ar_addr_reg[slot] + beat * (1 &lt;&lt; ar_size_reg[slot]);
+        end
+        default:
+        begin
+          $fatal(1, &quot;Unsupported AXI read burst type: %0d&quot;, ar_burst_reg[slot]);
+        end
       endcase
-      result = m_read_request(index, BITSIZE_data, address, AXI_PORT_ID[7:0]);
+      result = m_read_request(index, BITSIZE_data, address, AXI_PORT_ID[7 : 0]);
       if(result &gt; 0)
       begin
         ar_driver_tag_reg[slot][beat] = result;
@@ -4125,7 +4487,7 @@ begin : ramulator_backend
       begin
         $fatal(1, &quot;AXI WLAST mismatch at beat %0d of %0d&quot;, write_beat, write_beats);
       end
-      if(write_burst != 2&apos;b00 &amp;&amp; write_burst != 2&apos;b01)
+      if(write_burst != 2'b00 &amp;&amp; write_burst != 2'b01)
       begin
         $fatal(1, &quot;Unsupported AXI write burst type: %0d&quot;, write_burst);
       end
@@ -4144,8 +4506,8 @@ begin : ramulator_backend
       if(length != 0)
       begin
         data = 0;
-        data[BITSIZE_data-1:0] = write_data &gt;&gt; (8*offset);
-        result = m_write_request(index, data, 8*length, write_address + offset, 0);
+        data[BITSIZE_data - 1 : 0] = write_data &gt;&gt; (8 * offset);
+        result = m_write_request(index, data, 8 * length, write_address + offset, 0);
         if(result &gt; 0)
         begin
           offset = offset + length;
@@ -4159,8 +4521,8 @@ begin : ramulator_backend
           $fatal(1, &quot;Ramulator AXI write request failed&quot;);
         end
       end
-      write_accepted = offset == BITSIZE_wstrb;
-      write_offset_reg = write_accepted ? 0 : offset;
+      write_accepted_reg = offset == BITSIZE_wstrb;
+      write_offset_reg = write_accepted_reg ? 0 : offset;
     end
   end
 end
