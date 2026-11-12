@@ -141,6 +141,12 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
    const auto use_ramulator = HLSMgr->get_parameter()->isOption(OPT_enable_ramulator) &&
                               HLSMgr->get_parameter()->getOption<bool>(OPT_enable_ramulator);
 
+   if(use_ramulator)
+   {
+      structural_manager::add_port("ramulator_phase", port_o::IN, mod_cir,
+                                  structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
+   }
+
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 
    // TestbenchMEMAXI advances its delay field only while that field is greater than
@@ -222,6 +228,7 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
 .ruser(ruser),
 .rvalid(rvalid),
 .clock(clock),
+.ramulator_phase(ramulator_phase),
 .reset(reset),
 .awid(awid),
 .awaddr(awaddr),

@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: MIT
 module tb_axi_lanes #(parameter DEPTH = 4);
   import "DPI-C" function int unsigned m_next(input int unsigned state);
-  import "DPI-C" function void m_memory_tick
-      (input longint unsigned cycle);
   reg clock = 0;
   always
   begin
     #5 clock = !clock;
   end
   reg reset = 1;
+  wire ramulator_phase;
   reg arvalid = 0, awvalid = 0, wvalid = 0, rready = 0, bready = 0;
   wire arready, awready, wready, rvalid, bvalid, rlast;
   reg [63 : 0] araddr = 0, awaddr = 0;
@@ -22,7 +21,6 @@ module tb_axi_lanes #(parameter DEPTH = 4);
   wire [7 : 0] rid, bid;
   wire [31 : 0] rdata;
   wire [1 : 0] rresp, bresp;
-  integer cycle = 0;
 
 `ifdef CLASSIC_AXI
   TestbenchMEMAXI #(.READ_DELAY(2),
@@ -49,7 +47,11 @@ module tb_axi_lanes #(parameter DEPTH = 4);
                     .BITSIZE_wstrb(4),
                     .BITSIZE_rresp(2),
                     .BITSIZE_bresp(2))
-      memory(.clock(clock),
+      memory(
+`ifndef CLASSIC_AXI
+             .ramulator_phase(ramulator_phase),
+`endif
+             .clock(clock),
              .reset(reset),
              .arvalid(arvalid),
              .arready(arready),
@@ -100,14 +102,9 @@ module tb_axi_lanes #(parameter DEPTH = 4);
   reg held_r = 0, held_b = 0;
   reg [44 : 0] held_read;
   reg [10 : 0] held_write;
-  always @(negedge clock)
-  begin
-    if(!reset)
-    begin
-      cycle = cycle + 1;
-      m_memory_tick(cycle);
-    end
-  end
+`ifndef CLASSIC_AXI
+  ramulator_test_clock tick_source(.clock(clock), .reset(reset), .ramulator_phase(ramulator_phase));
+`endif
   always @(posedge clock)
   begin
     if(!reset)
@@ -290,6 +287,11 @@ module tb_axi_lanes #(parameter DEPTH = 4);
     begin
       @(negedge clock);
     end
+    #1;
+    reset = 0;
+    #1;
+    reset = 1;
+    repeat(2) @(negedge clock);
     #1;
     reset = 0;
     // Check reads before writes can hide an incorrect lane mapping.

@@ -781,6 +781,25 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
       add_internal_connection(fsm_done, dut_done);
    }
+   if(ramulator_memory)
+   {
+      const auto phase_port = tb_mem->find_member("ramulator_phase", port_o_K, tb_mem);
+      THROW_ASSERT(phase_port, "Ramulator clock phase output is missing");
+      const auto phase_signal = tb_top->add_sign("sig_ramulator_phase", tb_cir, phase_port->get_typeRef());
+      tb_top->add_connection(phase_port, phase_signal);
+      for(const auto& if_obj : if_modules)
+      {
+         if(if_obj == tb_mem)
+         {
+            continue;
+         }
+         const auto input = if_obj->find_member("ramulator_phase", port_o_K, if_obj);
+         if(input)
+         {
+            tb_top->add_connection(phase_signal, input);
+         }
+      }
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
    for(const auto& if_obj : if_modules)
    {

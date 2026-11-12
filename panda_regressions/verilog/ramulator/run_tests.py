@@ -203,7 +203,7 @@ def main():
                     defines = ['-DCLASSIC_AXI'] if model == 'classic_axi_lanes' else []
                     execute([str(verilator), *defines, '--binary', '--timing', '-Wno-fatal', '--top-module', f'tb_{fixture}',
                              f'-GDEPTH={depth}', '--Mdir', case_dir / 'obj', models,
-                             HERE / f'tb_{fixture}.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
+                             HERE / 'ramulator_test_clock.sv', HERE / f'tb_{fixture}.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
                     case_env = env.copy()
                     case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / f'obj/Vtb_{fixture}')
                     if model == 'classic_axi_lanes':

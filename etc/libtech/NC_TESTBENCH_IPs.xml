@@ -3265,6 +3265,9 @@ end
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="ramulator_phase" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -3362,15 +3365,18 @@ generate
   end
 endgenerate
 
-// SystemMEM advances every independent backend once, after request issue.
+// SystemMEM advances every independent backend before releasing the AXI phase.
 reg [63 : 0] memory_cycle_reg = 0;
 reg memory_running_reg = 0;
+reg ramulator_phase_reg = 0;
+assign ramulator_phase = ramulator_phase_reg;
 always @(negedge clock)
 begin
   if(1RESET_VALUE)
   begin
     memory_cycle_reg = 0;
     memory_running_reg = 0;
+    ramulator_phase_reg &lt;= 0;
   end
   else if(setup_port)
   begin
@@ -3385,6 +3391,7 @@ begin
   begin
     memory_cycle_reg = memory_cycle_reg + 1;
     m_memory_tick(memory_cycle_reg);
+    ramulator_phase_reg &lt;= !ramulator_phase_reg;
   end
 end
 
@@ -3628,6 +3635,9 @@ endgenerate
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="ramulator_phase" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -3807,6 +3817,15 @@ integer w_count_reg;
 reg [BITSIZE_data - 1 : 0] w_data_reg[0 : C_W - 1];
 reg [BITSIZE_wstrb - 1 : 0] w_strb_reg[0 : C_W - 1];
 reg w_last_reg[0 : C_W - 1];
+
+// Each accepted AR reserves its complete burst. The completed head beat drives
+// R directly: no fixed delay or extra response stage. Its slot remains stable
+// until RREADY, while other completed beats accumulate independently. Ramulator
+// may complete out of order; AXI beat order is preserved within each burst.
+reg [BITSIZE_data - 1 : 0] ar_data_reg[0 : C_AR - 1][0 : 255];
+reg ar_data_valid_reg[0 : C_AR - 1][0 : 255];
+integer ar_driver_tag_reg[0 : C_AR - 1][0 : 255];
+integer ar_issued_reg[0 : C_AR - 1];
 
 task automatic inject_next_read_response
     (input [BITSIZE_rresp - 1 : 0] response);
@@ -4316,15 +4335,6 @@ begin : update_w_last_q
   end
 end
 
-// Each accepted AR reserves its complete burst. The completed head beat drives
-// R directly: no fixed delay or extra response stage. Its slot remains stable
-// until RREADY, while other completed beats accumulate independently. Ramulator
-// may complete out of order; AXI beat order is preserved within each burst.
-reg [BITSIZE_data - 1 : 0] ar_data_reg[0 : C_AR - 1][0 : 255];
-reg ar_data_valid_reg[0 : C_AR - 1][0 : 255];
-integer ar_driver_tag_reg[0 : C_AR - 1][0 : 255];
-integer ar_issued_reg[0 : C_AR - 1];
-
 import &quot;DPI-C&quot; function int m_read_request
     (input shortint unsigned id,
      input shortint unsigned bitsize,
@@ -4349,10 +4359,11 @@ begin
   end
 end
 
-// All backend calls run after the rising-edge protocol queues settle. SystemMEM
-// is the only clock source; polling observes either this tick or the next one.
+// SystemMEM changes phase with a nonblocking assignment after its DPI tick
+// returns. Polling therefore observes that tick; new requests enter the next one.
 integer write_offset_reg;
-always @(negedge clock)
+reg backend_phase_reg = 0;
+always @(ramulator_phase or reset)
 begin : ramulator_backend
   automatic logic [4095 : 0] data;
   automatic integer result;
@@ -4366,6 +4377,7 @@ begin : ramulator_backend
   automatic ptr_t address;
   if(1RESET_VALUE)
   begin
+    backend_phase_reg = ramulator_phase;
     write_accepted_reg = 0;
     write_offset_reg = 0;
     for(slot = 0; slot &lt; C_AR; slot = slot + 1)
@@ -4378,8 +4390,9 @@ begin : ramulator_backend
       end
     end
   end
-  else
+  else if(ramulator_phase != backend_phase_reg)
   begin
+    backend_phase_reg = ramulator_phase;
     write_accepted_reg = 0;
     data = 0;
     result = 0;
@@ -4508,8 +4521,8 @@ begin : ramulator_backend
 end
 
 // Reuse a descriptor only after its final response has been accepted. These
-// assignments have a single rising-edge owner, disjoint from the falling-edge
-// backend accesses, which only touch descriptors already in the AR queue.
+// assignments have a single rising-edge owner, disjoint from backend accesses
+// released after the falling-edge tick, which only touch queued AR descriptors.
 always @(posedge clock)
 begin : initialize_read_descriptor
   integer beat;
