@@ -3,6 +3,10 @@
 
 #define N 20
 
+#if TEST_KERNEL == 3
+static volatile int initialized_bias = 7;
+#endif
+
 #if DEDICATED_AXI == 1
 #pragma HLS interface port = a mode = m_axi offset = direct
 #pragma HLS interface port = b mode = m_axi offset = direct
@@ -43,6 +47,8 @@ void ramulator_kernel(const int a[N], const int b[N], int c[N])
          c[i] = a[i] + b[i];
 #elif TEST_KERNEL == 1
          c[i] += 3 * a[i] - b[i];
+#elif TEST_KERNEL == 3
+         c[i] = a[i] + b[i] + initialized_bias;
 #else
          if(a[i] & 1)
          {

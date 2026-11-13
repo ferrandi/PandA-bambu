@@ -30,6 +30,8 @@ MODES = {
 SMOKE_CASES = [f"{kernel}/{mode}" for kernel in KERNELS for mode in MODES if not mode.startswith("mixed-")]
 MODES.update({"minimal-2ch": (0, 0, 0, 0), "minimal-4ch": (0, 0, 0, 0)})
 SMOKE_CASES += ["stencil/minimal-2ch", "stencil/minimal-4ch"]
+KERNELS["initialized"] = 3
+SMOKE_CASES += ["initialized/minimal-bus"]
 HBM_SIZES = {"hbm-gather": 4096, "hbm-scatter": 4096, "hbm-chase": 2048}
 HBM_CASES = [f"{kernel}/{mode}" for kernel in HBM_SIZES
              for mode in ("banked-minimal", "banked-axi")]
@@ -247,6 +249,8 @@ def main():
                    f"--channels-number={banks}"]
         if kernel == "stencil":
             command.extend(["-funroll-loops", "-s"])
+        if kernel == "initialized":
+            command.append(f"--output-directory={directory.name}")
         if hbm:
             command.append(f"-DHBM_SIZE={HBM_SIZES[kernel]}")
         if banked or axi:
@@ -262,7 +266,8 @@ def main():
             record.update(elements=HBM_SIZES[kernel], seed=HBM_SEED, threads=32)
         try:
             with (directory / "run.log").open("w") as log:
-                with subprocess.Popen(command, cwd=directory, env=case_env, stdout=log,
+                with subprocess.Popen(command, cwd=directory.parent if kernel == "initialized" else directory,
+                                      env=case_env, stdout=log,
                                       stderr=subprocess.STDOUT, start_new_session=True) as process:
                     try:
                         returncode = process.wait(timeout=timeout)

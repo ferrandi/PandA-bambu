@@ -3,7 +3,7 @@
 The dedicated `Ramulator co-simulation` workflow builds Bambu with Clang 13,
 then runs a single test job. The test job checks out the exact Ramulator
 submodule revision, builds and installs it once, and reuses that installation
-for all 26 cases (17 smoke, six intermediate HBM and three memory-isolation cases). The workflow assumes the pinned public Ramulator revision
+for all 27 cases (18 smoke, six intermediate HBM and three memory-isolation cases). The workflow assumes the pinned public Ramulator revision
 provides the standard CMake installation layout. It never patches or overrides
 the submodule revision and does not fall back to a different memory backend.
 
@@ -59,6 +59,9 @@ pragmas. MINIMAL is the external protocol. Banked cases explicitly declare
 `bank_number=4`; a channel count alone does not select banked memory.
 For smoke cases, `RAMULATOR_OVERRIDE_CHANNELS=1` matches the DRAM channel count to the selected
 Bambu channel count (four for banked cases, one otherwise).
+
+The `initialized/minimal-bus` case reads an initialized global variable and uses
+a relative output directory to check runtime lookup of memory initialization files.
 
 Two additional sequential smoke cases, `stencil/minimal-2ch` and
 `stencil/minimal-4ch`, use a floating-point stencil with runtime loop bounds,

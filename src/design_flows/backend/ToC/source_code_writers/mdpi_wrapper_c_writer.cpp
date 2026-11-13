@@ -893,7 +893,9 @@ size_t i;
                const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
                const auto var_init_dat = output_hls_directory / ("mem_" + STR(var_id) + "." + var_name + ".dat");
                const auto byte_count = TestbenchGeneration::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
-               indented_output_stream->Append("  {\"" + boost::replace_all_copy(var_init_dat.string(), "\"", "\\\"") +
+               const auto runtime_init_dat = std::filesystem::proximate(
+                   var_init_dat, Param->getOption<std::filesystem::path>(OPT_output_directory));
+               indented_output_stream->Append("  {\"" + boost::replace_all_copy(runtime_init_dat.string(), "\"", "\\\"") +
                                               "\", " + STR(byte_count) + ", " + STR(var_addr) + ", NULL},\n");
                base_addr = std::max(base_addr, var_addr + byte_count);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1423,7 +1425,9 @@ info("Creating banked memory\n");
             const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
             const auto var_init_dat = output_hls_directory / ("mem_" + STR(var_id) + "." + var_name + ".dat");
             const auto byte_count = TestbenchGeneration::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
-            indented_output_stream->Append("  {\"" + boost::replace_all_copy(var_init_dat.string(), "\"", "\\\"") +
+            const auto runtime_init_dat = std::filesystem::proximate(
+                var_init_dat, Param->getOption<std::filesystem::path>(OPT_output_directory));
+            indented_output_stream->Append("  {\"" + boost::replace_all_copy(runtime_init_dat.string(), "\"", "\\\"") +
                                            "\", " + STR(byte_count) + ", " + STR(var_addr) +
                                            " + internal_address_offset, NULL},\n");
             base_addr = std::max(base_addr, var_addr + byte_count);

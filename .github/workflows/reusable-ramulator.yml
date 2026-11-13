@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   co-simulation:
-    name: Ramulator integration (24 cases)
+    name: Ramulator integration
     runs-on: [self-hosted]
     container: ubuntu:24.04
     timeout-minutes: 120
