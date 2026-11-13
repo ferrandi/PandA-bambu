@@ -29,6 +29,7 @@ $(call check_defined, BEH_DIR)    # HLS_output/<sim_id>_beh absolute path
 #   TB_CFLAGS  : additional compilation flags for TB_SRCS
 #   TB_SRCS    : additional testbench source files
 #   PP_SRC     : pretty print source file
+#   RAMULATOR_ENABLED : true when the generated testbench uses Ramulator
 ###
 
 ### Environment below is automatically populated, do not override
@@ -80,9 +81,11 @@ ramulator_prefixes += $(abspath $(BAMBU_HLS)/../ext/ramulator2-no-spdlog/install
 endif
 RAMULATOR2_DIR ?= $(firstword $(foreach prefix,$(ramulator_prefixes),$(if $(wildcard $(prefix)/include/ramulator/base/config.h),$(prefix))))
 RAMULATOR2_LIBDIR ?= $(patsubst %/,%,$(dir $(firstword $(wildcard $(RAMULATOR2_DIR)/lib/libramulator.so $(RAMULATOR2_DIR)/lib64/libramulator.so $(RAMULATOR2_DIR)/lib/*/libramulator.so))))
+ifeq ($(RAMULATOR_ENABLED),true)
 ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
 	DRIVER_CFLAGS := $(filter-out -fno-exceptions -std=c++14,$(DRIVER_CFLAGS))
 	DRIVER_CFLAGS += -DHAVE_RAMULATOR2 -I$(RAMULATOR2_DIR)/include/ramulator -I$(RAMULATOR2_DIR)/include -std=c++20 -fexceptions
+endif
 endif
 
 WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++14 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
@@ -107,8 +110,10 @@ DRIVER_LDFLAGS += $(shell if basename $(CC) | grep -v '++' | grep -qv 'clang'; t
 DRIVER_LDFLAGS += -lpthread -lm -ldl
 
 # Ramulator2 link flags
+ifeq ($(RAMULATOR_ENABLED),true)
 ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
 	DRIVER_LDFLAGS += -L$(RAMULATOR2_LIBDIR) -Wl,-rpath,$(RAMULATOR2_LIBDIR) -lramulator
+endif
 endif
 
 LIB_LDFLAGS :=
