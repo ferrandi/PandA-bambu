@@ -179,6 +179,8 @@ def main():
         (include_dir / 'root.yaml').write_text(included)
         contract('relative-include', 'clock_contract', config=include_dir / 'root.yaml')
         contract('missing-config', 'clock_contract', config=directory / 'missing.yaml', failure=True)
+        contract('missing-config-before-ready', 'clock_contract', config=directory / 'missing.yaml', failure=True,
+                 updates={'MDPI_TEST_DELAY_READY': '1'})
         for ratio in ('0', '-1', '.nan'):
             config = directory / f'invalid-{ratio}.yaml'
             config.write_text(default.replace('clock_ratio: 3', f'clock_ratio: {ratio}'))

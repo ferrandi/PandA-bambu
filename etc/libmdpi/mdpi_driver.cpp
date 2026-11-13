@@ -1272,6 +1272,16 @@ void __m_interface_mem()
    __m_interface_set(new mem_interface(__m_interface_idx_next()));
 }
 
+static void __ipc_abort();
+
+static void ramulator_initialization_error()
+{
+   // The simulator must publish READY before we send a terminal response;
+   // otherwise it waits for a free IPC slot before issuing its first request.
+   __ipc_wait(MDPI_IPC_STATE_REQUEST);
+   __ipc_abort();
+}
+
 void __m_interface_mem_ramulator(double clock_period_ns, uint16_t channels_number)
 {
 #ifdef HAVE_RAMULATOR2
@@ -1282,14 +1292,14 @@ void __m_interface_mem_ramulator(double clock_period_ns, uint16_t channels_numbe
    catch(const std::exception& exception)
    {
       error("Ramulator2 initialization failed: %s\n", exception.what());
-      std::exit(EXIT_FAILURE);
+      ramulator_initialization_error();
    }
 #else
    (void)clock_period_ns;
    (void)channels_number;
    error("Ramulator2 was requested, but the MDPI driver has no Ramulator support. "
          "Set RAMULATOR2_DIR to its installation prefix and rebuild the simulation.\n");
-   std::exit(EXIT_FAILURE);
+   ramulator_initialization_error();
 #endif
 }
 

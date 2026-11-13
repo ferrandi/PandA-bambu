@@ -3,8 +3,14 @@
 #include <mdpi/mdpi.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 int main(void)
 {
+   if(getenv("MDPI_TEST_DELAY_READY"))
+   {
+      sleep(1);
+   }
    svLogicVecVal data[128] = {{0}};
    assert((m_next(1) & 255) == 2);
    int tag = m_read_request(0, 32, 0x40000000, 0);
