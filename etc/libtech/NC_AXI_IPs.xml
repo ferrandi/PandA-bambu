@@ -362,6 +362,13 @@ function integer log2;
 endfunction
 `endif
 
+localparam BYTES_PER_WORD = BITSIZE_m_axi_rdata / 8;
+`ifdef _SIM_HAVE_CLOG2
+localparam BYTE_OFFSET_BITS = BYTES_PER_WORD &gt; 1 ? $clog2(BYTES_PER_WORD) : 1;
+`else
+localparam BYTE_OFFSET_BITS = BYTES_PER_WORD &gt; 1 ? log2(BYTES_PER_WORD) : 1;
+`endif
+
 wire [2 : 0] size_next;
 
 generate
@@ -475,7 +482,7 @@ end
 assign m_axi_wvalid = m_axi_wvalid_reg;
 assign m_axi_awvalid = m_axi_awvalid_reg;
 
-reg [BITSIZE_Mout_Wdata_ram - 1 : 0] m_axi_wdata_reg, m_axi_wdata_next;
+reg [BITSIZE_m_axi_wdata - 1 : 0] m_axi_wdata_reg, m_axi_wdata_next;
 reg [BITSIZE_m_axi_wstrb - 1 : 0] m_axi_wstrb_reg, m_axi_wstrb_next;
 
 always @(posedge clock 1RESET_EDGE)
@@ -498,8 +505,9 @@ begin
   m_axi_wstrb_next = m_axi_wstrb_reg;
   if(Mout_we_ram &amp;&amp; (!m_axi_wvalid_reg || m_axi_wready))
   begin
-    m_axi_wdata_next = Mout_Wdata_ram;
-    m_axi_wstrb_next = ((1 &lt;&lt; (Mout_data_ram_size &gt;&gt; 3)) - 1);
+    m_axi_wdata_next = Mout_Wdata_ram &lt;&lt; ((Mout_addr_ram % (BITSIZE_m_axi_wdata / 8)) * 8);
+    m_axi_wstrb_next = ({BITSIZE_m_axi_wstrb{1'b1}} &gt;&gt; (BITSIZE_m_axi_wstrb - (Mout_data_ram_size &gt;&gt; 3)))
+                       &lt;&lt; (Mout_addr_ram % (BITSIZE_m_axi_wdata / 8));
   end
 end
 
@@ -610,6 +618,17 @@ assign m_axi_araddr = m_axi_araddr_reg;
 assign m_axi_arid = m_axi_arid_reg;
 assign m_axi_arsize = m_axi_arsize_reg;
 
+// Preserve the byte lane for each pending read, including out-of-order responses.
+reg [BYTE_OFFSET_BITS - 1 : 0] read_byte_offset_reg [0 : (2 ** BITSIZE_Mout_tag) - 1];
+
+always @(posedge clock)
+begin
+  if(Mout_oe_ram &amp;&amp; !Mout_back_pressure_reg)
+  begin
+    read_byte_offset_reg[Mout_tag] &lt;= Mout_addr_ram % BYTES_PER_WORD;
+  end
+end
+
 reg M_DataRdy_reg;
 
 always @(posedge clock 1RESET_EDGE)
@@ -644,7 +663,7 @@ begin
   end
 end
 
-assign M_Rdata_ram = m_axi_rvalid &amp; m_axi_rready ? m_axi_rdata : M_Rdata_ram_reg;
+assign M_Rdata_ram = m_axi_rvalid &amp; m_axi_rready ? (m_axi_rdata &gt;&gt; (read_byte_offset_reg[m_axi_rid] * 8)) : M_Rdata_ram_reg;
 
 reg m_axi_bready_reg;
 reg m_axi_rready_reg;
@@ -2370,6 +2389,13 @@ function integer log2;
 endfunction
 `endif
 
+localparam BYTES_PER_WORD = BITSIZE_m_axi_rdata / 8;
+`ifdef _SIM_HAVE_CLOG2
+localparam BYTE_OFFSET_BITS = BYTES_PER_WORD &gt; 1 ? $clog2(BYTES_PER_WORD) : 1;
+`else
+localparam BYTE_OFFSET_BITS = BYTES_PER_WORD &gt; 1 ? log2(BYTES_PER_WORD) : 1;
+`endif
+
 wire [2 : 0] size_next;
 
 generate
@@ -2426,7 +2452,7 @@ end
 assign m_axi_wvalid = m_axi_wvalid_reg;
 assign m_axi_awvalid = m_axi_awvalid_reg;
 
-reg [BITSIZE_Mout_Wdata_ram - 1 : 0] m_axi_wdata_reg;
+reg [BITSIZE_m_axi_wdata - 1 : 0] m_axi_wdata_reg;
 reg [BITSIZE_m_axi_wstrb - 1 : 0] m_axi_wstrb_reg;
 
 always @(posedge clock 1RESET_EDGE)
@@ -2436,10 +2462,11 @@ begin
     m_axi_wdata_reg &lt;= 0;
     m_axi_wstrb_reg &lt;= 0;
   end
-  else
+  else if(Mout_we_ram)
   begin
-    m_axi_wdata_reg &lt;= Mout_Wdata_ram;
-    m_axi_wstrb_reg &lt;= ((1 &lt;&lt; (Mout_data_ram_size &gt;&gt; 3)) - 1);
+    m_axi_wdata_reg &lt;= Mout_Wdata_ram &lt;&lt; ((Mout_addr_ram % (BITSIZE_m_axi_wdata / 8)) * 8);
+    m_axi_wstrb_reg &lt;= ({BITSIZE_m_axi_wstrb{1'b1}} &gt;&gt; (BITSIZE_m_axi_wstrb - (Mout_data_ram_size &gt;&gt; 3)))
+                       &lt;&lt; (Mout_addr_ram % (BITSIZE_m_axi_wdata / 8));
   end
 end
 
@@ -2456,7 +2483,7 @@ begin
     m_axi_awaddr_reg &lt;= 0;
     m_axi_awsize_reg &lt;= 0;
   end
-  else
+  else if(Mout_we_ram)
   begin
     m_axi_awaddr_reg &lt;= Mout_addr_ram;
     m_axi_awsize_reg &lt;= size_next;
@@ -2503,7 +2530,7 @@ begin
     m_axi_araddr_reg &lt;= 0;
     m_axi_arsize_reg &lt;= 0;
   end
-  else
+  else if(Mout_oe_ram)
   begin
     m_axi_araddr_reg &lt;= Mout_addr_ram;
     m_axi_arsize_reg &lt;= size_next;
@@ -2512,6 +2539,20 @@ end
 
 assign m_axi_arsize = m_axi_arsize_reg;
 assign m_axi_araddr = m_axi_araddr_reg;
+
+reg [BYTE_OFFSET_BITS - 1 : 0] read_byte_offset_reg;
+
+always @(posedge clock 1RESET_EDGE)
+begin
+  if(1RESET_VALUE)
+  begin
+    read_byte_offset_reg &lt;= 0;
+  end
+  else if(Mout_oe_ram)
+  begin
+    read_byte_offset_reg &lt;= Mout_addr_ram % BYTES_PER_WORD;
+  end
+end
 
 reg M_DataRdy_reg;
 
@@ -2528,7 +2569,7 @@ begin
 end
 
 assign M_DataRdy = (m_axi_bvalid &amp;&amp; m_axi_bready) || (m_axi_rvalid &amp;&amp; m_axi_rready) || M_DataRdy_reg;
-assign M_Rdata_ram = m_axi_rdata;
+assign M_Rdata_ram = m_axi_rdata &gt;&gt; (read_byte_offset_reg * 8);
 
 reg m_axi_bready_reg;
 reg m_axi_rready_reg;

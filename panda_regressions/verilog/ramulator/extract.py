@@ -9,8 +9,8 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[3]
 
 
-def extract(name):
-    xml = (ROOT / 'etc/libtech/NC_TESTBENCH_IPs.xml').read_text()
+def extract(name, library="NC_TESTBENCH_IPs.xml"):
+    xml = (ROOT / 'etc/libtech' / library).read_text()
     cell = next(c for c in re.findall(r'<cell>.*?</cell>', xml, re.S) if f'<name>{name}</name>' in c)
     module = ET.fromstring(cell).find('circuit/module_o')
     library = module.find('NP_functionality').get('LIBRARY').split()

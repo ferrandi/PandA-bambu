@@ -215,6 +215,26 @@ def main():
                     error = str(exception)
                 print('FAIL' if error else 'PASS', name, flush=True)
                 results.append((name, time.monotonic()-start, error, case_dir))
+    if not args.contract_only:
+        adapters = directory / 'adapters.sv'
+        adapters.write_text(extract('MinimalAXI4Adapter', 'NC_AXI_IPs.xml') +
+                            extract('MinimalAXI4AdapterSingleBeat', 'NC_AXI_IPs.xml'))
+        for tagged in (0, 1):
+            for width in (8, 32, 64):
+                name = f'axi-adapter-lanes-{tagged}-{width}'
+                case_dir = directory / name
+                case_dir.mkdir()
+                start = time.monotonic()
+                error = None
+                try:
+                    execute([str(verilator), '--binary', '--timing', '-Wno-fatal', '--top-module', 'tb_axi_adapter_lanes',
+                             f'-GTAGGED={tagged}', f'-GWIDTH={width}', '--Mdir', case_dir / 'obj', adapters,
+                             HERE / 'tb_axi_adapter_lanes.sv'], case_dir)
+                    execute([case_dir / 'obj/Vtb_axi_adapter_lanes'], case_dir, timeout=60)
+                except (OSError, subprocess.SubprocessError) as exception:
+                    error = str(exception)
+                print('FAIL' if error else 'PASS', name, flush=True)
+                results.append((name, time.monotonic()-start, error, case_dir))
     suite = ET.Element('testsuite', name='ramulator-rtl', tests=str(len(results)),
                        failures=str(sum(error is not None for _, _, error, _ in results)))
     for name, elapsed, error, case_dir in results:
