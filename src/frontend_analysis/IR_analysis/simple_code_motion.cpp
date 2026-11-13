@@ -48,6 +48,7 @@
 #include "math_function.hpp"
 #include "schedule.hpp"
 #include "string_manipulation.hpp"
+#include <algorithm>
 #include <fstream>
 
 namespace
@@ -722,6 +723,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             counter++;
          }
          const auto& list_of_stmt = list_of_bloc.at(curr_bb)->CGetStmtList();
+         const bool block_has_synchronization =
+             std::any_of(list_of_stmt.begin(), list_of_stmt.end(), isOpenMPSynchronization);
          std::list<ir_nodeRef> to_be_removed;
          CustomOrderedSet<unsigned int> zero_delay_stmts;
          std::list<ir_nodeRef> to_be_added_back;
@@ -785,7 +788,9 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             const bool memory = gn->vdef || !gn->vuses.empty() || is_call_stmt || is_assign_call ||
                                 is_load_assign || is_store_assign;
             bool crosses_synchronization = false;
-            for(auto previous = list_of_stmt.begin(); previous != statement; ++previous)
+            // Avoid a quadratic prefix scan in ordinary blocks without a fence.
+            for(auto previous = list_of_stmt.begin();
+                block_has_synchronization && (synchronization || memory) && previous != statement; ++previous)
             {
                const auto* previous_stmt = GetPointerS<const node_stmt>(*previous);
                const bool previous_sync = isOpenMPSynchronization(*previous);
