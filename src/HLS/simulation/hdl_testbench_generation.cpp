@@ -418,7 +418,8 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
 
          // Merge all matching out signals from memory master modules and testbench memory
          // Only memory models exposing slave request ports contribute to this bus.
-         if(tb_mem->find_member("S_oe_ram", port_o_K, tb_mem))
+         if(tb_mem->find_member("S_oe_ram", port_o_K, tb_mem) ||
+            tb_mem->find_member("cyc_is", port_o_K, tb_mem))
          {
             master_ports.push_front(tb_mem);
          }

@@ -1873,6 +1873,7 @@ end
 
 assign cyc_is = 0;
 assign stb_is = 0;
+assign we_is = 0;
 assign addr_is = 0;
 assign dat_is = 0;
 assign sel_is = 0;
