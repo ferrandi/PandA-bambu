@@ -49,6 +49,11 @@ QTCreator-PandA-GitHub.creator.user
 
 .vscode/
 .env
+
+# Python bytecode caches
+__pycache__/
+*.pyc
+
 build/
 build_release/
 obj/

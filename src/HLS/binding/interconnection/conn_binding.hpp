@@ -174,6 +174,9 @@ class conn_binding
    std::map<gc_vertex_descriptor, generic_objRef> timed_captures;
    std::map<gc_vertex_descriptor, TimedCaptureParameters> timed_capture_parameters;
 
+   /// Combinational forwarding from an unbounded result or its existing capture register.
+   std::map<std::pair<gc_vertex_descriptor, unsigned int>, std::pair<generic_objRef, unsigned int>> result_forwarding;
+
    struct InputHoldGroup
    {
       generic_objRef selector;
@@ -290,6 +293,9 @@ class conn_binding
    generic_objRef bind_timed_capture(gc_vertex_descriptor op, unsigned int latency, unsigned int capacity,
                                      unsigned int bitsize, const std::string& operation_name);
    generic_objRef get_timed_capture(gc_vertex_descriptor op) const;
+
+   generic_objRef bind_result_forwarding(gc_vertex_descriptor op, unsigned int reg, unsigned int bitsize,
+                                         const std::string& operation_name);
    void bind_input_hold_group(const generic_objRef selector, const generic_objRef fu_unit);
    structural_objectRef get_input_hold_input(const structural_objectRef fu_input) const;
    generic_objRef bind_stallable_fu_input(const generic_objRef fu_unit);

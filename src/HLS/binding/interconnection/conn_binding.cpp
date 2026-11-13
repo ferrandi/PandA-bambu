@@ -237,6 +237,21 @@ generic_objRef conn_binding::get_timed_capture(gc_vertex_descriptor op) const
    return it == timed_captures.end() ? generic_objRef() : it->second;
 }
 
+generic_objRef conn_binding::bind_result_forwarding(gc_vertex_descriptor op, unsigned int reg, unsigned int bitsize,
+                                                    const std::string& operation_name)
+{
+   const auto key = std::make_pair(op, reg);
+   const auto existing = result_forwarding.find(key);
+   if(existing != result_forwarding.end())
+   {
+      return existing->second.first;
+   }
+   const auto adapter = generic_objRef(
+       new generic_obj(generic_obj::CONNECTION_ELEMENT, "result_forwarding_" + operation_name + "_" + STR(reg)));
+   result_forwarding.emplace(key, std::make_pair(adapter, bitsize));
+   return adapter;
+}
+
 void conn_binding::bind_input_hold_group(const generic_objRef selector, const generic_objRef fu_unit)
 {
    THROW_ASSERT(selector, "Input hold group requires a launch selector");
@@ -312,6 +327,20 @@ void conn_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, cons
 
    /// add result capture adapters for co-started pipelined operations
    add_timed_captures(HLSMgr, HLS, SM);
+
+   for(const auto& forwarding : result_forwarding)
+   {
+      const auto TM = HLS->HLS_D->get_technology_manager();
+      const auto mux = SM->add_module_from_technology_library(forwarding.second.first->get_string(), MUX2_GATE_STD,
+                                                              TM->get_library(MUX2_GATE_STD), SM->get_circ(), TM);
+      mux->find_member("in1", port_o_K, mux)->type_resize(forwarding.second.second);
+      mux->find_member("in2", port_o_K, mux)->type_resize(forwarding.second.second);
+      mux->find_member("out1", port_o_K, mux)->type_resize(forwarding.second.second);
+      const auto done = activation_ports.at(forwarding.first.first).at(OUT)->get_structural_obj();
+      const auto done_signal = GetPointer<port_o>(done)->find_bounded_object();
+      SM->add_connection(done_signal ? done_signal : done, mux->find_member("sel", port_o_K, mux));
+      forwarding.second.first->set_structural_obj(mux);
+   }
 
    /// add sparse logic
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding sparse logic to the datapath");
@@ -624,7 +653,8 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          {
             auto curr_port = tgt_obj->get_in_port(ind);
             if(curr_port->get_id() == CLOCK_PORT_NAME || curr_port->get_id() == RESET_PORT_NAME ||
-               curr_port->get_id() == START_PORT_NAME || curr_port->get_id() == STALL_PORT_NAME)
+               curr_port->get_id() == START_PORT_NAME || curr_port->get_id() == STALL_PORT_NAME ||
+               curr_port->get_id() == "predicate")
             {
                continue;
             }
@@ -1339,6 +1369,9 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                   const auto op_name = data.CGetNodeInfo(op).vertex_name;
                   vertex_to_selector[op] = sel_obj;
                   const auto predicate_port = get_command_predicate(op);
+                  auto fu_unit = HLS->Rfu->get(op);
+                  auto fu_obj = fu_unit->get_structural_obj();
+                  const auto native_predicate = fu_obj->find_member("predicate", port_o_K, fu_obj);
                   structural_objectRef start_signal = sel_obj;
                   const auto op_node = HLSMgr->get_ir_manager()->GetIRNode(data.CGetNodeInfo(op).GetNodeId());
                   const auto call_predicate = getCallPredicate(op_node);
@@ -1369,27 +1402,37 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                      SM->add_connection(start_ports->get_port(0), sel_obj);
                      SM->add_connection(start_ports->get_port(1), predicate_signal);
 
-                     const auto predicate_not = SM->add_module_from_technology_library(
-                         "predicate_not_" + op_name + "_" + STR(unique_id), NOT_GATE_STD, LIBRARY_STD, circuit, TM);
-                     const auto not_input = predicate_not->find_member("in1", port_o_K, predicate_not);
-                     const auto not_signal = add_bool_signal("s_not_predicate_" + op_name);
-                     SM->add_connection(not_input, predicate_signal);
-                     SM->add_connection(not_signal, predicate_not->find_member("out1", port_o_K, predicate_not));
+                     if(!native_predicate)
+                     {
+                        const auto predicate_not = SM->add_module_from_technology_library(
+                            "predicate_not_" + op_name + "_" + STR(unique_id), NOT_GATE_STD, LIBRARY_STD, circuit, TM);
+                        const auto not_input = predicate_not->find_member("in1", port_o_K, predicate_not);
+                        const auto not_signal = add_bool_signal("s_not_predicate_" + op_name);
+                        SM->add_connection(not_input, predicate_signal);
+                        SM->add_connection(not_signal, predicate_not->find_member("out1", port_o_K, predicate_not));
 
-                     const auto skip_and = SM->add_module_from_technology_library(
-                         "skip_done_and_" + op_name + "_" + STR(unique_id), AND_GATE_STD, TM->get_library(AND_GATE_STD),
-                         circuit, TM);
-                     const auto skip_inputs = skip_and->find_member("in", port_o_K, skip_and);
-                     auto* skip_ports = GetPointer<port_o>(skip_inputs);
-                     skip_ports->add_n_ports(2U, skip_inputs);
-                     const auto skip_signal = add_bool_signal("s_skip_done_" + op_name);
-                     SM->add_connection(skip_signal, skip_and->find_member("out1", port_o_K, skip_and));
-                     SM->add_connection(skip_ports->get_port(0), sel_obj);
-                     SM->add_connection(skip_ports->get_port(1), not_signal);
-                     skip_done_signals[op] = skip_signal;
+                        const auto skip_and = SM->add_module_from_technology_library(
+                            "skip_done_and_" + op_name + "_" + STR(unique_id), AND_GATE_STD, TM->get_library(AND_GATE_STD),
+                            circuit, TM);
+                        const auto skip_inputs = skip_and->find_member("in", port_o_K, skip_and);
+                        auto* skip_ports = GetPointer<port_o>(skip_inputs);
+                        skip_ports->add_n_ports(2U, skip_inputs);
+                        const auto skip_signal = add_bool_signal("s_skip_done_" + op_name);
+                        SM->add_connection(skip_signal, skip_and->find_member("out1", port_o_K, skip_and));
+                        SM->add_connection(skip_ports->get_port(0), sel_obj);
+                        SM->add_connection(skip_ports->get_port(1), not_signal);
+                        skip_done_signals[op] = skip_signal;
+                     }
                   }
-                  auto fu_unit = HLS->Rfu->get(op);
-                  auto fu_obj = fu_unit->get_structural_obj();
+                  if(native_predicate)
+                  {
+                     // A shared FU must receive the predicate of the operation started this cycle.
+                     // OR the qualified predicates, but deliver the unqualified starts separately:
+                     // the FU itself completes skipped operations without synchronization effects.
+                     calls[native_predicate].push_back(start_signal);
+                     start_to_vertex[native_predicate].push_back(op);
+                     start_signal = sel_obj;
+                  }
                   auto start = fu_obj->find_member(START_PORT_NAME, port_o_K, fu_obj);
                   THROW_ASSERT(start, fu_obj->get_path());
                   calls[start].push_back(start_signal);

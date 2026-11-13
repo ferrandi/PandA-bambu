@@ -39,3 +39,10 @@
 [submodule "abseil-cpp"]
 	path = ext/abseil/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
+[submodule "ramulator2-no-spdlog"]
+	path = ext/ramulator2-no-spdlog
+	url = https://github.com/ferrandi/ramulator2.git
+[submodule "examples/ramulator-examples"]
+	path = examples/ramulator-examples
+	url = https://github.com/ferrandi/ramulator-examples.git
+	branch = main

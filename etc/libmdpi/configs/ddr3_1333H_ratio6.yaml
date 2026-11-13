@@ -1,0 +1,41 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# DDR3-1333H, 4Gb x8 components, single rank.
+#
+# Nominal DRAM clock: 667 MHz (tCK ~1.5 ns).
+# clock_ratio = 6   ->  DRAM runs 6x accelerator clock.
+# Recommended accelerator clock: --clock-period=9.0 (~111 MHz) for exact match.
+#   At --clock-period=10.0 (100 MHz) the effective DRAM tick rate is 600 MHz,
+#   which is ~10% slower than real DDR3-1333 (mildly pessimistic).
+#
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 6
+
+  DRAM:
+    impl: DDR3
+    org:
+      preset: DDR3_4Gb_x8
+      channel: 1
+      rank: 1
+    timing:
+      preset: DDR3_1333H
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

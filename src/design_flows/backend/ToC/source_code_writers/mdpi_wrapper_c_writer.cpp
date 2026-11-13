@@ -23,6 +23,7 @@
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 #include "mdpi_wrapper_c_writer.hpp"
@@ -608,7 +609,18 @@ void MdpiWrapperCWriter::InternalWriteFile()
    }
    args_map = "char args_map[" + std::to_string(args_decl_size) + "]" + args_map + "};\n";
    banked_args_map = "char banked_args_map[" + std::to_string(banked_args_decl_size) + "]" + banked_args_map + "};\n";
-   args_set += "__m_interface_mem();\n";
+   const auto clock_period = Param->getOption<double>(OPT_clock_period);
+   const auto channels_number =
+       Param->isOption(OPT_channels_number) ? Param->getOption<unsigned int>(OPT_channels_number) : 1u;
+   if(Param->getOption<bool>(OPT_enable_ramulator))
+   {
+      args_set += "__m_interface_mem_ramulator(" + std::to_string(clock_period) + ", " +
+                  std::to_string(channels_number) + ");\n";
+   }
+   else
+   {
+      args_set += "__m_interface_mem();\n";
+   }
    top_decl += ")\n";
    gold_decl += ");\n";
    pp_decl += ");\n";
@@ -707,6 +719,18 @@ void MdpiWrapperCWriter::InternalWriteFile()
       indented_output_stream->Append("ptr_t bank_offset = ((banked_base_address - (ptr_t)" + STR(HLSMgr->base_address) +
                                      ") / WR_BANK_NUMBER) * (WR_BANK_NUMBER - 1);\n");
       indented_output_stream->Append("m_interface_bank_offset(&bank_offset);\n");
+   }
+
+   if(Param->getOption<bool>(OPT_enable_ramulator))
+   {
+      // Keep the bank-offset interface in its existing slot immediately after
+      // the bus. Dedicated memories follow all pre-existing MDPI interfaces.
+      const auto dedicated_memories = func_arch->DedicatedMemoryIndices(
+          static_cast<unsigned int>(param_idx + 1 + (global_use_banked ? 1 : 0)));
+      for(size_t i = 0; i < dedicated_memories.size(); ++i)
+      {
+         indented_output_stream->Append("__m_interface_mem_ramulator(" + std::to_string(clock_period) + ", 1);\n");
+      }
    }
 
    indented_output_stream->Append("\n__m_sim_start();\n\n");
@@ -869,7 +893,9 @@ size_t i;
                const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
                const auto var_init_dat = output_hls_directory / ("mem_" + STR(var_id) + "." + var_name + ".dat");
                const auto byte_count = TestbenchGeneration::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
-               indented_output_stream->Append("  {\"" + boost::replace_all_copy(var_init_dat.string(), "\"", "\\\"") +
+               const auto runtime_init_dat = std::filesystem::proximate(
+                   var_init_dat, Param->getOption<std::filesystem::path>(OPT_output_directory));
+               indented_output_stream->Append("  {\"" + boost::replace_all_copy(runtime_init_dat.string(), "\"", "\\\"") +
                                               "\", " + STR(byte_count) + ", " + STR(var_addr) + ", NULL},\n");
                base_addr = std::max(base_addr, var_addr + byte_count);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -1073,6 +1099,9 @@ void MdpiWrapperCWriter::WriteSimulatorBankedMemory(const unsigned int function_
    indented_output_stream->Append("#define WR_BANK_OBJ_NUMBER (WR_BANK_MEM_VAR_NUMBER + WR_BANK_ARG_NUMBER)\n");
    indented_output_stream->Append("#define WR_BUNDLE_NUMBER " + STR(bundle_number) + "u\n");
    indented_output_stream->Append("#define WR_BANK_NUMBER " + STR(bank_number) + "u\n");
+   indented_output_stream->Append(
+       "#define WR_FULL_ADDRESS " +
+       STR(Param->getOption<std::string>(OPT_banked_memory_address_size) == "FULL" ? 1 : 0) + "\n");
    indented_output_stream->Append("#define WR_CHUNK_SIZE " + STR(chunk_size) + "u\n");
    indented_output_stream->Append("#define WR_BANK_ALIGN " + STR(bank_alignment) + "u\n");
 
@@ -1258,6 +1287,7 @@ abort();
 bank_pointers[j*WR_BANK_NUMBER + i] = (char*)malloc(chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i] * WR_CHUNK_SIZE);
 info("bank %u: allocated %zu chunks for bundle %u\n", i, chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i], j);
 unsigned int* target_bundle = bi[j].banks;
+if(!WR_FULL_ADDRESS)
 error |= __m_memmap(base_addr + i * bank_distance + j*bundle_distance_on_banks, (void*) (bank_pointers[j*WR_BANK_NUMBER + i]), chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i] * WR_CHUNK_SIZE);
 info("Mapped %zu bytes for bank %u at bank address " PTR_FORMAT " to bank pointer " PTR_FORMAT " \n", chunk_required_on_banks_by_bundles[j*WR_BANK_NUMBER + i] * WR_CHUNK_SIZE, i, base_addr + i * bank_distance + j*bundle_distance_on_banks, (ptr_t)(bank_pointers[j*WR_BANK_NUMBER + i]));
 }
@@ -1298,6 +1328,9 @@ else
 {
 info("Mem var: %u has internal address " PTR_FORMAT "\n", index, bank_map[index].internal_addr);
 }
+if(WR_FULL_ADDRESS &&
+   __m_memmap(bank_map[index].internal_addr, bank_map[index].external_addr, bank_map[index].size))
+   abort();
 const unsigned int bundle = bundle_map[index];
 __m_banked_transfer(memory_size, memory_size - mem_diff, bank_map[index].external_addr,
                     bank_pointers + bundle * WR_BANK_NUMBER, target_bundle, bundle_size, WR_CHUNK_SIZE,
@@ -1309,6 +1342,8 @@ __m_banked_transfer(memory_size, memory_size - mem_diff, bank_map[index].externa
    indented_output_stream->Append(R"(  
 static void copy_back_memory_from_banks(size_t memory_size, unsigned int index, size_t mem_diff, char** bank_pointers, unsigned int * last_chunk_space_used_on_bundles, unsigned int* last_bank_selector_on_bundles, size_t* space_used_on_banks_by_bundles)
 {
+if(WR_FULL_ADDRESS)
+   return;
 const unsigned int bundle = bundle_map[index];
 __m_banked_transfer(memory_size, memory_size - mem_diff, bank_map[index].external_addr,
                     bank_pointers + bundle * WR_BANK_NUMBER, bi[bundle].banks, bi[bundle].size, WR_CHUNK_SIZE,
@@ -1390,7 +1425,9 @@ info("Creating banked memory\n");
             const auto var_addr = HLSMgr->Rmem->get_external_base_address(var_id);
             const auto var_init_dat = output_hls_directory / ("mem_" + STR(var_id) + "." + var_name + ".dat");
             const auto byte_count = TestbenchGeneration::generate_init_file(var_init_dat, TM, var_id, HLSMgr->Rmem);
-            indented_output_stream->Append("  {\"" + boost::replace_all_copy(var_init_dat.string(), "\"", "\\\"") +
+            const auto runtime_init_dat = std::filesystem::proximate(
+                var_init_dat, Param->getOption<std::filesystem::path>(OPT_output_directory));
+            indented_output_stream->Append("  {\"" + boost::replace_all_copy(runtime_init_dat.string(), "\"", "\\\"") +
                                            "\", " + STR(byte_count) + ", " + STR(var_addr) +
                                            " + internal_address_offset, NULL},\n");
             base_addr = std::max(base_addr, var_addr + byte_count);

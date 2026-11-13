@@ -58,6 +58,7 @@ make -f "${BAMBU_HLS}/share/panda/libmdpi/Makefile.mk" \
   CFLAGS="${CFLAGS}" \
   BEH_CFLAGS="${BEH_CFLAGS}" \
   TB_CFLAGS="$(bambu_results /application/testbench@cflags)" \
+  RAMULATOR_ENABLED="$(bambu_results /application/testbench@ramulator)" \
   SRCS="$(bambu_results /application/sources/file)" \
   PP_SRC="" \
   TB_SRCS="$(bambu_results /application/testbench/file)" \

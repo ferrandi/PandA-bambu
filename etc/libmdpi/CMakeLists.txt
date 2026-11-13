@@ -38,3 +38,8 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE_INSTALL"
         RENAME LICENSE)
 install(FILES ${LIBMDPI_HEADER_FILES}
         DESTINATION "${LIBMDPI_INCLUDE_INSTALL_DIR}")
+
+# Ramulator memory timing presets used by the MDPI driver.
+install(DIRECTORY configs/
+        DESTINATION "${LIBMDPI_INSTALL_DIR}/configs"
+        FILES_MATCHING PATTERN "*.yaml")

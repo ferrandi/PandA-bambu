@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //    author Michele Fiorito <michele.fiorito@polimi.it>
+//    author Jesun Firoz <jesun.firoz@pnnl.gov>
 //
 
 
@@ -263,4 +264,132 @@ void m_builtin_exit(int status)
    __ipc_release();
 
    m_fini();
+}
+
+// Non-blocking memory operations for Ramulator2 integration
+
+int m_read_request(mdpi_idx_t id, uint16_t bitsize, ptr_t addr, int8_t cmd)
+{
+   int retval;
+   const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_REQUEST;
+   if(!bitsize || bitsize > sizeof(__m_ipc_operation.payload.interface.buffer) * 8)
+   {
+      error("Invalid asynchronous read size: %u bits.\n", bitsize);
+      return -1;
+   }
+   __ipc_reserve();
+   __m_ipc_operation.type = op_type;
+   __m_ipc_operation.payload.interface.id = id;
+   __m_ipc_operation.payload.interface.info = cmd;
+   __m_ipc_operation.payload.interface.addr = addr;
+   __m_ipc_operation.payload.interface.bitsize = bitsize;
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+
+   terminate_if_not(op_type);
+
+   retval = __m_ipc_operation.payload.interface.info;
+   debug("Interface %u read_request state -> %d.\n", id, retval);
+   __ipc_release();
+   return retval;
+}
+
+int m_read_complete(mdpi_idx_t id, svLogicVecVal* data)
+{
+   return m_read_complete_ch(id, 0, data);
+}
+
+int m_read_complete_ch(mdpi_idx_t id, uint8_t channel, svLogicVecVal* data)
+{
+   int retval;
+   const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_READ_COMPLETE;
+   if(!data)
+   {
+      error("Null data buffer for Ramulator completion polling on interface %u.\n", id);
+      abort();
+   }
+   memset(data, 0, sizeof(__m_ipc_operation.payload.interface.buffer) / sizeof(data[0].aval) * sizeof(*data));
+   __ipc_reserve();
+   __m_ipc_operation.type = op_type;
+   __m_ipc_operation.payload.interface.id = id;
+   __m_ipc_operation.payload.interface.info = channel;
+   __m_ipc_operation.payload.interface.bitsize = 0;
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+
+   terminate_if_not(op_type);
+
+   retval = __m_ipc_operation.payload.interface.info;
+   debug("Interface %u read_complete_ch (channel %u) state -> %d.\n", id, channel, retval);
+
+   if(retval > 0 && __m_ipc_operation.payload.interface.id == id)
+   {
+      uint16_t i, size = __m_ipc_operation.payload.interface.bitsize / 8 +
+                         ((__m_ipc_operation.payload.interface.bitsize % 8) != 0);
+#pragma unroll(4)
+      for(i = 0; i < size; ++i)
+      {
+         byte_t mem = __m_ipc_operation.payload.interface.buffer[i];
+         if(i % 4)
+         {
+            data[i / 4].aval |= (unsigned int)(mem) << byte_offset(i);
+         }
+         else
+         {
+            data[i / 4].aval = mem;
+            data[i / 4].bval = 0;
+         }
+      }
+   }
+   __ipc_release();
+   if(retval < 0)
+   {
+      error("Ramulator completion polling failed on interface %u, channel %u: %d.\n", id, channel, retval);
+      abort();
+   }
+   return retval;
+}
+
+int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, uint16_t bitsize, ptr_t addr, uint8_t shift)
+{
+   int retval;
+   uint16_t i;
+   const uint16_t bsize = (bitsize / 8) + ((bitsize % 8) != 0);
+   const mdpi_op_type_t op_type = MDPI_OP_TYPE_IF_WRITE_REQUEST;
+   if(!data || !bitsize || bsize > sizeof(__m_ipc_operation.payload.interface.buffer) || shift)
+   {
+      error("Invalid asynchronous write size, data or shift: %u bits, shift %u.\n", bitsize, shift);
+      return -1;
+   }
+   __ipc_reserve();
+   __m_ipc_operation.type = op_type;
+   __m_ipc_operation.payload.interface.id = id;
+   __m_ipc_operation.payload.interface.info = shift;
+   __m_ipc_operation.payload.interface.addr = addr;
+   __m_ipc_operation.payload.interface.bitsize = bitsize;
+#pragma unroll(4)
+   for(i = 0; i < bsize; ++i)
+   {
+      __m_ipc_operation.payload.interface.buffer[i] = data[i / 4].aval >> byte_offset(i);
+   }
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+
+   terminate_if_not(op_type);
+
+   retval = __m_ipc_operation.payload.interface.info;
+   debug("Interface %u write_request state -> %d.\n", id, retval);
+   __ipc_release();
+   return retval;
+}
+
+void m_memory_tick(unsigned long long cycle)
+{
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_MEM_TICK;
+   __m_ipc_operation.payload.interface.addr = cycle;
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+   terminate_if_not(MDPI_OP_TYPE_MEM_TICK);
+   __ipc_release();
 }

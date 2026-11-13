@@ -24,6 +24,7 @@
  * Objects can represent items at different level of abstraction: logic, RTL and TLM.
  *
  * @author Matteo Barbati <mbarbati@gmail.com>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *

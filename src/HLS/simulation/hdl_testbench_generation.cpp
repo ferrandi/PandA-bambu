@@ -23,6 +23,7 @@
  * @brief Generate HDL testbench for the top-level kernel testing
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
  */
@@ -227,6 +228,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
    const auto interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating memory interface...");
    structural_objectRef tb_mem;
+   bool ramulator_memory = false;
    const auto top_fname = top_bh->GetFunctionName();
    const auto function_parameters = top_bh->get_parameters();
    const auto& ifaces = HLSMgr->module_arch->GetArchitecture(top_fname)->ifaces;
@@ -240,20 +242,37 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
          is_banked = std::stoul((bus_if.find(FunctionArchitecture::iface_bank_number)->second)) > 0U;
       }
    }
+   const bool full_banked_address =
+       parameters->getOption<std::string>(OPT_banked_memory_address_size) == "FULL";
    bool is_bus_pipelined = parameters->isOption(OPT_bus_pipelined) && parameters->getOption<bool>(OPT_bus_pipelined);
 
    if(interface_type == HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION ||
       interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating TestbenchMEMMinimal...");
+      std::string mem_component = "TestbenchMEMMinimal";
+      if(parameters->isOption(OPT_enable_ramulator) &&
+         parameters->getOption<bool>(OPT_enable_ramulator))
+      {
+         mem_component = "TestbenchMEMRamulatorIntegrated";
+         ramulator_memory = true;
+         if(parameters->getOption<bool>(OPT_expose_globals) &&
+            dut->find_member("S_oe_ram", port_o_K, dut) && dut->find_member(MOUT_OE_PORT_NAME, port_o_K, dut))
+         {
+            THROW_ERROR("Ramulator requires internal memory feedback inside the accelerator; omit --expose-globals.");
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating " + mem_component + "...");
       tb_mem =
-          tb_top->add_module_from_technology_library("SystemMEM", "TestbenchMEMMinimal", LIBRARY_STD, tb_cir, TechM);
+          tb_top->add_module_from_technology_library("SystemMEM", mem_component, LIBRARY_STD, tb_cir, TechM);
       const auto emulate_bram = parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
                                     MemoryAllocation_Policy::ALL_BRAM ||
                                 parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
                                     MemoryAllocation_Policy::EXT_PIPELINED_BRAM;
       INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Emulate BRAM: " + std::string(emulate_bram ? "true" : "false"));
-      tb_mem->SetParameter("EMULATE_BRAM", STR(emulate_bram ? 1 : 0));
+      if(!ramulator_memory)
+      {
+         tb_mem->SetParameter("EMULATE_BRAM", STR(emulate_bram ? 1 : 0));
+      }
       tb_mem->SetParameter("QUEUE_SIZE", STR(HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size)));
       const auto oe_port = dut->find_member(MOUT_OE_PORT_NAME, port_o_K, dut);
       if(oe_port)
@@ -294,16 +313,19 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
    {
       THROW_ERROR("Testbench generation for selected interface type is not yet supported.");
    }
-   tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
-                                              "3" :
-                                          parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
-                                              "4" :
-                                              parameters->getOption<std::string>(OPT_mem_delay_read));
-   tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
-                                               "1" :
-                                           parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
-                                               "2" :
-                                               parameters->getOption<std::string>(OPT_mem_delay_write));
+   if(!ramulator_memory)
+   {
+      tb_mem->SetParameter("MEM_DELAY_READ", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                                 "3" :
+                                             parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                                 "4" :
+                                                 parameters->getOption<std::string>(OPT_mem_delay_read));
+      tb_mem->SetParameter("MEM_DELAY_WRITE", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
+                                                  "1" :
+                                              parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
+                                                  "2" :
+                                                  parameters->getOption<std::string>(OPT_mem_delay_write));
+   }
    // The testbench is Verilog even when the kernel uses another HDL. ModelSim
    // rejects unsized decimal literals that exceed 32 bits.
    tb_mem->SetParameter("base_addr",
@@ -395,7 +417,12 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
          }
 
          // Merge all matching out signals from memory master modules and testbench memory
-         master_ports.push_front(tb_mem);
+         // Only memory models exposing slave request ports contribute to this bus.
+         if(tb_mem->find_member("S_oe_ram", port_o_K, tb_mem) ||
+            tb_mem->find_member("cyc_is", port_o_K, tb_mem))
+         {
+            master_ports.push_front(tb_mem);
+         }
          for(unsigned int i = 0; i < master_mod->get_out_port_size(); ++i)
          {
             const auto out_port = master_mod->get_out_port(i);
@@ -433,6 +460,9 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       // Add interface components relative to each top function parameter
       const auto is_interface_inferred = interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       const auto func_arch = HLSMgr->module_arch->GetArchitecture(top_bh->GetFunctionName());
+      const auto dedicated_memories = func_arch->DedicatedMemoryIndices(
+          static_cast<unsigned int>(top_bh->GetParameters().size() + (top_bh->GetFunctionReturnType() != 0) + 1 +
+                                    (is_banked ? 1 : 0)));
       size_t interface_index = 0;
       for(const auto& arg : top_bh->GetParameters())
       {
@@ -479,7 +509,9 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                const auto if_port = tb_top->add_module_from_technology_library(
                    axim_bundle_name + "_fu", axim_bundle_name, LIBRARY_STD, tb_cir, TechM);
                if_modules.push_back(if_port);
-               if_port->SetParameter("index", tb_mem->GetParameter("index"));
+               if_port->SetParameter("index", parameters->getOption<bool>(OPT_enable_ramulator) ?
+                                                  STR(dedicated_memories.at(bundle_name)) :
+                                                  tb_mem->GetParameter("index"));
                if_port->SetParameter("READ_DELAY", parameters->getOption<std::string>(OPT_bram_high_latency) == "_3" ?
                                                        "3" :
                                                    parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
@@ -598,7 +630,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
 
             // Adds the bankadapter components for axi tb
             interface_index += 1;
-            for(unsigned int i = 0; i < bank_number; i++)
+            for(unsigned int i = 0; i < (full_banked_address ? 0ULL : bank_number); i++)
             {
                const auto tb_bank_adapter = tb_top->add_module_from_technology_library(
                    "TBBankAdpater_" + STR(i), "TestbenchBankAdapterAXI", LIBRARY_STD, tb_cir, TechM);
@@ -682,7 +714,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                tb_top->add_connection(sig_m_axi_araddr, tb_m_axi_araddr);
             }
          }
-         else if(is_banked)
+         else if(is_banked && !full_banked_address)
          {
             // Adds the bankadapter components for minimal tb
             const auto tb_bank_adapter = tb_top->add_module_from_technology_library(
@@ -749,6 +781,25 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       add_internal_connection(fsm_reset, dut_reset);
       const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
       add_internal_connection(fsm_done, dut_done);
+   }
+   if(ramulator_memory)
+   {
+      const auto phase_port = tb_mem->find_member("ramulator_phase", port_o_K, tb_mem);
+      THROW_ASSERT(phase_port, "Ramulator clock phase output is missing");
+      const auto phase_signal = tb_top->add_sign("sig_ramulator_phase", tb_cir, phase_port->get_typeRef());
+      tb_top->add_connection(phase_port, phase_signal);
+      for(const auto& if_obj : if_modules)
+      {
+         if(if_obj == tb_mem)
+         {
+            continue;
+         }
+         const auto input = if_obj->find_member("ramulator_phase", port_o_K, if_obj);
+         if(input)
+         {
+            tb_top->add_connection(phase_signal, input);
+         }
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
    for(const auto& if_obj : if_modules)

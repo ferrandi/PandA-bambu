@@ -151,6 +151,57 @@ etc/scripts/generate_bambu_parameter_registry.py \
   --sync-metadata
 ```
 
+# Ramulator2 co-simulation
+
+[@jesunsahariar](https://github.com/jesunsahariar) contributed the Ramulator2 memory timing integration.
+The `ext/ramulator2-no-spdlog` submodule pins the spdlog-free Ramulator2 fork;
+its source and license are maintained independently of Bambu.
+
+Build Ramulator2 with a C++20 compiler before running integrated co-simulation:
+
+```bash
+git submodule update --init --recursive
+cmake -S ext/ramulator2-no-spdlog -B ext/ramulator2-no-spdlog/build -DCMAKE_BUILD_TYPE=Release
+cmake --build ext/ramulator2-no-spdlog/build -j
+cmake --install ext/ramulator2-no-spdlog/build --prefix "$PWD/ext/ramulator2-no-spdlog/install"
+export RAMULATOR2_DIR="$PWD/ext/ramulator2-no-spdlog/install"
+export RAMULATOR2_CONFIG="$PWD/etc/libmdpi/configs/default_ddr4.yaml"
+```
+
+Build and install Bambu as described above, then source `install/settings.sh`. Add `--enable-ramulator`
+and `-m64` to an HDL co-simulation command to use the 64-bit Ramulator2 library.
+The option enables integrated Ramulator timing for both native bus and AXI testbenches.
+The common bus has one independent memory backend, including all its banked channels;
+each dedicated AXI bundle has its own backend. Parameters in the same bundle share
+that memory. All backends advance once per accelerator cycle. `--channels-number` controls Bambu AXI ports;
+the YAML preset controls DRAM channels. Set `RAMULATOR_OVERRIDE_CHANNELS=1` to
+match the DRAM channel count to Bambu. Memory presets are installed under
+`share/panda/libmdpi/configs`; `RAMULATOR2_CONFIG` selects a YAML preset.
+Keep `RAMULATOR2_DIR` set when using an installed Bambu so its MDPI driver can
+find the installed `include/ramulator` headers and shared library under `lib`
+(or `lib64`/a multiarch library directory). Any installation prefix is supported;
+the examples honor an explicit `RAMULATOR2_DIR` and otherwise use the local
+submodule installation. The MDPI driver records the library directory in its
+runtime search path, so `LD_LIBRARY_PATH` is unnecessary.
+
+Longer Ramulator benchmark suites and their scripts are isolated in the
+[`examples/ramulator-examples`](https://github.com/ferrandi/ramulator-examples)
+submodule, derived from [@BENfrost-20's collection](https://github.com/BENfrost-20/tests_bambu_ramulator)
+and [@jesunsahariar's integration](https://github.com/jesunsahariar/bambu-ramulator-release).
+They have their own benchmark sources and do not change the historical examples.
+Initialize the collection and follow its README for setup and manual execution:
+
+```bash
+git submodule update --init -- examples/ramulator-examples
+git -C examples/ramulator-examples submodule update --init --recursive
+```
+
+The full CI and the commands above check out the exact collection commit
+recorded in Bambu, including its recorded dependency revisions.
+
+The minimal CI keeps its short Ramulator co-simulations and dedicated RTL tests
+under `panda_regressions/`; the longer example suites are run separately.
+
 # Contacts
 Issues, patches, and pull requests are welcome at https://github.com/ferrandi/PandA-bambu.<br>
 For further information send an e-mail to panda-info@polimi.it, visit [PandA website](https://panda.dei.polimi.it/).

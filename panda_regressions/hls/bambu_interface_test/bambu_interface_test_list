@@ -75,6 +75,7 @@ ac_channels_64async.cpp --top-fname=count_async --generate-tb=a="{0x800000000000
 ac_channels_64async-LL.cpp --top-fname=count_async --generate-tb=a="{0x8000000000000001,0x8000000000000002,0x8000000000000003,0x8000000000000004,0x8000000000000005,0x8000000000000006,0x8000000000000007,0x8000000000000008}",b="{0x8000000000000002,0x8000000000000004,0x8000000000000006,0x8000000000000008,0x8000000000000010,0x8000000000000012,0x8000000000000014,0x8000000000000016}",d="{}",e="{}" -DBAMBU_SKIP_VERIFICATION
 hls_stream.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{}"
 hls_stream_axis.cpp --top-fname=sum3numbers --generate-tb=a="{1,2,3,4,5,6,7,8}",b="{1,2,3,4,5,6,7,8}",c="{1,2,3,4,5,6,7,8}",d="{}"
+bus_vector_add.cpp --benchmark-name=wishbone_bus_startup --top-fname=vector_add_int_pointer --generate-tb=BENCHMARKS_ROOT/bus.xml --generate-interface=WB4 --memory-allocation-policy=NO_BRAM
 bus_vector_add.cpp --benchmark-name=banked_vector_add_int --top-fname=vector_add_int --generate-tb=BENCHMARKS_ROOT/bus.xml  --memory-allocation-policy=NO_BRAM -DBANKED_BUS=1
 banked_sparse_bundles.cpp --top-fname=banked_copy --generate-tb=BENCHMARKS_ROOT/banked_sparse_bundles.cpp --benchmark-name=banked_sparse_3_5 --memory-allocation-policy=NO_BRAM --max-sim-cycles=5000
 banked_sparse_bundles.cpp --top-fname=banked_copy --generate-tb=BENCHMARKS_ROOT/banked_sparse_bundles.cpp --benchmark-name=banked_sparse_2_4 -DPOWER_OF_TWO --memory-allocation-policy=NO_BRAM --max-sim-cycles=5000

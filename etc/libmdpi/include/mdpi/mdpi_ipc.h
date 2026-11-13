@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //    author Michele Fiorito <michele.fiorito@polimi.it>
+//    author Jesun Firoz <jesun.firoz@pnnl.gov>
 //
 
 #ifndef __MDPI_IPC_H
@@ -68,7 +69,12 @@ typedef enum
    MDPI_OP_TYPE_IF_POP       = 1 << 1 | 1 << 3,
    MDPI_OP_TYPE_IF_PUSH      = 1 << 2 | 1 << 3,
    MDPI_OP_TYPE_IF_INFO      = 1 << 4,
-   MDPI_OP_TYPE_IF_EXIT      = 1 << 5
+   MDPI_OP_TYPE_IF_EXIT      = 1 << 5,
+   // Non-blocking operations for Ramulator2 integration
+   MDPI_OP_TYPE_IF_READ_REQUEST  = 1 << 6,
+   MDPI_OP_TYPE_IF_READ_COMPLETE = 1 << 7,
+   MDPI_OP_TYPE_IF_WRITE_REQUEST = 1 << 8,
+   MDPI_OP_TYPE_MEM_TICK         = 1 << 9
 } mdpi_op_type_t;
 // clang-format on
 
