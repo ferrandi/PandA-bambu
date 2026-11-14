@@ -800,6 +800,38 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
 
+// clang rejects a C standard on a C++ translation unit and vice-versa, but the
+// inputs of a Bambu invocation can mix '.c' and '.cpp' files, and the OpenMP
+// runtime appended by Bambu is a C++ file even when the user sources are in C.
+// Override the global standard only in the cases the front-end would reject
+// outright, mirroring the defaults selected in BambuParameter ('c11'/'c++14').
+static void AdjustStandardToTranslationUnit(std::string& parameters, const std::string& source_file)
+{
+   const auto extension = std::filesystem::path(source_file).extension().string();
+   const bool cpp_unit =
+      extension == ".cpp" || extension == ".cc" || extension == ".cxx" || extension == ".c++" || extension == ".C";
+   const bool c_unit = extension == ".c";
+   if(!cpp_unit && !c_unit)
+   {
+      return;
+   }
+   static const std::regex standard_regex("(-{1,2}std=)([A-Za-z0-9+_-]+)");
+   std::smatch match;
+   if(!std::regex_search(parameters, match, standard_regex))
+   {
+      return;
+   }
+   const bool cxx_standard = match[2].str().find("c++") != std::string::npos;
+   if(cpp_unit && !cxx_standard)
+   {
+      parameters.replace(match.position(2), match.length(2), "c++14");
+   }
+   else if(c_unit && cxx_standard)
+   {
+      parameters.replace(match.position(2), match.length(2), "c11");
+   }
+}
+
 void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::string>& source_files,
                                     const std::string& costTable)
 {
@@ -878,6 +910,10 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
                                            CM_COMPILER_OPT | (compiler_mode & ~(CM_ANALYZER_ALL | CM_LTO_FLAG)) :
                                            CM_COMPILER_STD | compiler_mode;
       auto local_compiler_parameters = is_llvmir ? "" : frontend_compiler_parameters;
+      if(!is_llvmir)
+      {
+         AdjustStandardToTranslationUnit(local_compiler_parameters, source_file);
+      }
       if(!is_llvmir && isOpenmp)
       {
          local_compiler_parameters += " -fopenmp ";
@@ -892,7 +928,9 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
          auto bambu_ir_file = output_temporary_directory + "/" + leaf_name + STR_CST_bambu_ir_suffix;
          if(!std::filesystem::exists(bambu_ir_file))
          {
-            CompileFile(source_file, "", frontend_compiler_parameters, passes, CM_EMPTY, costTable);
+            auto empty_mode_parameters = frontend_compiler_parameters;
+            AdjustStandardToTranslationUnit(empty_mode_parameters, source_file);
+            CompileFile(source_file, "", empty_mode_parameters, passes, CM_EMPTY, costTable);
             // source_file has been changed by previous call to CompileFile
             bambu_ir_file = output_temporary_directory + "/" + std::filesystem::path(source_file).filename().string() +
                             STR_CST_bambu_ir_suffix;
