@@ -3371,8 +3371,12 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_openmp) && getOption<bool>(OPT_openmp) &&
       getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
    {
-      appendOption(OPT_input_file,
-                   (relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename).string());
+      const auto runtime_file = relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename;
+      appendOption(OPT_input_file, runtime_file.string());
+      // The supported toolchains are distributed without an OpenMP header, so
+      // expose the bundled one: '#include <omp.h>' must resolve to the
+      // interface implemented by the runtime file appended above.
+      appendOption(OPT_cc_includes, "-isystem " + runtime_file.parent_path().string(), " ");
    }
    if((isOption(OPT_generate_vcd) && getOption<bool>(OPT_generate_vcd)) ||
       (isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy)))
