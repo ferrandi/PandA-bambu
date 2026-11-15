@@ -13,6 +13,7 @@
 #include "mdpi_debug.h"
 #include "mdpi_types.h"
 
+#include <limits.h>
 #include <stddef.h>
 
 #if defined(__cplusplus) && __cplusplus >= 201103L
@@ -105,6 +106,12 @@ class channel_interface : public interface
    unsigned int _count;
    const unsigned int _max_size;
 
+   static int _size_state(unsigned int size)
+   {
+      // Negative states are reserved for errors; keep large channel counts positive.
+      return size > static_cast<unsigned int>(INT_MAX) ? INT_MAX : static_cast<int>(size);
+   }
+
    unsigned int _read_size()
    {
       return _max_size ? (_max_size - _count) : _chan.size();
@@ -147,7 +154,7 @@ class channel_interface : public interface
          ++_count;
          if_debug("Item pop (%u left).\n", _read_size());
       }
-      return _read_size();
+      return _size_state(_read_size());
    }
 
    int write(bptr_t data, uint16_t /*bitsize*/, ptr_t /*addr*/, int cmd) override
@@ -168,18 +175,18 @@ class channel_interface : public interface
       {
          _chan[_chan.size() - 1] = *reinterpret_cast<T*>(data);
       }
-      return _write_size();
+      return _size_state(_write_size());
    }
 
    int state(int data)
    {
       if(data == (1 << 1))
       {
-         return _read_size();
+         return _size_state(_read_size());
       }
       else if(data == (1 << 2))
       {
-         return _write_size();
+         return _size_state(_write_size());
       }
       return IF_ERROR;
    }

@@ -58,9 +58,19 @@ def main():
     directory.mkdir(parents=True, exist_ok=False)
     common = ['-D__M64', '-DVERILATOR', '-D__M_OUT_LVL=4', f'-I{ROOT / "etc/libmdpi/include"}',
               f'-I{args.bambu_prefix.resolve() / "include/panda"}', f'-I{dpi}']
+    results = []
     start = time.monotonic()
     error = None
-    results = []
+    try:
+        execute(['g++', '-std=c++14', *common, HERE / 'channel_capacity.cpp',
+                 '-o', directory / 'channel_capacity'], directory)
+        execute([directory / 'channel_capacity'], directory)
+    except (OSError, subprocess.SubprocessError) as exception:
+        error = str(exception)
+    print('FAIL' if error else 'PASS', 'mdpi-channel-capacity', flush=True)
+    results.append(('mdpi-channel-capacity', time.monotonic()-start, error, directory))
+    start = time.monotonic()
+    error = None
     try:
         execute(['g++', '-std=c++20', *common, '-DHAVE_RAMULATOR2',
                  f'-I{prefix / "include/ramulator"}', f'-I{prefix / "include"}',
