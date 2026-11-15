@@ -81,6 +81,7 @@ def main():
         results.append(('rtl-reset-profiles', time.monotonic() - start, error, out))
     tasks = [(source, threads, context) for source in ('critical', 'barrier', 'phases')
              for threads, context in ((1, 0), (4, 0), (4, 2))]
+    tasks.append(('reduction', 4, 0))
     names = {f'{source}-{threads}t' + ('-cs2' if context else '') for source, threads, context in tasks}
     if set(args.case) - names:
         parser.error('Unknown case: ' + ', '.join(set(args.case) - names))

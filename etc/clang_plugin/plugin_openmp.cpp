@@ -293,11 +293,15 @@ namespace llvm
                   }
                   assert(isa<ConstantInt>(*gep->idx_begin()));
                   const auto val = cast<ConstantInt>(*gep->idx_begin())->getValue();
-                  return val.udiv(APInt(val.getBitWidth(), 4));
+                  const auto pointer_size =
+                      gep->getModule()->getDataLayout().getPointerSize(gep->getPointerAddressSpace());
+                  return val.udiv(APInt(val.getBitWidth(), pointer_size));
                }();
                const std::array<llvm::Value*, 2> idxs = {
                    ConstantInt::get(Type::getIntNTy(new_ptr->getParent()->getParent()->getContext(), 32), 0),
-                   ConstantInt::get(Type::getIntNTy(new_ptr->getParent()->getParent()->getContext(), 32), idx),
+                   // Structure member indices must be i32 even when the original array index is i64.
+                   ConstantInt::get(Type::getIntNTy(new_ptr->getParent()->getParent()->getContext(), 32),
+                                    idx.getZExtValue()),
                };
                return GetElementPtrInst::Create(elem_type, new_ptr, idxs, "", gep);
             }();
