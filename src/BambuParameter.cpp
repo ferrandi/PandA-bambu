@@ -2840,6 +2840,11 @@ void BambuParameter::CheckParameters()
          setOption(OPT_cc_standard, "c11");
       }
    }
+   const auto compiler_standard = getOption<std::string>(OPT_cc_standard);
+   const auto is_cpp_standard = compiler_standard.find("c++") != std::string::npos;
+   c_compiler_standard = is_cpp_standard ? "c11" : compiler_standard;
+   cpp_compiler_standard = is_cpp_standard ? compiler_standard : "c++14";
+
    /// Disable proxy when there are multiple top functions
    // TODO: check this, function proxies should work properly even with multiple top functions
    if(getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
@@ -3376,6 +3381,11 @@ void BambuParameter::CheckParameters()
       THROW_WARNING("Asynchronous memories are disabled by default when targeting NanoXplore devices");
       setOption(OPT_use_asynchronous_memories, false);
    }
+}
+
+const std::string& BambuParameter::GetCompilerStandard(bool cpp_source) const
+{
+   return cpp_source ? cpp_compiler_standard : c_compiler_standard;
 }
 
 void BambuParameter::SetDefaults()
