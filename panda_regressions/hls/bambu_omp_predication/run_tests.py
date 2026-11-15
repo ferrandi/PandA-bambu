@@ -74,6 +74,10 @@ def main():
             run_rtl(out)
         except (OSError, subprocess.SubprocessError, ValueError) as exception:
             error = str(exception)
+            logs = sorted(out.glob('rtl-*/run.log'), key=lambda path: path.stat().st_mtime)
+            if logs:
+                error += '\n' + logs[-1].read_text(errors='replace')[-6000:]
+        print('FAIL rtl-reset-profiles: ' + error if error else 'PASS rtl-reset-profiles', flush=True)
         results.append(('rtl-reset-profiles', time.monotonic() - start, error, out))
     tasks = [(source, threads, context) for source in ('critical', 'barrier', 'phases')
              for threads, context in ((1, 0), (4, 0), (4, 2))]
