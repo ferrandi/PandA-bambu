@@ -36,6 +36,7 @@ HBM_SIZES = {"hbm-gather": 4096, "hbm-scatter": 4096, "hbm-chase": 2048}
 HBM_CASES = [f"{kernel}/{mode}" for kernel in HBM_SIZES
              for mode in ("banked-minimal", "banked-axi")]
 ISOLATION_CASES = ["add/mixed-axi", "add/mixed-banked-minimal", "add/mixed-banked-axi"]
+SMOKE_CASES += ["nested/minimal-bus", "nested/axi-bus"]
 CASES = SMOKE_CASES + HBM_CASES + ISOLATION_CASES
 HBM_SEED = 0x504E4E4C
 
@@ -224,6 +225,10 @@ def main():
         directory = out / name
         directory.mkdir(parents=True)
         source, inputs = HERE / "kernel.cpp", HERE / "input.xml"
+        if kernel == "nested":
+            source = HERE / "nested.cpp"
+            banks = 2
+            axi_models = 2 if axi else 0
         if kernel == "stencil":
             source = HERE / "stencil.c"
             inputs = directory / "input.xml"
@@ -253,8 +258,10 @@ def main():
             command.append(f"--output-directory={directory.name}")
         if hbm:
             command.append(f"-DHBM_SIZE={HBM_SIZES[kernel]}")
-        if banked or axi:
+        if banked or axi or kernel == "nested":
             command.append("--bus-pipelined")
+        if kernel == "nested":
+            command.extend(["-fopenmp", "--generate-vcd"])
         if banked:
             command.extend(["-fopenmp", "--generate-vcd"])
         (directory / "command.txt").write_text(shlex.join(command) + "\n")
@@ -282,6 +289,22 @@ def main():
             if returncode:
                 raise ValueError(f"Bambu exited with {returncode}; see {directory / 'run.log'}")
             record.update(validate(directory, axi_models, banked, cycles_limit, banks, hbm))
+            if kernel == "nested":
+                ports = set()
+                stalled = False
+                with (directory / "HLS_output/simulation/test.vcd").open() as vcd:
+                    for line in vcd:
+                        words = line.split()
+                        if words[:1] == ["$var"] and words[4] == "M_back_pressure":
+                            ports.add(words[3])
+                        elif line.startswith('b'):
+                            value, ident = line[1:].split()
+                            stalled |= ident in ports and '1' in value
+                        elif line.startswith('1'):
+                            stalled |= line[1:].strip() in ports
+                if not stalled:
+                    raise ValueError("nested test did not exercise response backpressure")
+                record["response_backpressure"] = True
             if dedicated:
                 record["memories"] = memory_isolation((directory / "run.log").read_text(errors="replace"),
                                                        3 if dedicated == 1 else 2, record["cycles"])

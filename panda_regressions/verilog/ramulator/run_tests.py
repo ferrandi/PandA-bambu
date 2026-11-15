@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import time
 import xml.etree.ElementTree as ET
-from extract import extract
+from extract import extract, extract_dependencies
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
@@ -200,10 +200,11 @@ def main():
     if not error and not args.contract_only:
         models = directory / 'models.sv'
         models.write_text('typedef longint unsigned ptr_t;\n' + extract('TestbenchMEMRamulatorIntegrated') +
-                          extract('TestbenchMEMAXIRamulatorIntegrated') + extract('if_utils') + extract('TestbenchMEMAXI'))
+                          extract('TestbenchMEMAXIRamulatorIntegrated') + extract('if_utils') + extract('TestbenchMEMAXI') +
+                          extract_dependencies('Arbiter_connection_interface'))
         execute(['gcc', '-c', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                  '-o', directory / 'mdpi.o'], directory)
-        for model in ('memory', 'axi', 'axi_lanes', 'classic_axi_lanes'):
+        for model in ('memory', 'axi', 'axi_lanes', 'classic_axi_lanes', 'arbiter'):
             for depth in ((1, 2, 4, 64) if model == 'memory' else (1, 4) if 'lanes' in model else (1, 2, 4)):
                 name = f'{model}-depth{depth}'
                 case_dir = directory / name

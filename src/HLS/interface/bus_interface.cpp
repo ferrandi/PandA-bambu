@@ -741,7 +741,13 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
    const bool is_banked = bi.bank_number > 0;
    const bool has_tag_ports = input_module->find_member("Mout_tag", port_vector_o_K, input_module) &&
                               input_module->find_member("M_tag", port_vector_o_K, input_module);
+   const bool has_response_back_pressure =
+       input_module->find_member("M_back_pressure", port_vector_o_K, input_module) != nullptr;
    auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
+   if(!is_banked && has_response_back_pressure)
+   {
+      adapter_ports.emplace_back("M_back_pressure", "M_back_pressure", 1U);
+   }
    if(!is_banked && has_tag_ports)
    {
       adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
@@ -821,9 +827,9 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
          SM->add_connection(sig, adapter_port);
       }
 
-      if(!is_banked)
+      if(!is_banked && !has_response_back_pressure)
       {
-         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_vector_o_K, adapter_module);
+         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_o_K, adapter_module);
          if(bp_port)
          {
             structural_objectRef const_obj_bp =
@@ -1096,7 +1102,13 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
    const bool is_banked = bi.bank_number > 0;
    const bool has_tag_ports = input_module->find_member("Mout_tag", port_vector_o_K, input_module) &&
                               input_module->find_member("M_tag", port_vector_o_K, input_module);
+   const bool has_response_back_pressure =
+       input_module->find_member("M_back_pressure", port_vector_o_K, input_module) != nullptr;
    auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
+   if(!is_banked && has_response_back_pressure)
+   {
+      adapter_ports.emplace_back("M_back_pressure", "M_back_pressure", 1U);
+   }
    if(!is_banked && has_tag_ports)
    {
       adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
@@ -1199,9 +1211,9 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
          SM->add_connection(sig, adapter_port);
       }
 
-      if(!is_banked)
+      if(!is_banked && !has_response_back_pressure)
       {
-         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_vector_o_K, adapter_module);
+         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_o_K, adapter_module);
          if(bp_port)
          {
             structural_objectRef const_obj_bp =

@@ -280,7 +280,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
          const auto bp_port_tb = tb_mem->find_member(MOUT_BACK_PRESSURE_PORT_NAME, port_o_K, tb_mem);
          bp_port_tb->type_resize(STD_GET_SIZE(oe_port->get_typeRef()));
          INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Resized Mout_back_pressure_port");
-         if(!is_banked)
+         if(!dut->find_member(M_BACK_PRESSURE_PORT_NAME, port_o_K, dut))
          {
             const auto m_bp_port_tb = tb_mem->find_member(M_BACK_PRESSURE_PORT_NAME, port_o_K, tb_mem);
             m_bp_port_tb->type_resize(STD_GET_SIZE(oe_port->get_typeRef()));

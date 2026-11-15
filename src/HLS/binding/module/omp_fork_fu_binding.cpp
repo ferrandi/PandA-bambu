@@ -245,6 +245,14 @@ void omp_fork_fu_binding::add_memory_ports_to_fork_call_module(structural_object
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, fci.debug_level, "Added port Mout_back_pressure");
       }
    }
+   // Only the shared multichannel arbiter can have competing responses to one requester.
+   if(!fci.const_use_grouped_channels && !(fci.use_banked_memory && fci.is_top_level) && fci.channel_number > 1U)
+   {
+      const auto port = SM->add_port_vector(
+          "M_back_pressure", port_o::OUT, fci.channel_number, circuit,
+          outlined_master->find_member("M_DataRdy", port_o_K, outlined_master)->get_typeRef());
+      GetPointerS<port_o>(port)->set_is_memory(true);
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, fci.debug_level, "Added ports to module: " + fork_call_module->get_path());
 }
 
@@ -488,7 +496,7 @@ void omp_fork_fu_binding::generate_thread_to_memory_if(
    std::list<structural_objectRef> fork_call_list;
    fork_call_list.push_back(fork_call_module);
 
-   const std::vector<std::tuple<std::string, std::string, unsigned int, so_kind>> conn_interface_fork_call_ports = {
+   std::vector<std::tuple<std::string, std::string, unsigned int, so_kind>> conn_interface_fork_call_ports = {
        {"Mout_oe_ram_out", "Mout_oe_ram", 1U, port_vector_o_K},
        {"Mout_we_ram_out", "Mout_we_ram", 1U, port_vector_o_K},
        {"Mout_addr_ram_out", "Mout_addr_ram", addr_bus_bitsize, port_vector_o_K},
@@ -499,6 +507,11 @@ void omp_fork_fu_binding::generate_thread_to_memory_if(
        {"M_DataRdy", "M_DataRdy", 1U, port_vector_o_K},
        {"M_Rdata_ram", "M_Rdata_ram", data_bus_bitsize, port_vector_o_K},
        {"M_tag", "M_tag", fci.outer_tag_bitsize, port_vector_o_K}};
+
+   if(conn_interface_name == ARBITER_IF_NAME)
+   {
+      conn_interface_fork_call_ports.emplace_back("M_back_pressure", "M_back_pressure", 1U, port_vector_o_K);
+   }
 
    for(const auto& tp : conn_interface_fork_call_ports)
    {

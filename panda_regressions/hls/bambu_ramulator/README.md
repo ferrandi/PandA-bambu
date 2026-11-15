@@ -3,7 +3,7 @@
 The dedicated `Ramulator co-simulation` workflow builds Bambu with Clang 13,
 then runs a single test job. The test job checks out the exact Ramulator
 submodule revision, builds and installs it once, and reuses that installation
-for all 27 cases (18 smoke, six intermediate HBM and three memory-isolation cases). The workflow assumes the pinned public Ramulator revision
+for all 29 cases (20 smoke, six intermediate HBM and three memory-isolation cases). The workflow assumes the pinned public Ramulator revision
 provides the standard CMake installation layout. It never patches or overrides
 the submodule revision and does not fall back to a different memory backend.
 
@@ -16,6 +16,11 @@ tools. The standard caller's Bambu distribution is reused instead of rebuilding
 Bambu.
 
 ## Test list
+
+`nested/minimal-bus` and `nested/axi-bus` exercise four outer OpenMP threads,
+each spawning two inner threads, over two non-banked memory channels. They
+check response routing and backpressure when independent memory channels
+complete requests for the same outer thread.
 
 The following three kernels use 20 signed integers, including zero and negative values.
 Each of these three kernels runs in all five configurations below:
