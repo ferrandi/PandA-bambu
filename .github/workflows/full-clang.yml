@@ -196,7 +196,7 @@ jobs:
         run: |
           apt-get update
           apt-get install --no-install-recommends -y \
-            ca-certificates git curl xz-utils build-essential cmake python3 \
+            ca-certificates git curl wget xz-utils build-essential cmake python3 \
             clang verilator binutils gettext-base bc
       - name: Checkout Bambu
         uses: actions/checkout@v5
