@@ -2,3 +2,4 @@ src/gemm.c    --channels-type=MEM_ACC_11 --top-fname=gemm  --generate-tb=BENCHMA
 src/gemm.cpp  --channels-type=MEM_ACC_11 --top-fname=gemm  --generate-tb=BENCHMARKS_ROOT/src/gemm.xml --benchmark-name=gemm_cpp
 src/gemm.c    --channels-type=MEM_ACC_11 --top-fname=gemm  --generate-tb=BENCHMARKS_ROOT/src/gemm.xml --benchmark-name=gemm_c_cs1  --context_switch=1
 src/gemm.cpp  --channels-type=MEM_ACC_11 --top-fname=gemm  --generate-tb=BENCHMARKS_ROOT/src/gemm.xml --benchmark-name=gemm_cpp_cs1 --context_switch=1
+src/shared_capture.c --channels-type=MEM_ACC_11 --top-fname=shared_capture --generate-tb=BENCHMARKS_ROOT/src/shared_capture.xml --benchmark-name=shared_capture_c

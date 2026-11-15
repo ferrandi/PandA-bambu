@@ -588,6 +588,21 @@ namespace llvm
       return !kmp_to_remove.empty();
    }
 
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+   // Promoting the shared parameters of an .omp_outlined function requires the
+   // pointee type of its parameters, which is not available with opaque
+   // pointers. Note that promoteArgumentsCheck() also bails out on opaque
+   // pointers, so the analysis should never commit a promotion here: report an
+   // explicit error instead of returning false, because the caller would then
+   // rewrite the fork call against the unchanged function signature.
+   static void report_promote_unsupported_opaque()
+   {
+      llvm::report_fatal_error("OpenMP plug-in cannot promote the shared parameters of an .omp_outlined "
+                               "function with opaque pointers: use a compiler older than clang-16 or capture "
+                               "the local variable as firstprivate");
+   }
+#endif
+
    static bool fix_omp_outline_parameters(llvm::Function* function,
                                           std::map<Function*, std::set<uint64_t>>& argToPromote,
                                           std::set<uint64_t>& deadArgToPromote, llvm::Function*& updatedFunction)
@@ -659,8 +674,7 @@ namespace llvm
 #else
                   if(I->getType()->isOpaquePointerTy())
                   {
-                     LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                     return false;
+                     report_promote_unsupported_opaque();
                   }
                   Params.push_back(llvm::cast<llvm::PointerType>(I->getType())->getNonOpaquePointerElementType());
 #endif
@@ -675,8 +689,7 @@ namespace llvm
 #else
                   if(I->getType()->isOpaquePointerTy())
                   {
-                     LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                     return false;
+                     report_promote_unsupported_opaque();
                   }
                   Type* AgTy = cast<PointerType>(I->getType())->getNonOpaquePointerElementType();
 #endif
@@ -693,8 +706,7 @@ namespace llvm
 #else
                            if(aT->isOpaquePointerTy())
                            {
-                              LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                              return false;
+                              report_promote_unsupported_opaque();
                            }
                            auto arrElType = aT->getNonOpaquePointerElementType();
 #endif
@@ -759,8 +771,7 @@ namespace llvm
 #else
                         if(I->getType()->getScalarType()->isOpaquePointerTy())
                         {
-                           LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                           return false;
+                           report_promote_unsupported_opaque();
                         }
                         Params.push_back(GetElementPtrInst::getIndexedType(
                             cast<PointerType>(I->getType()->getScalarType())->getNonOpaquePointerElementType(),
