@@ -82,6 +82,7 @@ def main():
     tasks = [(source, threads, context) for source in ('critical', 'barrier', 'phases')
              for threads, context in ((1, 0), (4, 0), (4, 2))]
     tasks.append(('reduction', 4, 0))
+    tasks.extend([('reduction', 4, 2), ('memory_init', 4, 0), ('memory_init', 4, 2)])
     names = {f'{source}-{threads}t' + ('-cs2' if context else '') for source, threads, context in tasks}
     if set(args.case) - names:
         parser.error('Unknown case: ' + ', '.join(set(args.case) - names))
@@ -96,9 +97,12 @@ def main():
                    '--simulate', '-fopenmp', '-m64', '-lm', f'-DTHREADS={threads}',
                    f'--channels-type={"MEM_ACC_11" if threads == 1 else "MEM_ACC_NN"}',
                    f'--channels-number={min(threads, 2)}',
-                   '--memory-allocation-policy=NO_BRAM', '--max-sim-cycles=15000']
+                   f'--memory-allocation-policy={"LSS" if source == "memory_init" else "NO_BRAM"}',
+                   '--max-sim-cycles=15000']
         if context:
             command.append(f'--context_switch={context}')
+        if source == 'memory_init' or (source == 'reduction' and context):
+            command.append('--bambu-parameter=BRAM_bitsize_min=64')
         (directory / 'command.txt').write_text(shlex.join(command) + '\n')
         start = time.monotonic()
         error = None

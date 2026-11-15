@@ -3455,10 +3455,8 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    }
    unsigned long long vec_size = 0, elts_size = 0;
    const auto bitsize_align = is_sds ? 0ULL : std::stoull(fu_module->GetParameter("BRAM_BITSIZE"));
-   for(unsigned int i = 0; i < context_count; i++)
-   {
-      fill_array_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, IRM, is_sds, bitsize_align);
-   }
+   fill_array_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, IRM, is_sds, bitsize_align,
+                     context_count);
    THROW_ASSERT(vec_size, "at least one element is expected");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
    if(is_sds)
@@ -3485,8 +3483,9 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
                                    unsigned long long& vec_size, unsigned long long& elts_size,
                                    const std::unique_ptr<memory>& mem, ir_managerConstRef TM, bool is_sds,
-                                   unsigned long long bitsize_align)
+                                   unsigned long long bitsize_align, unsigned int context_count)
 {
+   THROW_ASSERT(context_count, "at least one memory context is expected");
    init_file_b.put(0);
    const auto is_memory_splitted = init_file_b.good();
    init_file_b.seekp(std::ios_base::cur - 1);
@@ -3552,35 +3551,38 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
          THROW_ASSERT(elts_size, "unexpected condition");
-         unsigned int row = 0;
-         std::string current_string;
-         for(const auto& init_value : init_string)
+         for(unsigned int context = 0; context < context_count; ++context)
          {
-            ++row;
-            auto init_value_size = init_value.size();
-            if(elts_size != init_value_size && (init_value_size % elts_size == 0))
+            unsigned int row = 0;
+            std::string current_string;
+            for(const auto& init_value : init_string)
             {
-               const auto n_elmts = init_value_size / elts_size;
-               for(auto index = 0u; index < n_elmts; ++index)
+               ++row;
+               auto init_value_size = init_value.size();
+               if(elts_size != init_value_size && (init_value_size % elts_size == 0))
                {
-                  init_file_a << init_value.substr(init_value_size - elts_size - index * elts_size, elts_size)
-                              << std::endl;
+                  const auto n_elmts = init_value_size / elts_size;
+                  for(auto index = 0u; index < n_elmts; ++index)
+                  {
+                     init_file_a << init_value.substr(init_value_size - elts_size - index * elts_size, elts_size)
+                                 << std::endl;
+                  }
                }
-            }
-            else if(elts_size > init_value_size && (elts_size % init_value_size == 0))
-            {
-               const auto n_elmts = elts_size / init_value_size;
-               current_string = init_value + current_string;
-               if(row % n_elmts == 0)
+               else if(elts_size > init_value_size && (elts_size % init_value_size == 0))
                {
-                  init_file_a << current_string << std::endl;
-                  current_string.clear();
+                  const auto n_elmts = elts_size / init_value_size;
+                  current_string = init_value + current_string;
+                  if(row % n_elmts == 0)
+                  {
+                     init_file_a << current_string << std::endl;
+                     current_string.clear();
+                  }
                }
-            }
-            else
-            {
-               THROW_ASSERT(elts_size == init_value_size, "unexpected condition");
-               init_file_a << init_value << std::endl;
+               else
+               {
+                  THROW_ASSERT(elts_size == init_value_size, "unexpected condition");
+                  init_file_a << init_value << std::endl;
+               }
             }
          }
       }
@@ -3649,31 +3651,25 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
             tail_padding = tail_padding + bits_offset;
             eightbit_string.push_back(tail_padding);
          }
-         if(eightbit_string.size() % nbyte_on_memory != 0)
-         {
-            for(size_t l = eightbit_string.size() % nbyte_on_memory; l < nbyte_on_memory; ++l)
-            {
-               eightbit_string.push_back("00000000");
-            }
-         }
-         if((ir_helper::SizeAlloc(array_type_node) / 8U) > eightbit_string.size())
-         {
-            size_t tail_bytes = (ir_helper::SizeAlloc(array_type_node) / 8U) - eightbit_string.size();
-            for(size_t l = 0; l < tail_bytes; ++l)
-            {
-               eightbit_string.push_back("00000000");
-            }
-         }
+         // Contexts are adjacent at their logical byte stride. Align the combined image only;
+         // padding each context separately would move the following contexts to wrong addresses.
+         const auto context_bytes = is_sds ? std::max(ir_helper::SizeAlloc(array_type_node) / 8U,
+                                                      static_cast<unsigned long long>(eightbit_string.size())) :
+                                             vec_size * elts_size / 8U;
+         THROW_ASSERT(eightbit_string.size() <= context_bytes, "initializer exceeds memory size");
+         eightbit_string.resize(context_bytes, "00000000");
+         const auto total_bytes = context_bytes * context_count;
+         const auto aligned_bytes = get_aligned_bitsize(total_bytes, nbyte_on_memory);
 
          std::string str_bit;
          bool is_even = true;
          unsigned int counter;
-         for(unsigned int l = 0; l < eightbit_string.size();)
+         for(unsigned long long l = 0; l < aligned_bytes;)
          {
             str_bit = "";
-            for(counter = 0; counter < nbyte_on_memory && l < eightbit_string.size(); counter++, l++)
+            for(counter = 0; counter < nbyte_on_memory; counter++, l++)
             {
-               str_bit = eightbit_string[l] + str_bit;
+               str_bit = (l < total_bytes ? eightbit_string[l % context_bytes] : "00000000") + str_bit;
             }
             if(is_even || !is_memory_splitted)
             {
@@ -3705,7 +3701,7 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
       if(is_sds)
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
-         for(unsigned int i = 0; i < vec_size; ++i)
+         for(unsigned long long i = 0; i < vec_size * context_count; ++i)
          {
             for(unsigned int j = 0; j < elts_size; ++j)
             {
@@ -3720,7 +3716,7 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
          bool is_even = true;
          bool need_newline_a = false;
          bool need_newline_b = false;
-         for(unsigned int i = 0; i < vec_size; ++i)
+         for(unsigned long long i = 0; i < vec_size * context_count; ++i)
          {
             for(unsigned int j = 0; j < elts_size; ++j)
             {
