@@ -2531,9 +2531,16 @@ generate
     assign M_Rdata_ram_out[k*BITSIZE_M_Rdata_ram_out +: BITSIZE_M_Rdata_ram_out] =
         ({BITSIZE_M_Rdata_ram_out{response_select_0}} &amp; M_Rdata_ram[0 +: BITSIZE_M_Rdata_ram]) |
         ({BITSIZE_M_Rdata_ram_out{response_select_1}} &amp; M_Rdata_ram[BITSIZE_M_Rdata_ram +: BITSIZE_M_Rdata_ram]);
-    assign M_tag_out[k*BITSIZE_M_tag_out +: BITSIZE_M_tag_out] =
-        ({BITSIZE_M_tag_out{response_select_0}} &amp; M_tag_out_wire[k*BITSIZE_M_tag_out +: BITSIZE_M_tag_out]) |
-        ({BITSIZE_M_tag_out{response_select_1}} &amp; M_tag_out_wire[(PORTSIZE_M_tag_out+k)*BITSIZE_M_tag_out +: BITSIZE_M_tag_out]);
+    if(INNER_TAG)
+    begin : response_tag
+      assign M_tag_out[k*BITSIZE_M_tag_out +: BITSIZE_M_tag_out] =
+          ({BITSIZE_M_tag_out{response_select_0}} &amp; M_tag_out_wire[k*BITSIZE_M_tag_out +: BITSIZE_M_tag_out]) |
+          ({BITSIZE_M_tag_out{response_select_1}} &amp; M_tag_out_wire[(PORTSIZE_M_tag_out+k)*BITSIZE_M_tag_out +: BITSIZE_M_tag_out]);
+    end
+  end
+  if(!INNER_TAG)
+  begin : response_no_tag
+    assign M_tag_out = 0;
   end
 endgenerate"/>
         </module_o>
