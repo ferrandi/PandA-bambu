@@ -11,6 +11,10 @@ strace is available the test additionally inspects the clang/opt argv to check
 that each command carries a single --std (the expected one), that -fopenmp is
 appended as usual, and that the LTO/opt commands receive no --std at all.
 
+Run it against the installation produced by "cmake --install" of the same
+build (the settings.sh next to that installation is sourced automatically);
+the test reports SKIP when the given bambu does not exist yet.
+
 Part of the PandA Project, under the Apache License v2.0 with LLVM Exceptions.
 SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 """
@@ -43,10 +47,14 @@ CASES = [
 
 
 def bambu_environment(bambu):
-    """Return the environment to run bambu with, sourcing its settings.sh if needed."""
+    """Return the environment to run bambu with.
+
+    The settings.sh next to the given installation is always sourced, so that
+    the run uses the very resources of the installation under test even when
+    the inherited environment was initialized from a different one; the
+    inherited environment is a fallback for layouts without settings.sh.
+    """
     env = dict(os.environ)
-    if env.get("BAMBU_HLS") and env.get("BAMBU_HLS_BACKEND_PATH"):
-        return env
     binary = Path(bambu)
     for candidate in (binary.parent.parent, binary.parent):
         settings = candidate / "settings.sh"
@@ -60,6 +68,8 @@ def bambu_environment(bambu):
                 env[key] = value
         if env.get("BAMBU_HLS") and env.get("BAMBU_HLS_BACKEND_PATH"):
             return env
+    if env.get("BAMBU_HLS") and env.get("BAMBU_HLS_BACKEND_PATH"):
+        return env
     raise SystemExit(f"cannot initialize the bambu environment for {bambu}: no usable settings.sh found")
 
 
@@ -79,10 +89,14 @@ def clang_commands(strace_log):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--bambu", required=True, help="bambu executable to test")
+    parser.add_argument("--bambu", required=True, help="bambu executable to test, usually the installed one")
     parser.add_argument("--keep", action="store_true", help="keep the temporary directory")
     args = parser.parse_args()
-    bambu = shutil.which(args.bambu) or str(Path(args.bambu).resolve())
+    bambu = shutil.which(args.bambu)
+    if bambu is None and not Path(args.bambu).is_file():
+        print(f"SKIP {args.bambu} not found: install this build (cmake --install) before running the test")
+        return 0
+    bambu = bambu or str(Path(args.bambu).resolve())
 
     strace = shutil.which("strace")
     failures = []
