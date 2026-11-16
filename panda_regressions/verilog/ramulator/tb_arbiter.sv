@@ -19,6 +19,7 @@ begin
  request_tag <= request_tag_next;
 end
 wire [1:0] memory_ready, request_bp, response_bp;
+wire [1:0] inactive_response_bp;
 wire [127:0] memory_data;
 wire [5:0] memory_tag;
 wire [3:0] ready, tag;
@@ -35,7 +36,7 @@ TestbenchMEMRamulatorIntegrated #(.index(0), .QUEUE_SIZE(DEPTH),
  .Mout_oe_ram(oe), .Mout_we_ram(2'b0), .Mout_addr_ram(addr), .Mout_Wdata_ram(128'b0),
  .Mout_data_ram_size({7'd64,7'd64}), .Mout_tag(request_tag), .Mout_back_pressure(request_bp),
  .M_DataRdy(memory_ready), .M_Rdata_ram(memory_data), .M_tag(memory_tag),
- .M_back_pressure(hold_responses ? 2'b11 : response_bp));
+ .M_back_pressure(hold_responses ? 2'b11 : response_bp | inactive_response_bp));
 Arbiter_connection_interface #(.ARBITER_TYPE(1),
     .INNER_TAG(1),
     .SELECTOR_SIZE(2),
@@ -87,11 +88,29 @@ Arbiter_connection_interface #(.ARBITER_TYPE(1),
  .Mout_data_ram_size(28'b0),.Mout_tag(4'b0),.Mout_back_pressure_out(2'b0),
  .M_DataRdy(memory_ready & {2{!hold_responses}}),.M_tag(memory_tag),.M_Rdata_ram(memory_data),
  .M_back_pressure(response_bp), .M_DataRdy_out(ready),.M_tag_out(tag),.M_Rdata_ram_out(data));
+// Inactive fork-call arbiters share the bus response inputs and merge their
+// backpressure outputs. Their stale selectors must not stall another fork.
+Arbiter_connection_interface #(.ARBITER_TYPE(1), .INNER_TAG(0), .IS_PIPELINED(0),
+ .SELECTOR_SIZE(2), .PORTSIZE_Mout_oe_ram(4), .PORTSIZE_Mout_we_ram(4),
+ .PORTSIZE_Mout_addr_ram(4), .PORTSIZE_Mout_Wdata_ram(4), .PORTSIZE_Mout_data_ram_size(4),
+ .PORTSIZE_M_DataRdy(2), .BITSIZE_M_Rdata_ram(64), .PORTSIZE_M_Rdata_ram(2),
+ .BITSIZE_M_tag(3), .PORTSIZE_M_tag(2), .PORTSIZE_Mout_oe_ram_out(2),
+ .PORTSIZE_Mout_we_ram_out(2), .PORTSIZE_Mout_addr_ram_out(2),
+ .PORTSIZE_Mout_Wdata_ram_out(2), .PORTSIZE_Mout_data_ram_size_out(2),
+ .PORTSIZE_M_DataRdy_out(4), .BITSIZE_M_Rdata_ram_out(64), .PORTSIZE_M_Rdata_ram_out(4),
+ .PORTSIZE_M_back_pressure(2), .PORTSIZE_Mout_back_pressure(4),
+ .PORTSIZE_Mout_back_pressure_out(2)) inactive_dut(
+ .clock(clock), .reset(reset), .Mout_oe_ram(4'b0), .Mout_we_ram(4'b0),
+ .Mout_addr_ram(4'b0), .Mout_Wdata_ram(4'b0), .Mout_data_ram_size(4'b0),
+ .Mout_tag(1'b0), .Mout_back_pressure_out(2'b0),
+ .M_DataRdy(memory_ready & {2{!hold_responses}}), .M_tag(memory_tag), .M_Rdata_ram(memory_data),
+ .M_back_pressure(inactive_response_bp));
 always @(posedge clock)
 begin : check
  integer port_index, t, delivered;
  if(!reset && !hold_responses)
  begin
+  if(inactive_response_bp !== 0) $fatal(1,"Inactive arbiter stalled another fork's response");
   delivered = 0;
   if(response_bp != 0)
   begin
