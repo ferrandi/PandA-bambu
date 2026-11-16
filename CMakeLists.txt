@@ -519,3 +519,12 @@ if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp_task AND TARGET clang_plu
               --plugin-dir "$<TARGET_FILE_DIR:clang_plugin_19_opt_openmp_task>")
    set_tests_properties(openmp_task_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 120)
 endif()
+
+if(BUILD_TESTING)
+   # the test drives the real front-end, so it requires an installed bambu:
+   # source <install_dir>/settings.sh before running ctest
+   add_test(NAME frontend_std
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_frontend_std.py"
+              --bambu bambu)
+   set_tests_properties(frontend_std PROPERTIES LABELS "frontend" TIMEOUT 1800)
+endif()
