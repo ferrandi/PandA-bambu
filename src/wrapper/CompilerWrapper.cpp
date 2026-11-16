@@ -820,23 +820,6 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
    const auto preprocess_only = Param->isOption(OPT_cc_E) && Param->getOption<bool>(OPT_cc_E);
    const auto optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-   const auto bambu_parameters = GetPointer<const BambuParameter>(Param);
-   const auto compiler_parameters_for_source = [&](const std::string& source_file) {
-      auto parameters = frontend_compiler_parameters;
-      const auto extension = std::filesystem::path(source_file).extension().string();
-      const bool cpp_unit =
-          extension == ".cpp" || extension == ".cc" || extension == ".cxx" || extension == ".c++" || extension == ".C";
-      const bool c_unit = extension == ".c";
-      if(bambu_parameters && (cpp_unit || c_unit))
-      {
-         const auto& standard = bambu_parameters->GetCompilerStandard(cpp_unit);
-         if(standard != Param->getOption<std::string>(OPT_cc_standard))
-         {
-            parameters += " --std=" + standard + " ";
-         }
-      }
-      return parameters;
-   };
 
    /// check for aligned option
    if(optimization_set == CompilerWrapper_OptimizationSet::O3 ||
@@ -895,7 +878,7 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       const auto local_compiler_mode = is_llvmir ?
                                            CM_COMPILER_OPT | (compiler_mode & ~(CM_ANALYZER_ALL | CM_LTO_FLAG)) :
                                            CM_COMPILER_STD | compiler_mode;
-      auto local_compiler_parameters = is_llvmir ? "" : compiler_parameters_for_source(source_file);
+      auto local_compiler_parameters = is_llvmir ? "" : GetFrontendCompilerParameters(source_file);
       if(!is_llvmir && isOpenmp)
       {
          local_compiler_parameters += " -fopenmp ";
@@ -910,7 +893,7 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
          auto bambu_ir_file = output_temporary_directory + "/" + leaf_name + STR_CST_bambu_ir_suffix;
          if(!std::filesystem::exists(bambu_ir_file))
          {
-            auto empty_mode_parameters = compiler_parameters_for_source(source_file);
+            auto empty_mode_parameters = GetFrontendCompilerParameters(source_file);
             CompileFile(source_file, "", empty_mode_parameters, passes, CM_EMPTY, costTable);
             // source_file has been changed by previous call to CompileFile
             bambu_ir_file = output_temporary_directory + "/" + std::filesystem::path(source_file).filename().string() +
@@ -1084,13 +1067,6 @@ void CompilerWrapper::InitializeCompilerParameters()
       }
    }
 
-   /// Adding standard
-   if(Param->isOption(OPT_cc_standard))
-   {
-      auto standard = Param->getOption<std::string>(OPT_cc_standard);
-      frontend_compiler_parameters += "--std=" + standard + " ";
-   }
-
    if(Param->isOption(OPT_cc_E) && Param->getOption<bool>(OPT_cc_E))
    {
       frontend_compiler_parameters += "-E ";
@@ -1169,6 +1145,29 @@ void CompilerWrapper::InitializeCompilerParameters()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized cc parameters");
+}
+
+std::string CompilerWrapper::GetFrontendCompilerParameters(const std::string& source_file) const
+{
+   auto parameters = frontend_compiler_parameters;
+   if(!Param->isOption(OPT_cc_standard))
+   {
+      return parameters;
+   }
+   auto standard = Param->getOption<std::string>(OPT_cc_standard);
+   if(const auto bambu_parameters = GetPointer<const BambuParameter>(Param))
+   {
+      const auto extension = std::filesystem::path(source_file).extension().string();
+      const bool cpp_unit =
+          extension == ".cpp" || extension == ".cc" || extension == ".cxx" || extension == ".c++" || extension == ".C";
+      const bool c_unit = extension == ".c";
+      if(cpp_unit || c_unit)
+      {
+         standard = bambu_parameters->GetCompilerStandard(cpp_unit);
+      }
+   }
+   parameters += "--std=" + standard + " ";
+   return parameters;
 }
 
 void CompilerWrapper::SetBambuDefault()
@@ -1630,7 +1629,8 @@ std::string CompilerWrapper::GetCompilerParameters(const std::string& extra_comp
 {
    const auto compiler = GetCompiler();
    std::string command =
-       (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " + compiler_linking_parameters + " ";
+       (no_frontend_compiler_parameters ? "" : GetFrontendCompilerParameters()) + " " + compiler_linking_parameters +
+       " ";
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
    std::string local_compiler_extra_options = no_frontend_compiler_parameters ? "" : compiler.extra_options;
