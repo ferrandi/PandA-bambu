@@ -770,7 +770,7 @@ void OmpTaskFuBinding::generate_mem_interface()
       memory_ports.push_back({{"M_back_pressure", port_vector_o_K}, {"M_back_pressure", port_vector_o_K}});
       const auto port = hls_params.SM->add_port_vector(
           "M_back_pressure", port_o::OUT, hls_params.mem_channel_num, hls_params.owner_module,
-          structural_type_descriptorRef(new structural_type_descriptor("bool")));
+          structural_type_descriptorRef(new structural_type_descriptor("bool", 1U)));
       GetPointerS<port_o>(port)->set_is_memory(true);
    }
 
