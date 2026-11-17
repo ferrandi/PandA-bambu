@@ -1093,10 +1093,12 @@ MemorySystem:
          auto& request = it->second;
          request.completed = true;
          completions[request.channel].push(tag);
+#if __M_OUT_LVL > 4
          report("[MDPI-PROFILE] ID=%u,CYCLE=%llu,OP=READ,ADDR=" PTR_FORMAT ",BITSIZE=%u,LATENCY=%llu\n",
                  static_cast<unsigned>(_idx), static_cast<unsigned long long>(current_cycle), request.addr,
                  static_cast<unsigned>(request.bitsize),
                  static_cast<unsigned long long>(current_cycle - request.cycle));
+#endif
       }
 
     public:
