@@ -90,6 +90,29 @@ def main():
     print('FAIL' if error else 'PASS', 'mdpi-acceptance', flush=True)
     results.append(('mdpi-acceptance', time.monotonic()-start, error, directory))
     if not error:
+        for concurrent in (False, True):
+            name = 'mdpi-simulator-first-shutdown' + ('-concurrent' if concurrent else '')
+            shutdown_dir = directory / name
+            shutdown_dir.mkdir()
+            start = time.monotonic()
+            try:
+                host = directory / ('host_concurrent' if concurrent else 'host')
+                if concurrent:
+                    execute(['g++', '-std=c++20', *common, '-DHAVE_RAMULATOR2', '-DBAMBU_CONCURRENT_COSIM',
+                             f'-I{prefix / "include/ramulator"}', f'-I{prefix / "include"}',
+                             ROOT / 'etc/libmdpi/mdpi_driver.cpp', HERE / 'host.cpp',
+                             f'-L{libdir}', f'-Wl,-rpath,{libdir}', '-lramulator', '-lpthread',
+                             '-o', host], shutdown_dir)
+                shutdown_env = env.copy()
+                shutdown_env['MDPI_TEST_WAIT_SIM_EXIT'] = '1'
+                execute([host], shutdown_dir, env=shutdown_env, timeout=60)
+            except (OSError, subprocess.SubprocessError) as exception:
+                error = str(exception)
+            print('FAIL' if error else 'PASS', name, flush=True)
+            results.append((name, time.monotonic()-start, error, shutdown_dir))
+            if error:
+                break
+    if not error:
         clients = {}
         for name in ('memory_contract', 'clock_contract', 'plain_contract', 'completion_error'):
             clients[name] = directory / name

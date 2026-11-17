@@ -73,6 +73,7 @@ static void* __m_driver_loop(void*);
 
 static pid_t __m_sim_pid = 0;
 static pthread_t __m_ipc_driver = 0;
+static bool __m_ipc_exited = false;
 
 static std::map<uint8_t, size_t> __m_params_size;
 static std::unique_ptr<memmap> __m_mapper;
@@ -1305,10 +1306,9 @@ void __m_interface_mem_ramulator(double clock_period_ns, uint16_t channels_numbe
 
 static FORCE_INLINE void __ipc_exit(mdpi_state_t state, uint8_t retval)
 {
-   static bool exited = false;
-   if(!exited)
+   if(!__m_ipc_exited)
    {
-      exited = true;
+      __m_ipc_exited = true;
       __ipc_exit(MDPI_IPC_STATE_RESPONSE, state, retval);
    }
 }
@@ -1650,6 +1650,14 @@ static void* __m_driver_loop(void*)
       switch(__m_ipc_operation.type)
       {
          case MDPI_OP_TYPE_STATE_CHANGE:
+            if(__m_ipc_operation.payload.sc.state == MDPI_STATE_END ||
+               __m_ipc_operation.payload.sc.state == MDPI_STATE_ERROR ||
+               __m_ipc_operation.payload.sc.state == MDPI_STATE_ABORT)
+            {
+               // The simulator publishes its final state before exiting. Do not
+               // send another terminal notification from the driver destructor.
+               __m_ipc_exited = true;
+            }
             return NULL;
          case MDPI_OP_TYPE_IF_READ:
          case MDPI_OP_TYPE_IF_WRITE:
