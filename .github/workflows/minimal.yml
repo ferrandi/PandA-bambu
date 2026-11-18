@@ -1209,6 +1209,8 @@ jobs:
           - { test: banked_profiling, script: ./examples/OpenMP/banked-memory/openmp_banked.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--noc-profiling -c=--compiler=I386_CLANG13" }
           - { test: banked_cache, script: ./examples/OpenMP/banked-memory/openmp_banked_cache.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
           - { test: banked_allocation, script: ./examples/OpenMP/banked-memory/openmp_banked_allocation.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: gemm_clang13, script: ./examples/OpenMP/nested-loops/openmp_gemm.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG13" }
+          - { test: gemm_clang19, script: ./examples/OpenMP/nested-loops/openmp_gemm.sh, args: "-c=--clock-period=10 -c=--device-name=xc7vx690t-3ffg1930 -c=--compiler=I386_CLANG19" }
     env:
       outname: OpenMP_${{matrix.test}}
       args: -c=--simulator=MODELSIM ${{matrix.args}}
