@@ -42,9 +42,12 @@ def run_rtl(out):
                 source.append(f'module {name}({", ".join(ports)});\n{body}\nendmodule\n')
             (directory / 'units.sv').write_text('\n'.join(source))
             with (directory / 'run.log').open('w') as log:
-                subprocess.run(['verilator', '--binary', '--timing', '-Wno-fatal', '--top-module', 'rtl_test',
-                                f'+define+ACTIVE_LOW={int(active_low)}', '--Mdir', str(directory / 'obj'),
-                                str(HERE / 'rtl_test.sv'), str(directory / 'units.sv')],
+                subprocess.run(['verilator', '--cc', '--exe', '-Wno-fatal', '--top-module', 'rtl_test',
+                                '-CFLAGS', f'-DACTIVE_LOW={int(active_low)}',
+                                '--Mdir', str(directory / 'obj'), str(HERE / 'rtl_test.sv'),
+                                str(directory / 'units.sv'), str(HERE / 'rtl_driver.cpp')],
+                               stdout=log, stderr=subprocess.STDOUT, check=True, timeout=120)
+                subprocess.run(['make', '-C', str(directory / 'obj'), '-f', 'Vrtl_test.mk', '-j2'],
                                stdout=log, stderr=subprocess.STDOUT, check=True, timeout=120)
                 subprocess.run([str(directory / 'obj/Vrtl_test')], stdout=log, stderr=subprocess.STDOUT,
                                check=True, timeout=15)
