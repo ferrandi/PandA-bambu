@@ -30,6 +30,8 @@ def validate_transcript(transcript: str, raw_status: str, status: str, mode: str
     proc_warning_detail = "Operation not permitted. (errno = EPERM)"
     license_warning = re.compile(r"^\*\* Warning: License feature '[^']+' will expire in [0-9]+ days\.$")
     for index, line in enumerate(lines):
+        if license_warning.fullmatch(line):
+            continue
         if re.search(r"\*\* Warning:", line, re.IGNORECASE) and not (
                 license_warning.fullmatch(line) or
                 (proc_warning.fullmatch(line) and index + 1 < len(lines) and
@@ -349,12 +351,12 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
         warning = "** Warning: License feature 'msimhdlsim' will expire in 14 days."
         self.check("read", "control", transcript + "\n" + warning)
         self.check("read", "control", transcript + "\n# " + warning)
-        for diagnostic in ("** Warning: License checkout failed.",
-                           "** Warning: License feature 'msimhdlsim' has expired.",
-                           warning + "\n** Warning: synthetic warning",
-                           warning + "\n** Error: synthetic error"):
-            with self.subTest(diagnostic=diagnostic), self.assertRaises(ValueError):
-                self.check("read", "control", transcript + "\n" + diagnostic)
+        for invalid in ("** Warning: License checkout failed.",
+                        warning.replace("will expire in 14 days", "has expired"),
+                        warning + "\n** Warning: synthetic warning",
+                        warning + "\n** Error: synthetic error"):
+            with self.subTest(diagnostic=invalid), self.assertRaises(ValueError):
+                self.check("read", "control", transcript + "\n" + invalid)
         with self.assertRaises(ValueError):
             self.check("read", "control", warning)
         with self.assertRaises(ValueError):
