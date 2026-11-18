@@ -244,10 +244,11 @@ def main():
             hbm_input(inputs, HBM_SIZES[kernel])
             case_env["RAMULATOR2_CONFIG"] = str(HERE / "hbm2.yaml")
             case_env["RAMULATOR_OVERRIDE_CHANNELS"] = "0"
+        # These short probes validate per-read MDPI timing records, emitted at verbosity 5.
         command = [str(bambu), str(source), f"--generate-tb={inputs}",
                    "--top-fname=ramulator_kernel", "--compiler=I386_CLANG13", "--simulator=VERILATOR",
                    "--simulate", f"--generate-interface={'MINIMAL' if kernel == 'stencil' else 'INFER'}", "--enable-ramulator",
-                   "--memory-allocation-policy=NO_BRAM", f"--clock-period={5 if hbm else 10}", "-m64", "-lm", "-v4",
+                   "--memory-allocation-policy=NO_BRAM", f"--clock-period={5 if hbm else 10}", "-m64", "-lm", "-v5",
                    f"--max-sim-cycles={cycles_limit}", f"-DTEST_KERNEL={KERNELS.get(kernel, 0)}",
                    f"-DBANKED={banked}", f"-DUSE_AXI={axi}", f"-DDEDICATED_AXI={dedicated}",
                    f"--channels-type={'MEM_ACC_NN' if banks > 1 else 'MEM_ACC_11'}",

@@ -74,7 +74,8 @@ def main():
                    f"-DUSE_CACHE={int(cache)}", f"-DBANKED={int(banked)}", f"-DUSE_AXI={int(axi)}",
                    f"--channels-type={channels_type}", f"--channels-number={channels}"]
         if args.ramulator:
-            command.extend(["--enable-ramulator", "-v4"])
+            # Require per-read MDPI evidence in these short integration probes.
+            command.extend(["--enable-ramulator", "-v5"])
         if address_mode:
             command.append(f"--banked-memory-address-size={address_mode}")
         if pipelined:
