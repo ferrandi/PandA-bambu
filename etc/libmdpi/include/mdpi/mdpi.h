@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //    author Michele Fiorito <michele.fiorito@polimi.it>
+//    author Jesun Firoz <jesun.firoz@pnnl.gov>
 //
 
 #ifndef __MDPI_H
@@ -26,6 +27,20 @@ extern "C"
                             signed char cmd);
    DPI_DLLESPEC int m_state(mdpi_idx_t id, int data);
    DPI_DLLESPEC void m_builtin_exit(int status);
+
+   // Non-blocking Ramulator requests: >0 accepted (read tag), 0 rejected,
+   // <0 invalid. A rejected request has no memory side effects; the TB retries.
+   // Completion polling returns at most one tag and its original-sized payload.
+   // Its data argument is a 4096-bit packed logic vector, cleared on every poll.
+   // The write shift argument is reserved and must be zero.
+   DPI_DLLESPEC int m_read_request(mdpi_idx_t id, unsigned short bitsize, ptr_t addr, signed char cmd);
+   DPI_DLLESPEC int m_read_complete(mdpi_idx_t id, svLogicVecVal* data);
+   DPI_DLLESPEC int m_read_complete_ch(mdpi_idx_t id, unsigned char channel, svLogicVecVal* data);
+   DPI_DLLESPEC int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, unsigned short bitsize, ptr_t addr,
+                                   unsigned char shift);
+
+   // Advance every independent memory once to the shared accelerator cycle.
+   DPI_DLLESPEC void m_memory_tick(unsigned long long cycle);
 
 #ifdef __cplusplus
 }

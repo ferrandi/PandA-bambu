@@ -1,0 +1,43 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# DDR3-1066G, 4Gb x8 components, single rank.
+#
+# Nominal DRAM clock: 533 MHz (tCK ~1.875 ns).
+# clock_ratio = 5   ->  DRAM runs 5x accelerator clock.
+# Recommended accelerator clock: --clock-period=10.0 (100 MHz)
+#   effective DRAM tick rate = 500 MHz  (~6% slower than real DDR3-1066,
+#   i.e. latencies are slightly pessimistic). Bump accelerator to 107 MHz
+#   (--clock-period=9.375) for exact match.
+#
+# Cap check: ratio 5 <= 6  OK.
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 5
+
+  DRAM:
+    impl: DDR3
+    org:
+      preset: DDR3_4Gb_x8
+      channel: 1
+      rank: 1
+    timing:
+      preset: DDR3_1066G
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

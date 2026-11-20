@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+# 32 logical Bambu banks/ports model two HBM2 stacks with 32 pseudochannels.
+# Ramulator's HBM2 preset has 2 pseudochannels per physical channel: use 16
+# physical channels, not an override to 32 (which would create 64 pseudochannels).
+Frontend:
+  impl: GEM5
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 5
+  DRAM:
+    impl: HBM2
+    org:
+      preset: HBM2_4Gb
+      channel: 16
+    timing:
+      preset: HBM2_2Gbps
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: OpenRowPolicy
+    plugins:
+  AddrMapper:
+    impl: RoBaRaCoCh

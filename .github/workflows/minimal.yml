@@ -410,6 +410,22 @@ jobs:
           source ${{env.dist-dir}}/settings.sh
           mkdir -p ${{env.report-dir}}
           ${{env.script}} ${{env.NO_CLEAN_ARG}} --returnfail --junitdir="${{env.report-dir}}" --summary="${{env.report-dir}}/perf.xml" ${{env.args}}
+      - name: Sequential bus and cache regressions
+        if: ${{ matrix.simulator == 'VERILATOR' }}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          python3 -B panda_regressions/hls/bambu_bus_cache/run_tests.py \
+            --out out_bambu_bus_cache --jobs 2 \
+            --junit "${{env.report-dir}}/bus-cache.xml"
+      - name: OpenMP hardware predication regressions
+        if: ${{ matrix.simulator == 'VERILATOR' }}
+        shell: bash
+        run: |
+          source ${{env.dist-dir}}/settings.sh
+          python3 -B panda_regressions/hls/bambu_omp_predication/run_tests.py \
+            --out out_bambu_omp_predication --jobs 2 \
+            --junit "${{env.report-dir}}/omp-predication.xml"
       - name: Collect post-mortem data
         if: ${{ failure() }}
         shell: bash
@@ -1634,6 +1650,7 @@ jobs:
   success:
     if: ${{ !cancelled() }}
     needs:
+      - ramulator
       - gcc_regression_simple
       - gcc_regression_simple-vhdl
       - gcc_regression_simple-pretty_print
@@ -1728,6 +1745,17 @@ jobs:
       - name: Check 'PandA benchmarks for OpenROAD 2' status
         if: ${{ needs['PandA-bench-openroad-2'].result != 'success' }}
         run: exit 1
+      - name: Check 'Ramulator' status
+        if: ${{ needs.ramulator.result != 'success' }}
+        run: exit 1
+
+  ramulator:
+    name: Ramulator
+    needs: [build]
+    uses: ./.github/workflows/reusable-ramulator.yml
+    with:
+      package-name: ${{ needs.build.outputs.package-name }}
+    secrets: inherit
 
   OpenMP-task-support:
     needs: [build]

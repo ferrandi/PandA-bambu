@@ -18,6 +18,9 @@
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="predicate" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -34,8 +37,10 @@
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="KMP_BAMBU_CRITICAL_FU loc" VERILOG_PROVIDED="
-assign done_port = kmp_lock_acquired_ack;
-assign kmp_lock_acquired = start_port;"/>
+// The manager routes delayed acknowledgments to the requesting thread/context.
+// Predicate is only consumed on start; it must not mask an accepted request.
+assign done_port = kmp_lock_acquired_ack | (start_port &amp; !predicate);
+assign kmp_lock_acquired = start_port &amp; predicate;"/>
         </module_o>
       </circuit>
     </cell>
@@ -55,6 +60,9 @@ assign kmp_lock_acquired = start_port;"/>
           <port_o id="reset" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="predicate" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -67,7 +75,7 @@ assign kmp_lock_acquired = start_port;"/>
           <port_o id="loc" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="KMP_BAMBU_END_CRITICAL_FU loc" VERILOG_PROVIDED="assign kmp_lock_release = start_port;
+          <NP_functionality LIBRARY="KMP_BAMBU_END_CRITICAL_FU loc" VERILOG_PROVIDED="assign kmp_lock_release = start_port &amp; predicate;
 assign done_port = start_port;"/>
         </module_o>
       </circuit>
@@ -102,6 +110,9 @@ assign done_port = start_port;"/>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_BARRIER_REACHED_FU"/>
+          <port_o id="predicate" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -119,7 +130,7 @@ assign done_port = start_port;"/>
           </port_o>
           <NP_functionality LIBRARY="KMP_BAMBU_BARRIER_REACHED_FU in1" VERILOG_PROVIDED="
           assign kmp_bambu_barrier_reached_tid = in1;
-          assign kmp_bambu_barrier_reached_we = start_port;
+          assign kmp_bambu_barrier_reached_we = start_port &amp; predicate;
           assign done_port = start_port;"/>
         </module_o>
       </circuit>
@@ -138,6 +149,9 @@ assign done_port = start_port;"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="predicate" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
@@ -159,7 +173,7 @@ reg done_port_reg 1INIT_ZERO_VALUE;
 
 always @(*) 
 begin
-  started_next = (started | start_port) &amp; !kmp_bambu_wait_all_threads_rd;
+  started_next = (started | (start_port &amp; predicate)) &amp; !kmp_bambu_wait_all_threads_rd;
 end
 
 always @(posedge clock 1RESET_EDGE)
@@ -175,10 +189,10 @@ begin
 end
 always @(*)
 begin
-  done_port_reg = (start_port &amp; kmp_bambu_wait_all_threads_rd) | (started &amp; kmp_bambu_wait_all_threads_rd);  
+  done_port_reg = (start_port &amp; (!predicate | kmp_bambu_wait_all_threads_rd)) | (started &amp; kmp_bambu_wait_all_threads_rd);
 end  
 
-assign kmp_bambu_wait_all_threads_ld = start_port;
+assign kmp_bambu_wait_all_threads_ld = start_port &amp; predicate;
 assign done_port = done_port_reg;"/>
         </module_o>
       </circuit>
@@ -197,6 +211,9 @@ assign done_port = done_port_reg;"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="predicate" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <port_o id="start_port" dir="IN">
@@ -223,7 +240,7 @@ integer i;
 always @(*) 
 begin
   started_next = started;
-  started_next[selector_register_file] = (started[selector_register_file] | start_port) &amp; !kmp_bambu_wait_all_threads_rd;
+  started_next[selector_register_file] = (started[selector_register_file] | (start_port &amp; predicate)) &amp; !kmp_bambu_wait_all_threads_rd;
 end
 
 always @(posedge clock 1RESET_EDGE)
@@ -243,10 +260,10 @@ end
 always @(*)
 begin
   done_port_reg = done_port_reg_old;
-  done_port_reg[selector_register_file] = (start_port &amp; kmp_bambu_wait_all_threads_rd) | (started[selector_register_file] &amp; kmp_bambu_wait_all_threads_rd);    
+  done_port_reg[selector_register_file] = (start_port &amp; (!predicate | kmp_bambu_wait_all_threads_rd)) | (started[selector_register_file] &amp; kmp_bambu_wait_all_threads_rd);
 end
 
-assign kmp_bambu_wait_all_threads_ld = start_port;
+assign kmp_bambu_wait_all_threads_ld = start_port &amp; predicate;
 assign done_port = done_port_reg[selector_register_file];"/>
         </module_o>
       </circuit>

@@ -1,0 +1,31 @@
+name: Ramulator co-simulation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ramulator-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Bambu for Ramulator
+    uses: ./.github/workflows/build-panda.yml
+    with:
+      package-name: bambu-ramulator-${{ github.run_id }}-${{ github.run_attempt }}
+      compilers: clang-13
+      package-compilers: true
+      configure: -DPANDA_ENABLE_RELEASE=ON -DPANDA_ENABLE_ASSERTS=OFF -DPANDA_ENABLE_WERROR=ON
+    secrets: inherit
+
+  co-simulation:
+    needs: build
+    uses: ./.github/workflows/reusable-ramulator.yml
+    with:
+      package-name: ${{ needs.build.outputs.package-name }}
+    secrets: inherit

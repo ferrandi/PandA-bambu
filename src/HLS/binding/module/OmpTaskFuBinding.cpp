@@ -764,8 +764,18 @@ void OmpTaskFuBinding::generate_mem_interface()
 
    static_assert(std::is_same_v<decltype(data_bus_bitsize), decltype(size_bus_bitsize)>, "expected same type");
 
+   auto memory_ports = mem_arbitrer_totask_graph_ports;
+   if(!hls_params.use_banked_mem && hls_params.mem_channel_num > 1U)
+   {
+      memory_ports.push_back({{"M_back_pressure", port_vector_o_K}, {"M_back_pressure", port_vector_o_K}});
+      const auto port = hls_params.SM->add_port_vector(
+          "M_back_pressure", port_o::OUT, hls_params.mem_channel_num, hls_params.owner_module,
+          structural_type_descriptorRef(new structural_type_descriptor("bool", 1U)));
+      GetPointerS<port_o>(port)->set_is_memory(true);
+   }
+
    CustomUnorderedMap<std::string, unsigned int> port_weights;
-   for(const auto& p : mem_arbitrer_totask_graph_ports)
+   for(const auto& p : memory_ports)
    {
       const auto p_name = std::get<0>(p.src);
       if(p_name == "Mout_addr_ram_out")
@@ -894,7 +904,7 @@ void OmpTaskFuBinding::generate_mem_interface()
       }
    }
 
-   for(const auto& p : mem_arbitrer_totask_graph_ports)
+   for(const auto& p : memory_ports)
    {
       const auto p_name_from = std::get<0>(p.src);
       const auto p_name_to = std::get<0>(p.dest);

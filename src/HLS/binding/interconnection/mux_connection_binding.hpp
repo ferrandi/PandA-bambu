@@ -129,6 +129,9 @@ class mux_connection_binding : public conn_binding_creator
 
    unsigned int extract_parm_decl(unsigned int ir_var, const ir_managerRef IRM);
 
+   generic_objRef result_source(gc_vertex_descriptor op, unsigned int ir_var, const OpGraph& data,
+                                FSMInfo::state_descriptor state);
+
    void connect_pipelined_registers(FSMInfo::state_descriptor state, const OpGraph& data);
 
    unsigned int address_precision(unsigned int precision, gc_vertex_descriptor op, const OpGraph& data,

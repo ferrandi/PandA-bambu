@@ -23,6 +23,7 @@
  * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 #include "simple_code_motion.hpp"
@@ -47,7 +48,43 @@
 #include "math_function.hpp"
 #include "schedule.hpp"
 #include "string_manipulation.hpp"
+#include <algorithm>
 #include <fstream>
+
+namespace
+{
+   bool isOpenMPSynchronization(const ir_nodeRef& node)
+   {
+      ir_nodeRef fn;
+      if(const auto* call = GetPointer<const call_stmt>(node))
+      {
+         fn = call->fn;
+      }
+      else if(const auto* assign = GetPointer<const assign_stmt>(node))
+      {
+         if(const auto* call_expr = GetPointer<const call_node>(assign->op1))
+         {
+            fn = call_expr->fn;
+         }
+      }
+      if(!fn)
+      {
+         return false;
+      }
+      if(fn->get_kind() == addr_node_K)
+      {
+         fn = GetPointerS<const unary_node>(fn)->op;
+      }
+      if(fn->get_kind() != function_val_node_K)
+      {
+         return false;
+      }
+      const auto name = ir_helper::GetFunctionName(fn);
+      return name == "__kmp_bambu_critical" || name == "__kmp_bambu_end_critical" ||
+             name == "__kmp_bambu_barrier_reached" || name == "__kmp_bambu_wait_all_threads" ||
+             name == "__kmp_bambu_cs_wait_all_threads";
+   }
+} // namespace
 
 simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                        unsigned int _function_id, const DesignFlowManager& _design_flow_manager)
@@ -686,6 +723,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             counter++;
          }
          const auto& list_of_stmt = list_of_bloc.at(curr_bb)->CGetStmtList();
+         const bool block_has_synchronization =
+             std::any_of(list_of_stmt.begin(), list_of_stmt.end(), isOpenMPSynchronization);
          std::list<ir_nodeRef> to_be_removed;
          CustomOrderedSet<unsigned int> zero_delay_stmts;
          std::list<ir_nodeRef> to_be_added_back;
@@ -738,6 +777,38 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             if(!is_assign && !is_call_stmt && !is_nop)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because " + tn->get_kind_text());
+               continue;
+            }
+
+            // Synchronization is a memory fence even when virtual SSA alias information
+            // does not describe the runtime manager. Hoisting appends to the predecessor,
+            // so only statements preceding this one in the source block can be crossed.
+            // Keep these constraints outside CheckMovable's pipelining shortcut.
+            const bool synchronization = isOpenMPSynchronization(tn);
+            const bool memory = gn->vdef || !gn->vuses.empty() || is_call_stmt || is_assign_call ||
+                                is_load_assign || is_store_assign;
+            bool crosses_synchronization = false;
+            // Avoid a quadratic prefix scan in ordinary blocks without a fence.
+            for(auto previous = list_of_stmt.begin();
+                block_has_synchronization && (synchronization || memory) && previous != statement; ++previous)
+            {
+               const auto* previous_stmt = GetPointerS<const node_stmt>(*previous);
+               const bool previous_sync = isOpenMPSynchronization(*previous);
+               const auto* previous_assign = GetPointer<const assign_stmt>(*previous);
+               const bool previous_access = previous_assign &&
+                                            (previous_assign->op0->get_kind() == mem_access_node_K ||
+                                             previous_assign->op1->get_kind() == mem_access_node_K ||
+                                             previous_assign->op1->get_kind() == call_node_K);
+               const bool previous_memory = previous_stmt->vdef || !previous_stmt->vuses.empty() ||
+                                            (*previous)->get_kind() == call_stmt_K || previous_access;
+               if((synchronization && (previous_sync || previous_memory)) || (memory && previous_sync))
+               {
+                  crosses_synchronization = true;
+                  break;
+               }
+            }
+            if(crosses_synchronization)
+            {
                continue;
             }
 

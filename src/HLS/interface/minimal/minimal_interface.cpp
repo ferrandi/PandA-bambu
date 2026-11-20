@@ -40,6 +40,7 @@
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
+#include "fu_binding.hpp"
 #include "hls.hpp"
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
@@ -208,6 +209,65 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
    }
 
+   // Split requests at the top, before closing the local BRAM slave path.
+   // Ported from feature/interface_rework's top_interface request filters.
+   std::map<std::string, std::vector<structural_objectRef>> local_requests, external_requests;
+   std::vector<std::pair<structural_objectRef, structural_objectRef>> filter_inputs;
+   const auto connect_requests = [&](const structural_objectRef& port,
+                                     const std::vector<structural_objectRef>& requests) {
+      for(unsigned int i = 0; i < requests.size(); ++i)
+      {
+         const auto target = port->get_kind() == port_vector_o_K ? GetPointerS<port_o>(port)->get_port(i) : port;
+         SM_minimal_interface->add_connection(target, requests[i]);
+      }
+   };
+   const auto architecture = HLSMgr->module_arch->GetArchitecture(FB->CGetBehavioralHelper()->GetFunctionName());
+   if(with_master && HLSMgr->CGetCallGraphManager().GetRootFunctions().count(funId) && architecture &&
+      architecture->ifaces.count("bus"))
+   {
+      const auto& bus = architecture->ifaces.at("bus");
+      const auto bank = bus.find(FunctionArchitecture::iface_bank_number);
+      const bool banked = bank != bus.end() && std::stoul(bank->second) > 0;
+      if(!banked)
+      {
+         const auto addr = wrappedObj->find_member("Mout_addr_ram", port_o_K, wrappedObj);
+         const auto count = addr->get_kind() == port_vector_o_K ? GetPointerS<port_o>(addr)->get_ports_size() : 1U;
+         const auto element = [](const structural_objectRef& port, unsigned int i) -> structural_objectRef {
+            return port->get_kind() == port_vector_o_K ? GetPointerS<port_o>(port)->get_port(i) : port;
+         };
+         const auto TechM = HLSMgr->get_HLS_device()->get_technology_manager();
+         for(unsigned int i = 0; i < count; ++i)
+         {
+            const auto filter = SM_minimal_interface->add_module_from_technology_library(
+                "request_filter_" + STR(i), "bus_request_filter", TechM->get_library("bus_request_filter"),
+                interfaceObj, TechM);
+            filter->SetParameter("EXTERNAL_ADDR", STR(parameters->getOption<unsigned long long>(OPT_base_address)));
+            for(const auto& suffix : {"oe_ram", "we_ram", "addr_ram"})
+            {
+               const auto master = std::string("Mout_") + suffix;
+               const auto slave = std::string("S_") + suffix;
+               const auto raw = element(wrappedObj->find_member(master, port_o_K, wrappedObj), i);
+               const auto input = filter->find_member(master + "_in", port_o_K, filter);
+               const auto external = filter->find_member(master, port_o_K, filter);
+               const auto local = filter->find_member(slave, port_o_K, filter);
+               for(const auto& port : {input, external, local})
+               {
+                  port_o::resize_std_port(STD_GET_SIZE(raw->get_typeRef()), 0U, 0, port);
+               }
+               filter_inputs.emplace_back(raw, input);
+               const auto external_signal = SM_minimal_interface->add_sign(
+                   "external_" + master + "_" + STR(i), interfaceObj, raw->get_typeRef());
+               const auto local_signal = SM_minimal_interface->add_sign(
+                   "local_" + slave + "_" + STR(i), interfaceObj, raw->get_typeRef());
+               external_requests[master].push_back(external_signal);
+               local_requests[slave].push_back(local_signal);
+               SM_minimal_interface->add_connection(external, external_signal);
+               SM_minimal_interface->add_connection(local, local_signal);
+            }
+         }
+      }
+   }
+
    auto do_not_expose_globals_case = [&] {
       auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
          structural_objectRef sign;
@@ -224,7 +284,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          {
             sign = SM_minimal_interface->add_sign(port2->get_id() + "_INT", interfaceObj, port2->get_typeRef());
          }
-         SM_minimal_interface->add_connection(port1, sign);
+         if(local_requests.count(portS))
+         {
+            connect_requests(port1, local_requests.at(portS));
+         }
+         else
+         {
+            SM_minimal_interface->add_connection(port1, sign);
+         }
          SM_minimal_interface->add_connection(sign, port2);
          portsToSigConnect[port2] = sign;
          portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
@@ -1208,6 +1275,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
       else if(portsToConnect.find(port_in) != portsToConnect.end())
       {
+         if(local_requests.count(port_in->get_id()))
+         {
+            connect_requests(port_in, local_requests.at(port_in->get_id()));
+            continue;
+         }
          structural_objectRef sign;
          if(port_in->get_kind() == port_vector_o_K)
          {
@@ -1411,7 +1483,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
          }
          port_o::fix_port_properties(port_out, ext_port);
-         SM_minimal_interface->add_connection(port_out, ext_port);
+         if(external_requests.count(port_out->get_id()))
+         {
+            connect_requests(ext_port, external_requests.at(port_out->get_id()));
+         }
+         else
+         {
+            SM_minimal_interface->add_connection(port_out, ext_port);
+         }
       }
       else if(portsToSigConnect.find(port_out) != portsToSigConnect.end())
       {
@@ -1439,7 +1518,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
          }
          port_o::fix_port_properties(port_out, ext_port);
-         SM_minimal_interface->add_connection(portsToSigConnect.find(port_out)->second, ext_port);
+         if(external_requests.count(port_out->get_id()))
+         {
+            connect_requests(ext_port, external_requests.at(port_out->get_id()));
+         }
+         else
+         {
+            SM_minimal_interface->add_connection(portsToSigConnect.find(port_out)->second, ext_port);
+         }
       }
       else if(port_out->get_kind() == port_vector_o_K && !GetPointer<port_o>(port_out)->find_bounded_object())
       {
@@ -1481,5 +1567,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
       port_o::fix_port_properties(port_in_out, ext_port);
       SM_minimal_interface->add_connection(port_in_out, ext_port);
+   }
+   for(unsigned int i = 0; i < filter_inputs.size(); ++i)
+   {
+      fu_binding::add_smart_connection(filter_inputs[i].first, filter_inputs[i].second, i, interfaceObj,
+                                       SM_minimal_interface);
    }
 }

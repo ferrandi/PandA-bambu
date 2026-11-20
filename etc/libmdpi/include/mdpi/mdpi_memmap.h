@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //    author Michele Fiorito <michele.fiorito@polimi.it>
+//    author Jesun Firoz <jesun.firoz@pnnl.gov>
 //
 
 #ifndef __MDPI_MEMMAP_H
@@ -28,6 +29,14 @@ class memmap
    virtual bptr_t addrmap(ptr_t sim_addr) = 0;
 
    virtual ptr_t mapaddr(const bptr_t addr) = 0;
+
+   // Bytes accessible before the next translation boundary, or zero if
+   // unmapped. Wide transfers walk adjacent spans instead of assuming their
+   // host buffers are contiguous. Shared-address mappers may have no bound.
+   virtual size_t region_avail(ptr_t /*sim_addr*/)
+   {
+      return static_cast<size_t>(-1);
+   }
 };
 
 #endif // __MDPI_MEMMAP_H

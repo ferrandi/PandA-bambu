@@ -23,6 +23,7 @@
  * @brief Implementation of the HDL generator for the testbench model of an AXI master interface.
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 
@@ -137,8 +138,16 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
    add_port_parametric_wire("arvalid", port_o::IN, 0U);
    add_port_parametric_wire("rready", port_o::IN, 0U);
 
+   const auto use_ramulator = HLSMgr->get_parameter()->isOption(OPT_enable_ramulator) &&
+                              HLSMgr->get_parameter()->getOption<bool>(OPT_enable_ramulator);
+
+   if(use_ramulator)
+   {
+      structural_manager::add_port("ramulator_phase", port_o::IN, mod_cir,
+                                  structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
+   }
+
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
-   structural_manager::add_NP_functionality(mod_cir, NP_functionality::IP_COMPONENT, "TestbenchMEMAXI");
 
    // TestbenchMEMAXI advances its delay field only while that field is greater than
    // one, and answers a request when the field reaches one. A delay of zero therefore
@@ -147,15 +156,115 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
    // nominal write latency must be at least two. The warning below used to promise the
    // correction without performing it.
    const auto mem_delay_write = HLSMgr->get_parameter()->getOption<unsigned int>(OPT_mem_delay_write);
-   if(mem_delay_write < 2)
+   if(use_ramulator)
+   {
+      structural_manager::add_NP_functionality(mod_cir, NP_functionality::IP_COMPONENT,
+                                               "TestbenchMEMAXIRamulatorIntegrated");
+   }
+   else
+   {
+      structural_manager::add_NP_functionality(mod_cir, NP_functionality::IP_COMPONENT, "TestbenchMEMAXI");
+   }
+
+   if(!use_ramulator && mem_delay_write < 2)
    {
       const std::string warning = "Warning: AXI does not support mem-delay-write==" + std::to_string(mem_delay_write) +
                                   ", as it requires at least a cycle of latency -> "
                                   "mem-delay-write changed to 2.\n";
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 4, warning);
    }
-   out << internal_port_assign << "\n"
-       << "TestbenchMEMAXI #(.index(index),\n"
+
+   out << internal_port_assign << "\n";
+
+   if(use_ramulator)
+   {
+      static unsigned int axi_port_id_counter = 0;
+      out << "TestbenchMEMAXIRamulatorIntegrated #(.index(index),\n"
+          << ".AXI_PORT_ID(" << axi_port_id_counter++ << "),\n"
+          << ".QUEUE_SIZE(" << (HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size) + 1) << "),\n"
+          << ".BITSIZE_bid(BITSIZE_" << port_prefix << "_bid),\n"
+          << ".BITSIZE_bresp(BITSIZE_" << port_prefix << "_bresp),\n"
+          << ".BITSIZE_buser(BITSIZE_" << port_prefix << "_buser),\n"
+          << ".BITSIZE_rid(BITSIZE_" << port_prefix << "_rid),\n"
+          << ".BITSIZE_rdata(BITSIZE_" << port_prefix << "_rdata),\n"
+          << ".BITSIZE_rresp(BITSIZE_" << port_prefix << "_rresp),\n"
+          << ".BITSIZE_ruser(BITSIZE_" << port_prefix << "_ruser),\n"
+          << ".BITSIZE_awid(BITSIZE_" << port_prefix << "_awid),\n"
+          << ".BITSIZE_awaddr(BITSIZE_" << port_prefix << "_awaddr),\n"
+          << ".BITSIZE_awlen(BITSIZE_" << port_prefix << "_awlen),\n"
+          << ".BITSIZE_awsize(BITSIZE_" << port_prefix << "_awsize),\n"
+          << ".BITSIZE_awburst(BITSIZE_" << port_prefix << "_awburst),\n"
+          << ".BITSIZE_awlock(BITSIZE_" << port_prefix << "_awlock),\n"
+          << ".BITSIZE_awcache(BITSIZE_" << port_prefix << "_awcache),\n"
+          << ".BITSIZE_awprot(BITSIZE_" << port_prefix << "_awprot),\n"
+          << ".BITSIZE_awqos(BITSIZE_" << port_prefix << "_awqos),\n"
+          << ".BITSIZE_awregion(BITSIZE_" << port_prefix << "_awregion),\n"
+          << ".BITSIZE_awuser(BITSIZE_" << port_prefix << "_awuser),\n"
+          << ".BITSIZE_wdata(BITSIZE_" << port_prefix << "_wdata),\n"
+          << ".BITSIZE_wstrb(BITSIZE_" << port_prefix << "_wstrb),\n"
+          << ".BITSIZE_wuser(BITSIZE_" << port_prefix << "_wuser),\n"
+          << ".BITSIZE_arid(BITSIZE_" << port_prefix << "_arid),\n"
+          << ".BITSIZE_araddr(BITSIZE_" << port_prefix << "_araddr),\n"
+          << ".BITSIZE_arlen(BITSIZE_" << port_prefix << "_arlen),\n"
+          << ".BITSIZE_arsize(BITSIZE_" << port_prefix << "_arsize),\n"
+          << ".BITSIZE_arburst(BITSIZE_" << port_prefix << "_arburst),\n"
+          << ".BITSIZE_arlock(BITSIZE_" << port_prefix << "_arlock),\n"
+          << ".BITSIZE_arcache(BITSIZE_" << port_prefix << "_arcache),\n"
+          << ".BITSIZE_arprot(BITSIZE_" << port_prefix << "_arprot),\n"
+          << ".BITSIZE_arqos(BITSIZE_" << port_prefix << "_arqos),\n"
+          << ".BITSIZE_arregion(BITSIZE_" << port_prefix << "_arregion),\n"
+          << ".BITSIZE_aruser(BITSIZE_" << port_prefix << "_aruser))\n"
+          << R"(axi4_tb (.awready(awready),
+.wready(wready),
+.bid(bid),
+.bresp(bresp),
+.buser(buser),
+.bvalid(bvalid),
+.arready(arready),
+.rid(rid),
+.rdata(rdata),
+.rresp(rresp),
+.rlast(rlast),
+.ruser(ruser),
+.rvalid(rvalid),
+.clock(clock),
+.ramulator_phase(ramulator_phase),
+.reset(reset),
+.awid(awid),
+.awaddr(awaddr),
+.awlen(awlen),
+.awsize(awsize),
+.awburst(awburst),
+.awlock(awlock),
+.awcache(awcache),
+.awprot(awprot),
+.awqos(awqos),
+.awregion(awregion),
+.awuser(awuser),
+.awvalid(awvalid),
+.wdata(wdata),
+.wstrb(wstrb),
+.wlast(wlast),
+.wuser(wuser),
+.wvalid(wvalid),
+.bready(bready),
+.arid(arid),
+.araddr(araddr),
+.arlen(arlen),
+.arsize(arsize),
+.arburst(arburst),
+.arlock(arlock),
+.arcache(arcache),
+.arprot(arprot),
+.arqos(arqos),
+.arregion(arregion),
+.aruser(aruser),
+.arvalid(arvalid),
+.rready(rready));)";
+   }
+   else
+   {
+      out << "TestbenchMEMAXI #(.index(index),\n"
        << ".WRITE_DELAY("
        << "WRITE_DELAY ? (WRITE_DELAY > 1 ? WRITE_DELAY - 1 : 1) : " << (std::max(2U, mem_delay_write) - 1) << "),\n"
        << ".READ_DELAY("
@@ -243,4 +352,5 @@ axi4_tb (.awready(awready),
 .aruser(aruser),
 .arvalid(arvalid),
 .rready(rready));)";
+   }
 }

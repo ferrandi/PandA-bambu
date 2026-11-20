@@ -24,6 +24,7 @@
  * tool
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Michele Fiorito <michele.fiorito@polimi.it>
  *
@@ -77,6 +78,7 @@ class xml_element;
        backend_sdc_extensions)(VHDL_library)(bitvalue_ipa)(use_asynchronous_memories)(do_not_chain_memories)(          \
        bram_high_latency)(cdfc_module_binding_algorithm)(function_allocation_algorithm)(testbench_input_string)(       \
        testbench_input_file)(testbench_argv)(testbench_param_size)(testbench_map_mode)(                                \
+       enable_ramulator)(                                                                                          \
        weighted_clique_register_algorithm)(disable_function_proxy)(memory_mapped_top)(expose_globals)(connect_iob)(    \
        profiling_output)(disable_bounded_function)(discrepancy)(discrepancy_force)(discrepancy_no_load_pointers)(      \
        discrepancy_only)(discrepancy_permissive_ptrs)(initial_internal_address)(mem_delay_read)(mem_delay_write)(      \
@@ -88,8 +90,8 @@ class xml_element;
        verilator)(verilator_timescale_override)(synopsys_vcs_root)(synopsys_vcs_home)(altera_root)(quartus_settings)(  \
        quartus_13_settings)(quartus_13_64bit)(nanoxplore_root)(nanoxplore_settings)(shared_input_registers)(           \
        inline_functions)(function_constraints)(resource_constraints)(axi_burst_type)(generate_components)(             \
-       bus_pipelined)(bus_arbiter_type)(bus_architecture)(backend_pipeline)(priority_encoder)(                         \
-       task_resource_duplication)
+       bus_pipelined)(banked_memory_address_size)(bus_arbiter_type)(bus_architecture)(backend_pipeline)(          \
+       priority_encoder)(task_resource_duplication)
 
 #define FRAMEWORK_OPTIONS                                                                                          \
    (benchmark_name)(cat_args)(find_max_transformations)(max_transformations)(compatible_compilers)(                \

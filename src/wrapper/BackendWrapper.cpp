@@ -575,6 +575,7 @@ void BackendWrapper::init(const std::string& top_fu_name, const std::string& top
       get_attribute(testbench, "symbol") = top_fu_name.c_str();
       get_attribute(testbench, "m_symbol") = cxa_prefix_mangled(top_fu_name, "__m_").c_str();
       get_attribute(testbench, "m_pp_symbol") = cxa_prefix_mangled(top_fu_name, "__m_pp_").c_str();
+      get_attribute(testbench, "ramulator") = Param->getOption<bool>(OPT_enable_ramulator);
       get_attribute(testbench, "cflags") = Param->isOption(OPT_tb_extra_cc_options) ?
                                                Param->getOption<std::string>(OPT_tb_extra_cc_options).c_str() :
                                                "";

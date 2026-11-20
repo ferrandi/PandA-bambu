@@ -1,0 +1,41 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# DDR4-2666V, 8Gb x8, single rank.
+#
+# Nominal DRAM clock: 1333 MHz (tCK ~0.75 ns).
+# clock_ratio = 6   ->  DRAM runs 6x accelerator clock.
+# Recommended accelerator clock: --clock-period=4.5 (~222 MHz) for exact match.
+#   At --clock-period=10.0 (100 MHz), effective DRAM = 600 MHz (~45% of real).
+#
+# Cap check: ratio 6 <= 6  OK.
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 6
+
+  DRAM:
+    impl: DDR4
+    org:
+      preset: DDR4_8Gb_x8
+      channel: 1
+      rank: 1
+    timing:
+      preset: DDR4_2666V
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh
