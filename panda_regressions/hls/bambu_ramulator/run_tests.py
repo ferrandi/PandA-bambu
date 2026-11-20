@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Smoke and intermediate HBM Ramulator suite; install the dependency once."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -176,6 +177,7 @@ def validate(directory, expected_axi, banked, cycle_limit, banks=4, hbm=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--list", action="store_true")
+    parser.add_argument("-j", "--jobs", type=int, default=1, help="Maximum concurrent co-simulations")
     parser.add_argument("--case", action="append", choices=CASES)
     parser.add_argument("--group", choices=("all", "smoke", "hbm", "isolation"), default="all")
     parser.add_argument("--bambu", type=Path)
@@ -190,8 +192,8 @@ def main():
         return 0
     if not args.bambu or not os.environ.get("BAMBU_HLS"):
         parser.error("source the Bambu installation settings.sh and provide --bambu")
-    if min(args.timeout, args.max_cycles, args.hbm_max_cycles, args.hbm_timeout) <= 0:
-        parser.error("timeout and max-cycles must be positive")
+    if min(args.jobs, args.timeout, args.max_cycles, args.hbm_max_cycles, args.hbm_timeout) <= 0:
+        parser.error("jobs, timeout and max-cycles must be positive")
     if not os.environ.get("RAMULATOR2_DIR"):
         parser.error("RAMULATOR2_DIR must identify the once-prepared installation")
     out, bambu = args.out.resolve(), args.bambu.resolve()
@@ -208,10 +210,9 @@ def main():
     env["RAMULATOR2_CONFIG"] = str(ROOT / "etc/libmdpi/configs/default_ddr4.yaml")
     env["RAMULATOR_OVERRIDE_CHANNELS"] = "1"
     env.pop("LD_LIBRARY_PATH", None)
-    records = []
     suite = ET.Element("testsuite", name="bambu-ramulator")
     selected = args.case or (SMOKE_CASES if args.group == "smoke" else HBM_CASES if args.group == "hbm" else ISOLATION_CASES if args.group == "isolation" else CASES)
-    for name in selected:
+    def run_case(name):
         kernel, mode = name.split("/")
         banked, axi, dedicated, axi_models = MODES[mode]
         hbm = kernel in HBM_SIZES
@@ -317,17 +318,22 @@ def main():
             record.update(status="FAIL", error=str(error))
         record["seconds"] = round(time.monotonic() - start, 3)
         (directory / "evidence.json").write_text(json.dumps(record, indent=2) + "\n")
-        records.append(record)
+        print(f"{record['status']:4} {name}: {record.get('error', str(record.get('cycles')) + ' cycles')}", flush=True)
+        return record
+
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        records = list(pool.map(run_case, dict.fromkeys(selected)))
+    for record in records:
+        kernel, mode = record["name"].split("/")
         case = ET.SubElement(suite, "testcase", name=mode, classname=kernel, time=str(record["seconds"]))
         if record["status"] == "FAIL":
             ET.SubElement(case, "failure", message=record["error"]).text = record["error"]
-        print(f"{record['status']:4} {name}: {record.get('error', str(record.get('cycles')) + ' cycles')}", flush=True)
     failures = sum(record["status"] != "PASS" for record in records)
     suite.set("tests", str(len(records)))
     suite.set("failures", str(failures))
     ET.ElementTree(suite).write(out / "junit.xml", encoding="utf-8", xml_declaration=True)
     provenance = {"bambu_sha256": hashlib.sha256(bambu.read_bytes()).hexdigest(),
-                  "ramulator_prefix": env["RAMULATOR2_DIR"], "tests": records}
+                  "ramulator_prefix": env["RAMULATOR2_DIR"], "jobs": args.jobs, "tests": records}
     (out / "summary.json").write_text(json.dumps(provenance, indent=2) + "\n")
     rows = ["| Test | Result | Cycles |", "|---|---|---:|"]
     rows += [f"| {r['name']} | {r['status']} | {r.get('cycles', '—')} |" for r in records]
