@@ -43,6 +43,13 @@ CASES = [
     ("c99", ".cpp", "--std=c++14", "#if __cplusplus < 201402L || __cplusplus >= 201703L\n#error wrong C++ standard\n#endif"),
     ("c++17", ".cpp", "--std=c++17", "#if __cplusplus < 201703L\n#error wrong C++ standard\n#endif"),
     ("c++17", ".c", "--std=c11", "#if __STDC_VERSION__ < 201112L\n#error wrong C standard\n#endif"),
+    ("gnu++17", ".cpp", "--std=gnu++17", "#if __cplusplus < 201703L\n#error wrong C++ standard\n#endif"),
+    ("gnu++17", ".c", "--std=c11", "#if __STDC_VERSION__ < 201112L\n#error wrong C standard\n#endif"),
+    ("c++17", ".c", "--std=c++17", "#if __cplusplus < 201703L\n#error wrong C++ standard\n#endif", ("-x", "c++")),
+    ("c99", ".cp", "--std=c++14", "#if __cplusplus < 201402L || __cplusplus >= 201703L\n#error wrong C++ standard\n#endif"),
+    ("c99", ".CPP", "--std=c++14", "#if __cplusplus < 201402L || __cplusplus >= 201703L\n#error wrong C++ standard\n#endif"),
+    ("c99", ".i", "--std=c99", "#if __STDC_VERSION__ != 199901L\n#error wrong C standard\n#endif"),
+    ("c99", ".ii", "--std=c++14", "#if __cplusplus < 201402L || __cplusplus >= 201703L\n#error wrong C++ standard\n#endif"),
 ]
 
 
@@ -60,7 +67,7 @@ def bambu_environment(bambu):
         settings = candidate / "settings.sh"
         if not settings.is_file():
             continue
-        dump = subprocess.run(["bash", "-c", f"source '{settings}' >/dev/null 2>&1 && env -0"],
+        dump = subprocess.run(["bash", "-c", 'source "$1" >/dev/null 2>&1 && env -0', "frontend_std", str(settings)],
                               capture_output=True, text=True, check=True).stdout
         for entry in dump.split("\0"):
             key, sep, value = entry.partition("=")
@@ -68,9 +75,7 @@ def bambu_environment(bambu):
                 env[key] = value
         if env.get("BAMBU_HLS") and env.get("BAMBU_HLS_BACKEND_PATH"):
             return env
-    if env.get("BAMBU_HLS") and env.get("BAMBU_HLS_BACKEND_PATH"):
-        return env
-    raise SystemExit(f"cannot initialize the bambu environment for {bambu}: no usable settings.sh found")
+    raise SystemExit(f"cannot initialize the bambu environment for {bambu}: no settings.sh found")
 
 
 def run_bambu(bambu, workdir, source, extra=(), env=None):
@@ -92,23 +97,39 @@ def main():
     parser.add_argument("--bambu", required=True, help="bambu executable to test, usually the installed one")
     parser.add_argument("--keep", action="store_true", help="keep the temporary directory")
     args = parser.parse_args()
-    bambu = shutil.which(args.bambu)
-    if bambu is None and not Path(args.bambu).is_file():
-        print(f"SKIP {args.bambu} not found: install this build (cmake --install) before running the test")
-        return 0
-    bambu = bambu or str(Path(args.bambu).resolve())
+    requested = os.environ.get("PANDA_TEST_BAMBU", args.bambu)
+    bambu = shutil.which(requested)
+    if bambu is None:
+        candidate = Path(requested)
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            bambu = str(candidate.resolve())
+        elif "PANDA_TEST_BAMBU" in os.environ:
+            print(f"FAIL PANDA_TEST_BAMBU is not executable: {requested}")
+            return 1
+        else:
+            print(f"SKIP {requested} not found: install this build before running the test")
+            return 77
+
+    bambu = str(Path(bambu).resolve())
 
     strace = shutil.which("strace")
     failures = []
     env = bambu_environment(bambu)
-    tmpdir = Path(tempfile.mkdtemp(prefix="frontend_std_"))
+    scratch = Path(__file__).resolve().parents[3] / "documentation" / "tmp"
+    scratch.mkdir(parents=True, exist_ok=True)
+    tmpdir = Path(tempfile.mkdtemp(prefix="frontend_std_", dir=scratch))
+    env.update(TMPDIR=str(tmpdir), TMP=str(tmpdir), TEMP=str(tmpdir))
     try:
-        for std, extension, expected, guard in CASES:
-            workdir = tmpdir / f"case_{std.replace('+', 'x')}_{extension.strip('.')}"
+        for case_index, case in enumerate(CASES):
+            std, extension, expected, guard = case[:4]
+            extra = case[4] if len(case) > 4 else ()
+            workdir = tmpdir / f"case_{case_index}_{std.replace('+', 'x')}_{extension.strip('.')}"
             workdir.mkdir()
             source = workdir / f"kernel{extension}"
-            source.write_text(KERNEL.format(name="kernel", guard=guard))
-            proc = run_bambu(bambu, workdir, source, ["--std=" + std, "-fopenmp",
+            source.write_text(KERNEL.format(name="kernel", guard=guard).replace("#include <omp.h>\n", "")
+                              if extension in (".i", ".ii") else
+                              KERNEL.format(name="kernel", guard=guard))
+            proc = run_bambu(bambu, workdir, source, [*extra, "--std=" + std, "-fopenmp",
                                                       "--memory-allocation-policy=NO_BRAM"], env)
             if proc.returncode != 0:
                 tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
@@ -129,17 +150,22 @@ def main():
                         print(f"OK  cflags of bambu_results.xml keep one global --std={std} plus the other options")
 
         if not strace:
-            print("SKIP argv inspection: strace not available")
+            print("NOTE argv inspection unavailable: strace not installed")
         else:
-            for std, extension, expected, guard in CASES:
-                workdir = tmpdir / f"strace_{std.replace('+', 'x')}_{extension.strip('.')}"
+            for case_index, case in enumerate(CASES):
+                std, extension, expected, guard = case[:4]
+                extra = case[4] if len(case) > 4 else ()
+                workdir = tmpdir / f"strace_{case_index}_{std.replace('+', 'x')}_{extension.strip('.')}"
                 workdir.mkdir()
                 source = workdir / f"kernel{extension}"
-                source.write_text(KERNEL.format(name="kernel", guard=guard))
+                source_text = KERNEL.format(name="kernel", guard=guard)
+                if extension in (".i", ".ii"):
+                    source_text = source_text.replace("#include <omp.h>\n", "")
+                source.write_text(source_text)
                 log = workdir / "strace.log"
                 with log.open("w") as sink:
                     proc = subprocess.run([strace, "-f", "-qq", "-s", "6000", "-e", "trace=execve",
-                                           bambu, str(source), "--top-fname=kernel", "--std=" + std,
+                                           bambu, str(source), "--top-fname=kernel", *extra, "--std=" + std,
                                            "-fopenmp", "--memory-allocation-policy=NO_BRAM"],
                                           cwd=workdir, stdout=sink, stderr=subprocess.STDOUT, env=env)
                 if proc.returncode != 0:
@@ -167,6 +193,26 @@ def main():
                 else:
                     print(f"OK  argv of {checked} clang command(s) for {extension} with global --std={std}: "
                           f"one {expected}, -fopenmp kept, no --std elsewhere")
+
+        for order in (("c", "cpp"), ("cpp", "c")):
+            for top_language in ("c", "cpp"):
+                workdir = tmpdir / f"mixed_{''.join(order)}_top_{top_language}"
+                workdir.mkdir()
+                c_source = workdir / "input.c"
+                cpp_source = workdir / "input.cpp"
+                c_body = "void kernel(int* a, int n) { int i; for(i=0;i<n;++i) a[i]=i; }" if top_language == "c" else "void helper_c(int* a) { a[0]=1; }"
+                cpp_body = "void kernel(int* a, int n) { for(int i=0;i<n;++i) a[i]=i; }" if top_language == "cpp" else "void helper_cpp(int* a) { a[0]=2; }"
+                c_source.write_text(c_body)
+                cpp_source.write_text(cpp_body)
+                sources = [c_source, cpp_source] if order == ("c", "cpp") else [cpp_source, c_source]
+                proc = subprocess.run([bambu, *(str(source) for source in sources), "--top-fname=kernel",
+                                       "--std=gnu++17", "--memory-allocation-policy=NO_BRAM"],
+                                      cwd=workdir, capture_output=True, text=True, env=env)
+                if proc.returncode:
+                    tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
+                    failures.append(f"mixed {order} with top in {top_language}: {' | '.join(tail)}")
+                else:
+                    print(f"OK  mixed sources {order} with top in {top_language}")
     finally:
         if args.keep:
             print(f"temporary files kept in {tmpdir}")

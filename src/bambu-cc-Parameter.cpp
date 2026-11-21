@@ -192,6 +192,7 @@ int bambu_cc_parameter::Exec()
          }
          case 'x':
          {
+            setOption(OPT_cc_xlang, std::string(optarg));
             appendOption(OPT_cc_extra_options, "-x " + std::string(optarg), " ");
             break;
          }

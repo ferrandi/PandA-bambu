@@ -520,6 +520,14 @@ if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp_task AND TARGET clang_plu
    set_tests_properties(openmp_task_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 120)
 endif()
 
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND PANDA_CLANG19_LLVMOPT)
+   add_test(NAME openmp_parallel_passes
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_parallel.py"
+              --clang "${PANDA_CLANG19_EXE}" --opt "${PANDA_CLANG19_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_19_opt_openmp>")
+   set_tests_properties(openmp_parallel_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
 if(BUILD_TESTING AND TARGET bambu)
    # integration test driving the real front-end: it runs the bambu of this
    # build's installation (cmake --install), since the build-tree binary lacks
@@ -529,5 +537,5 @@ if(BUILD_TESTING AND TARGET bambu)
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_frontend_std.py"
               --bambu "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/bambu")
    set_tests_properties(frontend_std PROPERTIES LABELS "frontend" TIMEOUT 1800
-      SKIP_REGULAR_EXPRESSION "^SKIP")
+      SKIP_RETURN_CODE 77)
 endif()

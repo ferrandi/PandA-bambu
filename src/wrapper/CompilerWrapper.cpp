@@ -33,7 +33,6 @@
 #include "CompilerWrapper.hpp"
 #include "openmp_task_constants.hpp"
 
-#include "BambuParameter.hpp"
 #include "BambuParameterRegistry.hpp"
 #include "Parameter.hpp"
 #include "compiler_constants.hpp"
@@ -215,6 +214,16 @@ static std::string __escape_define(const std::string& str)
 
 namespace
 {
+   bool is_cpp_standard(const std::string& standard)
+   {
+      return standard.rfind("c++", 0) == 0 || standard.rfind("gnu++", 0) == 0;
+   }
+
+   std::string standard_for_language(const std::string& standard, bool cpp_source)
+   {
+      return is_cpp_standard(standard) == cpp_source ? standard : cpp_source ? "c++14" : "c11";
+   }
+
    std::string trim_whitespace(const std::string& value)
    {
       const auto begin = value.find_first_not_of(" \t\r\n");
@@ -1155,16 +1164,13 @@ std::string CompilerWrapper::GetFrontendCompilerParameters(const std::string& so
       return parameters;
    }
    auto standard = Param->getOption<std::string>(OPT_cc_standard);
-   if(const auto bambu_parameters = GetPointer<const BambuParameter>(Param))
+   const auto format = source_file.empty() ? Parameters_FileFormat::FF_UNKNOWN : Param->GetFileFormat(source_file, false);
+   const bool cpp_source = cpp_input || format == Parameters_FileFormat::FF_CPP ||
+                           format == Parameters_FileFormat::FF_LLVM_CPP;
+   if(format == Parameters_FileFormat::FF_C || format == Parameters_FileFormat::FF_CPP ||
+      format == Parameters_FileFormat::FF_LLVM_CPP)
    {
-      const auto extension = std::filesystem::path(source_file).extension().string();
-      const bool cpp_unit =
-          extension == ".cpp" || extension == ".cc" || extension == ".cxx" || extension == ".c++" || extension == ".C";
-      const bool c_unit = extension == ".c";
-      if(cpp_unit || c_unit)
-      {
-         standard = bambu_parameters->GetCompilerStandard(cpp_unit);
-      }
+      standard = standard_for_language(standard, cpp_source);
    }
    parameters += "--std=" + standard + " ";
    return parameters;
@@ -1674,9 +1680,11 @@ void CompilerWrapper::CreateExecutable(const std::vector<std::filesystem::path>&
          command += iquote;
       }
    }
-   if(!has_cpp_file)
+   if(Param->isOption(OPT_cc_standard))
    {
-      command = std::regex_replace(command, std::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
+      const auto standard = standard_for_language(Param->getOption<std::string>(OPT_cc_standard),
+                                                  has_cpp_file || cpp_input);
+      command = std::regex_replace(command, std::regex("--std=[^ ]+"), "--std=" + standard);
    }
    command += srcs;
 

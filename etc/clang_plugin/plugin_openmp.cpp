@@ -475,7 +475,7 @@ namespace llvm
                            {
                               llvm::report_fatal_error("OpenMP plug-in cannot promote the local reduce data with "
                                                        "opaque pointers: use a compiler older than clang-16 or "
-                                                       "avoid the reduction clause");
+                                                       "avoid the reduction clause", false);
                            }
                            local_data_types.push_back(
                                cast<PointerType>(val->getType())->getNonOpaquePointerElementType());
@@ -603,7 +603,7 @@ namespace llvm
    {
       llvm::report_fatal_error("OpenMP plug-in cannot promote the shared parameters of an .omp_outlined "
                                "function with opaque pointers: use a compiler older than clang-16 or capture "
-                               "the local variable as firstprivate");
+                               "the local variable as firstprivate", false);
    }
 #endif
 
@@ -880,7 +880,7 @@ namespace llvm
             if(I->getType()->isOpaquePointerTy() && ArgNo > 1)
             {
                llvm::report_fatal_error("OpenMP plug-in cannot rewrite the promoted parameters of an .omp_outlined "
-                                        "function with opaque pointers: use a compiler older than clang-16");
+                                        "function with opaque pointers: use a compiler older than clang-16", false);
             }
             // the shared parameters (ArgNo 0/1) are replaced by the context-switch tid
             // intrinsics below and do not need the element type, which is not
@@ -1005,7 +1005,7 @@ namespace llvm
                      {
                         llvm::report_fatal_error(
                             "OpenMP plug-in cannot rewrite non-load uses of the shared parameters of an "
-                            ".omp_outlined function");
+                            ".omp_outlined function", false);
                      }
                      assert(ArgIndices &&
                             "First and second argument of .omp.outlined not expected to be complex pointers");
@@ -1657,7 +1657,7 @@ namespace llvm
                   llvm::report_fatal_error(llvm::Twine(
                       "Unsupported microtask operand for " TOSTRING(KMP_FORK_CALL)
                       " (expected a function, possibly wrapped in a bitcast): ")
-                                           + microtask_operand->getName());
+                                           + microtask_operand->getName(), false);
                }
                if(!computeArgToPromote)
                {
@@ -1705,7 +1705,7 @@ namespace llvm
                         if(!AgTy)
                         {
                            llvm::report_fatal_error("OpenMP plug-in cannot recover the type of a shared argument "
-                                                    "passed to " TOSTRING(KMP_FORK_CALL));
+                                                    "passed to " TOSTRING(KMP_FORK_CALL), false);
                         }
 #endif
                         if(AgTy->isStructTy())

@@ -36,8 +36,6 @@ REF_FORWARD_DECL(BambuParameter);
 class BambuParameter : public Parameter
 {
  private:
-   std::string c_compiler_standard;
-   std::string cpp_compiler_standard;
 
    /**
     * Check the compatibility among the different parameters
@@ -89,11 +87,6 @@ class BambuParameter : public Parameter
     */
    void SetDefaults() override;
 
-   /**
-    * Return the compiler standard normalized for the source language.
-    * @param cpp_source true for a C++ source file
-    */
-   const std::string& GetCompilerStandard(bool cpp_source) const;
 };
 
 #endif
