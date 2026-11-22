@@ -15,7 +15,7 @@ __attribute__((noinline)) void kernel_wrapper(int *a, int *b, int *c, int i, int
 void gemm(int *a, int *b, int *c)
 {
    int i = 0, j = 0, k = 0;
-#pragma omp parallel for
+#pragma omp parallel for private(j, k)
    for (i = 0; i < N; i++)
    {
       for (j = 0; j < N; j++)

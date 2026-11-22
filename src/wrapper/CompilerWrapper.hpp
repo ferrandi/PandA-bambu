@@ -261,7 +261,8 @@ class CompilerWrapper
    void QueryCompilerConfig(const std::string& compiler_option) const;
 
    std::string GetCompilerParameters(const std::string& extra_compiler_options,
-                                     bool no_frontend_compiler_parameters = false) const;
+                                     bool no_frontend_compiler_parameters = false,
+                                     const std::string& source_file = "") const;
 
    /**
     * Create an executable starting from source code

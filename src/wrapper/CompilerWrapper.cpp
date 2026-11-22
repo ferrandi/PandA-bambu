@@ -1631,12 +1631,13 @@ void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) co
 }
 
 std::string CompilerWrapper::GetCompilerParameters(const std::string& extra_compiler_options,
-                                                   bool no_frontend_compiler_parameters) const
+                                                   bool no_frontend_compiler_parameters,
+                                                   const std::string& source_file) const
 {
    const auto compiler = GetCompiler();
    std::string command =
-       (no_frontend_compiler_parameters ? "" : GetFrontendCompilerParameters()) + " " + compiler_linking_parameters +
-       " ";
+       (no_frontend_compiler_parameters ? "" : GetFrontendCompilerParameters(source_file)) + " " +
+       compiler_linking_parameters + " ";
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
    std::string local_compiler_extra_options = no_frontend_compiler_parameters ? "" : compiler.extra_options;

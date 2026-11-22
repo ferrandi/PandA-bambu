@@ -25,6 +25,7 @@ $(call check_defined, BEH_DIR)    # HLS_output/<sim_id>_beh absolute path
 #   SRCS       : PandA Bambu HLS input source files
 #   BEH_CC     : alternative compiler for libmdpi compilation
 #   CFLAGS     : compilation flags for SRCS, WRAPPER_SRC, and TB_SRCS
+#   CPP_CFLAGS : compilation flags for C++ sources in SRCS
 #   BEH_CFLAGS : includes and defines for svdpi.h
 #   TB_CFLAGS  : additional compilation flags for TB_SRCS
 #   TB_SRCS    : additional testbench source files
@@ -43,6 +44,7 @@ endif
 
 override SRCS := $(abspath $(filter-out %.bambuir, $(SRCS)))
 override TB_SRCS := $(abspath $(TB_SRCS))
+CPP_CFLAGS ?= $(CFLAGS)
 SRC_DIR := $(shell echo "$(SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 TB_SRC_DIR := $(shell echo "$(TB_SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 BUILD_DIR := $(SIM_DIR)/build
@@ -88,7 +90,7 @@ ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
 endif
 endif
 
-WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++14 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
+WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++14 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(^|[[:space:]])-x[[:space:]]+[^[:space:]]+/\1/g; s/(^|[[:space:]])-x[^[:space:]]+/\1/g; s/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
 		ifndef MPPTOP_FNAME
@@ -157,7 +159,7 @@ endif
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
-	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(CFLAGS) -fPIC -c -o $@ $<
+	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(if $(filter .ii .cc .cp .cxx .cpp .CPP .c++ .C,$(suffix $(<F))),$(CPP_CFLAGS),$(CFLAGS)) -fPIC -c -o $@ $<
 	$(Q)objcopy $(REDEFINE_TOP) $@
 
 $(TB_OBJ_DIR)/%.o: $(TB_SRC_DIR)/%

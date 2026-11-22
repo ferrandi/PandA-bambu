@@ -4,9 +4,12 @@
 The frontend parameters are built by CompilerWrapper::GetFrontendCompilerParameters:
 the global --std option is normalized per translation unit language (a C source
 gets a C standard, a C++ source a C++ one), while paths without a source file
-(GetCompilerParameters, e.g. the cflags recorded in bambu_results.xml) keep the
-global standard.  The value of the applied standard is verified portably through
-__STDC_VERSION__/__cplusplus guards compiled by the front-end itself; when
+(GetCompilerParameters) keep the global standard. The simulation XML records
+source-aware C and C++ flags separately; cflags follows the selected driver,
+so it uses the C++ standard when the input is compiled by a C++ driver. The value
+of the applied standard is
+verified portably through __STDC_VERSION__/__cplusplus guards compiled by the
+front-end itself; when
 strace is available the test additionally inspects the clang/opt argv to check
 that each command carries a single --std (the expected one), that -fopenmp is
 appended as usual, and that the LTO/opt commands receive no --std at all.
@@ -25,6 +28,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 KERNEL = """#include <omp.h>
@@ -48,8 +52,8 @@ CASES = [
     ("c++17", ".c", "--std=c++17", "#if __cplusplus < 201703L\n#error wrong C++ standard\n#endif", ("-x", "c++")),
     ("c99", ".cp", "--std=c++14", "#if __cplusplus < 201402L || __cplusplus >= 201703L\n#error wrong C++ standard\n#endif"),
     ("c99", ".CPP", "--std=c++14", "#if __cplusplus < 201402L || __cplusplus >= 201703L\n#error wrong C++ standard\n#endif"),
-    ("c99", ".i", "--std=c99", "#if __STDC_VERSION__ != 199901L\n#error wrong C standard\n#endif"),
-    ("c99", ".ii", "--std=c++14", "#if __cplusplus < 201402L || __cplusplus >= 201703L\n#error wrong C++ standard\n#endif"),
+    ("c99", ".i", "--std=c99", "typedef char standard_guard[__STDC_VERSION__ == 199901L ? 1 : -1];"),
+    ("c99", ".ii", "--std=c++14", 'static_assert(__cplusplus >= 201402L && __cplusplus < 201703L, "wrong standard");'),
 ]
 
 
@@ -82,6 +86,13 @@ def run_bambu(bambu, workdir, source, extra=(), env=None):
     cmd = [bambu, str(source), "--top-fname=kernel", *extra]
     proc = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True, env=env)
     return proc
+
+
+def source_fixture(extension, guard):
+    source = KERNEL.format(name="kernel", guard=guard)
+    if extension in (".i", ".ii"):
+        source = source.replace("#include <omp.h>\n", "")
+    return source
 
 
 def clang_commands(strace_log):
@@ -126,9 +137,7 @@ def main():
             workdir = tmpdir / f"case_{case_index}_{std.replace('+', 'x')}_{extension.strip('.')}"
             workdir.mkdir()
             source = workdir / f"kernel{extension}"
-            source.write_text(KERNEL.format(name="kernel", guard=guard).replace("#include <omp.h>\n", "")
-                              if extension in (".i", ".ii") else
-                              KERNEL.format(name="kernel", guard=guard))
+            source.write_text(source_fixture(extension, guard))
             proc = run_bambu(bambu, workdir, source, [*extra, "--std=" + std, "-fopenmp",
                                                       "--memory-allocation-policy=NO_BRAM"], env)
             if proc.returncode != 0:
@@ -136,18 +145,28 @@ def main():
                 failures.append(f"{std} + {extension}: bambu exit {proc.returncode}: {' | '.join(tail)}")
                 continue
             print(f"OK  value of --std for {extension} with global --std={std} is {expected}")
-            if std == "c++17" and extension == ".c":
-                cflags = re.search(r'cflags="([^"]*)"', (workdir / "bambu_results.xml").read_text())
-                if not cflags:
-                    failures.append("bambu_results.xml without cflags attribute")
+            if (std, extension) in (("c++17", ".c"), ("c99", ".cpp")) and not extra:
+                sources = ET.parse(workdir / "bambu_results.xml").getroot().find("sources")
+                if sources is None:
+                    failures.append("bambu_results.xml without sources element")
                 else:
-                    emitted = re.findall(r"--std=\S+", cflags.group(1))
-                    if emitted != [f"--std={std}"]:
-                        failures.append(f"cflags carry {emitted} instead of one --std={std}")
-                    elif "-D__NO_INLINE__" not in cflags.group(1):
-                        failures.append("cflags lost the options built together with --std")
+                    if extension == ".c":
+                        expected_flags = (("cflags", "--std=c11"), ("cpp_cflags", "--std=c++17"))
                     else:
-                        print(f"OK  cflags of bambu_results.xml keep one global --std={std} plus the other options")
+                        # cflags follows the selected C++ driver for this .cpp input.
+                        expected_flags = (("cflags", "--std=c++14"), ("cpp_cflags", "--std=c++14"))
+                    for attr, expected_std in expected_flags:
+                        flags = sources.get(attr)
+                        if flags is None:
+                            failures.append(f"bambu_results.xml without sources@{attr}")
+                            continue
+                        emitted = re.findall(r"--std=\S+", flags)
+                        if emitted != [expected_std]:
+                            failures.append(f"sources@{attr} carries {emitted} instead of one {expected_std}")
+                        elif "-D__NO_INLINE__" not in flags:
+                            failures.append(f"sources@{attr} lost -D__NO_INLINE__")
+                        else:
+                            print(f"OK  sources@{attr} keeps one {expected_std} and -D__NO_INLINE__")
 
         if not strace:
             print("NOTE argv inspection unavailable: strace not installed")
@@ -158,10 +177,7 @@ def main():
                 workdir = tmpdir / f"strace_{case_index}_{std.replace('+', 'x')}_{extension.strip('.')}"
                 workdir.mkdir()
                 source = workdir / f"kernel{extension}"
-                source_text = KERNEL.format(name="kernel", guard=guard)
-                if extension in (".i", ".ii"):
-                    source_text = source_text.replace("#include <omp.h>\n", "")
-                source.write_text(source_text)
+                source.write_text(source_fixture(extension, guard))
                 log = workdir / "strace.log"
                 with log.open("w") as sink:
                     proc = subprocess.run([strace, "-f", "-qq", "-s", "6000", "-e", "trace=execve",
