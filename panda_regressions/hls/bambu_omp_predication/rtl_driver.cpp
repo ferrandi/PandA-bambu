@@ -28,7 +28,8 @@ int main(int argc, char** argv)
    };
    const auto effects = [&](bool expected) {
       check(top.acquire == expected && top.release_lock == expected && top.barrier_we == expected &&
-                top.wait_ld == expected && top.cs_ld == expected,
+                top.wait_ld == expected && top.cs_ld == expected && top.reduce_we == expected &&
+                top.reduce_ld == expected,
             "side effects");
    };
    try
@@ -48,7 +49,8 @@ int main(int argc, char** argv)
          top.predicate = 0;
          settle();
          effects(false);
-         check(top.lock_done && top.release_done && top.barrier_done && top.wait_done && top.cs_done,
+         check(top.lock_done && top.release_done && top.barrier_done && top.wait_done && top.cs_done &&
+                   top.reduce_set_done && top.reduce_get_done,
                "skip completion");
          tick();
          top.start_port = 0;
@@ -65,6 +67,10 @@ int main(int argc, char** argv)
       check(!top.lock_done && !top.wait_done && !top.cs_done && top.release_done && top.barrier_done,
             "delayed completion");
       check(top.barrier_tid == 1, "barrier operand");
+      check(top.reduce_set_tid == 3 && top.reduce_get_tid == 3 && top.reduce_set_val == 0x12345678 &&
+                top.reduce_get_val == 0x87654321,
+            "reduction operands");
+      check(!top.reduce_set_done && !top.reduce_get_done, "reduction completed before acknowledgment");
       tick();
       top.start_port = top.predicate = 0;
       settle();
@@ -73,7 +79,8 @@ int main(int argc, char** argv)
       tick();
       top.ack = top.rd = 1;
       settle();
-      check(top.lock_done && top.wait_done && top.cs_done, "delayed acknowledgment");
+      check(top.lock_done && top.wait_done && top.cs_done && top.reduce_set_done && top.reduce_get_done,
+            "delayed acknowledgment");
       tick();
       top.ack = top.rd = 0;
       tick();
@@ -82,7 +89,8 @@ int main(int argc, char** argv)
       top.start_port = top.predicate = top.ack = top.rd = 1;
       settle();
       effects(true);
-      check(top.lock_done && top.wait_done && top.cs_done, "immediate acknowledgment");
+      check(top.lock_done && top.wait_done && top.cs_done && top.reduce_set_done && top.reduce_get_done,
+            "immediate acknowledgment");
       tick();
       top.predicate = top.ack = top.rd = 0;
       settle();

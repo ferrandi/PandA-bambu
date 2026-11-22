@@ -40,7 +40,8 @@ def check_predication(directory, required):
         return gate == 'or' and any(dynamic(p, visited) for p in inputs)
 
     verified = set()
-    instances = re.findall(r'KMP_BAMBU_(CRITICAL|END_CRITICAL|BARRIER_REACHED|(?:CS_)?WAIT_ALL_THREADS)_FU\s+'
+    instances = re.findall(r'KMP_BAMBU_(CRITICAL|END_CRITICAL|BARRIER_REACHED|(?:CS_)?WAIT_ALL_THREADS|'
+                           r'(?:SET|GET)_TH_LOCAL_REDUCE_DATA)_FU\s+'
                            r'(?:#\s*\(.*?\)\s*)?\w+\s*\((.*?)\);', rtl, re.S)
     for name, instance in instances:
         predicate = re.search(r'\.predicate\(([^)]+)\)', instance)
@@ -81,6 +82,7 @@ def main():
         results.append(('rtl-reset-profiles', time.monotonic() - start, error, out))
     tasks = [(source, threads, context) for source in ('critical', 'barrier', 'phases')
              for threads, context in ((1, 0), (4, 0), (4, 2))]
+    tasks.extend([('fork', 4, 0), ('fork', 4, 2)])
     tasks.append(('reduction', 4, 0))
     tasks.extend([('reduction', 4, 2), ('memory_init', 4, 0), ('memory_init', 4, 2)])
     names = {f'{source}-{threads}t' + ('-cs2' if context else '') for source, threads, context in tasks}

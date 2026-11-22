@@ -280,6 +280,9 @@ assign done_port = done_port_reg[selector_register_file];"/>
           <structural_type_descriptor id_type="KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU"/>
           <parameter name="CONTEXT_BIT_START">0</parameter>
           <parameter name="CONTEXT_BIT_END">0</parameter>
+          <port_o id="predicate" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -308,9 +311,9 @@ assign done_port = done_port_reg[selector_register_file];"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="KMP_BAMBU_SET_TH_LOCAL_REDUCE_DATA_FU in1 in2 selector_register_file kmp_bambu_set_th_local_reduce_data_val CONTEXT_BIT_START CONTEXT_BIT_END" VERILOG_PROVIDED="
-assign done_port = kmp_bambu_set_th_local_reduce_data_ack;
+assign done_port = kmp_bambu_set_th_local_reduce_data_ack | (start_port &amp; ~predicate);
 assign kmp_bambu_set_th_local_reduce_data_tid =  in1;
-assign kmp_bambu_set_th_local_reduce_data_we = start_port;
+assign kmp_bambu_set_th_local_reduce_data_we = start_port &amp; predicate;
 
 generate
   if(CONTEXT_BIT_START == 0)
@@ -335,6 +338,9 @@ endgenerate"/>
           <authors>Fabrizio Ferrandi, Giovanni Gozzi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>MIT</license>
           <structural_type_descriptor id_type="KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU"/>
+          <port_o id="predicate" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="start_port" dir="IN">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
@@ -360,10 +366,10 @@ endgenerate"/>
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
           <NP_functionality LIBRARY="KMP_BAMBU_GET_TH_LOCAL_REDUCE_DATA_FU in1 out1" VERILOG_PROVIDED="
-assign done_port = kmp_bambu_get_th_local_reduce_data_ack;
+assign done_port = kmp_bambu_get_th_local_reduce_data_ack | (start_port &amp; ~predicate);
 assign kmp_bambu_get_th_local_reduce_data_tid =  in1;
 assign out1 = kmp_bambu_get_th_local_reduce_data_val;
-assign kmp_bambu_get_th_local_reduce_data_ld = start_port;"/>
+assign kmp_bambu_get_th_local_reduce_data_ld = start_port &amp; predicate;"/>
         </module_o>
       </circuit>
     </cell>

@@ -10,11 +10,14 @@ extern "C" void omp_predication(const int* a, int* result, int enabled)
    int sum1 = 2;
 #pragma omp parallel num_threads(THREADS)
    {
-#pragma omp for reduction(+ : sum, sum1)
-      for(int i = 0; i < 32; ++i)
+      if(enabled)
       {
-         sum += a[i];
-         sum1 += 2 * a[i];
+#pragma omp for reduction(+ : sum, sum1)
+         for(int i = 0; i < 32; ++i)
+         {
+            sum += a[i];
+            sum1 += 2 * a[i];
+         }
       }
    }
    result[0] = sum;
