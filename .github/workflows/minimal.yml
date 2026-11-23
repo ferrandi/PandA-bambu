@@ -467,6 +467,7 @@ jobs:
           - { setup: clang-13, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG13 -c=--simulator=VERILATOR" }
           - { setup: clang-16, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion" }
           - { setup: clang-16-keeplist, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion --keep-cell=clang-16_eg_ext_pipelined_O2 --keep-list=coverage-analysis/out/10_keep/keep_lists_draft_rehome_65069fdf0278.json --expect-sha256=65069fdf0278c38b3c29fed07ef99c682438be9357beae778faf3611479988ed" }
+          - { setup: clang-16-gap440, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG16 -c=--simulator=VERILATOR -c=-Wno-int-conversion --keep-cell=clang-16_eg_ext_pipelined_O2 --keep-list=coverage-analysis/out/10_keep/keep_lists_w288c_428_plus_gapkiller.json --expect-sha256=bb1ccf19da41cb73853a965764062546884dfd97848580fb24bd33f8ed768432" }
           - { setup: clang-19, script: generic_gcc_regression_simple_eg_ext_pipelined.sh, args: "-c=--compiler=I386_CLANG19 -c=--simulator=VERILATOR -c=-Wno-int-conversion" }
     env:
       outname: ${{matrix.setup}}_regression_simple
