@@ -6,6 +6,27 @@ ORFS_REQUIRED_DIGEST="${OPENROAD_ORFS_PINNED_DIGEST:-${ORFS_DEFAULT_PINNED_DIGES
 ORFS_REPO_URL="https://github.com/The-OpenROAD-Project/OpenROAD-flow-scripts.git"
 ORFS_DEFAULT_MODULES_TO_KEEP_AND_RETIME="mul_node_FU widen_mul_node_FU ui_widen_mul_node_FU ui_mul_node_FU"
 
+write_sdc()
+{
+   # BackendWrapper writes target@period in the device's command units:
+   # ns for nangate45, ps for devices declaring USE_TIME_UNIT_PS (ASAP7).
+   # target@period_ps is always ps and must not be used as an SDC value.
+   local clock_constraint="$(bambu_results /application/target@period)"
+   if [[ -z "${clock_constraint}" ]]; then
+      echo "ERROR: missing target clock period for ORFS constraints." >&2
+      return 1
+   fi
+   if $(bambu_results /application/top_module@combinational); then
+      echo "set_max_delay ${clock_constraint} -from [all_inputs] -to [all_outputs]" > "${SDC_FILE}"
+   else
+      echo "create_clock $(bambu_results /application/top_module@clock_name) -period ${clock_constraint}" > "${SDC_FILE}"
+   fi
+   local sdc_ext_file="$(bambu_results /application/backend@sdc_ext_file)"
+   if [[ -n "${sdc_ext_file}" ]]; then
+      echo "source ${sdc_ext_file}" >> "${SDC_FILE}"
+   fi
+}
+
 detect_host_cores()
 {
    nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 1
@@ -572,6 +593,7 @@ EOF
    local out_xml="${SWD}/$(bambu_results /application/backend@bambu_results)"
    python3 - "${metadata_json}" "${results_sdc}" "${out_xml}" <<'PY'
 import json
+import math
 import pathlib
 import re
 import sys
@@ -579,12 +601,13 @@ import xml.etree.ElementTree as ET
 
 def as_float(value):
    if isinstance(value, (int, float)):
-      return float(value)
+      return float(value) if math.isfinite(value) else None
    if isinstance(value, str):
       m = re.search(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?", value.strip())
       if m:
          try:
-            return float(m.group(0))
+            value = float(m.group(0))
+            return value if math.isfinite(value) else None
          except ValueError:
             return None
    return None
@@ -613,18 +636,35 @@ def requirement_from_sdc(sdc_path):
       content = sdc_path.read_text(encoding="utf-8")
    except OSError:
       return None
-   m = re.search(r"create_clock[\s\S]*?-period\s+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)", content)
-   if m:
-      return float(m.group(1))
    normalized = re.sub(r"\\\s*\n", " ", content)
    num_re = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
    vals = []
    for line in normalized.splitlines():
-      if "set_max_delay" in line:
-         numbers = re.findall(num_re, line)
-         if numbers:
-            vals.append(float(numbers[-1]))
+      # Match commands, not comments or numbers in port/bus names. OpenSTA
+      # write_sdc places the max-delay value last; Bambu places it first.
+      m = re.match(rf"\s*create_clock\s+.*?-period\s+({num_re})(?=\s|$)", line)
+      if m:
+         return float(m.group(1))
+      if re.match(r"\s*set_max_delay\s", line):
+         m = re.match(rf"\s*set_max_delay\s+({num_re})(?=\s|$)", line)
+         if not m:
+            m = re.search(rf"\s({num_re})\s*(?:;\s*)?(?:#.*)?$", line)
+         if m:
+            vals.append(float(m.group(1)))
    return min(vals) if vals else None
+
+def time_unit_ns(data):
+   # genMetrics copies clock values from 2_floorplan.sdc without scaling.
+   # report_worst_slack_metric uses OpenSTA command units as well. In contrast,
+   # report_fmax_metric uses internal seconds and reports Hz, on every platform.
+   unit = data.get("run__flow__platform__time_units", "")
+   m = re.fullmatch(r"\s*(\d+(?:\.\d*)?(?:[eE][-+]?\d+)?)?\s*(s|ms|us|ns|ps|fs)\s*", str(unit))
+   if not m:
+      raise ValueError(f"missing or unsupported ORFS platform time units: {unit!r}")
+   scale = float(m.group(1) or 1) * {"s": 1e9, "ms": 1e6, "us": 1e3, "ns": 1, "ps": 1e-3, "fs": 1e-6}[m.group(2)]
+   if not math.isfinite(scale) or scale <= 0:
+      raise ValueError(f"invalid ORFS platform time units: {unit!r}")
+   return scale
 
 metadata_path = pathlib.Path(sys.argv[1])
 sdc_path = pathlib.Path(sys.argv[2])
@@ -636,16 +676,31 @@ if not metadata_path.is_file():
 data = json.loads(metadata_path.read_text(encoding="utf-8"))
 design_area = first_numeric(data, ["finish__design__instance__area", "finish__design__instance__area__stdcell"])
 tot_power = first_numeric(data, ["finish__power__total", "finish__power__internal__total"])
-setup_ws = first_numeric(data, ["finish__timing__setup__ws", "finish__timing__setup__wns"])
-timing_requirement = period_from_metadata(data) or requirement_from_sdc(sdc_path)
+setup_ws = first_numeric(data, ["finish__timing__setup__ws"])
+if setup_ws is None:
+   # WNS is clipped at zero and cannot recover an achieved period when timing
+   # is met. Only a negative WNS is a usable substitute for signed worst slack.
+   wns = first_numeric(data, ["finish__timing__setup__wns"])
+   if wns is not None and wns < 0:
+      setup_ws = wns
+timing_requirement = period_from_metadata(data)
+if timing_requirement is None:
+   timing_requirement = requirement_from_sdc(sdc_path)
 if design_area is None or tot_power is None or setup_ws is None or timing_requirement is None:
    print("ERROR: missing ORFS metrics for backend XML generation", file=sys.stderr)
    sys.exit(1)
 
-design_delay_ps = timing_requirement - setup_ws
-design_delay_ns = design_delay_ps / 1000.0
-clock_slack_ns = setup_ws / 1000.0
-frequency_mhz = 1000.0 / design_delay_ns if design_delay_ns else 0.0
+try:
+   scale_ns = time_unit_ns(data)
+except ValueError as error:
+   sys.exit(f"ERROR: {error}")
+# PERIOD is the achieved period/delay, not the target constraint. Bambu's
+# evaluation multiplies this ns value by simulated cycles to obtain TIME [ns].
+design_delay_ns = (timing_requirement - setup_ws) * scale_ns
+clock_slack_ns = setup_ws * scale_ns
+if not math.isfinite(design_delay_ns) or design_delay_ns <= 0:
+   sys.exit("ERROR: ORFS timing requirement and worst slack give a non-positive or invalid achieved period")
+frequency_mhz = 1000.0 / design_delay_ns
 out_xml.parent.mkdir(parents=True, exist_ok=True)
 root = ET.Element("application")
 ET.SubElement(root, "resources",
@@ -668,20 +723,7 @@ export DESIGN_NAME="$(bambu_results /application/top_module@name)"
 : "${DESIGN_NICKNAME:=${DESIGN_NAME}}"
 export DESIGN_NICKNAME
 export SDC_FILE="${SWD}/constraints.sdc"
-clock_constraint_ps="$(bambu_results /application/target@period_ps)"
-if [[ -z "${clock_constraint_ps}" ]]; then
-   clock_constraint_ps="$(bambu_results /application/target@period)"
-fi
-
-if $(bambu_results /application/top_module@combinational); then
-   echo "set_max_delay ${clock_constraint_ps} -from [all_inputs] -to [all_outputs]" > "${SDC_FILE}"
-else
-   echo "create_clock $(bambu_results /application/top_module@clock_name) -period ${clock_constraint_ps}" > "${SDC_FILE}"
-fi
-sdc_ext_file="$(bambu_results /application/target@sdc_ext_file)"
-if [[ -n "${sdc_ext_file}" ]]; then
-   echo "source ${sdc_ext_file}" >> "${SDC_FILE}"
-fi
+write_sdc || exit $?
 
 WORK_DIR="${CURR_WORKDIR:-$(pwd)}"
 export VERILOG_FILES=""
@@ -697,4 +739,4 @@ export FLOW_VARIANT
 
 resolve_num_cores
 run_orfs_backend
-exit 0
+exit $?
