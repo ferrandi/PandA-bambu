@@ -41,10 +41,12 @@
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Operator.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/Utils/Cloning.h"
 
 #include "debug_print.hpp"
 
@@ -166,7 +168,8 @@ namespace llvm
       do
       {
          changed_any = false;
-         for(auto* F : dataflow_functions)
+         // By reference: F is replaced by the new function without the propagated arguments.
+         for(auto*& F : dataflow_functions)
          {
             if(F->hasAddressTaken())
             {
@@ -187,11 +190,13 @@ namespace llvm
                continue;
             }
 
+            SmallVector<Type*, 8> params;
+            SmallVector<unsigned, 8> removed_args;
             for(auto& arg : F->args())
             {
-               // use_empty: already propagated, the call sites now pass null.
                if(arg.use_empty() || arg.hasPassPointeeByValueCopyAttr() || arg.hasStructRetAttr())
                {
+                  params.push_back(arg.getType());
                   continue;
                }
                const auto arg_i = arg.getArgNo();
@@ -200,28 +205,96 @@ namespace llvm
                    C && llvm::all_of(calls, [&](const CallBase* CB) { return CB->getArgOperand(arg_i) == C; });
                if(!same_constant || !isEligible(C))
                {
+                  params.push_back(arg.getType());
                   continue;
                }
                LLVM_DEBUG(dbgs() << "[CSROA] Argument " << arg_i << " of dataflow module " << F->getName()
                                  << " propagated: " << *C << "\n");
                arg.replaceAllUsesWith(C);
-               // The call sites pass null so that the top no longer uses the global. Once the argument has become
-               // null, keeping nonnull and dereferenceable (clang puts them on a const T& parameter) is UB, so we
-               // remove them from the definition and from every call.
-               for(const auto kind : {Attribute::NonNull, Attribute::Dereferenceable})
-               {
-                  F->removeParamAttr(arg_i, kind);
-                  for(auto* CB : calls)
-                  {
-                     CB->removeParamAttr(arg_i, kind);
-                  }
-               }
-               for(auto* CB : calls)
-               {
-                  CB->setArgOperand(arg_i, Constant::getNullValue(arg.getType()));
-               }
+               removed_args.push_back(arg_i);
                changed_any = true;
             }
+
+            if(removed_args.empty())
+            {
+               continue;
+            }
+
+            // New function without the propagated arguments. Until F is erased the name is taken, so LLVM gives
+            // NewF a temporary unique name; NewF takes the name of F below.
+            FunctionType* FTy = FunctionType::get(F->getReturnType(), params, F->isVarArg());
+            Function* NewF = Function::Create(FTy, F->getLinkage(), F->getName(), M);
+
+            // Every argument of F must be in VMap: the kept ones go to the new arguments, the removed ones (which
+            // no longer have uses) to poison.
+            ValueToValueMapTy VMap;
+            auto new_arg = NewF->arg_begin();
+            for(auto& arg : F->args())
+            {
+               if(llvm::is_contained(removed_args, arg.getArgNo()))
+               {
+                  VMap[&arg] = PoisonValue::get(arg.getType());
+               }
+               else
+               {
+                  new_arg->setName(arg.getName());
+                  VMap[&arg] = &*new_arg++;
+               }
+            }
+            SmallVector<ReturnInst*, 8> returns;
+            CloneFunctionInto(NewF, F, VMap, CloneFunctionChangeType::LocalChangesOnly, returns);
+
+            // Every call to F becomes a call to NewF without the removed arguments.
+            for(auto* CB : calls)
+            {
+               const auto PAL = CB->getAttributes();
+               SmallVector<Value*, 8> args;
+               SmallVector<AttributeSet, 8> arg_attrs;
+               for(unsigned i = 0; i < CB->arg_size(); ++i)
+               {
+                  if(llvm::is_contained(removed_args, i))
+                  {
+                     continue;
+                  }
+                  args.push_back(CB->getArgOperand(i));
+#if LLVM_VERSION_MAJOR >= 14
+                  arg_attrs.push_back(PAL.getParamAttrs(i));
+#else
+                  arg_attrs.push_back(PAL.getParamAttributes(i));
+#endif
+               }
+               SmallVector<OperandBundleDef, 1> bundles;
+               CB->getOperandBundlesAsDefs(bundles);
+
+               IRBuilder<> B(CB);
+               CallBase* NewCB;
+               if(auto* II = dyn_cast<InvokeInst>(CB))
+               {
+                  NewCB = B.CreateInvoke(NewF, II->getNormalDest(), II->getUnwindDest(), args, bundles);
+               }
+               else
+               {
+                  auto* CI = B.CreateCall(NewF, args, bundles);
+                  CI->setTailCallKind(cast<CallInst>(CB)->getTailCallKind());
+                  NewCB = CI;
+               }
+               NewCB->setCallingConv(CB->getCallingConv());
+#if LLVM_VERSION_MAJOR >= 14
+               NewCB->setAttributes(AttributeList::get(M.getContext(), PAL.getFnAttrs(), PAL.getRetAttrs(), arg_attrs));
+#else
+               NewCB->setAttributes(
+                   AttributeList::get(M.getContext(), PAL.getFnAttributes(), PAL.getRetAttributes(), arg_attrs));
+#endif
+               NewCB->setDebugLoc(CB->getDebugLoc());
+               NewCB->takeName(CB);
+               CB->replaceAllUsesWith(NewCB);
+               CB->eraseFromParent();
+            }
+
+            // NewF replaces F under the same name.
+            NewF->takeName(F);
+            F->eraseFromParent();
+            F = NewF;
          }
          changed |= changed_any;
       } while(changed_any);

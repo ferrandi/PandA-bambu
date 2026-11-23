@@ -43,9 +43,14 @@ namespace llvm
    /// their parameters alone, and a constant that is always passed in stays behind the parameter. In hls4ml this
    /// is the case of the weights and biases: every layer gets its w/b arrays as pointers, so the kernels read each
    /// weight from memory and multiply by a variable.
-   /// This pass carries across that boundary only scalar constants and read-only globals: the signature is kept
-   /// and the call sites pass null instead, so architecture.xml and the dataflow interfaces stay valid. Anything
-   /// that is written (channels, state, this) keeps going through the parameter.
+   /// This pass carries across that boundary only scalar constants and read-only globals, when every call passes
+   /// the same one and the module is only called directly. The parameter is removed: the module is rebuilt under
+   /// the same name without it and its calls are rewritten. Leaving it in the signature would leave its bundle in
+   /// the interface too, and two instances of the same module template (two hls4ml layers) would share a
+   /// "weights" bundle with different data widths. Anything that is written (channels, state, this) keeps going
+   /// through the parameter.
+   /// architecture.xml is not rewritten here: the remaining arguments keep their bambu.orig_index, which ArrPart
+   /// uses to find their entries, and the IR dump drops the entries and bundles of the removed ones.
    struct DFConstArgPass : public PassInfoMixin<DFConstArgPass>
    {
       /// topFnNames: comma separated top functions, which are never rewritten.
