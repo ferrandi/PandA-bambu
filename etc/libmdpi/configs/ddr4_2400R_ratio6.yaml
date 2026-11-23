@@ -5,19 +5,14 @@
 # DDR4-2400R (JEDEC standard CL=16-16-16), 8Gb x8, single rank.
 #
 # Nominal DRAM clock: 1200 MHz (tCK ~0.833 ns).
-# clock_ratio = 6   ->  DRAM runs 6x accelerator clock.
-# Recommended accelerator clock: --clock-period=5.0 (200 MHz) for exact match.
-#   At --clock-period=10.0 (100 MHz) the effective DRAM tick rate is only
-#   600 MHz (50% of real), so DDR4-2400 timings get stretched ~2x in wall
-#   clock terms. Either accept this pessimism or bump the accelerator clock.
-#
-# Cap check: ratio 6 <= 6  OK.
+# MDPI derives the clock ratio from --clock-period and the model's tCK,
+# retaining fractional phase. The filename is kept for existing scripts.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 6
+  clock_ratio: 1
 
   DRAM:
     impl: DDR4

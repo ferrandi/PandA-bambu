@@ -134,7 +134,7 @@ avoid data races between threads.
 
 `hbm2.yaml` selects the actual HBM2 model (`HBM2_4Gb`, `HBM2_2Gbps`), 16 physical
 channels with two pseudochannels each, and OpenRowPolicy. The accelerator runs
-at 200 MHz and DRAM ticks at 1000 MHz (`clock_ratio=5`). For this group the driver
+at 200 MHz and DRAM ticks at 1000 MHz (a derived ratio of 5). For this group the driver
 must preserve the YAML channel count (`RAMULATOR_OVERRIDE_CHANNELS=0`): forcing
 32 physical HBM channels would double the intended pseudochannel count.
 These are protocol/concurrency regressions, not a calibrated board bandwidth
@@ -218,8 +218,12 @@ channel tags, invalid requests and fractional DRAM/accelerator clock ratios.
 The classical backend is checked both with and without the Ramulator library.
 `RAMULATOR2_CONFIG` selects a YAML file; relative `!include` paths resolve from
 the containing file. An explicit invalid configuration fails initialization.
-`MemorySystem.clock_ratio` is the number of DRAM ticks per accelerator cycle,
-including fractional values; there is no upper limit of six.
+MDPI derives DRAM ticks per accelerator cycle from the accelerator clock period
+and Ramulator's `get_tCK()`. Fractional ratios retain their time remainder in
+integer femtoseconds, so ticks occur on the first accelerator cycle at or after
+the corresponding DRAM edge, without cumulative floating-point drift. Legacy
+`MemorySystem.clock_ratio` values are ignored; no manual frequency pairing is
+needed. Models must provide a finite positive `tCK`.
 
 The original DDR3, DDR4, DDR5 and HBM presets run without changing their row
 policies. DDR3 ClosedRowPolicy treats the absent bank-group level as one implicit

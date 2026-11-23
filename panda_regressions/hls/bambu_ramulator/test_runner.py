@@ -17,16 +17,18 @@ class EvidenceChecks(unittest.TestCase):
 
     def test_memory_clock_is_not_multiplied_by_port_count(self):
         first = ("Ramulator2 successfully initialized for interface 3\n"
-                 "[MDPI-MEMORY] ID=3,CYCLES=100,DRAM_TICKS=300,READS=20,COMPLETED=20,WRITES=0\n")
+                 "[MDPI-CLOCK] ID=3,ACCELERATOR_PERIOD_FS=5000,DRAM_PERIOD_FS=3000\n"
+                 "[MDPI-MEMORY] ID=3,CYCLES=100,DRAM_TICKS=166,READS=20,COMPLETED=20,WRITES=0\n")
         second = ("Ramulator2 successfully initialized for interface 4\n"
-                  "[MDPI-MEMORY] ID=4,CYCLES=100,DRAM_TICKS=300,READS=20,COMPLETED=20,WRITES=20\n")
+                  "[MDPI-CLOCK] ID=4,ACCELERATOR_PERIOD_FS=5000,DRAM_PERIOD_FS=3000\n"
+                  "[MDPI-MEMORY] ID=4,CYCLES=100,DRAM_TICKS=166,READS=20,COMPLETED=20,WRITES=20\n")
         self.assertEqual(len(memory_isolation(first + second, 2)), 2)
         with self.assertRaisesRegex(ValueError, "simulated accelerator cycles"):
             memory_isolation(first + second, 2, 50)
         write_only = second.replace("READS=20,COMPLETED=20", "READS=0,COMPLETED=0")
         self.assertEqual(len(memory_isolation(first + write_only, 2)), 2)
         with self.assertRaisesRegex(ValueError, "clock advanced incorrectly"):
-            memory_isolation(first + second.replace("TICKS=300", "TICKS=600"), 2)
+            memory_isolation(first + second.replace("TICKS=166", "TICKS=332"), 2)
         with self.assertRaisesRegex(ValueError, "share accelerator time"):
             memory_isolation(first + second.replace("CYCLES=100", "CYCLES=200"), 2)
 

@@ -174,11 +174,35 @@ def main():
         contract('ramulator-without-library', 'clock_contract', host=directory / 'host_plain',
                  failure=True, diagnostic='MDPI driver has no Ramulator support')
         default = (ROOT / 'etc/libmdpi/configs/default_ddr4.yaml').read_text()
+        # DDR4-1600L has tCK=1.25 ns. Derive all expected ratios from physical
+        # periods and compare each read's delivery cycle with a 1:1 reference.
+        clock_config = directory / 'clock.yaml'
+        clock_config.write_text(default.replace('preset: DDR4_2400R', 'preset: DDR4_1600L'))
+        contract('clock-reference', 'clock_contract', config=clock_config, expected_ratio='1',
+                 updates={'MDPI_TEST_MEMORIES': '2', 'MDPI_TEST_PERIOD_NS': '1.25'})
+        reference = re.search(r'CLOCK_READ_CYCLE=(\d+)', (directory / 'clock-reference/run.log').read_text())
+        if not reference:
+            raise ValueError('Missing reference read completion cycle')
+        reference_ticks = int(reference[1])
         for ratio in ('0.25', '0.3', '1.5', '3.7', '6.5'):
-            config = directory / f'clock-{ratio}.yaml'
-            config.write_text(default.replace('clock_ratio: 3', f'clock_ratio: {ratio}'))
-            contract(f'clock-{ratio}', 'clock_contract', config=config, expected_ratio=ratio,
-                     updates={'MDPI_TEST_MEMORIES': '2'})
+            exact_ratio = Fraction(ratio)
+            delivery = (reference_ticks * exact_ratio.denominator + exact_ratio.numerator - 1) // exact_ratio.numerator
+            contract(f'clock-{ratio}', 'clock_contract', config=clock_config, expected_ratio=ratio,
+                     updates={'MDPI_TEST_MEMORIES': '2',
+                              'MDPI_TEST_PERIOD_NS': str(float(Fraction('1.25') * exact_ratio)),
+                              'MDPI_TEST_READ_CYCLE': str(delivery)})
+        contract('clock-repeating', 'clock_contract', expected_ratio=Fraction(10000, 833),
+                 updates={'MDPI_TEST_MEMORIES': '2', 'MDPI_TEST_PERIOD_NS': '10'})
+        contract('clock-jumps', 'clock_contract', config=clock_config, expected_ratio='0.3',
+                 updates={'MDPI_TEST_MEMORIES': '2', 'MDPI_TEST_PERIOD_NS': '0.375',
+                          'MDPI_TEST_CLOCK_JUMPS': '1'})
+        # Legacy YAML ratios must neither rescale the model nor reject fractional
+        # values: only the accelerator period and the model's tCK drive time.
+        for ratio in ('1', '5', '0.3'):
+            config = directory / f'legacy-ratio-{ratio}.yaml'
+            config.write_text(re.sub(r'  clock_ratio:.*', f'  clock_ratio: {ratio}', clock_config.read_text()))
+            contract(f'legacy-ratio-{ratio}', 'clock_contract', config=config, expected_ratio='8',
+                     updates={'MDPI_TEST_MEMORIES': '2', 'MDPI_TEST_PERIOD_NS': '10'})
         execute(['g++', '-std=c++20', f'-I{prefix / "include/ramulator"}', f'-I{prefix / "include"}',
                  HERE / 'row_policy.cpp', f'-L{libdir}', f'-Wl,-rpath,{libdir}', '-lramulator',
                  '-o', directory / 'row_policy'], directory)
@@ -214,10 +238,13 @@ def main():
         contract('missing-config', 'clock_contract', config=directory / 'missing.yaml', failure=True)
         contract('missing-config-before-ready', 'clock_contract', config=directory / 'missing.yaml', failure=True,
                  updates={'MDPI_TEST_DELAY_READY': '1'})
-        for ratio in ('0', '-1', '.nan'):
-            config = directory / f'invalid-{ratio}.yaml'
-            config.write_text(default.replace('clock_ratio: 3', f'clock_ratio: {ratio}'))
-            contract(f'invalid-ratio-{ratio}', 'clock_contract', config=config, failure=True)
+        for period in ('0', '-1', 'nan', 'inf', '1e-10', '1e100'):
+            contract(f'invalid-period-{period}', 'clock_contract',
+                     updates={'MDPI_TEST_PERIOD_NS': period}, failure=True)
+        missing_tck = directory / 'missing-tck.yaml'
+        missing_tck.write_text('Frontend: {impl: GEM5}\nMemorySystem: {impl: DummyMemorySystem}\n')
+        contract('missing-dram-tck', 'clock_contract', config=missing_tck, failure=True,
+                 diagnostic='Ramulator must provide a finite positive DRAM tCK')
         (include_dir / 'cycle.yaml').write_text('!include cycle.yaml\n')
         contract('cyclic-include', 'clock_contract', config=include_dir / 'cycle.yaml', failure=True)
     if not error and not args.contract_only:

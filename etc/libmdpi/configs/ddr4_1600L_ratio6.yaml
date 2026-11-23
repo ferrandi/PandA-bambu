@@ -5,18 +5,14 @@
 # DDR4-1600L, 8Gb x8 components, single rank.
 #
 # Nominal DRAM clock: 800 MHz (tCK = 1.25 ns).
-# clock_ratio = 6   ->  DRAM runs 6x accelerator clock.
-# Recommended accelerator clock: --clock-period=7.5 (~133 MHz) for exact match.
-#   At --clock-period=10.0 (100 MHz) the effective DRAM tick rate is 600 MHz
-#   (25% slower than real DDR4-1600; latencies pessimistic).
-#
-# Cap check: ratio 6 <= 6  OK.
+# MDPI derives the clock ratio from --clock-period and the model's tCK,
+# retaining fractional phase. The filename is kept for existing scripts.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 6
+  clock_ratio: 1
 
   DRAM:
     impl: DDR4

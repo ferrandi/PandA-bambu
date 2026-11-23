@@ -6,7 +6,7 @@ Frontend:
   impl: GEM5
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 5
+  clock_ratio: 1
   DRAM:
     impl: HBM2
     org:

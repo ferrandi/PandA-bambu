@@ -949,8 +949,10 @@ namespace
       uint64_t reads_issued = 0;
       uint64_t reads_completed = 0;
       uint64_t writes_issued = 0;
-      long double clock_ratio = 3.0L;
-      long double clock_phase = 0.0L;
+      // Keep fractional DRAM cycles as an exact time remainder across accelerator edges.
+      uint64_t accelerator_period_fs = 0;
+      uint64_t dram_period_fs = 0;
+      uint64_t clock_phase_fs = 0;
 
       void report(const char* format, ...) const
       {
@@ -1054,7 +1056,7 @@ Frontend:
   impl: GEM5
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 3
+  clock_ratio: 1
   DRAM:
     impl: DDR4
     org:
@@ -1110,16 +1112,8 @@ MemorySystem:
          }
          auto config = configuration();
          auto system = config["MemorySystem"];
-         if(system["clock_ratio"])
-         {
-            clock_ratio = system["clock_ratio"].as<long double>();
-         }
-         if(!std::isfinite(clock_ratio) || clock_ratio <= 0)
-         {
-            throw std::invalid_argument("MemorySystem.clock_ratio must be finite and positive");
-         }
-         // The external MDPI clock advances the model explicitly. Ramulator's
-         // standalone scheduler expects an integer ratio; it is not used here.
+         // MDPI owns the external clock. Ignore legacy YAML ratios and bypass
+         // Ramulator's standalone frontend/memory scheduler.
          system["clock_ratio"] = 1;
          if(const auto* override_channels = std::getenv("RAMULATOR_OVERRIDE_CHANNELS"))
          {
@@ -1140,8 +1134,32 @@ MemorySystem:
          }
          frontend->connect_memory_system(memory.get());
          memory->connect_frontend(frontend.get());
+         const auto to_femtoseconds = [](long double period_ns) -> uint64_t {
+            const auto period_fs = std::round(period_ns * 1000000.0L);
+            if(!std::isfinite(period_fs) || period_fs < 1 ||
+               period_fs > static_cast<long double>(std::numeric_limits<int64_t>::max()))
+            {
+               throw std::invalid_argument("Clock period must be positive and representable in femtoseconds");
+            }
+            return static_cast<uint64_t>(period_fs);
+         };
+         accelerator_period_fs = to_femtoseconds(clock_period_ns);
+         // Ramulator stores tCK as integer picoseconds but exposes float ns.
+         // Recover its original precision before converting the time unit.
+         const auto dram_tck_ns = memory->get_tCK();
+         if(!std::isfinite(dram_tck_ns) || dram_tck_ns <= 0)
+         {
+            throw std::invalid_argument("Ramulator must provide a finite positive DRAM tCK");
+         }
+         const auto dram_period_ps = std::round(static_cast<long double>(dram_tck_ns) * 1000.0L);
+         dram_period_fs = to_femtoseconds(dram_period_ps / 1000.0L);
          report("Ramulator2 successfully initialized for interface %u\n", static_cast<unsigned>(_idx));
-         report("Memory clock: %.9Lg DRAM ticks per accelerator cycle (%.9g ns).\n", clock_ratio, clock_period_ns);
+         report("Memory clock: %.9Lg DRAM ticks per accelerator cycle (%.9g ns), DRAM tCK %.9Lg ns.\n",
+                 static_cast<long double>(accelerator_period_fs) / dram_period_fs, clock_period_ns,
+                 static_cast<long double>(dram_period_fs) / 1000000.0L);
+         report("[MDPI-CLOCK] ID=%u,ACCELERATOR_PERIOD_FS=%llu,DRAM_PERIOD_FS=%llu\n",
+                 static_cast<unsigned>(_idx), static_cast<unsigned long long>(accelerator_period_fs),
+                 static_cast<unsigned long long>(dram_period_fs));
       }
 
       ~mem_interface_ramulator() override
@@ -1163,11 +1181,11 @@ MemorySystem:
          while(current_cycle < cycle)
          {
             ++current_cycle;
-            clock_phase += clock_ratio;
-            while(clock_phase + 16 * std::numeric_limits<long double>::epsilon() >= 1.0L)
+            clock_phase_fs += accelerator_period_fs;
+            while(clock_phase_fs >= dram_period_fs)
             {
                memory->tick();
-               clock_phase -= 1.0;
+               clock_phase_fs -= dram_period_fs;
                ++dram_ticks;
             }
          }

@@ -59,7 +59,10 @@ int main()
       }
       else
       {
-         __m_interface_mem_ramulator(10.0, 1);
+         __m_interface_mem_ramulator(std::getenv("MDPI_TEST_PERIOD_NS") ?
+                                        std::strtod(std::getenv("MDPI_TEST_PERIOD_NS"), nullptr) :
+                                        10.0,
+                                    1);
       }
    }
    __m_sim_start();

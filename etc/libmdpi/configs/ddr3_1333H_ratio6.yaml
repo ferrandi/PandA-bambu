@@ -5,17 +5,14 @@
 # DDR3-1333H, 4Gb x8 components, single rank.
 #
 # Nominal DRAM clock: 667 MHz (tCK ~1.5 ns).
-# clock_ratio = 6   ->  DRAM runs 6x accelerator clock.
-# Recommended accelerator clock: --clock-period=9.0 (~111 MHz) for exact match.
-#   At --clock-period=10.0 (100 MHz) the effective DRAM tick rate is 600 MHz,
-#   which is ~10% slower than real DDR3-1333 (mildly pessimistic).
-#
+# MDPI derives the clock ratio from --clock-period and the model's tCK,
+# retaining fractional phase. The filename is kept for existing scripts.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 6
+  clock_ratio: 1
 
   DRAM:
     impl: DDR3

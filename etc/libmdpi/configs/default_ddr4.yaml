@@ -4,21 +4,16 @@
 
 # Default DDR4 Ramulator2 configuration (Bambu MDPI integration).
 #
-# Semantics of MemorySystem.clock_ratio in this setup:
-#   mdpi_driver.cpp advances Ramulator clock_ratio DRAM ticks for every
-#   accelerator cycle. With --clock-period=10.0 (100 MHz accelerator) and
-#   clock_ratio=3, the DRAM clock is simulated at 300 MHz. DRAM latencies
-#   from the timing preset below are counted in DRAM cycles, so the wall-
-#   clock latency of each DDR parameter is (nCK / (clock_ratio * accel_MHz)).
-#
-# Picked for: historic baseline (matches the previous hardcoded behavior).
-# Effective DRAM tick rate at 100 MHz accel: 300 MHz.
+# MDPI derives DRAM ticks per accelerator cycle from --clock-period / tCK.
+# tCK comes from the timing preset; fractional ratios retain their phase.
+# For DDR4-2400R, tCK is approximately 0.833 ns: a 10 ns accelerator cycle
+# advances approximately 12 DRAM cycles, independently of the YAML clock_ratio.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 3
+  clock_ratio: 1
 
   DRAM:
     impl: DDR4

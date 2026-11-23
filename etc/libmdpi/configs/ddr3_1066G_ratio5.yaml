@@ -5,19 +5,14 @@
 # DDR3-1066G, 4Gb x8 components, single rank.
 #
 # Nominal DRAM clock: 533 MHz (tCK ~1.875 ns).
-# clock_ratio = 5   ->  DRAM runs 5x accelerator clock.
-# Recommended accelerator clock: --clock-period=10.0 (100 MHz)
-#   effective DRAM tick rate = 500 MHz  (~6% slower than real DDR3-1066,
-#   i.e. latencies are slightly pessimistic). Bump accelerator to 107 MHz
-#   (--clock-period=9.375) for exact match.
-#
-# Cap check: ratio 5 <= 6  OK.
+# MDPI derives the clock ratio from --clock-period and the model's tCK,
+# retaining fractional phase. The filename is kept for existing scripts.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 5
+  clock_ratio: 1
 
   DRAM:
     impl: DDR3

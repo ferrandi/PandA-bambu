@@ -16,18 +16,14 @@
 #     This is above the official JEDEC DDR3 limit (1600) and is sometimes
 #     found on enthusiast/server DIMMs.
 #
-# Frequency scaling (DRAM ticks per accelerator cycle):
-#   DDR3-2133 real DRAM clock ~= 1066 MHz, tCK ~= 0.937 ns.
-#   clock_ratio = 6 requires accelerator clock ~= 178 MHz
-#   (--clock-period=5.625) for a cycle-accurate wall-clock match.
-#   The benchmark scripts auto-select --clock-period=5.625 when this
-#   preset is chosen; override with CLOCK_PERIOD=<ns> if needed.
+# MDPI derives DRAM ticks per accelerator cycle from --clock-period / tCK.
+# The DRAM timing preset determines tCK; fractional ratios retain their phase.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 6
+  clock_ratio: 1
 
   DRAM:
     impl: DDR3

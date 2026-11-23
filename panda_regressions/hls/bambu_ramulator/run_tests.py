@@ -138,9 +138,14 @@ def memory_isolation(log, expected_active, accelerator_cycles=None):
         raise ValueError(f"independent memories do not share accelerator time: {memories}")
     if accelerator_cycles is not None and not 0 <= accelerator_cycles - memories[0]["cycles"] <= 2:
         raise ValueError(f"memory time disagrees with simulated accelerator cycles: {memories}")
-    # The smoke DDR4 configuration uses three DRAM ticks per accelerator cycle.
-    if any(m["dram_ticks"] != 3 * m["cycles"] for m in memories):
-        raise ValueError(f"memory clock advanced incorrectly: {memories}")
+    clock_records = re.findall(r"\[MDPI-CLOCK\] ID=(\d+),ACCELERATOR_PERIOD_FS=(\d+),DRAM_PERIOD_FS=(\d+)", log)
+    clocks = {int(idx): (int(accelerator), int(dram)) for idx, accelerator, dram in clock_records}
+    if len(clocks) != len(clock_records) or set(clocks) != {m["id"] for m in memories}:
+        raise ValueError("missing or duplicate memory clock periods")
+    for memory in memories:
+        accelerator, dram = clocks[memory["id"]]
+        if min(accelerator, dram) <= 0 or memory["dram_ticks"] != memory["cycles"] * accelerator // dram:
+            raise ValueError(f"memory clock advanced incorrectly: {memories}")
     return memories
 
 

@@ -5,17 +5,14 @@
 # DDR3-800D (slowest JEDEC DDR3), 4GB x8 components, single rank.
 #
 # Nominal DRAM clock: 400 MHz (tCK = 2.5 ns).
-# clock_ratio = 4   ->  DRAM runs 4x accelerator clock.
-# Recommended accelerator clock: --clock-period=10.0 (100 MHz)
-#   effective DRAM tick rate = 400 MHz  (exact match to DDR3-800)
-#
-# Cap check: ratio 4 <= 6  OK.
+# MDPI derives the clock ratio from --clock-period and the model's tCK,
+# retaining fractional phase. The filename is kept for existing scripts.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 4
+  clock_ratio: 1
 
   DRAM:
     impl: DDR3

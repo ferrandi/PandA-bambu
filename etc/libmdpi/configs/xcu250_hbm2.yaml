@@ -21,18 +21,14 @@
 #   --channels-number, so to actually exercise N memory channels you must also
 #   pass --channels-number=N (the NoC driver sets this from the core count).
 #
-# Frequency pairing (DRAM/accel ratio):
-#   HBM2-2Gbps => 2000 MT/s => DRAM command clock 1000 MHz.
-#   clock_ratio = 5 pairs with a 200 MHz accelerator (--clock-period=5.0) for a
-#   wall-clock-accurate match. test-gapbs-noc-ramulator-candidate-xcu250.sh
-#   selects --clock-period=5.0 automatically for this preset; override with
-#   CLOCK_PERIOD=<ns> (and keep clock_ratio = round(1000 / accel_MHz)).
+# MDPI derives DRAM ticks per accelerator cycle from --clock-period / tCK.
+# The DRAM timing preset determines tCK; fractional ratios retain their phase.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 5
+  clock_ratio: 1
 
   DRAM:
     impl: HBM2

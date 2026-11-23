@@ -17,19 +17,14 @@
 #   - channel: 4 is used as configured. RAMULATOR_OVERRIDE_CHANNELS=1
 #     explicitly replaces it with the accelerator's --channels-number.
 #
-# Frequency scaling (DRAM ticks per accelerator cycle):
-#   DDR4-2400 real DRAM clock = 1200 MHz.
-#   clock_ratio = 6 requires accelerator clock = 200 MHz (--clock-period=5.0)
-#   for a cycle-accurate wall-clock match of the real xcu250 DRAM. The
-#   benchmark scripts automatically select --clock-period=5.0 when this
-#   preset (or any other ratio-6 DDR4-2400/2666 preset) is chosen; override
-#   with CLOCK_PERIOD=<ns> in the environment if needed.
+# MDPI derives DRAM ticks per accelerator cycle from --clock-period / tCK.
+# The DRAM timing preset determines tCK; fractional ratios retain their phase.
 Frontend:
   impl: GEM5
 
 MemorySystem:
   impl: GenericDRAM
-  clock_ratio: 6
+  clock_ratio: 1
 
   DRAM:
     impl: DDR4
