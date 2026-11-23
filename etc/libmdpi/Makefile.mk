@@ -24,8 +24,8 @@ $(call check_defined, BEH_DIR)    # HLS_output/<sim_id>_beh absolute path
 # The following variables may also be defined:
 #   SRCS       : PandA Bambu HLS input source files
 #   BEH_CC     : alternative compiler for libmdpi compilation
-#   CFLAGS     : compilation flags for SRCS, WRAPPER_SRC, and TB_SRCS
-#   CPP_CFLAGS : compilation flags for C++ sources in SRCS
+#   CFLAGS     : compilation flags for C sources and generated wrapper/TB files
+#   CPP_CFLAGS : compilation flags for C++ sources in SRCS and TB_SRCS
 #   BEH_CFLAGS : includes and defines for svdpi.h
 #   TB_CFLAGS  : additional compilation flags for TB_SRCS
 #   TB_SRCS    : additional testbench source files
@@ -63,6 +63,7 @@ WRAPPER_MDPI_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(WRAPPER_MDPI_SR
 WRAPPER_CSROA_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(WRAPPER_CSROA_SRC)))
 WRAPPER_OBJ := $(WRAPPER_MDPI_OBJ) $(WRAPPER_CSROA_OBJ)
 
+TB_CPP_CFLAGS := $(patsubst -fno-exceptions,,$(CPP_CFLAGS)) $(TB_CFLAGS)
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS)
 MDPI_CFLAGS := $(BEH_CFLAGS) -D_GNU_SOURCE -isystem$(panda_includes)
 LIB_CFLAGS := $(MDPI_CFLAGS)
@@ -165,7 +166,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%
 $(TB_OBJ_DIR)/%.o: $(TB_SRC_DIR)/%
 	@echo "Compiling testbench $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
-	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(TB_CFLAGS) -fPIC -c -o $@ $<
+	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(if $(filter .ii .cc .cp .cxx .cpp .CPP .c++ .C,$(suffix $(<F))),$(TB_CPP_CFLAGS),$(TB_CFLAGS)) -fPIC -c -o $@ $<
 	$(Q)objcopy $(WEAKEN_TOP) $(REDEFINE_SYS) $@
 
 $(PP_OBJ): $(PP_SRC)

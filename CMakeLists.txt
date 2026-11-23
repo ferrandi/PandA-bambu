@@ -529,6 +529,11 @@ if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND
 endif()
 
 if(BUILD_TESTING AND TARGET bambu)
+   add_test(NAME mdpi_testbench_flags
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_mdpi_testbench_flags.py"
+              --makefile "${CMAKE_SOURCE_DIR}/etc/libmdpi/Makefile.mk" --cc "${CMAKE_C_COMPILER}")
+   set_tests_properties(mdpi_testbench_flags PROPERTIES LABELS "frontend" TIMEOUT 120)
+
    # integration test driving the real front-end: it runs the bambu of this
    # build's installation (cmake --install), since the build-tree binary lacks
    # the installed plug-ins and libraries; the test skips when that
