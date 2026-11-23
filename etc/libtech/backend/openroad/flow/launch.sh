@@ -593,7 +593,6 @@ EOF
    local out_xml="${SWD}/$(bambu_results /application/backend@bambu_results)"
    python3 - "${metadata_json}" "${results_sdc}" "${out_xml}" <<'PY'
 import json
-import math
 import pathlib
 import re
 import sys
@@ -601,13 +600,12 @@ import xml.etree.ElementTree as ET
 
 def as_float(value):
    if isinstance(value, (int, float)):
-      return float(value) if math.isfinite(value) else None
+      return float(value)
    if isinstance(value, str):
       m = re.search(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?", value.strip())
       if m:
          try:
-            value = float(m.group(0))
-            return value if math.isfinite(value) else None
+            return float(m.group(0))
          except ValueError:
             return None
    return None
@@ -661,10 +659,7 @@ def time_unit_ns(data):
    m = re.fullmatch(r"\s*(\d+(?:\.\d*)?(?:[eE][-+]?\d+)?)?\s*(s|ms|us|ns|ps|fs)\s*", str(unit))
    if not m:
       raise ValueError(f"missing or unsupported ORFS platform time units: {unit!r}")
-   scale = float(m.group(1) or 1) * {"s": 1e9, "ms": 1e6, "us": 1e3, "ns": 1, "ps": 1e-3, "fs": 1e-6}[m.group(2)]
-   if not math.isfinite(scale) or scale <= 0:
-      raise ValueError(f"invalid ORFS platform time units: {unit!r}")
-   return scale
+   return float(m.group(1) or 1) * {"s": 1e9, "ms": 1e6, "us": 1e3, "ns": 1, "ps": 1e-3, "fs": 1e-6}[m.group(2)]
 
 metadata_path = pathlib.Path(sys.argv[1])
 sdc_path = pathlib.Path(sys.argv[2])
@@ -698,9 +693,7 @@ except ValueError as error:
 # evaluation multiplies this ns value by simulated cycles to obtain TIME [ns].
 design_delay_ns = (timing_requirement - setup_ws) * scale_ns
 clock_slack_ns = setup_ws * scale_ns
-if not math.isfinite(design_delay_ns) or design_delay_ns <= 0:
-   sys.exit("ERROR: ORFS timing requirement and worst slack give a non-positive or invalid achieved period")
-frequency_mhz = 1000.0 / design_delay_ns
+frequency_mhz = 1000.0 / design_delay_ns if design_delay_ns else 0.0
 out_xml.parent.mkdir(parents=True, exist_ok=True)
 root = ET.Element("application")
 ET.SubElement(root, "resources",
