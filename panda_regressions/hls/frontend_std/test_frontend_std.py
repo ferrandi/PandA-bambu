@@ -13,6 +13,8 @@ front-end itself; when
 strace is available the test additionally inspects the clang/opt argv to check
 that each command carries a single --std (the expected one), that -fopenmp is
 appended as usual, and that the LTO/opt commands receive no --std at all.
+Mixed C/C++ driver selection remains order-dependent; see
+documentation/frontend_language_selection.md.
 
 Run it against the installation produced by "cmake --install" of the same
 build (the settings.sh next to that installation is sourced automatically);
@@ -228,7 +230,36 @@ def main():
                     tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
                     failures.append(f"mixed {order} with top in {top_language}: {' | '.join(tail)}")
                 else:
-                    print(f"OK  mixed sources {order} with top in {top_language}")
+                    print(f"OK  mixed source smoke case {order} with top in {top_language}")
+
+        # This C-only token exposes that the driver/language mode for a mixed
+        # invocation is still selected globally from the final input.
+        workdir = tmpdir / "mixed_c_only"
+        workdir.mkdir()
+        c_source = workdir / "input.c"
+        cpp_source = workdir / "input.cpp"
+        c_source.write_text(
+            '#ifdef __cplusplus\n#error "C-only fixture was compiled as C++"\n#endif\n'
+            "void kernel(int *a) { int class = 7; a[0] = class; }\n"
+        )
+        cpp_source.write_text("void helper_cpp(int *a) { a[0] = 2; }\n")
+        common = ["--top-fname=kernel", "--std=c99", "--memory-allocation-policy=NO_BRAM"]
+        proc = subprocess.run([bambu, str(c_source), str(cpp_source), *common],
+                              cwd=workdir, capture_output=True, text=True, env=env)
+        diagnostic = proc.stdout + proc.stderr
+        expected_diagnostic = "C-only fixture was compiled as C++"
+        if proc.returncode == 0 or expected_diagnostic not in diagnostic:
+            failures.append("C-then-C++ mixed inputs did not expose the expected C-as-C++ limitation")
+        else:
+            print("KNOWN LIMITATION: C-then-C++ inputs compile the .c fixture as C++")
+
+        proc = subprocess.run([bambu, str(cpp_source), str(c_source), *common],
+                              cwd=workdir, capture_output=True, text=True, env=env)
+        if proc.returncode:
+            tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
+            failures.append(f"reverse mixed input order unexpectedly failed: {' | '.join(tail)}")
+        else:
+            print("KNOWN LIMITATION CHECK: reversing the mixed input order succeeds")
     finally:
         if args.keep:
             print(f"temporary files kept in {tmpdir}")

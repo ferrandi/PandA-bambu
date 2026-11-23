@@ -446,9 +446,13 @@ namespace llvm
                            continue;
                         }
                         assert(stores.size() == 1U && "Expected a single store to update local reduce data!");
-                        local_data_ptrs[local_data_idx] = dyn_cast<Instruction>((*stores.begin())->getOperand(0));
-                        assert(local_data_ptrs[local_data_idx] &&
-                               local_data_ptrs[local_data_idx]->getType()->isPointerTy());
+                        auto local_data_value = dyn_cast<Instruction>((*stores.begin())->getOperand(0));
+                        if(!local_data_value || !local_data_value->getType()->isPointerTy())
+                        {
+                           llvm::report_fatal_error("OpenMP plug-in cannot promote local reduce data: expected a "
+                                                    "pointer value", false);
+                        }
+                        local_data_ptrs[local_data_idx] = local_data_value;
                         // remove store operation which will become useless after promotion
                         kmp_to_remove.push_back((*stores.begin()));
                         LLVM_DEBUG(llvm::dbgs()

@@ -528,6 +528,26 @@ if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND
    set_tests_properties(openmp_parallel_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
 endif()
 
+if(BUILD_TESTING AND TARGET clang_plugin_16_opt_openmp AND PANDA_CLANG16_EXE AND PANDA_CLANG16_CLANGPP
+   AND PANDA_CLANG16_LLVMLINK AND PANDA_CLANG16_LLVMOPT)
+   add_test(NAME openmp_reduction_16
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_reduction.py"
+              --clang "${PANDA_CLANG16_EXE}" --cxx "${PANDA_CLANG16_CLANGPP}"
+              --llvm-link "${PANDA_CLANG16_LLVMLINK}" --opt "${PANDA_CLANG16_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_16_opt_openmp>" --pointer-mode typed)
+   set_tests_properties(openmp_reduction_16 PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND PANDA_CLANG19_CLANGPP
+   AND PANDA_CLANG19_LLVMLINK AND PANDA_CLANG19_LLVMOPT)
+   add_test(NAME openmp_reduction_19
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_reduction.py"
+              --clang "${PANDA_CLANG19_EXE}" --cxx "${PANDA_CLANG19_CLANGPP}"
+              --llvm-link "${PANDA_CLANG19_LLVMLINK}" --opt "${PANDA_CLANG19_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_19_opt_openmp>" --pointer-mode opaque)
+   set_tests_properties(openmp_reduction_19 PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
 if(BUILD_TESTING AND TARGET bambu)
    add_test(NAME mdpi_testbench_flags
       COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_mdpi_testbench_flags.py"
