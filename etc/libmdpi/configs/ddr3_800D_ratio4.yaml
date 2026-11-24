@@ -1,0 +1,38 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# DDR3-800D (slowest JEDEC DDR3), 4GB x8 components, single rank.
+#
+# Nominal DRAM clock: 400 MHz (tCK = 2.5 ns).
+# MDPI derives the clock ratio from --clock-period and the model's tCK,
+# retaining fractional phase. The filename is kept for existing scripts.
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 1
+
+  DRAM:
+    impl: DDR3
+    org:
+      preset: DDR3_4Gb_x8
+      channel: 1
+      rank: 1
+    timing:
+      preset: DDR3_800D
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

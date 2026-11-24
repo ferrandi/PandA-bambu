@@ -28,10 +28,12 @@ def validate_transcript(transcript: str, raw_status: str, status: str, mode: str
     proc_warning = re.compile(
         r'^\*\* Warning: \(vsim-7\) Failed to open process file "/proc/[0-9]+/stat" in read mode\.$')
     proc_warning_detail = "Operation not permitted. (errno = EPERM)"
+    license_warning = re.compile(r"^\*\* Warning: License feature '[^']+' will expire in [0-9]+ days\.$")
     for index, line in enumerate(lines):
         if re.search(r"\*\* Warning:", line, re.IGNORECASE) and not (
-                proc_warning.fullmatch(line) and index + 1 < len(lines) and
-                lines[index + 1] == proc_warning_detail):
+                license_warning.fullmatch(line) or
+                (proc_warning.fullmatch(line) and index + 1 < len(lines) and
+                 lines[index + 1] == proc_warning_detail)):
             raise ValueError(f"unexpected ModelSim warning: {line}")
     if re.search(r"(\*\* (?:Error|Fatal):|segmentation fault|stack smashing|addresssanitizer|"
                  r"core dumped|aborted|watchdog|timed out)", normalized, re.IGNORECASE):
@@ -341,6 +343,22 @@ class GeneratedMemaxiResponseRunnerContract(unittest.TestCase):
             with self.subTest(diagnostic=diagnostic):
                 with self.assertRaises(ValueError):
                     self.check("write", "control", transcript + "\n" + diagnostic)
+
+    def test_accepts_license_expiration_notice_without_hiding_failures(self) -> None:
+        transcript = self.transcript("read", "control")
+        warning = "** Warning: License feature 'msimhdlsim' will expire in 14 days."
+        self.check("read", "control", transcript + "\n" + warning)
+        self.check("read", "control", transcript + "\n# " + warning)
+        for diagnostic in ("** Warning: License checkout failed.",
+                           "** Warning: License feature 'msimhdlsim' has expired.",
+                           warning + "\n** Warning: synthetic warning",
+                           warning + "\n** Error: synthetic error"):
+            with self.subTest(diagnostic=diagnostic), self.assertRaises(ValueError):
+                self.check("read", "control", transcript + "\n" + diagnostic)
+        with self.assertRaises(ValueError):
+            self.check("read", "control", warning)
+        with self.assertRaises(ValueError):
+            self.check("read", "control", transcript + "\n" + warning, raw="1")
 
     def test_accepts_only_the_exact_proc_permission_warning_pair(self) -> None:
         transcript = self.transcript("read", "control")

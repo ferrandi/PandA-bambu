@@ -381,7 +381,7 @@ assign kmp_bambu_wait_all_threads_rd = &amp;barrier_done;"/>
                <port_vector_o id="kmp_lock_acquired_ack_tag" dir="OUT">
                   <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
                </port_vector_o>
-               <NP_functionality LIBRARY="kmp_bambu_fork_call_critical_manager ACCELERATOR_NUMBER CONTEXT_NUMBER USE_CS kmp_lock_acquired kmp_lock_acquired_ack kmp_lock_release kmp_lock_acquired_tag kmp_lock_acquired_ack_tag" IP_COMPONENT="multiple_priority_encoder_hierarchical_2_1,multiple_priority_encoder_hierarchical_4_2,multiple_priority_encoder_hierarchical_8_3,multiple_priority_encoder_hierarchical_16_4,multiple_priority_encoder_hierarchical_32_5,multiple_priority_encoder_hierarchical_64_6,multiple_priority_encoder_hierarchical_128_7,multiple_priority_encoder_hierarchical_256_8,multiple_priority_encoder_hierarchical_512_9" VERILOG_PROVIDED="
+               <NP_functionality LIBRARY="kmp_bambu_fork_call_critical_manager ACCELERATOR_NUMBER CONTEXT_NUMBER USE_CS kmp_lock_acquired kmp_lock_acquired_ack kmp_lock_release kmp_lock_acquired_tag kmp_lock_acquired_ack_tag" IP_COMPONENT="multiple_priority_encoder_hierarchical_1_1,multiple_priority_encoder_hierarchical_2_1,multiple_priority_encoder_hierarchical_4_2,multiple_priority_encoder_hierarchical_8_3,multiple_priority_encoder_hierarchical_16_4,multiple_priority_encoder_hierarchical_32_5,multiple_priority_encoder_hierarchical_64_6,multiple_priority_encoder_hierarchical_128_7,multiple_priority_encoder_hierarchical_256_8,multiple_priority_encoder_hierarchical_512_9" VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
@@ -442,7 +442,13 @@ generate
 endgenerate
 
 generate
-  if(REG_SIZE == 2)
+  if(REG_SIZE == 1)
+  begin
+    multiple_priority_encoder_hierarchical_1_1 encoder (.empty(request_empty),
+      .i(lock_request_reg),
+      .o(request_selected));
+  end
+  else if(REG_SIZE == 2)
   begin
     multiple_priority_encoder_hierarchical_2_1 encoder (.empty(request_empty),
       .i(lock_request_reg),

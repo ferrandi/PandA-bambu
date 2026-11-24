@@ -436,11 +436,12 @@ class fu_binding
     * @param TM is the IR manager reference
     * @param is_sds is true if SDS memory alignment is required
     * @param bitsize_align is the memory alignment bitsize
+    * @param context_count is the number of contiguous copies of the array
     */
    static void fill_array_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
                                  unsigned long long& vec_size, unsigned long long& elts_size,
                                  const std::unique_ptr<memory>& mem, ir_managerConstRef TM, bool is_sds,
-                                 unsigned long long bitsize_align);
+                                 unsigned long long bitsize_align, unsigned int context_count = 1U);
 
    static void write_init(const ir_managerConstRef IRM, ir_nodeRef var_node, ir_nodeRef init_node,
                           std::vector<std::string>& init_file, const std::unique_ptr<memory>& mem,

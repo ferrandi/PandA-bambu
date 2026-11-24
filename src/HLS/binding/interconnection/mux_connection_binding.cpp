@@ -503,6 +503,48 @@ unsigned int mux_connection_binding::extract_parm_decl(unsigned int ir_var, cons
    return base_index;
 }
 
+generic_objRef mux_connection_binding::result_source(gc_vertex_descriptor op, unsigned int ir_var, const OpGraph& data,
+                                                     FSMInfo::state_descriptor state)
+{
+   const auto capture = HLS->Rconn->get_timed_capture(op);
+   if(capture)
+   {
+      return capture;
+   }
+   const auto fu = HLS->Rfu->get(op);
+   if(HLS->allocation_information->is_operation_bounded(data, op, HLS->Rfu->get_assign(op)))
+   {
+      return fu;
+   }
+   const auto& ending = HLS->fsm_info->getState(state).endingOperations;
+   const auto unbounded = std::count_if(
+       ending.begin(), ending.end(), [&](const auto other)
+       { return !HLS->allocation_information->is_operation_bounded(data, other, HLS->Rfu->get_assign(other)); });
+   if(unbounded < 2)
+   {
+      return fu;
+   }
+   const auto step = HLS->fsm_info->GetStep(data, state, op, ir_var, false, HLSMgr->is_register_compatible(ir_var));
+   if(!HLS->storage_value_information->is_a_storage_value(state, ir_var, step))
+   {
+      return fu;
+   }
+   const auto storage = HLS->storage_value_information->get_storage_value_index(state, ir_var, step);
+   const auto reg = HLS->Rreg->get_register(storage);
+   const auto bitsize = ir_helper::Size(HLSMgr->get_ir_manager()->GetIRNode(ir_var));
+   HLS_manager::check_bitwidth(bitsize);
+   const auto forwarding = HLS->Rconn->bind_result_forwarding(op, reg, static_cast<unsigned int>(bitsize),
+                                                              data.CGetNodeInfo(op).vertex_name);
+   HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, op, data);
+   // A join remembers earlier completions, but the FU output is only valid on its own done.
+   // Forward the current response or the value captured when this operation completed earlier.
+   HLS->Rconn->add_data_transfer(fu, forwarding, 1, 0,
+                                 data_transfer(ir_var, bitsize, state, FSMInfo::invalidState, op));
+   HLS->Rconn->add_data_transfer(HLS->Rreg->get(reg), forwarding, 2, 0,
+                                 data_transfer(ir_var, bitsize, state, FSMInfo::invalidState, op));
+   return forwarding;
+}
+
 void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op, const OpGraph& data,
                                                   generic_objRef fu_obj, unsigned int port_num, unsigned int port_index,
                                                   unsigned int ir_var, unsigned long long precision,
@@ -559,8 +601,7 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
          if((data.CGetNodeInfo(def_op).node_type & TYPE_PHI) == 0 &&
             def_op_ending_states.find(state_src) != def_op_ending_states.end())
          {
-            const auto timed_capture = HLS->Rconn->get_timed_capture(def_op);
-            const generic_objRef fu_src_obj = timed_capture ? timed_capture : HLS->Rfu->get(def_op);
+            const auto fu_src_obj = result_source(def_op, ir_var, data, state_src);
             HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                           data_transfer(ir_var, precision, state_src, state_tgt, op));
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -634,8 +675,7 @@ void mux_connection_binding::connect_to_registers(OpGraph::vertex_descriptor op,
             }
             if(def_op_ending_states.find(state_src) != def_op_ending_states.end() && same_stage)
             {
-               const auto timed_capture = HLS->Rconn->get_timed_capture(def_op);
-               const auto fu_src_obj = timed_capture ? timed_capture : HLS->Rfu->get(def_op);
+               const auto fu_src_obj = result_source(def_op, ir_var, data, state_src);
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index,
                                              data_transfer(ir_var, precision, state_src, state_tgt, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
@@ -1090,9 +1130,12 @@ void mux_connection_binding::create_connections()
       }
       const auto op_node_id = node_info.GetNodeId();
       const auto op_node = (op_node_id && op_node_id != INFINITE_UINT) ? IRM->GetIRNode(op_node_id) : ir_nodeConstRef{};
-      const auto call_predicate =
-          ((node_info.node_type & TYPE_EXTERNAL) && op_node) ? getDynamicCallPredicate(op_node) : ir_nodeConstRef{};
       auto fu = HLS->Rfu->get_assign(op);
+      const auto fu_cm = GetPointer<functional_unit>(HLS->allocation_information->get_fu(fu))->CM;
+      const auto native_predicate =
+          fu_cm && fu_cm->get_circ() && fu_cm->get_circ()->find_member("predicate", port_o_K, fu_cm->get_circ());
+      const auto call_predicate = ((node_info.node_type & TYPE_EXTERNAL) || native_predicate) && op_node ?
+                                      getDynamicCallPredicate(op_node) : ir_nodeConstRef{};
       auto idx = HLS->Rfu->get_index(op);
       auto n_channels = HLS->allocation_information->get_number_channels(fu);
 
