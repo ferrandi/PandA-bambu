@@ -3,6 +3,7 @@
 import argparse
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 
@@ -47,22 +48,18 @@ def check_profile(args, pointer_mode):
             cwd=work, env=env)
         if '@__kmp_bambu_set_th_local_reduce_data' not in optimized_ir.read_text():
             raise RuntimeError(f'{pointer_mode}: optimized natural IR does not reach the reduction data hook')
+        transformed = work / 'out.ll'
         result = subprocess.run(
             [args.opt, *opaque_flags, '-load-pass-plugin=' + str(Path(args.plugin).resolve()),
              '-passes=default<O2>,openmpBambu', '-vectorize-loops=false', '-vectorize-slp=false',
-             '-verify-each', str(optimized_ir), '-o', str(work / 'out.bc')],
+             '-verify-each', '-S', str(optimized_ir), '-o', str(transformed)],
             cwd=work, env=env, text=True, capture_output=True)
-        if pointer_mode == 'typed':
-            if result.returncode != 0:
-                raise RuntimeError(f'typed: expected the Bambu typed-pointer reduction pipeline to pass, '
-                                   f'exit={result.returncode}\n{result.stderr}')
-            return
-        expected = 'cannot promote local reduce data: expected a pointer value'
-        if result.returncode <= 0 or expected not in result.stderr:
-            raise RuntimeError(f'{pointer_mode}: expected diagnostic {expected!r}, '
-                               f'exit={result.returncode}\n{result.stderr}')
-        if any(marker in result.stderr for marker in ('PLEASE submit a bug report', 'Stack dump:')):
-            raise RuntimeError(f'{pointer_mode}: unsupported input reported as an LLVM crash\n{result.stderr}')
+        if result.returncode:
+            raise RuntimeError(f'{pointer_mode}: reduction failed, exit={result.returncode}\n{result.stderr}')
+        if pointer_mode == 'opaque' and not re.search(
+                r'call .*@__kmp_bambu_set_th_local_reduce_data.*!bambu\.omp\.reduction\.promoted',
+                transformed.read_text()):
+            raise RuntimeError('opaque: the reduction array was not promoted')
 
 
 def main():

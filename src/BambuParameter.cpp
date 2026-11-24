@@ -2297,6 +2297,8 @@ int BambuParameter::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, getOption<int>(OPT_output_level),
                   " ==  Bambu executed with: " + cat_args + "\n");
 
+   bool has_c_source = false;
+   bool has_cpp_source = false;
    while(optind < argc)
    {
       const std::string filename(argv[optind]);
@@ -2315,6 +2317,8 @@ int BambuParameter::Exec()
       {
          appendOption(OPT_input_file, filename);
          setOption(OPT_input_format, file_type);
+         has_c_source |= file_type == Parameters_FileFormat::FF_C;
+         has_cpp_source |= file_type == Parameters_FileFormat::FF_CPP;
       }
       else if(file_type == Parameters_FileFormat::FF_RAW ||
               (isOption(OPT_input_format) &&
@@ -2335,6 +2339,13 @@ int BambuParameter::Exec()
                            "Use --input-format explicitly for raw input or non-standard extensions.");
       }
       optind++;
+   }
+
+   if(has_c_source && has_cpp_source && !isOption(OPT_cc_xlang))
+   {
+      THROW_WARNING("Mixed C/C++ source inputs: Bambu selects the compiler driver from the last input file. "
+                    "Use -x c or -x c++ to specify one language for all user sources, "
+                    "or compile each language separately to LLVM bitcode.");
    }
 
    CheckParameters();

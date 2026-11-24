@@ -55,13 +55,11 @@ def main():
                 input_ir = raw_ir.read_text()
                 if not re.search(r'call\b[^\n]*@__kmp_bambu_set_th_local_reduce_data', input_ir):
                     raise RuntimeError(f'{name}: IR does not reach the reduce-data runtime hook')
-                expected = 'cannot promote the local reduce data with opaque pointers'
-                if result.returncode <= 0 or expected not in result.stderr:
-                    raise RuntimeError(f'{name}: expected diagnostic {expected!r}, exit={result.returncode}\n'
+                if result.returncode:
+                    raise RuntimeError(f'{name}: reduction promotion failed, exit={result.returncode}\n'
                                        f'{result.stderr}\nInput IR:\n{input_ir}')
-                if any(marker in result.stderr for marker in ('PLEASE submit a bug report', 'Stack dump:')):
-                    raise RuntimeError(f'{name}: unsupported input reported as an LLVM crash\n{result.stderr}')
-                return input_ir, []
+                if '!bambu.omp.reduction.promoted' not in out_ir.read_text():
+                    raise RuntimeError(f'{name}: reduction array was not promoted')
             if result.returncode:
                 raise RuntimeError(f'{name}: opt failed\n{result.stderr}')
             ir = out_ir.read_text()

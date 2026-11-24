@@ -165,6 +165,7 @@
 #include "config_I386_LLVM9_LINK_EXE.hpp"
 #include "config_I386_LLVM9_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 
 #include <algorithm>
@@ -217,6 +218,12 @@ namespace
    bool is_cpp_standard(const std::string& standard)
    {
       return standard.rfind("c++", 0) == 0 || standard.rfind("gnu++", 0) == 0;
+   }
+
+   bool is_openmp_runtime(const ParameterConstRef& param, const std::string& source)
+   {
+      return param->isOption(OPT_openmp) && param->getOption<bool>(OPT_openmp) &&
+             source == (relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename).string();
    }
 
    std::string standard_for_language(const std::string& standard, bool cpp_source)
@@ -576,6 +583,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       command += " -c";
       command += " -D__NO_INLINE__"; /// needed to avoid problem with glibc inlines
       command += " " + compiler.extra_options;
+      if(is_openmp_runtime(Param, input_filename))
+      {
+         command += " -x c++";
+      }
 
       if((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)))
       {
@@ -1165,7 +1176,8 @@ std::string CompilerWrapper::GetFrontendCompilerParameters(const std::string& so
    }
    auto standard = Param->getOption<std::string>(OPT_cc_standard);
    const auto format = source_file.empty() ? Parameters_FileFormat::FF_UNKNOWN : Param->GetFileFormat(source_file, false);
-   const bool cpp_source = cpp_input || format == Parameters_FileFormat::FF_CPP ||
+   const bool cpp_source = is_openmp_runtime(Param, source_file) ||
+                           cpp_input || format == Parameters_FileFormat::FF_CPP ||
                            format == Parameters_FileFormat::FF_LLVM_CPP;
    if(format == Parameters_FileFormat::FF_C || format == Parameters_FileFormat::FF_CPP ||
       format == Parameters_FileFormat::FF_LLVM_CPP)

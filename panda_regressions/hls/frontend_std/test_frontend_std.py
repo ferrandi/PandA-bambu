@@ -247,6 +247,9 @@ def main():
         proc = subprocess.run([bambu, str(c_source), str(cpp_source), *common],
                               cwd=workdir, capture_output=True, text=True, env=env)
         diagnostic = proc.stdout + proc.stderr
+        warning = "Mixed C/C++ source inputs:"
+        if diagnostic.count(warning) != 1 or "Use -x c or -x c++" not in diagnostic:
+            failures.append("implicit mixed inputs did not report the language warning once")
         expected_diagnostic = "C-only fixture was compiled as C++"
         if proc.returncode == 0 or expected_diagnostic not in diagnostic:
             failures.append("C-then-C++ mixed inputs did not expose the expected C-as-C++ limitation")
@@ -260,6 +263,12 @@ def main():
             failures.append(f"reverse mixed input order unexpectedly failed: {' | '.join(tail)}")
         else:
             print("KNOWN LIMITATION CHECK: reversing the mixed input order succeeds")
+        for sources in ((c_source, cpp_source), (cpp_source, c_source)):
+            proc = subprocess.run([bambu, *(str(source) for source in sources), *common, "-x", "c"],
+                                  cwd=workdir, capture_output=True, text=True, env=env)
+            if proc.returncode or warning in proc.stdout + proc.stderr:
+                tail = (proc.stdout + proc.stderr).strip().splitlines()[-3:]
+                failures.append(f"mixed input order with explicit -x c: {' | '.join(tail)}")
     finally:
         if args.keep:
             print(f"temporary files kept in {tmpdir}")

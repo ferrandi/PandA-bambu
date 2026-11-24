@@ -83,6 +83,9 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/LoopUtils.h>
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+#include <llvm/Transforms/Utils/Cloning.h>
+#endif
 #if PANDA_LLVM_CLANG_MAJOR < 13
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #elif PANDA_LLVM_CLANG_MAJOR >= 13
@@ -336,10 +339,182 @@ namespace llvm
       }
    }
 
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+   static constexpr auto promoted_reduction = "bambu.omp.reduction.promoted";
+
+   static bool inline_opaque_reduction_combiners(Function& function)
+   {
+      SmallVector<CallInst*, 2> combiners;
+      for(auto& bb : function)
+      {
+         for(auto& inst : bb)
+         {
+            auto* call = dyn_cast<CallInst>(&inst);
+            auto* callee = call ? call->getCalledFunction() : nullptr;
+            if(callee && callee->hasLocalLinkage() && callee->getName().contains(".omp.reduction.reduction_func") &&
+               call->arg_size() == 2 && call->getArgOperand(1)->getType()->isOpaquePointerTy())
+            {
+               auto* fetch = dyn_cast<CallInst>(call->getArgOperand(1));
+               if(fetch && fetch->getCalledFunction() &&
+                  fetch->getCalledFunction()->getName() == TOSTRING(KMP_GET_REDUCE_DATA))
+               {
+                  combiners.push_back(call);
+               }
+            }
+         }
+      }
+      for(auto* combiner : combiners)
+      {
+         InlineFunctionInfo info;
+         if(!InlineFunction(*combiner, info).isSuccess())
+         {
+            report_fatal_error("OpenMP plug-in cannot inline an opaque reduction combiner", false);
+         }
+      }
+      return !combiners.empty();
+   }
+
+   struct ReductionSlot
+   {
+      StoreInst* initializer = nullptr;
+      SmallVector<LoadInst*, 2> loads;
+   };
+
+   static void collect_reduction_slots(Value* address, unsigned index, MutableArrayRef<ReductionSlot> slots,
+                                       const DataLayout& layout, CallInst* publish,
+                                       std::vector<Instruction*>& remove)
+   {
+      for(auto* user : address->users())
+      {
+         if(user == publish)
+         {
+            continue;
+         }
+         if(auto* gep = dyn_cast<GetElementPtrInst>(user))
+         {
+            APInt offset(layout.getIndexTypeSizeInBits(gep->getType()), 0);
+            const auto stride = layout.getPointerTypeSize(address->getType());
+            if(gep->getPointerOperand() == address && gep->accumulateConstantOffset(layout, offset) &&
+               !offset.isNegative() && offset.getActiveBits() <= 64)
+            {
+               const auto bytes = offset.getZExtValue();
+               if(bytes % stride == 0 && bytes / stride < slots.size() - index)
+               {
+                  collect_reduction_slots(gep, index + bytes / stride, slots, layout, publish, remove);
+                  remove.push_back(gep);
+                  continue;
+               }
+            }
+         }
+         else if(auto* load = dyn_cast<LoadInst>(user))
+         {
+            if(load->getType()->isPointerTy() && load->isSimple())
+            {
+               slots[index].loads.push_back(load);
+               continue;
+            }
+         }
+         else if(auto* store = dyn_cast<StoreInst>(user))
+         {
+            if(publish && store->getPointerOperand() == address && store->isSimple() &&
+               !slots[index].initializer && isa<AllocaInst>(store->getValueOperand()))
+            {
+               slots[index].initializer = store;
+               continue;
+            }
+         }
+         else if(auto* intrinsic = dyn_cast<IntrinsicInst>(user))
+         {
+            if(publish && (intrinsic->getIntrinsicID() == Intrinsic::lifetime_start ||
+                           intrinsic->getIntrinsicID() == Intrinsic::lifetime_end))
+            {
+               remove.push_back(intrinsic);
+               continue;
+            }
+         }
+         report_fatal_error("OpenMP plug-in cannot promote opaque reduction data: unsupported slot access", false);
+      }
+   }
+
+   static StructType* promote_opaque_reduction(CallInst* publish, std::vector<Instruction*>& remove)
+   {
+      auto* table = dyn_cast<AllocaInst>(publish->getArgOperand(1));
+      auto* array = table ? dyn_cast<ArrayType>(table->getAllocatedType()) : nullptr;
+      if(!array || !array->getElementType()->isPointerTy() || !array->getNumElements() || table->isArrayAllocation())
+      {
+         report_fatal_error("OpenMP plug-in cannot promote opaque reduction data: expected a pointer array", false);
+      }
+      const auto& layout = publish->getModule()->getDataLayout();
+      SmallVector<ReductionSlot, 4> slots(array->getNumElements());
+      collect_reduction_slots(table, 0, slots, layout, publish, remove);
+      SmallVector<Type*, 4> types;
+      SmallPtrSet<AllocaInst*, 4> variables;
+      for(const auto& slot : slots)
+      {
+         auto* variable = slot.initializer ? cast<AllocaInst>(slot.initializer->getValueOperand()) : nullptr;
+         if(!variable || variable->isArrayAllocation() || variable->getType() != table->getType() ||
+            variable->getAlign() > layout.getABITypeAlign(variable->getAllocatedType()) ||
+            !variables.insert(variable).second)
+         {
+            report_fatal_error("OpenMP plug-in cannot promote opaque reduction data: unsupported private variable",
+                               false);
+         }
+         types.push_back(variable->getAllocatedType());
+      }
+
+      auto* type = StructType::create(publish->getContext(), types);
+      IRBuilder<> builder(&*publish->getFunction()->getEntryBlock().getFirstInsertionPt());
+      auto* data = builder.CreateAlloca(type, table->getAddressSpace());
+      publish->setArgOperand(1, data);
+      publish->setMetadata(promoted_reduction, MDNode::get(publish->getContext(), {}));
+      for(unsigned i = 0; i < slots.size(); ++i)
+      {
+         auto& slot = slots[i];
+         auto* field = builder.CreateStructGEP(type, data, i);
+         auto* variable = cast<AllocaInst>(slot.initializer->getValueOperand());
+         variable->replaceAllUsesWith(field);
+         remove.push_back(variable);
+         remove.push_back(slot.initializer);
+         for(auto* load : slot.loads)
+         {
+            load->replaceAllUsesWith(field);
+            remove.push_back(load);
+         }
+      }
+      remove.push_back(table);
+      return type;
+   }
+
+   static void promote_opaque_reduction_loads(CallInst* fetch, StructType* type, std::vector<Instruction*>& remove)
+   {
+      SmallVector<ReductionSlot, 4> slots(type->getNumElements());
+      collect_reduction_slots(fetch, 0, slots, fetch->getModule()->getDataLayout(), nullptr, remove);
+      IRBuilder<> builder(fetch->getNextNode());
+      for(unsigned i = 0; i < slots.size(); ++i)
+      {
+         if(!slots[i].loads.empty())
+         {
+            auto* field = builder.CreateStructGEP(type, fetch, i);
+            for(auto* load : slots[i].loads)
+            {
+               load->replaceAllUsesWith(field);
+               remove.push_back(load);
+            }
+         }
+      }
+   }
+#endif
+
    static bool propagate_nproc(llvm::Function& function, ConstantInt* default_nt)
    {
       std::vector<llvm::Instruction*> kmp_to_remove;
       Type* local_data_struct_t = nullptr;
+      bool changed = false;
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+      StructType* opaque_reduction = nullptr;
+      SmallVector<CallInst*, 2> opaque_fetches;
+      changed = inline_opaque_reduction_combiners(function);
+#endif
 
       for(llvm::BasicBlock& bb : function)
       {
@@ -391,6 +566,22 @@ namespace llvm
                      assert(call_inst->arg_size() >= 2 && "Expected to have at least 2 arguments!");
 #endif
                      auto set_reduce_data_arg = call_inst->getArgOperand(1U);
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+                     if(set_reduce_data_arg->getType()->isOpaquePointerTy())
+                     {
+                        if(call_inst->getMetadata(promoted_reduction))
+                        {
+                           return;
+                        }
+                        if(opaque_reduction)
+                        {
+                           report_fatal_error("OpenMP plug-in cannot promote multiple opaque reduction arrays in "
+                                              "one function", false);
+                        }
+                        opaque_reduction = promote_opaque_reduction(call_inst, kmp_to_remove);
+                        return;
+                     }
+#endif
                      LLVM_DEBUG(llvm::dbgs() << "   set reduce data arg: " << set_reduce_data_arg << "\n");
                      if(!isa<Instruction>(set_reduce_data_arg))
                      {
@@ -543,6 +734,13 @@ namespace llvm
                   }
                   else if(calledFunName == TOSTRING(KMP_GET_REDUCE_DATA))
                   {
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+                     if(call_inst->getType()->isOpaquePointerTy())
+                     {
+                        opaque_fetches.push_back(call_inst);
+                        return;
+                     }
+#endif
                      if(local_data_struct_t)
                      {
                         const auto data_struct_ptr_t = PointerType::getUnqual(local_data_struct_t);
@@ -587,13 +785,22 @@ namespace llvm
          }
       }
 
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+      if(opaque_reduction)
+      {
+         for(auto* fetch : opaque_fetches)
+         {
+            promote_opaque_reduction_loads(fetch, opaque_reduction, kmp_to_remove);
+         }
+      }
+#endif
       for(auto instr : kmp_to_remove)
       {
          instr->replaceAllUsesWith(UndefValue::get(instr->getType()));
          instr->eraseFromParent();
       }
 
-      return !kmp_to_remove.empty();
+      return changed || !kmp_to_remove.empty();
    }
 
 #if PANDA_LLVM_CLANG_MAJOR >= 16
