@@ -106,6 +106,9 @@ class technology_manager
  public:
    explicit technology_manager(const ParameterConstRef Param);
 
+   /// Full module prefix (multiple_priority_encoder_<family>_) for library and generated RTL.
+   std::string get_priority_encoder_prefix() const;
+
  private:
    /// friend definition for class allocation
    friend class allocation;

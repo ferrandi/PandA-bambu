@@ -23,6 +23,7 @@
  * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  *
  */
 #include "simple_code_motion.hpp"
@@ -47,7 +48,66 @@
 #include "math_function.hpp"
 #include "schedule.hpp"
 #include "string_manipulation.hpp"
+#include <algorithm>
 #include <fstream>
+#include <string_view>
+
+namespace
+{
+   const char* const synchronization_functions[] = {SCM_OMP_SYNCHRONIZATION_FUNCTIONS};
+   const char* const predicable_functions[] = {SCM_OMP_PREDICABLE_FUNCTIONS};
+   const char* const full_barrier_functions[] = {SCM_OMP_FULL_BARRIER_FUNCTIONS};
+   const char* const team_setup_functions[] = {SCM_OMP_SET_NUM_THREADS};
+
+   template <size_t N>
+   bool isOpenMPFunction(const ir_nodeRef& node, const char* const (&functions)[N])
+   {
+      ir_nodeRef fn;
+      if(const auto* call = GetPointer<const call_stmt>(node))
+      {
+         fn = call->fn;
+      }
+      else if(const auto* assign = GetPointer<const assign_stmt>(node))
+      {
+         if(const auto* call_expr = GetPointer<const call_node>(assign->op1))
+         {
+            fn = call_expr->fn;
+         }
+      }
+      if(!fn)
+      {
+         return false;
+      }
+      if(fn->get_kind() == addr_node_K)
+      {
+         fn = GetPointerS<const unary_node>(fn)->op;
+      }
+      if(fn->get_kind() != function_val_node_K)
+      {
+         return false;
+      }
+      const auto name = ir_helper::GetFunctionName(fn);
+      return std::any_of(std::begin(functions), std::end(functions), [&](const std::string_view base) {
+         return name == base || (name.size() > base.size() && name.compare(0, base.size(), base) == 0 &&
+                                 name[base.size()] == '_');
+      });
+   }
+
+   bool isOpenMPSynchronization(const ir_nodeRef& node)
+   {
+      return isOpenMPFunction(node, synchronization_functions);
+   }
+
+   bool isPredicableOpenMPSynchronization(const ir_nodeRef& node)
+   {
+      return isOpenMPFunction(node, predicable_functions);
+   }
+
+   bool isOpenMPFullBarrier(const ir_nodeRef& node)
+   {
+      return isOpenMPFunction(node, full_barrier_functions);
+   }
+} // namespace
 
 simple_code_motion::simple_code_motion(const ParameterConstRef _parameters, const application_managerRef _AppM,
                                        unsigned int _function_id, const DesignFlowManager& _design_flow_manager)
@@ -662,6 +722,44 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                                     inverse_vertex_map.at(bloc::EXIT_BLOCK_ID));
    const ir_manipulationConstRef ir_man(new ir_manipulation(TM, parameters, AppM));
 
+   CustomUnorderedSet<unsigned int> full_barrier_blocks;
+   for(const auto& block : list_of_bloc)
+   {
+      const auto& statements = block.second->CGetStmtList();
+      if(std::any_of(statements.begin(), statements.end(), isOpenMPFullBarrier))
+      {
+         full_barrier_blocks.insert(block.first);
+      }
+   }
+   // Hoisting appends after destination statements. Its barriers are therefore not
+   // crossed. The source prefix is checked separately; inspect intervening blocks
+   // on every incoming path, including paths containing a loop.
+   const auto crosses_full_barrier = [&](const unsigned int source, const unsigned int destination) {
+      if(full_barrier_blocks.empty())
+      {
+         return false;
+      }
+      CustomUnorderedSet<unsigned int> visited;
+      std::vector<unsigned int> pending(list_of_bloc.at(source)->list_of_pred.begin(),
+                                        list_of_bloc.at(source)->list_of_pred.end());
+      while(!pending.empty())
+      {
+         const auto block = pending.back();
+         pending.pop_back();
+         if(block == destination || block == bloc::ENTRY_BLOCK_ID || !visited.insert(block).second)
+         {
+            continue;
+         }
+         if(full_barrier_blocks.count(block))
+         {
+            return true;
+         }
+         const auto& predecessors = list_of_bloc.at(block)->list_of_pred;
+         pending.insert(pending.end(), predecessors.begin(), predecessors.end());
+      }
+      return false;
+   };
+
    for(const auto bb_vertex : bb_sorted_vertices)
    {
       const auto curr_bb = direct_vertex_map.at(bb_vertex);
@@ -686,6 +784,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             counter++;
          }
          const auto& list_of_stmt = list_of_bloc.at(curr_bb)->CGetStmtList();
+         const bool block_has_synchronization =
+             std::any_of(list_of_stmt.begin(), list_of_stmt.end(), isOpenMPSynchronization);
          std::list<ir_nodeRef> to_be_removed;
          CustomOrderedSet<unsigned int> zero_delay_stmts;
          std::list<ir_nodeRef> to_be_added_back;
@@ -738,6 +838,46 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             if(!is_assign && !is_call_stmt && !is_nop)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because " + tn->get_kind_text());
+               continue;
+            }
+
+            // Synchronization is a memory fence even when virtual SSA alias information
+            // does not describe the runtime manager. Hoisting appends to the predecessor,
+            // so only statements preceding this one in the source block can be crossed.
+            // Keep these constraints outside CheckMovable's pipelining shortcut.
+            const bool synchronization = isOpenMPSynchronization(tn);
+            // Forks remain anchored. Thread-count setup must stay in place until
+            // OMPCGExt consumes it; it does not become a hardware operation.
+            if(isOpenMPFullBarrier(tn) || isOpenMPFunction(tn, team_setup_functions))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because OpenMP call is anchored");
+               continue;
+            }
+            const bool memory = gn->vdef || !gn->vuses.empty() || is_call_stmt || is_assign_call ||
+                                is_load_assign || is_store_assign;
+            bool crosses_synchronization = false;
+            // Avoid a quadratic prefix scan in ordinary blocks without a fence.
+            for(auto previous = list_of_stmt.begin(); block_has_synchronization && previous != statement; ++previous)
+            {
+               const auto* previous_stmt = GetPointerS<const node_stmt>(*previous);
+               const bool previous_sync = isOpenMPSynchronization(*previous);
+               const auto* previous_assign = GetPointer<const assign_stmt>(*previous);
+               const bool previous_access = previous_assign &&
+                                            (previous_assign->op0->get_kind() == mem_access_node_K ||
+                                             previous_assign->op1->get_kind() == mem_access_node_K ||
+                                             previous_assign->op1->get_kind() == call_node_K);
+               const bool previous_memory = previous_stmt->vdef || !previous_stmt->vuses.empty() ||
+                                            (*previous)->get_kind() == call_stmt_K || previous_access;
+               if(isOpenMPFullBarrier(*previous) || (synchronization && (previous_sync || previous_memory)) ||
+                  (memory && previous_sync))
+               {
+                  crosses_synchronization = true;
+                  break;
+               }
+            }
+            if(crosses_synchronization)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of OpenMP ordering");
                continue;
             }
 
@@ -846,6 +986,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                   {
                      unsigned loop_idU = list_of_bloc.at(dom_bb_index)->loop_id;
                      unsigned loop_idC = list_of_bloc.at(curr_bb)->loop_id;
+                     if(crosses_full_barrier(curr_bb, dom_bb_index))
+                     {
+                        break;
+                     }
                      if(loop_idC >= loop_idU)
                      {
                         prev_dest_bb_index = dest_bb_index;
@@ -894,6 +1038,15 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                               "<--Skipped (1) because destination would be the same bb");
+               continue;
+            }
+            // Non-predicable synchronization calls may move only along unconditional edges.
+            if(synchronization && !isPredicableOpenMPSynchronization(tn) &&
+               (list_of_bloc.at(dest_bb_index)->list_of_succ.size() != 1 ||
+                list_of_bloc.at(dest_bb_index)->list_of_succ.front() != curr_bb))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "<--Skipped because OpenMP call does not support conditional execution");
                continue;
             }
             bool zero_delay = true;

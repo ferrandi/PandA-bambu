@@ -20,6 +20,27 @@ do
 done
 
 OPT_FLAGS="-O5"
+# Intel's ModelSim edition does not accept the commercial optimization switch.
+# Leave optimization to that edition's defaults for both compilation and vopt.
+case "$(vlog -version 2>&1)" in
+  *"Intel FPGA"*) OPT_FLAGS="" ;;
+esac
+# Concurrent Starter simulations can fail on the periodic license lock-file
+# check, so serialize them on a per-user lock.
+case "$(vsim -version 2>&1)" in
+  *"STARTER EDITION"*|*"Starter Edition"*)
+    OPT_FLAGS=""
+    if ! command -v flock >/dev/null 2>&1; then
+      echo "ModelSim Starter simulations require flock (util-linux)." >&2
+      return 1
+    fi
+    exec {MODELSIM_LOCK_FD}> "${TMPDIR:-/tmp}/bambu-modelsim-starter-${UID}.lock" || return 1
+    if ! flock -w "${BAMBU_MODELSIM_LOCK_TIMEOUT:-600}" "${MODELSIM_LOCK_FD}"; then
+      echo "Timed out waiting for another ModelSim Starter simulation to finish." >&2
+      return 1
+    fi
+    ;;
+esac
 
 SV_FLAGS="${VFLAGS} ${OPT_FLAGS}"
 if $(bambu_results /application/backend@assert) ; then

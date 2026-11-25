@@ -125,6 +125,13 @@ DesignFlowStep_Status bus_interface::InternalExec()
                      wrappedObj->get_path() +
                      " does not expose Mout_addr_ram. Check interface pragma analysis and architecture.xml.");
       }
+      initialize_bmi(wrappedObj);
+      // The existing minimal interface already exposes the complete bus and
+      // completion ports. Only wrap it when an adapter or a NoC is required.
+      if(!is_banked && !bi.use_caches && !bi.use_axi)
+      {
+         return DesignFlowStep_Status::SUCCESS;
+      }
       std::string module_name = wrappedObj->get_id();
 
       structural_managerRef SM_bus_interface = structural_managerRef(new structural_manager(parameters));
@@ -148,8 +155,6 @@ DesignFlowStep_Status bus_interface::InternalExec()
       GetPointer<module_o>(interfaceObj)->set_license(GENERATED_LICENSE);
 
       add_parameter_port(SM_bus_interface, interfaceObj, wrappedObj); // add ports to external module
-
-      initialize_bmi(wrappedObj);
 
       if(parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) ==
              MemoryAllocation_Policy::ALL_BRAM ||
@@ -300,7 +305,21 @@ void bus_interface::initialize_bmi(const structural_objectRef wrappedObj)
       bi.bank_index = ceil_log2(static_cast<unsigned int>(chunk_size));
    }
 
-   bi.channel_number = parameters->getOption<unsigned int>(OPT_channels_number);
+   if(bi.use_caches && bi.bank_number == 0 &&
+      HLSMgr->CGetFunctionBehavior(funId)->GetChannelsType() == MemoryAllocation_ChannelsType::MEM_ACC_NN)
+   {
+      THROW_ERROR_USAGE("Non-banked bus caches do not support MEM_ACC_NN: there is no coherence between caches. "
+                        "Use MEM_ACC_11 or MEM_ACC_N1, or configure banked memory.");
+   }
+
+   // Count external request channels, not direct-access memory ports. In
+   // particular, MEM_ACC_N1 can configure multiple direct ports while exposing
+   // a single indirect channel. OpenMP may expose multiple replicated channels.
+   const auto request_port = wrappedObj->find_member("Mout_oe_ram", port_vector_o_K, wrappedObj);
+   THROW_ASSERT(request_port, "Mout_oe_ram port must be present in " + wrappedObj->get_path());
+   bi.channel_number = request_port->get_kind() == port_vector_o_K ?
+                           GetPointerS<port_o>(request_port)->get_ports_size() :
+                           1U;
    bi.bank_index_bits_used = bi.bank_number > 0 ? ceil_log2(bi.bank_number) : 0;
    bi.noc_nodes = bi.bank_number > 0 ? std::max(bi.channel_number, bi.bank_number) : 0;
 
@@ -337,7 +356,10 @@ void bus_interface::initialize_bmi(const structural_objectRef wrappedObj)
 
    structural_objectRef wrapped_tag_port = wrappedObj->find_member("Mout_tag", port_vector_o_K, wrappedObj);
    bi.context_bus_bitsize = wrapped_tag_port ? wrapped_tag_port->get_typeRef()->vector_size : 1U;
-   bi.addr_banked_bitsize = bi.addr_bus_bitsize - bi.bank_index_bits_used;
+   bi.addr_banked_bitsize =
+       parameters->getOption<std::string>(OPT_banked_memory_address_size) == "FULL" ?
+           bi.addr_bus_bitsize :
+           bi.addr_bus_bitsize - bi.bank_index_bits_used;
 }
 
 void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef noc_module,
@@ -635,6 +657,9 @@ void bus_interface::create_noc_memory_mapping_unit(const structural_objectRef no
             structural_objectRef noc_addr_adapter_module = SM->add_module_from_technology_library(
                 noc_addr_adapter_name, "noc_addr_adapter", noc_addr_adapter_library, circuit,
                 HLS->HLS_D->get_technology_manager());
+            noc_addr_adapter_module->SetParameter(
+                "FULL_ADDRESS",
+                STR(parameters->getOption<std::string>(OPT_banked_memory_address_size) == "FULL" ? 1 : 0));
             noc_addr_adapter_module->SetParameter("BANK_START", STR(bi.bank_index + bundle_bank_bitsize));
             noc_addr_adapter_module->SetParameter("BANK_END", STR(bi.bank_index));
             noc_addr_adapter_module->SetParameter("BANK_COUNT", STR(bundle_bank_number));
@@ -714,6 +739,20 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
        {"ready", "ready", 1U}};
 
    const bool is_banked = bi.bank_number > 0;
+   const bool has_tag_ports = input_module->find_member("Mout_tag", port_vector_o_K, input_module) &&
+                              input_module->find_member("M_tag", port_vector_o_K, input_module);
+   const bool has_response_back_pressure =
+       input_module->find_member("M_back_pressure", port_vector_o_K, input_module) != nullptr;
+   auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
+   if(!is_banked && has_response_back_pressure)
+   {
+      adapter_ports.emplace_back("M_back_pressure", "M_back_pressure", 1U);
+   }
+   if(!is_banked && has_tag_ports)
+   {
+      adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
+      adapter_ports.emplace_back("M_tag", "M_tag", bi.context_bus_bitsize);
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                   "Creating IOB caches for" + STR(is_banked ? " banked" : "") + " bus with " +
                       STR(is_banked ? bi.bank_number : bi.channel_number) + " channels");
@@ -733,10 +772,11 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
                       join_module->find_member(CLOCK_PORT_NAME, port_o_K, join_module));
    SM->add_connection(circuit->find_member(RESET_PORT_NAME, port_o_K, circuit),
                       join_module->find_member(RESET_PORT_NAME, port_o_K, join_module));
+   const auto adapter_number = is_banked ? bi.bank_number : bi.channel_number;
    auto join_input_port = join_module->find_member("in1", port_o_K, join_module);
    THROW_ASSERT(join_input_port, "Must be present.\n");
    auto join_input_port_o = GetPointer<port_o>(join_input_port);
-   join_input_port_o->add_n_ports(bi.bank_number, join_input_port);
+   join_input_port_o->add_n_ports(adapter_number, join_input_port);
    port_o::resize_std_port(1U, 0U, 0, join_input_port);
 
    auto join_output_port = join_module->find_member("out1", port_o_K, join_module);
@@ -751,7 +791,6 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
    SM->add_connection(done_output_sig, join_output_port);
    SM->add_connection(done_output_sig, done_external_port);
 
-   const auto adapter_number = is_banked ? bi.bank_number : bi.channel_number;
    for(unsigned int i = 0; i < adapter_number; i = i + 1)
    {
       std::string adapter_name = "adapter_" + STR(i);
@@ -763,7 +802,7 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
       SM->add_connection(circuit->find_member(RESET_PORT_NAME, port_o_K, circuit),
                          adapter_module->find_member(RESET_PORT_NAME, port_o_K, adapter_module));
 
-      for(const auto& p : (is_banked ? noc_adapter_ports : minimal_adapter_ports))
+      for(const auto& p : adapter_ports)
       {
          const auto pname_input = std::get<0>(p);
          const auto pname_adapter = std::get<1>(p);
@@ -788,15 +827,19 @@ void bus_interface::create_iob_caches(const structural_objectRef input_module, c
          SM->add_connection(sig, adapter_port);
       }
 
-      if(!is_banked)
+      if(!is_banked && !has_response_back_pressure)
       {
-         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_vector_o_K, adapter_module);
+         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_o_K, adapter_module);
          if(bp_port)
          {
             structural_objectRef const_obj_bp =
                 SM->add_constant("null_value_M_back_pressure_" + STR(i), circuit, bp_port->get_typeRef(), STR(0));
             SM->add_connection(bp_port, const_obj_bp);
          }
+      }
+
+      if(!is_banked && !has_tag_ports)
+      {
          structural_objectRef ac_port = adapter_module->find_member("Mout_tag", port_vector_o_K, adapter_module);
          if(ac_port)
          {
@@ -1059,7 +1102,13 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
    const bool is_banked = bi.bank_number > 0;
    const bool has_tag_ports = input_module->find_member("Mout_tag", port_vector_o_K, input_module) &&
                               input_module->find_member("M_tag", port_vector_o_K, input_module);
+   const bool has_response_back_pressure =
+       input_module->find_member("M_back_pressure", port_vector_o_K, input_module) != nullptr;
    auto adapter_ports = is_banked ? noc_adapter_ports : minimal_adapter_ports;
+   if(!is_banked && has_response_back_pressure)
+   {
+      adapter_ports.emplace_back("M_back_pressure", "M_back_pressure", 1U);
+   }
    if(!is_banked && has_tag_ports)
    {
       adapter_ports.emplace_back("Mout_tag", "Mout_tag", bi.context_bus_bitsize);
@@ -1162,9 +1211,9 @@ void bus_interface::create_axi_adapter(const structural_objectRef input_module, 
          SM->add_connection(sig, adapter_port);
       }
 
-      if(!is_banked)
+      if(!is_banked && !has_response_back_pressure)
       {
-         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_vector_o_K, adapter_module);
+         structural_objectRef bp_port = adapter_module->find_member("M_back_pressure", port_o_K, adapter_module);
          if(bp_port)
          {
             structural_objectRef const_obj_bp =

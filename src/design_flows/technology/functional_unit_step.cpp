@@ -276,7 +276,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
             {
                structural_objectRef port_c = mod->get_in_port(i);
                if(port_c && (port_c->get_id() == CLOCK_PORT_NAME || port_c->get_id() == RESET_PORT_NAME ||
-                             port_c->get_id() == START_PORT_NAME ||
+                             port_c->get_id() == START_PORT_NAME || port_c->get_id() == STALL_PORT_NAME ||
                              (GetPointer<port_o>(port_c) && GetPointer<port_o>(port_c)->get_is_memory()) ||
                              port_c->get_id().find("sel_") == 0))
                {
@@ -313,7 +313,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                      structural_objectRef port_c =
                          n_ports > constPort ? mod->get_in_port(constPort) : structural_objectRef();
                      if(port_c && (port_c->get_id() == CLOCK_PORT_NAME || port_c->get_id() == RESET_PORT_NAME ||
-                                   port_c->get_id() == START_PORT_NAME ||
+                                   port_c->get_id() == START_PORT_NAME || port_c->get_id() == STALL_PORT_NAME ||
                                    (GetPointer<port_o>(port_c) && GetPointer<port_o>(port_c)->get_is_memory()) ||
                                    port_c->get_id().find("sel_") == 0))
                      {
@@ -328,7 +328,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                         {
                            structural_objectRef port = mod->get_in_port(iport);
                            if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME ||
-                              port->get_id() == START_PORT_NAME ||
+                              port->get_id() == START_PORT_NAME || port->get_id() == STALL_PORT_NAME ||
                               (GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_memory()) ||
                               port->get_id().find("sel_") == 0)
                            {

@@ -1,0 +1,50 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# Ramulator2 config matching the Xilinx Alveo U250 (xcu250-2Lfigd2104-VVD).
+#
+# Board DRAM (from Xilinx DS962 / UG1289):
+#   - 4 independent DDR4 channels on the card
+#   - 16 GB per channel, 64 GB total
+#   - DDR4-2400 (PC4-19200), 64-bit data + 8-bit ECC = 72-bit bus
+#   - Typical component: 16Gb x8 (e.g. Micron MT40A2G8), 1 rank per DIMM
+#   - MIG hard IP in the Ultrascale+ routes the AXI-MM interface to DRAM
+#
+# Ramulator mapping:
+#   - DDR4_16Gb_x8 organization matches 16 GB per channel, 1 rank
+#   - DDR4_2400R timing preset is the JEDEC CL=16-16-16 2400 MT/s bin
+#   - channel: 4 is used as configured. RAMULATOR_OVERRIDE_CHANNELS=1
+#     explicitly replaces it with the accelerator's --channels-number.
+#
+# MDPI derives DRAM ticks per accelerator cycle from --clock-period / tCK.
+# The DRAM timing preset determines tCK; fractional ratios retain their phase.
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 1
+
+  DRAM:
+    impl: DDR4
+    org:
+      preset: DDR4_16Gb_x8
+      channel: 4
+      rank: 1
+    timing:
+      preset: DDR4_2400R
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

@@ -24,11 +24,13 @@ $(call check_defined, BEH_DIR)    # HLS_output/<sim_id>_beh absolute path
 # The following variables may also be defined:
 #   SRCS       : PandA Bambu HLS input source files
 #   BEH_CC     : alternative compiler for libmdpi compilation
-#   CFLAGS     : compilation flags for SRCS, WRAPPER_SRC, and TB_SRCS
+#   CFLAGS     : compilation flags for C sources and generated wrapper/TB files
+#   CPP_CFLAGS : compilation flags for C++ sources in SRCS and TB_SRCS
 #   BEH_CFLAGS : includes and defines for svdpi.h
 #   TB_CFLAGS  : additional compilation flags for TB_SRCS
 #   TB_SRCS    : additional testbench source files
 #   PP_SRC     : pretty print source file
+#   RAMULATOR_ENABLED : true when the generated testbench uses Ramulator
 ###
 
 ### Environment below is automatically populated, do not override
@@ -42,6 +44,7 @@ endif
 
 override SRCS := $(abspath $(filter-out %.bambuir, $(SRCS)))
 override TB_SRCS := $(abspath $(TB_SRCS))
+CPP_CFLAGS ?= $(CFLAGS)
 SRC_DIR := $(shell echo "$(SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 TB_SRC_DIR := $(shell echo "$(TB_SRCS)" | sed 's/ /\n/g' | sed -e '$$!{N;s/^\(.*\).*\n\1.*$$/\1\n\1/;D;}' | sed 's/\(.*\)\/.*/\1/')
 BUILD_DIR := $(SIM_DIR)/build
@@ -60,6 +63,7 @@ WRAPPER_MDPI_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(WRAPPER_MDPI_SR
 WRAPPER_CSROA_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(WRAPPER_CSROA_SRC)))
 WRAPPER_OBJ := $(WRAPPER_MDPI_OBJ) $(WRAPPER_CSROA_OBJ)
 
+TB_CPP_CFLAGS := $(patsubst -fno-exceptions,,$(CPP_CFLAGS)) $(TB_CFLAGS)
 override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS)
 MDPI_CFLAGS := $(BEH_CFLAGS) -D_GNU_SOURCE -isystem$(panda_includes)
 LIB_CFLAGS := $(MDPI_CFLAGS)
@@ -71,7 +75,23 @@ DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++14 -fno-exceptions
 
-WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++14 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
+# RAMULATOR2_DIR is a standard installation prefix, not a source directory.
+# Source checkouts default to the in-tree submodule's local installation.
+# Installed Bambu users can select any prefix through RAMULATOR2_DIR.
+ramulator_prefixes := $(abspath $(libmdpi_root)/../../ext/ramulator2-no-spdlog/install)
+ifneq (,$(BAMBU_HLS))
+ramulator_prefixes += $(abspath $(BAMBU_HLS)/../ext/ramulator2-no-spdlog/install)
+endif
+RAMULATOR2_DIR ?= $(firstword $(foreach prefix,$(ramulator_prefixes),$(if $(wildcard $(prefix)/include/ramulator/base/config.h),$(prefix))))
+RAMULATOR2_LIBDIR ?= $(patsubst %/,%,$(dir $(firstword $(wildcard $(RAMULATOR2_DIR)/lib/libramulator.so $(RAMULATOR2_DIR)/lib64/libramulator.so $(RAMULATOR2_DIR)/lib/*/libramulator.so))))
+ifeq ($(RAMULATOR_ENABLED),true)
+ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
+	DRIVER_CFLAGS := $(filter-out -fno-exceptions -std=c++14,$(DRIVER_CFLAGS))
+	DRIVER_CFLAGS += -DHAVE_RAMULATOR2 -I$(RAMULATOR2_DIR)/include/ramulator -I$(RAMULATOR2_DIR)/include -std=c++20 -fexceptions
+endif
+endif
+
+WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++14 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(^|[[:space:]])-x[[:space:]]+[^[:space:]]+/\1/g; s/(^|[[:space:]])-x[^[:space:]]+/\1/g; s/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
 		ifndef MPPTOP_FNAME
@@ -92,7 +112,14 @@ DRIVER_LDFLAGS += $(shell if basename $(CC) | grep -v '++' | grep -q 'clang'; th
 DRIVER_LDFLAGS += $(shell if basename $(CC) | grep -v '++' | grep -qv 'clang'; then echo -lstdc++; fi)
 DRIVER_LDFLAGS += -lpthread -lm -ldl
 
-LIB_LDFLAGS := 
+# Ramulator2 link flags
+ifeq ($(RAMULATOR_ENABLED),true)
+ifneq (,$(wildcard $(RAMULATOR2_LIBDIR)/libramulator.so))
+	DRIVER_LDFLAGS += -L$(RAMULATOR2_LIBDIR) -Wl,-rpath,$(RAMULATOR2_LIBDIR) -lramulator
+endif
+endif
+
+LIB_LDFLAGS :=
 ifeq ($(BEH_CC),xsc)
 	LIB_CFLAGS := $(addprefix -gcc_compile_options=, $(LIB_CFLAGS))
 	LIB_LDFLAGS := -work $(shell realpath --relative-to $(libmdpi_root) $(BEH_DIR)) $(addprefix -gcc_link_options=, $(LIB_LDFLAGS))
@@ -133,13 +160,13 @@ endif
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
-	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(CFLAGS) -fPIC -c -o $@ $<
+	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(if $(filter .ii .cc .cp .cxx .cpp .CPP .c++ .C,$(suffix $(<F))),$(CPP_CFLAGS),$(CFLAGS)) -fPIC -c -o $@ $<
 	$(Q)objcopy $(REDEFINE_TOP) $@
 
 $(TB_OBJ_DIR)/%.o: $(TB_SRC_DIR)/%
 	@echo "Compiling testbench $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
-	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(TB_CFLAGS) -fPIC -c -o $@ $<
+	$(Q)$(CC) $(if $(filter-out .F% .f%,$(suffix $(<F))),-MMD -MP -MT $(patsubst %.o,%.d, $@),) $(if $(filter .ii .cc .cp .cxx .cpp .CPP .c++ .C,$(suffix $(<F))),$(TB_CPP_CFLAGS),$(TB_CFLAGS)) -fPIC -c -o $@ $<
 	$(Q)objcopy $(WEAKEN_TOP) $(REDEFINE_SYS) $@
 
 $(PP_OBJ): $(PP_SRC)
@@ -149,17 +176,17 @@ $(PP_OBJ): $(PP_SRC)
 	$(Q)objcopy --keep-global-symbol $(TOP_FNAME) $$(nm $@ | grep -o '[^[:space:]]*get_pc_thunk[^[:space:]]*' | sed 's/^/--keep-global-symbol /' | tr '\n' ' ') $@
 	$(Q)objcopy --redefine-sym $(TOP_FNAME)=$(MPPTOP_FNAME) $@
 
-$(WRAPPER_MDPI_OBJ): $(WRAPPER_MDPI_SRC)
+$(WRAPPER_MDPI_OBJ): $(WRAPPER_MDPI_SRC) $(wildcard $(panda_includes)/mdpi/*.h) $(libmdpi_root)/Makefile.mk
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
 	$(Q)$(CC) $(WRAPPER_CFLAGS) -fPIC -c -o $@ $<
 
-$(WRAPPER_CSROA_OBJ): $(WRAPPER_CSROA_SRC)
+$(WRAPPER_CSROA_OBJ): $(WRAPPER_CSROA_SRC) $(wildcard $(panda_includes)/mdpi/*.h) $(libmdpi_root)/Makefile.mk
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
 	$(Q)$(CC) $(WRAPPER_CFLAGS) -fPIC -c -o $@ $<
 
-$(DRIVER_OBJ): $(DRIVER_SRC)
+$(DRIVER_OBJ): $(DRIVER_SRC) $(wildcard $(panda_includes)/mdpi/*.h) $(libmdpi_root)/Makefile.mk
 	@echo "Compiling $(notdir $<)"
 	$(Q)mkdir -p $$(dirname $@)
 	$(Q)$(CC) $(DRIVER_CFLAGS) -fPIC -c -o $@ $<

@@ -1,0 +1,39 @@
+# Copyright (C) 2026 Jesun Firoz
+# SPDX-License-Identifier: Apache-2.0
+# Author: Jesun Firoz <jesun.firoz@pnnl.gov>
+
+# Default DDR4 Ramulator2 configuration (Bambu MDPI integration).
+#
+# MDPI derives DRAM ticks per accelerator cycle from --clock-period / tCK.
+# tCK comes from the timing preset; fractional ratios retain their phase.
+# For DDR4-2400R, tCK is approximately 0.833 ns: a 10 ns accelerator cycle
+# advances approximately 12 DRAM cycles, independently of the YAML clock_ratio.
+Frontend:
+  impl: GEM5
+
+MemorySystem:
+  impl: GenericDRAM
+  clock_ratio: 1
+
+  DRAM:
+    impl: DDR4
+    org:
+      preset: DDR4_8Gb_x8
+      channel: 1
+      rank: 1
+    timing:
+      preset: DDR4_2400R
+
+  Controller:
+    impl: Generic
+    Scheduler:
+      impl: FRFCFS
+    RefreshManager:
+      impl: AllBank
+    RowPolicy:
+      impl: ClosedRowPolicy
+      cap: 4
+    plugins:
+
+  AddrMapper:
+    impl: RoBaRaCoCh

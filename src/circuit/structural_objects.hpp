@@ -24,6 +24,7 @@
  * Objects can represent items at different level of abstraction: logic, RTL and TLM.
  *
  * @author Matteo Barbati <mbarbati@gmail.com>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
@@ -69,6 +70,7 @@ class simple_indent;
 #define CLOCK_PORT_NAME "clock"
 #define WENABLE_PORT_NAME "wenable"
 #define START_PORT_NAME "start_port"
+#define STALL_PORT_NAME "stall_port"
 #define RESET_PORT_NAME "reset"
 #define CACHE_RESET_PORT_NAME "cache_reset"
 #define DONE_PORT_NAME "done_port"

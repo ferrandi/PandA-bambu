@@ -532,18 +532,9 @@ unsigned int CallGraphManager::GetRootFunction(unsigned int fid) const
    }
 
    unsigned int parent_fid = 0;
-   const auto top_vertex = GetVertex(fid);
    for(auto root_fid : root_functions)
    {
-      CustomOrderedSet<unsigned int> f_list;
-      CalledFunctionsVisitor vis(allow_recursive_functions, *this, f_list, f_list);
-      std::vector<boost::default_color_type> color_vec(call_graph.num_vertices());
-      boost::depth_first_visit(
-          call_graph, top_vertex, vis,
-          boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), call_graph),
-                                            boost::white_color),
-          [&](vertex_descriptor u, const CallGraph& g) { return root_functions.count(g.CGetNodeInfo(u).nodeID); });
-      if(f_list.count(fid))
+      if(GetReachedFunctionsFrom(root_fid, false).count(fid))
       {
          THROW_ASSERT(parent_fid == 0, "Expected single parent root functions.");
 #if HAVE_ASSERTS

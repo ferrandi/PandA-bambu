@@ -26,7 +26,6 @@ env:
   storage-url: ${{secrets.CI_STORAGE_URL}}
   storage-user: ${{secrets.CI_STORAGE_USER}}
   storage-token: ${{secrets.CI_STORAGE_TOKEN}}
-  host_jobs: $J
   dist-dir: panda_dist
 
 jobs:
@@ -74,28 +73,14 @@ jobs:
       - name: Launch test batch
         id: batch
         shell: bash
-        run: |
-          source ${{env.dist-dir}}/settings.sh
-          mkdir ${{env.report-dir}}
-          out_dir="$PWD/${{env.report-dir}}"
-          test_dir="test_out"
-          echo "test-reports-dir=$out_dir" >> $GITHUB_OUTPUT
-          IFS=',' read -r -a configurations <<< "${{matrix.batch}}"
-          for configuration in "${configurations[@]}"
-          do
-            unset device
-            unset period
-            unset args
-            rm -rf $test_dir
-            IFS='_ ' read device period args <<< "$configuration"
-            echo "::group::Run for ${device} at ${period} ${args[@]/#/'with additional args '}"
-            IFS=' ' read -r -a args <<< "$args"
-            config_name="${device}_${period}$(sed -e 's/\([-]\+\)/_/g' <<< $args)"
-            config_out="$out_dir/$config_name"
-            mkdir -p "$config_out"
-            ${{matrix.script}} -o $test_dir --returnfail --junitdir="$config_out" --summary="$config_out/perf.xml" -c=--compiler=${{env.test-compiler}} -c=--device-name=${device} -c=--clock-period=${period} ${{env.args}} ${{matrix.args}} ${args[@]/#/-c=}
-            echo "::endgroup::"
-          done
+        env:
+          OPENMP_BATCH_SCRIPT: ${{matrix.script}}
+          OPENMP_BATCH_CONFIGURATIONS: ${{matrix.batch}}
+          OPENMP_REPORT_DIR: ${{env.report-dir}}
+          OPENMP_DIST_DIR: ${{env.dist-dir}}
+          OPENMP_BATCH_COMPILER: ${{env.test-compiler}}
+          OPENMP_EXTRA_ARGS: ${{env.args}} ${{matrix.args}}
+        run: bash .github/scripts/run-openmp-batch.sh
       - name: Upload test reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6

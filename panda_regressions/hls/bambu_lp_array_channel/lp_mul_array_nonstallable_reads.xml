@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>interface_library</name>
+    <cell>
+      <name>a_bambu_artificial_ParmMgr</name>
+      <attribute name="Stallable" value_type="boolean">0</attribute>
+    </cell>
+    <cell>
+      <name>b_bambu_artificial_ParmMgr</name>
+      <attribute name="Stallable" value_type="boolean">0</attribute>
+    </cell>
+  </library>
+</technology>

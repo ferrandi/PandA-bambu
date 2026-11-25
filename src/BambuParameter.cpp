@@ -23,6 +23,7 @@
  * @brief This file contains the implementation of some methods for parameter parsing in Bambu tool
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Jesun Firoz <jesun.firoz@pnnl.gov>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
@@ -72,6 +73,7 @@
 #include <filesystem>
 #include <getopt.h>
 #include <iosfwd>
+#include <limits>
 #include <list>
 #include <regex>
 #include <string>
@@ -143,7 +145,9 @@
 #define OPT_NUM_ACCELERATORS (1 + OPT_NO_MIXED_DESIGN)
 #define OPT_PARALLEL_CONTROLLER (1 + OPT_NUM_ACCELERATORS)
 #define OPT_PERIOD_CLOCK (1 + OPT_PARALLEL_CONTROLLER)
-#define OPT_CLOCK_NAME (1 + OPT_PERIOD_CLOCK)
+#define OPT_PRIORITY_ENCODER (1 + OPT_PERIOD_CLOCK)
+#define OPT_TASK_RESOURCE_DUPLICATION (1 + OPT_PRIORITY_ENCODER)
+#define OPT_CLOCK_NAME (1 + OPT_TASK_RESOURCE_DUPLICATION)
 #define OPT_RESET_NAME (1 + OPT_CLOCK_NAME)
 #define OPT_START_NAME (1 + OPT_RESET_NAME)
 #define OPT_DONE_NAME (1 + OPT_START_NAME)
@@ -200,6 +204,7 @@
 #define OPT_BUS_PIPELINED (1 + OPT_GENERATE_COMPONENTS)
 #define OPT_BUS_ARBITER_TYPE (1 + OPT_BUS_PIPELINED)
 #define OPT_BUS_ARCHITECTURE (1 + OPT_BUS_ARBITER_TYPE)
+#define OPT_BANKED_MEMORY_ADDRESS_SIZE (1 + OPT_BUS_ARCHITECTURE)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -430,6 +435,14 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when STORE are performed (default 1).\n\n"
       << "   --bus-pipelined\n"
       << "        Allows concurrent requests on the bus.\n\n"
+      << "   --banked-memory-address-size=<mode>\n"
+      << "        Select the address size exposed by banked memory interfaces.\n"
+      << "        Possible values for <mode> are:\n"
+      << "            RESIZED - use the bank-local address, removing bank selector bits (default).\n"
+      << "            FULL - preserve the entire accelerator address.\n"
+      << "        FULL connects memories directly without testbench bank adapters.\n\n"
+      << "   --enable-ramulator\n"
+      << "        Enable Ramulator memory timing in native bus and AXI testbenches.\n\n"
       << "   --tb-queue-size=value\n"
       << "        Define the maximum number of concurrent requests accepted by the testbench. (default 4).\n\n"
       << "   --data-bus-bitsize=<bitsize>\n"
@@ -504,6 +517,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Specify the done signal name of the top interface (default = done_port).\n\n"
       << "    --idle-name=id\n"
       << "        Specify the idle signal name of the top interface (default = idle_port).\n\n"
+      << "    --task-resource-duplication=N\n"
+      << "        Instances of each OpenMP task resource (positive integer, default=1).\n"
+      << "        Task graphs are detected automatically with the LLVM19 OpenMP frontend.\n\n"
+      << "    --priority-encoder=hierarchical|tree|gates\n"
+      << "        Select combinatorial priority encoders (default = hierarchical).\n\n"
       << "    --clock-period=value\n"
       << "        Specify the period of the clock signal (default = 10ns).\n\n"
       << "    --backend-script-extensions=file\n"
@@ -912,6 +930,8 @@ int BambuParameter::Exec()
       {"assert-debug", no_argument, nullptr, 0},
       {"device-name", required_argument, nullptr, OPT_DEVICE_NAME},
       {"clock-period", required_argument, nullptr, OPT_PERIOD_CLOCK},
+      {"priority-encoder", required_argument, nullptr, OPT_PRIORITY_ENCODER},
+      {"task-resource-duplication", required_argument, nullptr, OPT_TASK_RESOURCE_DUPLICATION},
       {"clock-name", required_argument, nullptr, OPT_CLOCK_NAME},
       {"reset-name", required_argument, nullptr, OPT_RESET_NAME},
       {"start-name", required_argument, nullptr, OPT_START_NAME},
@@ -978,6 +998,7 @@ int BambuParameter::Exec()
       {"mem-delay-read", required_argument, nullptr, OPT_MEM_DELAY_READ},
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
+      {"enable-ramulator", no_argument, nullptr, 0},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
@@ -991,6 +1012,7 @@ int BambuParameter::Exec()
       {"fp-format-interface", optional_argument, nullptr, OPT_FP_FORMAT_INTERFACE},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
       {"bus-pipelined", optional_argument, nullptr, OPT_BUS_PIPELINED},
+      {"banked-memory-address-size", required_argument, nullptr, OPT_BANKED_MEMORY_ADDRESS_SIZE},
       {"bus-arbiter-type", optional_argument, nullptr, OPT_BUS_ARBITER_TYPE},
       {"bus-architecture", optional_argument, nullptr, OPT_BUS_ARCHITECTURE},
       {"AXI-burst-type", optional_argument, nullptr, OPT_AXI_BURST_TYPE},
@@ -1278,6 +1300,38 @@ int BambuParameter::Exec()
                                  "'. Expected either a single token (<device_string>) or exactly three comma-separated "
                                  "fields (<name>,<speed>,<package>). "
                                  "Examples: --device-name=xc7z020-1clg484 or --device-name=xc7z020,1,clg484.");
+            }
+            break;
+         }
+         case OPT_PRIORITY_ENCODER:
+         {
+            const std::string encoder = optarg;
+            if(encoder != "hierarchical" && encoder != "tree" && encoder != "gates")
+            {
+               THROW_ERROR("--priority-encoder must be hierarchical, tree or gates");
+            }
+            setOption(OPT_priority_encoder, encoder);
+            break;
+         }
+         case OPT_TASK_RESOURCE_DUPLICATION:
+         {
+            const std::string value(optarg);
+            if(value.empty() || value.find_first_not_of("0123456789") != std::string::npos)
+            {
+               THROW_ERROR_USAGE("--task-resource-duplication requires a positive integer");
+            }
+            try
+            {
+               const auto number = std::stoull(value);
+               if(number == 0 || number > std::numeric_limits<unsigned>::max())
+               {
+                  THROW_ERROR_USAGE("--task-resource-duplication is outside the supported positive integer range");
+               }
+               setOption(OPT_task_resource_duplication, static_cast<unsigned>(number));
+            }
+            catch(const std::exception&)
+            {
+               THROW_ERROR_USAGE("--task-resource-duplication requires a positive integer in range");
             }
             break;
          }
@@ -1818,6 +1872,17 @@ int BambuParameter::Exec()
             setOption(OPT_bus_pipelined, true);
             break;
          }
+         case OPT_BANKED_MEMORY_ADDRESS_SIZE:
+         {
+            const std::string mode(optarg);
+            if(mode != "RESIZED" && mode != "FULL")
+            {
+               THROW_ERROR_USAGE("Invalid banked memory address size '" + mode +
+                                 "'. Supported values are RESIZED and FULL.");
+            }
+            setOption(OPT_banked_memory_address_size, mode);
+            break;
+         }
          case OPT_BUS_ARBITER_TYPE:
          {
             if(std::string(optarg) == "RP")
@@ -2148,6 +2213,11 @@ int BambuParameter::Exec()
                setOption(OPT_assert_debug, true);
                break;
             }
+            if(strcmp(long_options[option_index].name, "enable-ramulator") == 0)
+            {
+               setOption(OPT_enable_ramulator, true);
+               break;
+            }
             /// scheduling options
             if(strcmp(long_options[option_index].name, "no-chaining") == 0)
             {
@@ -2227,6 +2297,8 @@ int BambuParameter::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, getOption<int>(OPT_output_level),
                   " ==  Bambu executed with: " + cat_args + "\n");
 
+   bool has_c_source = false;
+   bool has_cpp_source = false;
    while(optind < argc)
    {
       const std::string filename(argv[optind]);
@@ -2245,6 +2317,8 @@ int BambuParameter::Exec()
       {
          appendOption(OPT_input_file, filename);
          setOption(OPT_input_format, file_type);
+         has_c_source |= file_type == Parameters_FileFormat::FF_C;
+         has_cpp_source |= file_type == Parameters_FileFormat::FF_CPP;
       }
       else if(file_type == Parameters_FileFormat::FF_RAW ||
               (isOption(OPT_input_format) &&
@@ -2265,6 +2339,13 @@ int BambuParameter::Exec()
                            "Use --input-format explicitly for raw input or non-standard extensions.");
       }
       optind++;
+   }
+
+   if(has_c_source && has_cpp_source && !isOption(OPT_cc_xlang))
+   {
+      THROW_WARNING("Mixed C/C++ source inputs: Bambu selects the compiler driver from the last input file. "
+                    "Use -x c or -x c++ to specify one language for all user sources, "
+                    "or compile each language separately to LLVM bitcode.");
    }
 
    CheckParameters();
@@ -2296,6 +2377,22 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 void BambuParameter::CheckParameters()
 {
    Parameter::CheckParameters();
+   for(const auto* name : {"enable-task", "priority-encoder", "task-resource-duplication"})
+   {
+      if(IsParameter(name))
+      {
+         const auto message = std::string(name) == "enable-task" ?
+                                  "remove this setting; OpenMP tasks are detected automatically" :
+                                  "use --" + std::string(name) + "=<value> instead";
+         THROW_ERROR_USAGE(std::string("--bambu-parameter=") + name + " is no longer supported; " + message);
+      }
+   }
+
+   const auto m_axi_burst = GetParameter<std::string>("m-axi-burst");
+   if(m_axi_burst != "0" && m_axi_burst != "1")
+   {
+      THROW_ERROR_USAGE("m-axi-burst must be exactly 0 or 1");
+   }
 
    setOption(OPT_simulation_output, getOption<std::string>(OPT_output_directory) + "/bambu_time_simulation.txt");
    setOption(OPT_profiling_output, getOption<std::string>(OPT_output_directory) + "/bambu_profiling_simulation.txt");
@@ -2782,6 +2879,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_cc_standard, "c11");
       }
    }
+
    /// Disable proxy when there are multiple top functions
    // TODO: check this, function proxies should work properly even with multiple top functions
    if(getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
@@ -3285,8 +3383,12 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_openmp) && getOption<bool>(OPT_openmp) &&
       getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
    {
-      appendOption(OPT_input_file,
-                   (relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename).string());
+      const auto runtime_file = relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename;
+      appendOption(OPT_input_file, runtime_file.string());
+      // The supported toolchains are distributed without an OpenMP header, so
+      // expose the bundled one: '#include <omp.h>' must resolve to the
+      // interface implemented by the runtime file appended above.
+      appendOption(OPT_cc_includes, "-isystem " + runtime_file.parent_path().string(), " ");
    }
    if((isOption(OPT_generate_vcd) && getOption<bool>(OPT_generate_vcd)) ||
       (isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy)))
@@ -3318,6 +3420,8 @@ void BambuParameter::CheckParameters()
 
 void BambuParameter::SetDefaults()
 {
+   SetPandaParameter("m-axi-burst", "1");
+
    /// Debugging level
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_NONE);
@@ -3359,6 +3463,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_storage_value_insertion_algorithm, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION);
    setOption(OPT_reset_type, "no");
    setOption(OPT_reset_level, false);
+   setOption(OPT_priority_encoder, "hierarchical");
+   setOption(OPT_task_resource_duplication, 1U);
    setOption(OPT_reg_init_value, true);
 
    setOption(OPT_shared_input_registers, false);
@@ -3374,6 +3480,8 @@ void BambuParameter::SetDefaults()
 
    setOption(OPT_tb_queue_size, 4);
 
+   setOption(OPT_enable_ramulator, false);
+
    /// -- Memory allocation -- //
    setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
    setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NONE);
@@ -3384,6 +3492,7 @@ void BambuParameter::SetDefaults()
 
    /// -- Bus options -- //
    setOption(OPT_bus_pipelined, false);
+   setOption(OPT_banked_memory_address_size, "RESIZED");
    setOption(OPT_bus_arbiter_type, "RR");
    setOption(OPT_bus_architecture, "ALL_TO_ALL");
 

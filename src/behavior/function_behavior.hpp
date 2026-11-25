@@ -103,10 +103,13 @@ struct OMPInfo
    std::stack<unsigned int> critical;
    const unsigned int local_idx;
    const unsigned int global_idx;
+   /// Internal task-entry identity for private call graphs; zero for ordinary OpenMP threads.
+   const unsigned int task_id;
    const OMPInfoConstRef parent;
 
    OMPInfo(unsigned int _local_idx, unsigned int _context_count, unsigned int _core_id, unsigned int _ncore,
-           unsigned int _fork_call_id, const OMPInfoConstRef& parent, unsigned int _kmp_t_nproc);
+           unsigned int _fork_call_id, const OMPInfoConstRef& parent, unsigned int _kmp_t_nproc,
+           unsigned int _task_id = 0U);
 
    static unsigned int make_global(unsigned int idx, unsigned int ncore, OMPInfoConstRef parent);
 };

@@ -436,6 +436,12 @@ struct functional_unit : public technology_node
    /// map between the attribute keys and the corresponding values
    std::map<std::string, attributeRef> attributes;
 
+   /// Return the stallable property, inheriting from the backing template when not set on this resource.
+   bool is_stallable(const functional_unit* template_fu = nullptr) const;
+
+   /// Remove xload's synthetic default operation for an XML cell with no explicit operation or template.
+   void remove_metadata_only_placeholder_operation();
+
    /// clock period adopted for the synthesis (in ns)
    double clock_period;
 

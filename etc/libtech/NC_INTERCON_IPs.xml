@@ -829,15 +829,20 @@ endgenerate"/>
           <parameter name="BANK_START">0</parameter>
           <parameter name="BANK_END">0</parameter>
           <parameter name="BANK_COUNT">1</parameter>
+          <parameter name="FULL_ADDRESS">0</parameter>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="noc_addr_adapter BUNDLE_START BUNDLE_END BANK_START BANK_END BANK_COUNT in1 out1" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="noc_addr_adapter FULL_ADDRESS BUNDLE_START BUNDLE_END BANK_START BANK_END BANK_COUNT in1 out1" VERILOG_PROVIDED="
 generate
-  if(BANK_COUNT &gt; 1 &amp;&amp; BANK_COUNT != (1 &lt;&lt; (BANK_START - BANK_END)))
+  if(FULL_ADDRESS)
+  begin
+    assign out1 = in1;
+  end
+  else if(BANK_COUNT &gt; 1 &amp;&amp; BANK_COUNT != (1 &lt;&lt; (BANK_START - BANK_END)))
   begin
     localparam EXTRA_SELECTORS = (1 &lt;&lt; (BANK_START - BANK_END)) - BANK_COUNT;
     wire [BANK_START-BANK_END-1:0] bank_selector = in1[BANK_START-1:BANK_END];
@@ -1439,10 +1444,10 @@ generate
         assign channel_selector_next = ~channel_status_reg &amp;&amp; (Mout_oe_ram[i] || Mout_we_ram[i]) ? Mout_tag[i*BITSIZE_Mout_tag+:BITSIZE_Mout_tag] : channel_selector_reg;
         assign M_tag_out[i*BITSIZE_M_tag_out +: BITSIZE_M_tag_out] = channel_selector_reg;
       end
-      else
-      begin
-        assign M_tag_out[i*BITSIZE_M_tag_out +: BITSIZE_M_tag_out] = 0;
-      end
+    end
+    if(!INNER_TAG)
+    begin
+      assign M_tag_out = 0;
     end
     assign Mout_tag_out = 0;
   end
@@ -2322,7 +2327,10 @@ endgenerate"/>
           <port_vector_o id="Mout_back_pressure_out" dir="IN" is_memory="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_vector_o>
-          <NP_functionality LIBRARY="Arbiter_connection_interface ARBITER_TYPE INNER_TAG SELECTOR_SIZE IS_PIPELINED Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram M_tag Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out Mout_tag_out M_DataRdy_out M_Rdata_ram_out M_tag_out Mout_back_pressure Mout_back_pressure_out" IP_COMPONENT="round_robin_arbiter_core,priority_arbiter_core,left_priority_arbiter_core,MUX_N_to_1_enabled,MUX_N_to_1,DEMUX_1_to_N,DEMUX_1_to_N_enabled,pipelined_channel_controller,sequential_channel_controller" VERILOG_PROVIDED="
+          <port_vector_o id="M_back_pressure" dir="OUT" is_memory="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_vector_o>
+          <NP_functionality LIBRARY="Arbiter_connection_interface M_back_pressure ARBITER_TYPE INNER_TAG SELECTOR_SIZE IS_PIPELINED Mout_oe_ram Mout_we_ram Mout_addr_ram Mout_Wdata_ram Mout_data_ram_size Mout_tag M_DataRdy M_Rdata_ram M_tag Mout_oe_ram_out Mout_we_ram_out Mout_addr_ram_out Mout_Wdata_ram_out Mout_data_ram_size_out Mout_tag_out M_DataRdy_out M_Rdata_ram_out M_tag_out Mout_back_pressure Mout_back_pressure_out" IP_COMPONENT="round_robin_arbiter_core,priority_arbiter_core,left_priority_arbiter_core,MUX_N_to_1_enabled,MUX_N_to_1,DEMUX_1_to_N,DEMUX_1_to_N_enabled,pipelined_channel_controller,sequential_channel_controller" VERILOG_PROVIDED="
 localparam PRIORITY_ARBITER = 0;
 localparam ROUND_ROBIN_ARBITER = 1;
 localparam LEFT_PRIORITY_ARBITER = 2;
@@ -2331,6 +2339,40 @@ localparam CHANNEL_NUMBER = PORTSIZE_Mout_oe_ram_out;
 wire [CHANNEL_NUMBER*SELECTOR_SIZE -1 : 0] selector, channel_selector;	
 wire [CHANNEL_NUMBER-1:0] valid, channel_active;
 wire [CHANNEL_NUMBER*PORTSIZE_M_tag_out*BITSIZE_M_tag_out-1:0] M_tag_out_wire;
+wire [CHANNEL_NUMBER-1:0] response_grant;
+wire response_collision;
+wire response_priority;
+
+assign response_collision = M_DataRdy[0] &amp;&amp; M_DataRdy[1] &amp;&amp;
+    (IS_PIPELINED || (!channel_active[0] &amp;&amp; !channel_active[1])) &amp;&amp;
+    channel_selector[0 +: SELECTOR_SIZE] == channel_selector[SELECTOR_SIZE +: SELECTOR_SIZE];
+assign M_back_pressure[0] = response_collision &amp;&amp; response_priority;
+assign M_back_pressure[1] = response_collision &amp;&amp; !response_priority;
+assign response_grant = M_DataRdy &amp; ~M_back_pressure;
+
+generate
+  if(ARBITER_TYPE == ROUND_ROBIN_ARBITER)
+  begin : response_round_robin
+    reg response_priority_reg;
+    always @(posedge clock)
+    begin
+      if(1RESET_VALUE)
+      begin
+        response_priority_reg &lt;= 0;
+      end
+      else if(response_collision)
+      begin
+        response_priority_reg &lt;= ~response_priority_reg;
+      end
+    end
+    assign response_priority = response_priority_reg;
+  end
+  else
+  begin : response_fixed_priority
+    assign response_priority = 1'b0;
+  end
+endgenerate
+
 
 generate
   if(ARBITER_TYPE == PRIORITY_ARBITER)
@@ -2460,7 +2502,7 @@ genvar j;
       .PORTSIZE_M_tag_out(PORTSIZE_M_tag_out),
       .BITSIZE_M_tag_out(BITSIZE_M_tag_out)) sequential_channel_controller (.clock(clock),
       .reset(reset),
-      .M_DataRdy(M_DataRdy[j]),
+      .M_DataRdy(response_grant[j]),
       .Mout_back_pressure_out(Mout_back_pressure_out[j]),
       .active_request(valid[j]),
       .channel_active(channel_active[j]),
@@ -2472,50 +2514,36 @@ genvar j;
       assign Mout_tag_out = 0;
     end
   end
+endgenerate
 
-  genvar k;
-  wire [CHANNEL_NUMBER*PORTSIZE_M_DataRdy_out-1:0] M_DataRdy_wire;
-  wire [CHANNEL_NUMBER*PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out-1:0] M_Rdata_ram_wire;
+genvar k;
+generate
+  for(k = 0; k &lt; PORTSIZE_M_DataRdy_out; k = k + 1)
+  begin : response
+    wire response_match_0, response_match_1;
+    wire response_select_0, response_select_1;
 
-  for(k=0; k &lt; CHANNEL_NUMBER; k = k + 1)
-  begin
-    DEMUX_1_to_N_enabled #(.BITSIZE_in1(1),
-    .BITSIZE_selector(SELECTOR_SIZE),
-    .PORTSIZE_out1(PORTSIZE_M_DataRdy_out),
-    .BITSIZE_out1(1)) DEMUX_N_to_1_M_DataRdy_out (.selector(channel_selector[k*SELECTOR_SIZE +: SELECTOR_SIZE]),
-    .out1(M_DataRdy_wire[k*PORTSIZE_M_DataRdy_out +: PORTSIZE_M_DataRdy_out]),
-    .in1(M_DataRdy[k]),
-    .enabled(M_DataRdy[k]));
-    DEMUX_1_to_N #(.BITSIZE_in1(BITSIZE_M_Rdata_ram),
-    .BITSIZE_selector(SELECTOR_SIZE),
-    .PORTSIZE_out1(PORTSIZE_M_DataRdy_out),
-    .BITSIZE_out1(BITSIZE_M_Rdata_ram_out)) DEMUX_N_to_1_M_RData_ram_out (.selector(channel_selector[k*SELECTOR_SIZE +: SELECTOR_SIZE]),
-    .out1(M_Rdata_ram_wire[k*PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out +: PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out]),
-    .in1(M_Rdata_ram[k*BITSIZE_M_Rdata_ram +: BITSIZE_M_Rdata_ram]));
-  end  
-endgenerate  
-  
-reg [PORTSIZE_M_DataRdy_out-1:0] M_DataRdy_out_temp;
-reg [PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out-1:0] M_Rdata_ram_out_temp;
-reg [PORTSIZE_M_tag_out*BITSIZE_M_tag_out-1:0] M_tag_out_temp;
-  
-integer s;
-always @(*)
-begin
-  M_DataRdy_out_temp = 0;
-  M_Rdata_ram_out_temp = 0;
-  M_tag_out_temp = 0;
-  for(s=0; s &lt; CHANNEL_NUMBER; s = s + 1)
-  begin
-    M_DataRdy_out_temp = M_DataRdy_out_temp | M_DataRdy_wire[s*PORTSIZE_M_DataRdy_out +: PORTSIZE_M_DataRdy_out];
-    M_Rdata_ram_out_temp = M_Rdata_ram_out_temp | M_Rdata_ram_wire[s*PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out +: PORTSIZE_M_Rdata_ram_out*BITSIZE_M_Rdata_ram_out];
-    M_tag_out_temp = M_tag_out_temp | (M_tag_out_wire[s*PORTSIZE_M_tag_out*BITSIZE_M_tag_out +: PORTSIZE_M_tag_out*BITSIZE_M_tag_out] &amp; {PORTSIZE_M_tag_out*BITSIZE_M_tag_out{M_DataRdy[s]}});
+    assign response_match_0 = M_DataRdy[0] &amp;&amp; channel_selector[0 +: SELECTOR_SIZE] == k;
+    assign response_match_1 = M_DataRdy[1] &amp;&amp; channel_selector[SELECTOR_SIZE +: SELECTOR_SIZE] == k;
+    assign response_select_0 = response_match_0 &amp;&amp; !(response_match_1 &amp;&amp; response_priority);
+    assign response_select_1 = response_match_1 &amp;&amp; !(response_match_0 &amp;&amp; !response_priority);
+
+    assign M_DataRdy_out[k] = response_select_0 || response_select_1;
+    assign M_Rdata_ram_out[k*BITSIZE_M_Rdata_ram_out +: BITSIZE_M_Rdata_ram_out] =
+        ({BITSIZE_M_Rdata_ram_out{response_select_0}} &amp; M_Rdata_ram[0 +: BITSIZE_M_Rdata_ram]) |
+        ({BITSIZE_M_Rdata_ram_out{response_select_1}} &amp; M_Rdata_ram[BITSIZE_M_Rdata_ram +: BITSIZE_M_Rdata_ram]);
+    if(INNER_TAG)
+    begin : response_tag
+      assign M_tag_out[k*BITSIZE_M_tag_out +: BITSIZE_M_tag_out] =
+          ({BITSIZE_M_tag_out{response_select_0}} &amp; M_tag_out_wire[k*BITSIZE_M_tag_out +: BITSIZE_M_tag_out]) |
+          ({BITSIZE_M_tag_out{response_select_1}} &amp; M_tag_out_wire[(PORTSIZE_M_tag_out+k)*BITSIZE_M_tag_out +: BITSIZE_M_tag_out]);
+    end
   end
-end
-
-assign M_DataRdy_out = M_DataRdy_out_temp;
-assign M_Rdata_ram_out = M_Rdata_ram_out_temp;
-assign M_tag_out = M_tag_out_temp;"/>
+  if(!INNER_TAG)
+  begin : response_no_tag
+    assign M_tag_out = 0;
+  end
+endgenerate"/>
         </module_o>
       </circuit>
     </cell>
@@ -2638,20 +2666,20 @@ assign M_tag_out = M_tag_out_temp;"/>
           <port_o id="valid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="priority_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="priority_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_hierarchical_1_1,multiple_priority_encoder_hierarchical_2_1,multiple_priority_encoder_hierarchical_4_2,multiple_priority_encoder_hierarchical_8_3,multiple_priority_encoder_hierarchical_16_4,multiple_priority_encoder_hierarchical_32_5,multiple_priority_encoder_hierarchical_64_6,multiple_priority_encoder_hierarchical_128_7,multiple_priority_encoder_hierarchical_256_8,multiple_priority_encoder_hierarchical_512_9" VERILOG_PROVIDED="
 wire empty;
 assign valid = !empty;
 
 generate
   if(BITSIZE_in1 == 1)
   begin
-    multiple_priority_encoder_1_1 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_1_1 encoder (.empty(empty),
       .i(in1),
       .o(out1));
   end
   else if(BITSIZE_in1 == 2)
   begin
-    multiple_priority_encoder_2_1 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_2_1 encoder (.empty(empty),
       .i(in1),
       .o(out1));
   end
@@ -2659,7 +2687,7 @@ generate
   begin
     wire [3:0] in1_temp;
     assign in1_temp = in1 | {4{1'b0}};
-    multiple_priority_encoder_4_2 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_4_2 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2667,7 +2695,7 @@ generate
   begin
     wire [7:0] in1_temp;
     assign in1_temp = in1 | {8{1'b0}};
-    multiple_priority_encoder_8_3 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_8_3 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2675,7 +2703,7 @@ generate
   begin
     wire [15:0] in1_temp;
     assign in1_temp = in1 | {16{1'b0}};
-    multiple_priority_encoder_16_4 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_16_4 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2683,7 +2711,7 @@ generate
   begin
     wire [31:0] in1_temp;
     assign in1_temp = in1 | {32{1'b0}};
-    multiple_priority_encoder_32_5 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_32_5 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2691,7 +2719,7 @@ generate
   begin
     wire [63:0] in1_temp;
     assign in1_temp = in1 | {64{1'b0}};
-    multiple_priority_encoder_64_6 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_64_6 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2699,7 +2727,7 @@ generate
   begin
     wire [127:0] in1_temp;
     assign in1_temp = in1 | {128{1'b0}};
-    multiple_priority_encoder_128_7 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_128_7 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2707,7 +2735,7 @@ generate
   begin
     wire [255:0] in1_temp;
     assign in1_temp = in1 | {256{1'b0}};
-    multiple_priority_encoder_256_8 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_256_8 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2715,7 +2743,7 @@ generate
   begin
     wire [511:0] in1_temp;
     assign in1_temp = in1 | {512{1'b0}};
-    multiple_priority_encoder_512_9 encoder (.empty(empty),
+    multiple_priority_encoder_hierarchical_512_9 encoder (.empty(empty),
       .i(in1_temp),
       .o(out1));
   end
@@ -2754,22 +2782,24 @@ endgenerate
           <port_o id="valid" dir="OUT">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_1_1,multiple_priority_encoder_2_1,multiple_priority_encoder_4_2,multiple_priority_encoder_8_3,multiple_priority_encoder_16_4,multiple_priority_encoder_32_5,multiple_priority_encoder_64_6,multiple_priority_encoder_128_7,multiple_priority_encoder_256_8,multiple_priority_encoder_512_9" VERILOG_PROVIDED="
-`ifndef CLOG2
-`define CLOG2(x) \
-  (x &lt;= 2) ? 1 : \
-  (x &lt;= 4) ? 2 : \
-  (x &lt;= 8) ? 3 : \
-  (x &lt;= 16) ? 4 : \
-  (x &lt;= 32) ? 5 : \
-  (x &lt;= 64) ? 6 : \
-  (x &lt;= 128) ? 7 : \
-  (x &lt;= 256) ? 8 : \
-  (x &lt;= 512) ? 9 : \
-  -1
+          <NP_functionality LIBRARY="round_robin_arbiter_core in1 out1" IP_COMPONENT="multiple_priority_encoder_hierarchical_1_1,multiple_priority_encoder_hierarchical_2_1,multiple_priority_encoder_hierarchical_4_2,multiple_priority_encoder_hierarchical_8_3,multiple_priority_encoder_hierarchical_16_4,multiple_priority_encoder_hierarchical_32_5,multiple_priority_encoder_hierarchical_64_6,multiple_priority_encoder_hierarchical_128_7,multiple_priority_encoder_hierarchical_256_8,multiple_priority_encoder_hierarchical_512_9" VERILOG_PROVIDED="
+`ifndef _SIM_HAVE_CLOG2
+  function integer log2;
+     input integer value;
+     integer temp_value;
+    begin
+      temp_value = value-1;
+      for (log2=0; temp_value&gt;0; log2=log2+1)
+        temp_value = temp_value&gt;&gt;1;
+    end
+  endfunction
 `endif
 
-localparam BITSIZE_counter = `CLOG2(BITSIZE_in1);
+`ifdef _SIM_HAVE_CLOG2
+  localparam BITSIZE_counter = BITSIZE_in1 > 1 ? $clog2(BITSIZE_in1) : 1;
+`else
+  localparam BITSIZE_counter = BITSIZE_in1 > 1 ? log2(BITSIZE_in1) : 1;
+`endif
 
 reg [BITSIZE_in1-1:0] last_mask;
 wire [BITSIZE_in1-1:0] upper_in, next_mask;
@@ -2796,19 +2826,19 @@ assign out1 = empty_upper ? lower_out : upper_out;
 generate
   if(BITSIZE_in1 == 1)
   begin
-    multiple_priority_encoder_1_1 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_1_1 upper (.empty(empty_upper),
       .i(upper_in),
       .o(upper_out));
-    multiple_priority_encoder_1_1 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_1_1 lower (.empty(empty_lower),
       .i(in1),
       .o(lower_out));
   end
   else if(BITSIZE_in1 == 2)
   begin
-    multiple_priority_encoder_2_1 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_2_1 upper (.empty(empty_upper),
       .i(upper_in),
       .o(upper_out));
-    multiple_priority_encoder_2_1 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_2_1 lower (.empty(empty_lower),
       .i(in1),
       .o(lower_out));
   end
@@ -2817,10 +2847,10 @@ generate
     wire [3:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {4{1'b0}};
     assign upper_in_temp = upper_in | {4{1'b0}};
-    multiple_priority_encoder_4_2 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_4_2 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_4_2 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_4_2 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2829,10 +2859,10 @@ generate
     wire [7:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {8{1'b0}};
     assign upper_in_temp = upper_in | {8{1'b0}};
-    multiple_priority_encoder_8_3 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_8_3 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_8_3 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_8_3 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2841,10 +2871,10 @@ generate
     wire [15:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {16{1'b0}};
     assign upper_in_temp = upper_in | {16{1'b0}};
-    multiple_priority_encoder_16_4 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_16_4 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_16_4 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_16_4 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2853,10 +2883,10 @@ generate
     wire [31:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {32{1'b0}};
     assign upper_in_temp = upper_in | {32{1'b0}};
-    multiple_priority_encoder_32_5 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_32_5 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_32_5 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_32_5 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2865,10 +2895,10 @@ generate
     wire [63:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {64{1'b0}};
     assign upper_in_temp = upper_in | {64{1'b0}};
-    multiple_priority_encoder_64_6 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_64_6 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_64_6 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_64_6 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2877,10 +2907,10 @@ generate
     wire [127:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {128{1'b0}};
     assign upper_in_temp = upper_in | {128{1'b0}};
-    multiple_priority_encoder_128_7 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_128_7 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_128_7 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_128_7 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2889,10 +2919,10 @@ generate
     wire [255:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {256{1'b0}};
     assign upper_in_temp = upper_in | {256{1'b0}};
-    multiple_priority_encoder_256_8 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_256_8 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_256_8 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_256_8 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -2901,10 +2931,10 @@ generate
     wire [511:0] in1_temp, upper_in_temp;
     assign in1_temp = in1 | {512{1'b0}};
     assign upper_in_temp = upper_in | {512{1'b0}};
-    multiple_priority_encoder_512_9 upper (.empty(empty_upper),
+    multiple_priority_encoder_hierarchical_512_9 upper (.empty(empty_upper),
       .i(upper_in_temp),
       .o(upper_out));
-    multiple_priority_encoder_512_9 lower (.empty(empty_lower),
+    multiple_priority_encoder_hierarchical_512_9 lower (.empty(empty_lower),
       .i(in1_temp),
       .o(lower_out));
   end
@@ -3026,6 +3056,53 @@ assign out1 = valid ? ~selector : 0;"/>
           assign out1 = &amp;rin1_next;"/>
         </module_o>
       </circuit>
+    </cell>
+    <cell>
+        <name>bus_request_filter</name>
+        <circuit>
+          <module_o id="bus_request_filter">
+              <description>This component is part of the PANDA/BAMBU IP LIBRARY</description>
+              <copyright>Copyright (C) 2020-2025 Politecnico di Milano</copyright>
+              <authors>Giovanni Gozzi &lt;giovanni.gozzi@polimi.it&gt;</authors>
+              <license>MIT</license>
+              <structural_type_descriptor id_type="bus_request_filter"/>
+              <parameter name="EXTERNAL_ADDR">0</parameter>
+              <port_o id="Mout_oe_ram_in" dir="IN" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="Mout_we_ram_in" dir="IN" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="Mout_addr_ram_in" dir="IN" is_memory="1" is_slave="1" is_addr_bus="1">
+                <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+              </port_o>
+              <port_o id="Mout_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="Mout_we_ram" dir="OUT" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="Mout_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+                <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+              </port_o>
+              <port_o id="S_oe_ram" dir="OUT" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="S_we_ram" dir="OUT" is_memory="1" is_slave="1">
+                <structural_type_descriptor type="BOOL" size="1"/>
+              </port_o>
+              <port_o id="S_addr_ram" dir="OUT" is_memory="1" is_slave="1" is_addr_bus="1">
+                <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
+              </port_o>
+              <NP_functionality LIBRARY="bus_request_filter EXTERNAL_ADDR Mout_addr_ram_in Mout_addr_ram S_addr_ram" VERILOG_PROVIDED="
+assign Mout_oe_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? 0 : Mout_oe_ram_in;
+assign Mout_we_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? 0 : Mout_we_ram_in;
+assign Mout_addr_ram = Mout_addr_ram_in;
+assign S_oe_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? Mout_oe_ram_in : 0;
+assign S_we_ram = Mout_addr_ram_in &lt; EXTERNAL_ADDR ? Mout_we_ram_in : 0;
+assign S_addr_ram = Mout_addr_ram_in;"/>
+          </module_o>
+        </circuit>
     </cell>
   </library>
 </technology>

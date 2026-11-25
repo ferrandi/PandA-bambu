@@ -77,6 +77,19 @@ namespace
       target_module->set_copyright(source_module->get_copyright());
       target_module->set_authors(source_module->get_authors());
       target_module->set_license(source_module->get_license());
+      const auto& source_attributes = source_module->get_attribute_list();
+      for(const auto& metadata_attribute :
+          {"bambu_axi_burst_mode", "bambu_axi_bundle_name", "bambu_axi_duplex_role", "bambu_axi_duplex_aggregator",
+           "bambu_axi_address_bitsize", "bambu_axi_data_bitsize", "bambu_axi_latency", "bambu_max_read_burst_length",
+           "bambu_num_read_outstanding", "bambu_read_fifo_depth", "bambu_max_write_burst_length",
+           "bambu_write_burst_outstanding", "bambu_write_fifo_depth"})
+      {
+         if(std::find(source_attributes.begin(), source_attributes.end(), metadata_attribute) !=
+            source_attributes.end())
+         {
+            target_module->add_attribute(metadata_attribute, source_module->get_attribute(metadata_attribute));
+         }
+      }
       for(const auto& module_parameter : source_module->GetParameters())
       {
          target_module->AddParameter(module_parameter.first,
@@ -84,6 +97,20 @@ namespace
          target_module->SetParameter(module_parameter.first, module_parameter.second);
       }
       target_module->set_multi_unit_multiplicity(multiplicity);
+   }
+
+   void copy_stallable_attribute(const functional_unit* source_fu, functional_unit* target_fu)
+   {
+      const auto stallable = source_fu->attributes.find("Stallable");
+      if(stallable != source_fu->attributes.end())
+      {
+         target_fu->attributes["Stallable"] = stallable->second;
+         if(std::find(target_fu->ordered_attributes.begin(), target_fu->ordered_attributes.end(), "Stallable") ==
+            target_fu->ordered_attributes.end())
+         {
+            target_fu->ordered_attributes.push_back("Stallable");
+         }
+      }
    }
 
    structural_objectRef create_generated_port(const structural_managerRef& CM, const structural_objectRef& top,
@@ -250,7 +277,8 @@ technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name
    {
       const auto curr_port = fu_module->get_in_port(i);
       const auto port_name = curr_port->get_id();
-      if(port_name == CLOCK_PORT_NAME || port_name == RESET_PORT_NAME || port_name == START_PORT_NAME)
+      if(port_name == CLOCK_PORT_NAME || port_name == RESET_PORT_NAME || port_name == START_PORT_NAME ||
+         port_name == STALL_PORT_NAME)
       {
          ++toSkip;
       }
@@ -372,6 +400,7 @@ technology_nodeRef HDLGeneratorManager::specialize_fu(const std::string& fu_name
       }
       fu->functional_unit_name = new_fu_name;
       fu->CM = CM;
+      copy_stallable_attribute(GetPointerS<const functional_unit>(techNode_obj), fu);
       const auto op_vec = GetPointerS<const functional_unit>(techNode_obj)->get_operations();
       for(const auto& techNode_fu : op_vec)
       {
@@ -411,6 +440,7 @@ technology_nodeRef HDLGeneratorManager::create_generic_module(const std::string&
       const auto fu = GetPointerS<functional_unit>(new_techNode_obj);
       fu->area_m = std::make_shared<area_info>();
       fu->area_m->resources[area_info::AREA] = 0;
+      copy_stallable_attribute(GetPointerS<const functional_unit>(techNode_obj), fu);
       const auto& op_vec = GetPointerS<functional_unit>(techNode_obj)->get_operations();
       for(const auto& techNode_fu : op_vec)
       {

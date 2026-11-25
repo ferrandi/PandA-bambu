@@ -167,7 +167,8 @@ class library_manager
 
    void erase_info();
 
-   static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param);
+   static void xload(const xml_element* node, const library_managerRef& LM, const ParameterConstRef& Param,
+                     const std::string& priority_encoder_prefix);
 
    void xwrite(xml_element* rootnode);
 

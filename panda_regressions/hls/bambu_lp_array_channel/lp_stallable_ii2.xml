@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<technology>
+  <library>
+    <name>STD_FU</name>
+    <cell>
+      <name>ui_mul_node_FU_32_32_32_2</name>
+      <template name="ui_mul_node_FU" parameter="32 32 32 2"/>
+      <characterization_timestamp>2099-01-01T00:00:00</characterization_timestamp>
+      <operation operation_name="mul_node" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32"
+                 pipe_parameters="2" cycles="3" initiation_time="2" stage_period="3.952"/>
+    </cell>
+  </library>
+</technology>

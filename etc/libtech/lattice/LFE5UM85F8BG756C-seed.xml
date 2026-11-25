@@ -1474,6 +1474,7 @@
       </cell>
       <template>
         <name>mul_node_FU</name>
+        <attribute name="Stallable" value_type="boolean">true</attribute>
         <no_constant_characterization></no_constant_characterization>
         <operation operation_name="mul_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2" commutative="1"/>
         <circuit>
@@ -1486,6 +1487,9 @@
             <structural_type_descriptor id_type="mul_node_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <port_o id="clock" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="stall_port" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
             </port_o>
             <port_o id="in1" dir="IN">
@@ -1537,10 +1541,10 @@ pmi_dsp_mult #(
    .CLK1(clock),
    .CLK2(clock),
    .CLK3(clock),
-   .CE0(1&apos;b1),
-   .CE1(1&apos;b1),
-   .CE2(1&apos;b1),
-   .CE3(1&apos;b1),
+   .CE0(~stall_port),
+   .CE1(~stall_port),
+   .CE2(~stall_port),
+   .CE3(~stall_port),
    .RST0(1&apos;b0),
    .RST1(1&apos;b0),
    .RST2(1&apos;b0),
@@ -1558,6 +1562,7 @@ pmi_dsp_mult #(
       </template>
       <template>
         <name>ui_mul_node_FU</name>
+        <attribute name="Stallable" value_type="boolean">true</attribute>
         <no_constant_characterization></no_constant_characterization>
         <operation operation_name="mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2" commutative="1"/>
         <circuit>
@@ -1570,6 +1575,9 @@ pmi_dsp_mult #(
             <structural_type_descriptor id_type="ui_mul_node_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <port_o id="clock" dir="IN" is_clock="1">
+              <structural_type_descriptor type="BOOL" size="1"/>
+            </port_o>
+            <port_o id="stall_port" dir="IN">
               <structural_type_descriptor type="BOOL" size="1"/>
             </port_o>
             <port_o id="in1" dir="IN">
@@ -1621,10 +1629,10 @@ pmi_dsp_mult #(
    .CLK1(clock),
    .CLK2(clock),
    .CLK3(clock),
-   .CE0(1&apos;b1),
-   .CE1(1&apos;b1),
-   .CE2(1&apos;b1),
-   .CE3(1&apos;b1),
+   .CE0(~stall_port),
+   .CE1(~stall_port),
+   .CE2(~stall_port),
+   .CE3(~stall_port),
    .RST0(1&apos;b0),
    .RST1(1&apos;b0),
    .RST2(1&apos;b0),

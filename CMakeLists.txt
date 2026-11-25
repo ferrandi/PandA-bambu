@@ -45,7 +45,7 @@ option(PANDA_ENABLE_OPT "Enable aggressive optimization flags" ON)
 option(PANDA_ENABLE_WERROR "Enable warnings-as-errors set" ON)
 option(PANDA_ENABLE_DEBUG "Enable debug symbols" OFF)
 option(PANDA_ENABLE_UNORDERED "Enable unordered data structure support" OFF)
-option(PANDA_SYNC_PARAMETER_METADATA "Rewrite documentation/bambu_parameters_metadata.json during registry generation" ON)
+option(PANDA_SYNC_PARAMETER_METADATA "Rewrite documentation/bambu_parameters_metadata.json during registry generation" OFF)
 set(PANDA_APPIMAGE_NAME "" CACHE STRING "Name for AppImage package (empty to disable)")
 set(PANDA_APPIMAGE_ROOT "" CACHE PATH "AppImage staging root (used when PANDA_APPIMAGE_NAME is set)")
 set(PANDA_APPIMAGE_PARALLEL "" CACHE STRING "Parallel jobs for the AppImage build/install step (empty uses the backend default)")
@@ -102,10 +102,10 @@ set(PANDA_LICENSING_INSTALLDIR_REL "${PANDA_DATA_INSTALLDIR_REL}/licensing")
 set(PANDA_DATA_INSTALLDIR "${PANDA_DATA_INSTALLDIR_REL}")
 set(PANDA_LICENSING_INSTALLDIR "${PANDA_LICENSING_INSTALLDIR_REL}")
 
-find_package(Boost 1.70 QUIET CONFIG COMPONENTS headers)
+find_package(Boost 1.73 QUIET CONFIG COMPONENTS headers)
 if(NOT Boost_FOUND)
    message(FATAL_ERROR
-      "Boost (>= 1.70) with 'headers' component was not found.\n"
+      "Boost (>= 1.73) with 'headers' component was not found.\n"
       "Install the Boost development package:\n"
       "  Debian/Ubuntu:  sudo apt-get install libboost-dev\n"
       "  Fedora/RHEL:    sudo dnf install boost-devel\n"
@@ -500,3 +500,67 @@ add_custom_target(package
 )
 
 message(STATUS "PandA CMake configuration initialized (bambu, eucalyptus, bambu-cc enabled).")
+
+find_program(PANDA_TEST_VERILATOR verilator)
+if(BUILD_TESTING AND PANDA_TEST_VERILATOR)
+   add_test(NAME priority_encoders
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/verilog/priority_encoder/test_priority_encoders.py"
+              --verilator "${PANDA_TEST_VERILATOR}")
+   set_tests_properties(priority_encoders PROPERTIES LABELS "rtl;technology" TIMEOUT 900)
+elseif(BUILD_TESTING)
+   message(STATUS "Priority encoder regression unavailable: Verilator was not found")
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp_task AND TARGET clang_plugin_19_opt_deduplicate_load_inst)
+   add_test(NAME openmp_task_passes
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_task/test_task_passes.py"
+              --opt "${PANDA_CLANG19_LLVMOPT}" --clang "${PANDA_CLANG19_EXE}" --cxx "${CMAKE_CXX_COMPILER}"
+              --llvm-config "${PANDA_CLANG19_LLVM_CONFIG}"
+              --plugin-dir "$<TARGET_FILE_DIR:clang_plugin_19_opt_openmp_task>")
+   set_tests_properties(openmp_task_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 120)
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND PANDA_CLANG19_LLVMOPT)
+   add_test(NAME openmp_parallel_passes
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_parallel.py"
+              --clang "${PANDA_CLANG19_EXE}" --opt "${PANDA_CLANG19_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_19_opt_openmp>")
+   set_tests_properties(openmp_parallel_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_16_opt_openmp AND PANDA_CLANG16_EXE AND PANDA_CLANG16_CLANGPP
+   AND PANDA_CLANG16_LLVMLINK AND PANDA_CLANG16_LLVMOPT)
+   add_test(NAME openmp_reduction_16
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_reduction.py"
+              --clang "${PANDA_CLANG16_EXE}" --cxx "${PANDA_CLANG16_CLANGPP}"
+              --llvm-link "${PANDA_CLANG16_LLVMLINK}" --opt "${PANDA_CLANG16_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_16_opt_openmp>" --pointer-mode typed)
+   set_tests_properties(openmp_reduction_16 PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND PANDA_CLANG19_CLANGPP
+   AND PANDA_CLANG19_LLVMLINK AND PANDA_CLANG19_LLVMOPT)
+   add_test(NAME openmp_reduction_19
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_reduction.py"
+              --clang "${PANDA_CLANG19_EXE}" --cxx "${PANDA_CLANG19_CLANGPP}"
+              --llvm-link "${PANDA_CLANG19_LLVMLINK}" --opt "${PANDA_CLANG19_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_19_opt_openmp>" --pointer-mode opaque)
+   set_tests_properties(openmp_reduction_19 PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
+if(BUILD_TESTING AND TARGET bambu)
+   add_test(NAME mdpi_testbench_flags
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_mdpi_testbench_flags.py"
+              --makefile "${CMAKE_SOURCE_DIR}/etc/libmdpi/Makefile.mk" --cc "${CMAKE_C_COMPILER}")
+   set_tests_properties(mdpi_testbench_flags PROPERTIES LABELS "frontend" TIMEOUT 120)
+
+   # integration test driving the real front-end: it runs the bambu of this
+   # build's installation (cmake --install), since the build-tree binary lacks
+   # the installed plug-ins and libraries; the test skips when that
+   # installation does not exist yet
+   add_test(NAME frontend_std
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_frontend_std.py"
+              --bambu "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/bambu")
+   set_tests_properties(frontend_std PROPERTIES LABELS "frontend" TIMEOUT 1800
+      SKIP_RETURN_CODE 77)
+endif()

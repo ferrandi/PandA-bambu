@@ -28,8 +28,11 @@
  *
  */
 #include "fu_binding.hpp"
+#include "openmp_task_constants.hpp"
 
+#include "AXIDuplexBinding.hpp"
 #include "HDLGeneratorManager.hpp"
+#include "OmpTaskFuBinding.hpp"
 #include "Parameter.hpp"
 #include "allocation_information.hpp"
 #include "behavioral_helper.hpp"
@@ -72,6 +75,7 @@
 #include <regex>
 #include <set>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -773,9 +777,19 @@ fu_bindingRef fu_binding::create_fu_binding(const HLS_managerConstRef _HLSMgr, c
                                             const ParameterConstRef _parameters)
 {
    const auto fname = ir_helper::GetFunctionName(_HLSMgr->get_ir_manager()->GetIRNode(_function_id));
-   if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call"))
+   const bool isOpenmp = _parameters->isOption(OPT_openmp) && _parameters->getOption<bool>(OPT_openmp);
+   const bool useTask = openmp_task::IsEnabled(*_parameters);
+   if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call") && useTask)
+   {
+      THROW_ERROR_USAGE("OpenMP task mode does not support residual parallel fork calls");
+   }
+   if(boost::algorithm::starts_with(fname, "__kmp_bambu_fork_call") && !useTask)
    {
       return fu_bindingRef(new omp_fork_fu_binding(_HLSMgr, _function_id, _parameters));
+   }
+   else if(openmp_task::IsGraphEntry(fname) && useTask && isOpenmp)
+   {
+      return fu_bindingRef(new OmpTaskFuBinding(_HLSMgr, _function_id, _parameters));
    }
    return fu_bindingRef(new fu_binding(_HLSMgr, _function_id, _parameters));
 }
@@ -1210,6 +1224,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const auto circuit = SM->get_circ();
 
    std::list<structural_objectRef> memory_modules;
+
+   AXIDuplexBinding::bundles duplex_bundles;
 
    /// add the MEMCPY_STD component when parameters has to be copied into the local store
    const auto FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
@@ -1684,7 +1700,17 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             }
             kill_proxy_function_units(wrapped_units, curr_gate, fun_call_sites_rel, reverse_function_units);
 
-            bool added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
+            const auto fu_technology = GetPointerS<const functional_unit>(allocation_information->get_fu(i));
+            bool added_memory_element = false;
+            AXIDuplexBinding::endpoint duplex_endpoint;
+            if(AXIDuplexBinding::collect_endpoint(fu_technology, curr_gate, duplex_endpoint))
+            {
+               AXIDuplexBinding::add_endpoint(duplex_bundles, std::move(duplex_endpoint));
+            }
+            else
+            {
+               added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
+            }
             if(added_memory_element &&
                std::find(memory_modules.begin(), memory_modules.end(), curr_gate) == memory_modules.end())
             {
@@ -1699,6 +1725,17 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Specialized functional units");
+
+   if(!duplex_bundles.empty())
+   {
+      const auto aggregators =
+          AXIDuplexBinding::connect(HLSMgr, HLS, clock_port, reset_port, duplex_bundles, parameters, unique_id);
+      for(const auto& aggregator : aggregators)
+      {
+         manage_module_ports(HLSMgr, HLS, SM, aggregator, 0);
+      }
+   }
+
    if(!has_resource_sharing_p)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, HLS->output_level,
@@ -1958,7 +1995,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       ding_dong_buffer->SetParameter("PRIVATE_MEMORY", HLSMgr->Rmem->is_private_memory(var) ? "1" : "0");
       ding_dong_buffer->SetParameter("READ_ONLY_MEMORY", HLSMgr->Rmem->is_read_only_variable(var) ? "1" : "0");
       ding_dong_buffer->SetParameter("MEMORY_INIT_file", "\"\"\"\"");
-      if(omp_info)
+      if(omp_info && omp_info->mem_page_size != 0ULL)
       {
          ding_dong_buffer->SetParameter("CONTEXT_COUNT", STR(omp_info->context_count));
          ding_dong_buffer->SetParameter("CONTEXT_PAGE_BITSIZE", STR(ceil_log2(omp_info->mem_page_size)));
@@ -3281,15 +3318,18 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    }
 
    unsigned int offset = 0;
+   std::vector<structural_objectRef> operand_ports;
    bool is_multi_read_cond = allocation_information->get_fu_name(fu).first == MULTI_READ_COND_STD;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Resizing input ports");
    for(unsigned int i = 0; i < fu_module->get_in_port_size(); i++)
    {
       structural_objectRef port = fu_module->get_in_port(i);
-      if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME || port->get_id() == START_PORT_NAME)
+      if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME || port->get_id() == START_PORT_NAME ||
+         port->get_id() == STALL_PORT_NAME || port->get_id() == "predicate")
       {
-         ++offset;
+         continue;
       }
+      operand_ports.push_back(port);
       if(is_multiport && port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
       {
          GetPointer<port_o>(port)->add_n_ports(static_cast<unsigned int>(max_n_ports), port);
@@ -3320,7 +3360,9 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       for(auto piOffset = 0U; piOffset < piIndexLimit; ++piOffset)
       {
-         structural_objectRef port = fu_module->get_in_port(l->first + offset + piOffset);
+         const auto port_index = l->first + offset + piOffset;
+         THROW_ASSERT(port_index < operand_ports.size(), "Functional unit operand index exceeds its data inputs");
+         structural_objectRef port = operand_ports[port_index];
          port_o::resize_std_port(bitsize_variable, n_elmts, debug_level, port);
       }
       if(is_dual && l->first)
@@ -3390,7 +3432,9 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    fu_module->SetParameter("address_space_rangesize", STR(rangesize));
    fu_module->SetParameter("USE_SPARSE_MEMORY", is_sparse_memory ? "1" : "0");
    unsigned int context_count = 1U;
-   if(omp_info)
+   // A single-context task owns a private call graph but needs no memory pages
+   // for context switching. Its OMPInfo consequently has no allocated page size.
+   if(omp_info && omp_info->mem_page_size != 0ULL)
    {
       context_count = omp_info->context_count;
       fu_module->SetParameter("CONTEXT_COUNT", STR(context_count));
@@ -3411,10 +3455,8 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    }
    unsigned long long vec_size = 0, elts_size = 0;
    const auto bitsize_align = is_sds ? 0ULL : std::stoull(fu_module->GetParameter("BRAM_BITSIZE"));
-   for(unsigned int i = 0; i < context_count; i++)
-   {
-      fill_array_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, IRM, is_sds, bitsize_align);
-   }
+   fill_array_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, IRM, is_sds, bitsize_align,
+                     context_count);
    THROW_ASSERT(vec_size, "at least one element is expected");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
    if(is_sds)
@@ -3441,8 +3483,9 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar,
                                    unsigned long long& vec_size, unsigned long long& elts_size,
                                    const std::unique_ptr<memory>& mem, ir_managerConstRef TM, bool is_sds,
-                                   unsigned long long bitsize_align)
+                                   unsigned long long bitsize_align, unsigned int context_count)
 {
+   THROW_ASSERT(context_count, "at least one memory context is expected");
    init_file_b.put(0);
    const auto is_memory_splitted = init_file_b.good();
    init_file_b.seekp(std::ios_base::cur - 1);
@@ -3508,35 +3551,38 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
          THROW_ASSERT(elts_size, "unexpected condition");
-         unsigned int row = 0;
-         std::string current_string;
-         for(const auto& init_value : init_string)
+         for(unsigned int context = 0; context < context_count; ++context)
          {
-            ++row;
-            auto init_value_size = init_value.size();
-            if(elts_size != init_value_size && (init_value_size % elts_size == 0))
+            unsigned int row = 0;
+            std::string current_string;
+            for(const auto& init_value : init_string)
             {
-               const auto n_elmts = init_value_size / elts_size;
-               for(auto index = 0u; index < n_elmts; ++index)
+               ++row;
+               auto init_value_size = init_value.size();
+               if(elts_size != init_value_size && (init_value_size % elts_size == 0))
                {
-                  init_file_a << init_value.substr(init_value_size - elts_size - index * elts_size, elts_size)
-                              << std::endl;
+                  const auto n_elmts = init_value_size / elts_size;
+                  for(auto index = 0u; index < n_elmts; ++index)
+                  {
+                     init_file_a << init_value.substr(init_value_size - elts_size - index * elts_size, elts_size)
+                                 << std::endl;
+                  }
                }
-            }
-            else if(elts_size > init_value_size && (elts_size % init_value_size == 0))
-            {
-               const auto n_elmts = elts_size / init_value_size;
-               current_string = init_value + current_string;
-               if(row % n_elmts == 0)
+               else if(elts_size > init_value_size && (elts_size % init_value_size == 0))
                {
-                  init_file_a << current_string << std::endl;
-                  current_string.clear();
+                  const auto n_elmts = elts_size / init_value_size;
+                  current_string = init_value + current_string;
+                  if(row % n_elmts == 0)
+                  {
+                     init_file_a << current_string << std::endl;
+                     current_string.clear();
+                  }
                }
-            }
-            else
-            {
-               THROW_ASSERT(elts_size == init_value_size, "unexpected condition");
-               init_file_a << init_value << std::endl;
+               else
+               {
+                  THROW_ASSERT(elts_size == init_value_size, "unexpected condition");
+                  init_file_a << init_value << std::endl;
+               }
             }
          }
       }
@@ -3605,31 +3651,25 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
             tail_padding = tail_padding + bits_offset;
             eightbit_string.push_back(tail_padding);
          }
-         if(eightbit_string.size() % nbyte_on_memory != 0)
-         {
-            for(size_t l = eightbit_string.size() % nbyte_on_memory; l < nbyte_on_memory; ++l)
-            {
-               eightbit_string.push_back("00000000");
-            }
-         }
-         if((ir_helper::SizeAlloc(array_type_node) / 8U) > eightbit_string.size())
-         {
-            size_t tail_bytes = (ir_helper::SizeAlloc(array_type_node) / 8U) - eightbit_string.size();
-            for(size_t l = 0; l < tail_bytes; ++l)
-            {
-               eightbit_string.push_back("00000000");
-            }
-         }
+         // Contexts are adjacent at their logical byte stride. Align the combined image only;
+         // padding each context separately would move the following contexts to wrong addresses.
+         const auto context_bytes = is_sds ? std::max(ir_helper::SizeAlloc(array_type_node) / 8U,
+                                                      static_cast<unsigned long long>(eightbit_string.size())) :
+                                             vec_size * elts_size / 8U;
+         THROW_ASSERT(eightbit_string.size() <= context_bytes, "initializer exceeds memory size");
+         eightbit_string.resize(context_bytes, "00000000");
+         const auto total_bytes = context_bytes * context_count;
+         const auto aligned_bytes = get_aligned_bitsize(total_bytes, nbyte_on_memory);
 
          std::string str_bit;
          bool is_even = true;
          unsigned int counter;
-         for(unsigned int l = 0; l < eightbit_string.size();)
+         for(unsigned long long l = 0; l < aligned_bytes;)
          {
             str_bit = "";
-            for(counter = 0; counter < nbyte_on_memory && l < eightbit_string.size(); counter++, l++)
+            for(counter = 0; counter < nbyte_on_memory; counter++, l++)
             {
-               str_bit = eightbit_string[l] + str_bit;
+               str_bit = (l < total_bytes ? eightbit_string[l % context_bytes] : "00000000") + str_bit;
             }
             if(is_even || !is_memory_splitted)
             {
@@ -3661,7 +3701,7 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
       if(is_sds)
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
-         for(unsigned int i = 0; i < vec_size; ++i)
+         for(unsigned long long i = 0; i < vec_size * context_count; ++i)
          {
             for(unsigned int j = 0; j < elts_size; ++j)
             {
@@ -3676,7 +3716,7 @@ void fu_binding::fill_array_memory(std::ostream& init_file_a, std::ostream& init
          bool is_even = true;
          bool need_newline_a = false;
          bool need_newline_b = false;
-         for(unsigned int i = 0; i < vec_size; ++i)
+         for(unsigned long long i = 0; i < vec_size * context_count; ++i)
          {
             for(unsigned int j = 0; j < elts_size; ++j)
             {

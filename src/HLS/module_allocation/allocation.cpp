@@ -1741,6 +1741,8 @@ DesignFlowStep_Status allocation::InternalExec()
             {
                allocation_information->binding[node_id] =
                    std::pair<std::string, unsigned int>(current_op, fu_name_to_id[key][fu_index]);
+               allocation_information->node_id_to_fus[std::pair<unsigned int, std::string>(node_id, node_operation)]
+                   .insert(fu_name_to_id[key][fu_index]);
             }
             else
             {
@@ -1900,7 +1902,7 @@ DesignFlowStep_Status allocation::InternalExec()
 
          const auto structManager_obj = GetPointer<functional_unit>(current_fu)->CM;
 
-         /// check for generated module and bambu/flopoco resources
+         /// check for generated module and bambu resources
          if(check_generated_bambu(structManager_obj, bambu_provided_resource, current_fu))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because of generated module");
@@ -2040,7 +2042,8 @@ DesignFlowStep_Status allocation::InternalExec()
                         {
                            break;
                         }
-                        if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME && port_name != START_PORT_NAME)
+                        if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME &&
+                           port_name != START_PORT_NAME && port_name != STALL_PORT_NAME)
                         {
                            ++firstIndexToSpecialize;
                         }

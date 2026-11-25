@@ -31,9 +31,10 @@
  *
  */
 #include "CompilerWrapper.hpp"
+#include "openmp_task_constants.hpp"
 
-#include "Parameter.hpp"
 #include "BambuParameterRegistry.hpp"
+#include "Parameter.hpp"
 #include "compiler_constants.hpp"
 #include "cpu_stats.hpp"
 #include "cpu_time.hpp"
@@ -53,12 +54,17 @@
 
 #include "config_ANALYZER_COMPILER_PLUGINS_DIR.hpp"
 #include "config_BUILD_APPIMAGE.hpp"
+#include "config_COMPILER_ADD_FULL_UNROLL_META_PLUGIN.hpp"
 #include "config_COMPILER_ASTANALYZER_PLUGIN.hpp"
 #include "config_COMPILER_CHANNELCTOR_PLUGIN.hpp"
 #include "config_COMPILER_CUSTOMSROA_PLUGIN.hpp"
+#include "config_COMPILER_DCE_PLUGIN.hpp"
+#include "config_COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN.hpp"
 #include "config_COMPILER_EMPTY_PLUGIN.hpp"
 #include "config_COMPILER_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN.hpp"
 #include "config_COMPILER_OPENMP_PLUGIN.hpp"
+#include "config_COMPILER_OPENMP_TASK_PLUGIN.hpp"
 #include "config_COMPILER_SSA_PLUGIN.hpp"
 #include "config_COMPILER_SSA_PLUGINCPP.hpp"
 #include "config_COMPILER_TOPFNAME_PLUGIN.hpp"
@@ -159,10 +165,12 @@
 #include "config_I386_LLVM9_LINK_EXE.hpp"
 #include "config_I386_LLVM9_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 
 #include <algorithm>
 #include <cerrno>
+#include <cstdint>
 #include <fstream>
 #include <list>
 #include <random>
@@ -172,26 +180,32 @@
 
 #define SCRIPT_NEWLINE " \\\n  "
 PANDA_REGISTER_PARAMETER("emit-llvm", PandaParamType::Bool, "0",
-                         "Emit the compiled source file in symbolic llvm instead of an object file",
-                         "debugging");
+                         "Emit the compiled source file in symbolic llvm instead of an object file", "debugging");
 
-enum CompilerMode : int
+enum CompilerMode : int64_t
 {
-   CM_EMPTY = 1 << 0,              // Empty file compilation
-   CM_ANALYZER_INTERFACE = 1 << 1, // Enable frontend code analyzer plugins
-   CM_ANALYZER_OPTIMIZE = 1 << 2,  // Enable frontend code optimizer plugins
-   CM_ANALYZER_ALL = 3 << 1,       // Enable all frontend plugins
-   CM_OPT_CUSTOMSROA = 1 << 7,     // Enable custom scalar replacement of aggregates plugin
-   CM_OPT_INTERNALIZE = 1 << 8,    // Enable symbol internalize plugin
-   CM_OPT_EXPANDMEMOPS = 1 << 9,   // Enable memory operation optimizer plugin
-   CM_OPT_DUMPBAMBUIR = 1 << 10,   // Enable IR dump plugin
-   CM_OPT_CHANNELCTOR = 1 << 11,   // Enable ac_channel/hls::stream construction cleanup plugin
-   CM_OPT_OPENMP = 1 << 12,        // Enable OpenMP plugin
-   CM_OPT_ALL = 31 << 7,         // Enable backend HLS optimization plugins
-   CM_LTO_FLAG = 1 << 16,          // Enable LTO optimization flags
-   CM_COMPILER_STD = 1 << 24,      // Use default compiler
-   CM_COMPILER_OPT = 1 << 25,      // Use compiler optimizer
-   CM_COMPILER_LTO = 1 << 26,      // Use compiler linker
+   CM_EMPTY = 1LL << 0,                   // Empty file compilation
+   CM_ANALYZER_INTERFACE = 1LL << 1,      // Enable frontend code analyzer plugins
+   CM_ANALYZER_OPTIMIZE = 1LL << 2,       // Enable frontend code optimizer plugins
+   CM_ANALYZER_ALL = 3LL << 1,            // Enable all frontend plugins
+   CM_OPT_CUSTOMSROA = 1LL << 7,          // Enable custom scalar replacement of aggregates plugin
+   CM_OPT_INTERNALIZE = 1LL << 8,         // Enable symbol internalize plugin
+   CM_OPT_EXPANDMEMOPS = 1LL << 9,        // Enable memory operation optimizer plugin
+   CM_OPT_DUMPBAMBUIR = 1LL << 10,        // Enable IR dump plugin
+   CM_OPT_CHANNELCTOR = 1LL << 11,        // Enable ac_channel/hls::stream construction cleanup plugin
+   CM_OPT_OPENMP = 1LL << 12,             // Enable OpenMP plugin
+   CM_OPT_ALL = 31LL << 7,                // Enable backend HLS optimization plugins
+   CM_LTO_FLAG = 1LL << 16,               // Enable LTO optimization flags
+   CM_COMPILER_STD = 1LL << 24,           // Use default compiler
+   CM_COMPILER_OPT = 1LL << 25,           // Use compiler optimizer
+   CM_COMPILER_LTO = 1LL << 26,           // Use compiler linker
+   CM_COMPILER_DIS = 1LL << 27,           // Use compiler disassembler
+   CM_ADD_FULL_UNROLL_META = 1LL << 28,   // Use full unroll metadata plugin
+   CM_DEDUPLICATE_LOAD_INST = 1LL << 29,  // Use deduplicate load instructions plugin
+   CM_OPENMP_TASK_EXTRACTION = 1LL << 30, // Use the OpenMP task graph extractor plugin
+   CM_DCE = 1LL << 31,                    // Use the dce plugin
+   CM_OPENMP_TASK_DETECTION = 1LL << 33,  // Detect runtime task calls before choosing the OpenMP flow
+   CM_OPENMP_SIMPLIFY_ARGS = 1LL << 32,   // Use the OpenMP argument simplify plugin
 };
 
 static std::string __escape_define(const std::string& str)
@@ -201,6 +215,22 @@ static std::string __escape_define(const std::string& str)
 
 namespace
 {
+   bool is_cpp_standard(const std::string& standard)
+   {
+      return standard.rfind("c++", 0) == 0 || standard.rfind("gnu++", 0) == 0;
+   }
+
+   bool is_openmp_runtime(const ParameterConstRef& param, const std::string& source)
+   {
+      return param->isOption(OPT_openmp) && param->getOption<bool>(OPT_openmp) &&
+             source == (relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename).string();
+   }
+
+   std::string standard_for_language(const std::string& standard, bool cpp_source)
+   {
+      return is_cpp_standard(standard) == cpp_source ? standard : cpp_source ? "c++14" : "c11";
+   }
+
    std::string trim_whitespace(const std::string& value)
    {
       const auto begin = value.find_first_not_of(" \t\r\n");
@@ -449,7 +479,7 @@ CompilerWrapper::CompilerWrapper(const ParameterConstRef _Param, const CompilerW
 }
 
 void CompilerWrapper::CompileFile(std::string& input_filename, const std::string& output_filename,
-                                  const std::string& parameters_line, passesType passes, int cm,
+                                  const std::string& parameters_line, passesType passes, int64_t cm,
                                   const std::string& costTable)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + input_filename);
@@ -478,6 +508,18 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    std::string real_filename = input_filename;
    std::string load_prefix = "";
    std::string command;
+   const auto load_and_run_plugin = [&](const std::string& plugin_name) {
+      if(cm & CM_COMPILER_STD)
+      {
+         load_prefix += SCRIPT_NEWLINE + load_plugin(plugin_name);
+      }
+      else
+      {
+         load_prefix += SCRIPT_NEWLINE + load_plugin_opt(plugin_name);
+         passes.add_pass(plugin_name);
+      }
+   };
+
    if(cm & CM_COMPILER_OPT)
    {
       if(cm & CM_ANALYZER_ALL)
@@ -493,6 +535,46 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       THROW_ASSERT(cm == CM_COMPILER_LTO, "Plugins must not be enabled when linker is required");
       load_prefix += compiler.llvm_link;
    }
+   else if(cm & CM_COMPILER_DIS)
+   {
+      THROW_ASSERT(cm == CM_COMPILER_DIS, "Plugins must not be enabled when disassembler is required");
+      load_prefix += compiler.llvm_opt + " -S";
+   }
+   else if(cm & CM_ADD_FULL_UNROLL_META)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_ADD_FULL_UNROLL_META_PLUGIN);
+   }
+   else if(cm & CM_DEDUPLICATE_LOAD_INST)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_DEDUPLICATE_LOAD_INST_PLUGIN);
+   }
+   else if(cm & CM_OPENMP_TASK_DETECTION)
+   {
+      load_prefix += compiler.llvm_opt;
+      load_and_run_plugin(COMPILER_OPENMP_TASK_PLUGIN);
+      load_prefix +=
+          SCRIPT_NEWLINE + std::string("-task-detect-only -outputdir=\"") + output_temporary_directory + "\"";
+   }
+   else if(cm & CM_OPENMP_TASK_EXTRACTION)
+   {
+      const auto resourceDuplicationCount = Param->getOption<unsigned>(OPT_task_resource_duplication);
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_OPENMP_TASK_PLUGIN);
+      load_prefix += STR(SCRIPT_NEWLINE) + "-resource-duplication=" + STR(resourceDuplicationCount);
+      load_prefix += SCRIPT_NEWLINE + std::string("-outputdir=\"") + output_temporary_directory + "\"";
+   }
+   else if(cm & CM_DCE)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_DCE_PLUGIN);
+   }
+   else if(cm & CM_OPENMP_SIMPLIFY_ARGS)
+   {
+      load_prefix += compiler.llvm_opt + " -S";
+      load_and_run_plugin(COMPILER_OPENMP_ARGUMENT_SIMPLIFY_PLUGIN);
+   }
    else
    {
       cm |= CM_COMPILER_STD;
@@ -501,6 +583,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       command += " -c";
       command += " -D__NO_INLINE__"; /// needed to avoid problem with glibc inlines
       command += " " + compiler.extra_options;
+      if(is_openmp_runtime(Param, input_filename))
+      {
+         command += " -x c++";
+      }
 
       if((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)))
       {
@@ -566,17 +652,6 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       }
    }
 
-   const auto load_and_run_plugin = [&](const std::string& plugin_name) {
-      if(cm & CM_COMPILER_STD)
-      {
-         load_prefix += SCRIPT_NEWLINE + load_plugin(plugin_name);
-      }
-      else
-      {
-         load_prefix += SCRIPT_NEWLINE + load_plugin_opt(plugin_name);
-         passes.add_pass(plugin_name);
-      }
-   };
    const auto append_arg = [&](const std::string& arg) {
       if(cm & CM_COMPILER_STD)
       {
@@ -610,6 +685,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       {
          append_arg("-panda-Internalize");
       }
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-task-graph-topfname");
+      }
       load_and_run_plugin(COMPILER_TOPFNAME_PLUGIN);
    }
    // customSROA inlines: it must run after topfname has marked top/dataflow functions NoInline
@@ -634,6 +713,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       load_and_run_plugin(COMPILER_OPENMP_PLUGIN);
       command += " -dflt_nthreads=" + Param->getOption<std::string>(OPT_num_accelerators);
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-openmp-task-graph");
+      }
    }
 
    command += SCRIPT_NEWLINE + parameters_line;
@@ -642,6 +725,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
    {
       append_arg("-panda-outputdir=" + output_temporary_directory);
       append_arg("-panda-infile=" + input_filename);
+      if(openmp_task::IsEnabled(*Param))
+      {
+         append_arg("-panda-task-graph");
+      }
       append_arg("-panda-cost-table=\"" + costTable + "\"");
       if(top_fnames.size())
       {
@@ -746,7 +833,9 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
 
    const auto compiler = GetCompiler();
    const auto multi_source = source_files.size() > 1;
-   const auto enable_LTO = multi_source;
+   const bool isOpenmp = Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp);
+   const auto enable_LTO = multi_source || isOpenmp;
+   Param->SetOpenMPTaskGraphDetected(false);
    const auto compile_only = Param->isOption(OPT_cc_S) && Param->getOption<bool>(OPT_cc_S);
    const auto preprocess_only = Param->isOption(OPT_cc_E) && Param->getOption<bool>(OPT_cc_E);
    const auto optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
@@ -773,8 +862,8 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
-   const auto compiler_mode = [&]() -> int {
-      int flags = 0;
+   const auto compiler_mode = [&]() -> int64_t {
+      int64_t flags = 0;
       if(preprocess_only || compile_only)
       {
          return flags;
@@ -784,13 +873,9 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       {
          flags |= CM_OPT_CUSTOMSROA;
       }
-      if(multi_source)
+      if(enable_LTO)
       {
          flags |= CM_LTO_FLAG;
-         if(!enable_LTO)
-         {
-            flags |= CM_OPT_DUMPBAMBUIR;
-         }
       }
       else
       {
@@ -808,10 +893,13 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       const auto obj_file = ((compile_only || preprocess_only) && Param->isOption(OPT_output_file)) ?
                                 Param->getOption<std::string>(OPT_output_file) :
                                 unique_path(output_temporary_directory + "/" + leaf_name + ".%%%%%%.o").string();
-      const auto is_llvmir = std::filesystem::path(source_file).extension() == ".ll";
-      const auto local_compiler_mode = (is_llvmir ? CM_COMPILER_OPT : CM_COMPILER_STD) | compiler_mode;
-      auto local_compiler_parameters = is_llvmir ? "" : frontend_compiler_parameters;
-      if(Param->isOption(OPT_openmp) && Param->getOption<bool>(OPT_openmp))
+      const auto source_extension = std::filesystem::path(source_file).extension();
+      const auto is_llvmir = source_extension == ".ll" || source_extension == ".bc";
+      const auto local_compiler_mode = is_llvmir ?
+                                           CM_COMPILER_OPT | (compiler_mode & ~(CM_ANALYZER_ALL | CM_LTO_FLAG)) :
+                                           CM_COMPILER_STD | compiler_mode;
+      auto local_compiler_parameters = is_llvmir ? "" : GetFrontendCompilerParameters(source_file);
+      if(!is_llvmir && isOpenmp)
       {
          local_compiler_parameters += " -fopenmp ";
       }
@@ -825,7 +913,8 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
          auto bambu_ir_file = output_temporary_directory + "/" + leaf_name + STR_CST_bambu_ir_suffix;
          if(!std::filesystem::exists(bambu_ir_file))
          {
-            CompileFile(source_file, "", frontend_compiler_parameters, passes, CM_EMPTY, costTable);
+            auto empty_mode_parameters = GetFrontendCompilerParameters(source_file);
+            CompileFile(source_file, "", empty_mode_parameters, passes, CM_EMPTY, costTable);
             // source_file has been changed by previous call to CompileFile
             bambu_ir_file = output_temporary_directory + "/" + std::filesystem::path(source_file).filename().string() +
                             STR_CST_bambu_ir_suffix;
@@ -841,6 +930,58 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       std::string lto_source = container_to_string(obj_files, STR_CST_string_separator);
       std::string lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.bc";
       CompileFile(lto_source, lto_obj, "", passes, CM_COMPILER_LTO, "");
+
+      if(isOpenmp && compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG19)
+      {
+         const auto detection_file = std::filesystem::path(output_temporary_directory) / openmp_task::DetectionFilename;
+         std::filesystem::remove(detection_file);
+         auto detection_source = lto_obj;
+         CompileFile(detection_source, output_temporary_directory + "/task-detected.bc", "", passes,
+                     CM_OPENMP_TASK_DETECTION, costTable);
+         std::ifstream detection(detection_file);
+         std::string result;
+         unsigned detectedPointerBits = 0;
+         if(!(detection >> result >> detectedPointerBits) || (result != "tasks" && result != "ordinary"))
+         {
+            THROW_ERROR("OpenMP task detection did not produce a valid result");
+         }
+         if(result == "tasks" && detectedPointerBits != CGetPointerSize(Param))
+         {
+            THROW_ERROR_USAGE(
+                "LLVM task input pointer width differs from the selected target; specify matching -m32/-m64 options");
+         }
+         Param->SetOpenMPTaskGraphDetected(result == "tasks");
+      }
+      if(openmp_task::IsEnabled(*Param))
+      {
+         if(compiler_target != CompilerWrapper_CompilerTarget::CT_I386_CLANG19)
+         {
+            THROW_ERROR_USAGE("OpenMP tasks require --compiler=I386_CLANG19");
+         }
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/" + leaf_name + ".lto.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_COMPILER_DIS, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/add_unroll_meta_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_ADD_FULL_UNROLL_META, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/deduplicate_loads_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_DEDUPLICATE_LOAD_INST, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/task_graph_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_OPENMP_TASK_EXTRACTION, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/dce_out.ll";
+         CompileFile(lto_source, lto_obj, "", passes, CM_DCE, costTable);
+
+         lto_source = lto_obj;
+         lto_obj = output_temporary_directory + "/" + OMP_TASK_EXTRACTOR_output_filename;
+         CompileFile(lto_source, lto_obj, "", passes, CM_OPENMP_SIMPLIFY_ARGS, costTable);
+      }
 
       lto_source = lto_obj;
       lto_obj = output_temporary_directory + "/" + leaf_name + ".lto-opt.bc";
@@ -946,13 +1087,6 @@ void CompilerWrapper::InitializeCompilerParameters()
       }
    }
 
-   /// Adding standard
-   if(Param->isOption(OPT_cc_standard))
-   {
-      auto standard = Param->getOption<std::string>(OPT_cc_standard);
-      frontend_compiler_parameters += "--std=" + standard + " ";
-   }
-
    if(Param->isOption(OPT_cc_E) && Param->getOption<bool>(OPT_cc_E))
    {
       frontend_compiler_parameters += "-E ";
@@ -1031,6 +1165,27 @@ void CompilerWrapper::InitializeCompilerParameters()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized cc parameters");
+}
+
+std::string CompilerWrapper::GetFrontendCompilerParameters(const std::string& source_file) const
+{
+   auto parameters = frontend_compiler_parameters;
+   if(!Param->isOption(OPT_cc_standard))
+   {
+      return parameters;
+   }
+   auto standard = Param->getOption<std::string>(OPT_cc_standard);
+   const auto format = source_file.empty() ? Parameters_FileFormat::FF_UNKNOWN : Param->GetFileFormat(source_file, false);
+   const bool cpp_source = is_openmp_runtime(Param, source_file) ||
+                           cpp_input || format == Parameters_FileFormat::FF_CPP ||
+                           format == Parameters_FileFormat::FF_LLVM_CPP;
+   if(format == Parameters_FileFormat::FF_C || format == Parameters_FileFormat::FF_CPP ||
+      format == Parameters_FileFormat::FF_LLVM_CPP)
+   {
+      standard = standard_for_language(standard, cpp_source);
+   }
+   parameters += "--std=" + standard + " ";
+   return parameters;
 }
 
 void CompilerWrapper::SetBambuDefault()
@@ -1488,11 +1643,13 @@ void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) co
 }
 
 std::string CompilerWrapper::GetCompilerParameters(const std::string& extra_compiler_options,
-                                                   bool no_frontend_compiler_parameters) const
+                                                   bool no_frontend_compiler_parameters,
+                                                   const std::string& source_file) const
 {
    const auto compiler = GetCompiler();
    std::string command =
-       (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " + compiler_linking_parameters + " ";
+       (no_frontend_compiler_parameters ? "" : GetFrontendCompilerParameters(source_file)) + " " +
+       compiler_linking_parameters + " ";
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
    std::string local_compiler_extra_options = no_frontend_compiler_parameters ? "" : compiler.extra_options;
@@ -1536,9 +1693,11 @@ void CompilerWrapper::CreateExecutable(const std::vector<std::filesystem::path>&
          command += iquote;
       }
    }
-   if(!has_cpp_file)
+   if(Param->isOption(OPT_cc_standard))
    {
-      command = std::regex_replace(command, std::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
+      const auto standard = standard_for_language(Param->getOption<std::string>(OPT_cc_standard),
+                                                  has_cpp_file || cpp_input);
+      command = std::regex_replace(command, std::regex("--std=[^ ]+"), "--std=" + standard);
    }
    command += srcs;
 
@@ -1776,7 +1935,6 @@ std::string CompilerWrapper::clang_recipes(const CompilerWrapper_OptimizationSet
       {
          recipe += " -enable-loop-flatten";
       }
-
       recipe += " -" COMPILER_EXPANDMEMOPS_PLUGIN " -simplifycfg ";
    }
    else if(compiler_target == CompilerWrapper_CompilerTarget::CT_I386_CLANG16)

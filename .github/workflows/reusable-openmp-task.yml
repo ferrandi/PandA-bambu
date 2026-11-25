@@ -1,0 +1,113 @@
+name: Reusable OpenMP task synthesis
+
+on:
+  workflow_call:
+    inputs:
+      package-name:
+        description: "Bambu AppImage package name"
+        required: true
+        type: string
+      simulator:
+        description: "Simulator for task co-simulation"
+        required: false
+        type: string
+        default: MODELSIM
+      no-clean:
+        description: "Retain successful task workdirs for debugging"
+        required: false
+        type: boolean
+        default: false
+      runner-labels:
+        description: "JSON runner labels; callers retain their simulator runner pool"
+        required: false
+        type: string
+        default: '["self-hosted", "long", "xilinx"]'
+    secrets:
+      CI_STORAGE_URL:
+        required: true
+      CI_STORAGE_USER:
+        required: true
+      CI_STORAGE_TOKEN:
+        required: true
+
+env:
+  package-name: ${{inputs.package-name}}
+  test-compiler: I386_CLANG19
+  report-dir: test-reports
+  storage-url: ${{secrets.CI_STORAGE_URL}}
+  storage-user: ${{secrets.CI_STORAGE_USER}}
+  storage-token: ${{secrets.CI_STORAGE_TOKEN}}
+  dist-dir: panda_dist
+
+jobs:
+  openmp-base-tests:
+    runs-on: ${{fromJSON(inputs.runner-labels)}}
+    timeout-minutes: 600
+    env:
+      basename: openmp-base
+      args:
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        include:
+          - basename: task_arbiter
+            script: ./examples/OpenMP/task/openmp_task_arb.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: task_banked
+            script: ./examples/OpenMP/task/openmp_task_banked.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: task_arbiter_eval
+            script: ./examples/OpenMP/task/openmp_task_eval_arb.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+          - basename: task_banked_eval
+            script: ./examples/OpenMP/task/openmp_task_eval_banked.sh
+            batch: "xc7vx690t-3ffg1930_10.0"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: 'true'
+      - name: Check priority encoder implementations
+        if: matrix.basename == 'task_arbiter'
+        shell: bash
+        run: |
+          if command -v verilator >/dev/null 2>&1; then
+            python3 panda_regressions/verilog/priority_encoder/test_priority_encoders.py
+          else
+            echo "::warning::Priority encoder regression skipped: Verilator is unavailable"
+          fi
+      - name: Download PandA distribution
+        uses: ./.github/actions/storage-download
+        with:
+          name: ${{env.package-name}}
+          storage-url: "${{env.storage-url}}"
+          username: "${{env.storage-user}}"
+          password: "${{env.storage-token}}"
+      - name: Generate out name
+        id: get
+        shell: bash
+        run: |
+          COMPILER="$(echo '${{env.test-compiler}}' | cut -d' ' -f1 | sed -r 's/I386_//g' | tr '[:upper:]' '[:lower:]')"
+          OUTNAME="${COMPILER}_${{matrix.basename}}_${{env.basename}}"
+          echo "outname=$OUTNAME" >> $GITHUB_OUTPUT
+      - name: Launch test batch
+        id: batch
+        shell: bash
+        env:
+          OPENMP_BATCH_SCRIPT: ${{matrix.script}}
+          OPENMP_BATCH_CONFIGURATIONS: ${{matrix.batch}}
+          OPENMP_REPORT_DIR: ${{env.report-dir}}
+          OPENMP_DIST_DIR: ${{env.dist-dir}}
+          OPENMP_EXTRA_ARGS: -c=--simulator=${{inputs.simulator}} ${{inputs.no-clean && '--no-clean' || ''}} ${{env.args}} ${{matrix.args}}
+        run: bash .github/scripts/run-openmp-batch.sh
+      - name: Collect post-mortem data
+        if: ${{failure()}}
+        shell: bash
+        run: bash .github/scripts/collect-post-mortem.sh "${{env.report-dir}}" "$GITHUB_JOB" "" "${{env.dist-dir}}"
+      - name: Upload test reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{steps.get.outputs.outname}}
+          path: ${{steps.batch.outputs.test-reports-dir}}

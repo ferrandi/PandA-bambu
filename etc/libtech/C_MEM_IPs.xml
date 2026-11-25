@@ -12706,17 +12706,25 @@ end
 assign din_a = (proxy_sel_STORE &amp;&amp; proxy_in4w) ? proxy_in1 : in1;
 assign bram_write = (sel_STORE &amp;&amp; in4w) || (proxy_sel_STORE  &amp;&amp; proxy_in4w);
 
-generate if(READ_ONLY_MEMORY==0)
+generate if(READ_ONLY_MEMORY==0 &amp;&amp; n_elements==1)
   always @(posedge clock)
   begin
     if (bram_write)
-    begin
+      memory[0] &lt;= din_a;
+  end
+else if(READ_ONLY_MEMORY==0)
+  always @(posedge clock)
+  begin
+    if (bram_write)
       memory[memory_addr_a_w] &lt;= din_a;
-    end
   end
 endgenerate
 
-assign dout_a = memory[memory_addr_a_r];
+generate if(n_elements==1)
+  assign dout_a = memory[0];
+else
+  assign dout_a = memory[memory_addr_a_r];
+endgenerate
 
 assign tmp_addr_r = (proxy_sel_LOAD &amp;&amp; proxy_in4r) ? proxy_in2r : in2r;
 generate
@@ -13301,11 +13309,23 @@ generate
 genvar i11;
   for (i11=0; i11&lt;max_n_reads; i11=i11+1)
   begin : asynchronous_read
-    assign dout_a[data_size*i11+:data_size] = memory[memory_addr_a_r[nbit_read_addr*i11+:nbit_read_addr]];
+    if(n_elements==1)
+      assign dout_a[data_size*i11+:data_size] = memory[0];
+    else
+      assign dout_a[data_size*i11+:data_size] = memory[memory_addr_a_r[nbit_read_addr*i11+:nbit_read_addr]];
   end
 endgenerate
 
-generate if(READ_ONLY_MEMORY==0)
+generate if(READ_ONLY_MEMORY==0 &amp;&amp; n_elements==1)
+  always @(posedge clock)
+  begin
+    for (index2=0; index2&lt;max_n_writes; index2=index2+1)
+    begin
+      if(bram_write[index2])
+        memory[0] &lt;= din_value_aggregated[data_size*index2+:data_size];
+    end
+  end
+else if(READ_ONLY_MEMORY==0)
   always @(posedge clock)
   begin
     for (index2=0; index2&lt;max_n_writes; index2=index2+1)

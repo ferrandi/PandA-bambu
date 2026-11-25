@@ -44,12 +44,15 @@
 #include "polixml.hpp"
 #include "storage_value_information.hpp"
 #include "utility.hpp"
+#include "utility/bounded_decimal.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
 #define MAX_BITWIDTH_SIZE 4096
 
 #include <pugixml.hpp>
+
+#include <limits>
 
 HLS_manager::HLS_manager(const ParameterConstRef _Param, const HLS_deviceRef _HLS_D)
     : application_manager(false, _Param),
@@ -413,10 +416,43 @@ ModuleArchitecture::ModuleArchitecture(const std::string& filename)
          for(auto& i : f.child("bundles"))
          {
             THROW_ASSERT(!i.attribute("name").empty(), "Interface name attribute missing from XML.");
-            auto& iface_attr = fa->ifaces[i.attribute("name").value()];
+            const auto bundle_name = std::string(i.attribute("name").value());
+            auto& iface_attr = fa->ifaces[bundle_name];
             for(auto& a : i.attributes())
             {
+               const auto attribute_name = std::string(a.name());
+               if(attribute_name == "num_write_outstanding" || attribute_name == "write_burst_outstanding")
+               {
+                  std::uint32_t value = 0;
+                  if(panda::utility::parse_bounded_ascii_decimal(std::string(a.value()), 1U, 16U, value) !=
+                     panda::utility::bounded_decimal_result::valid)
+                  {
+                     THROW_ERROR_USAGE("Invalid AXI interface attribute '" + attribute_name + "' for bundle '" +
+                                       bundle_name + "': expected an ASCII decimal integer in [1,16].");
+                  }
+                  const auto normalized = std::to_string(value);
+                  const auto existing = iface_attr.find(FunctionArchitecture::iface_write_burst_outstanding);
+                  if(existing != iface_attr.end() && existing->second != normalized)
+                  {
+                     THROW_ERROR_USAGE("Conflicting num_write_outstanding and write_burst_outstanding values for "
+                                       "bundle '" +
+                                       bundle_name + "'.");
+                  }
+                  iface_attr.emplace(FunctionArchitecture::iface_write_burst_outstanding, normalized);
+                  continue;
+               }
                iface_attr.emplace(FunctionArchitecture::to_iface_attr("iface_" + std::string(a.name())), a.value());
+            }
+            const auto latency = iface_attr.find(FunctionArchitecture::iface_latency);
+            if(latency != iface_attr.end())
+            {
+               const auto mode = iface_attr.find(FunctionArchitecture::iface_mode);
+               if(mode == iface_attr.end() || mode->second != "m_axi")
+               {
+                  THROW_ERROR_USAGE("Invalid AXI interface attribute 'latency' for bundle '" + bundle_name +
+                                    "': latency is only valid for mode=m_axi.");
+               }
+               ParseAXIInterfaceLatency(iface_attr, bundle_name);
             }
          }
       }

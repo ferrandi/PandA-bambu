@@ -71,7 +71,8 @@ memory_access::memory_access(unsigned int _node_id, unsigned int _base_address, 
 }
 
 OMPInfo::OMPInfo(unsigned int _local_idx, unsigned int _context_count, unsigned int _core_id, unsigned int _ncore,
-                 unsigned int _fork_call_id, const OMPInfoConstRef& _parent, unsigned int _kmp_t_nproc)
+                 unsigned int _fork_call_id, const OMPInfoConstRef& _parent, unsigned int _kmp_t_nproc,
+                 unsigned int _task_id)
     : fork_call_id(_fork_call_id),
       ncore(_ncore),
       core_id(_core_id),
@@ -81,6 +82,7 @@ OMPInfo::OMPInfo(unsigned int _local_idx, unsigned int _context_count, unsigned 
       critical(),
       local_idx(_local_idx),
       global_idx(make_global(_local_idx, _ncore, _parent)),
+      task_id(_task_id),
       parent(_parent)
 {
 }

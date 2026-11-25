@@ -535,22 +535,28 @@ void BackendWrapper::init(const std::string& top_fu_name, const std::string& top
    if(Param->isOption(OPT_default_compiler))
    {
       CompilerWrapper compiler(Param, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler));
-      auto cflags = compiler.GetCompilerParameters("");
-      std::cmatch what;
-      std::string kill_printf;
-      if(std::regex_search(cflags.c_str(), what, std::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
-      {
-         kill_printf.append(what[1].first, what[1].second);
-         cflags.erase(static_cast<size_t>(what[0].first - cflags.c_str()),
-                      static_cast<size_t>(what[0].second - what[0].first));
-      }
-      // Bash variable is initialized using double quotes, thus will evaluate escaped characters. Then, it is necessary
-      // to add a further escaping to retain original string semantics. (i.e. \"var\" -> CFLAGS="\"var\"" -> "var",
-      // while we need it to still be \"var\", thus we need to write CFLAGS="\\\"var\\\"")
-      cflags = std::regex_replace(cflags, std::regex("(\\\\(\"|\\\\|n))"), "\\\\$1");
+      const auto native_cflags = [&compiler](const std::string& source_file) {
+         auto flags = compiler.GetCompilerParameters("", false, source_file);
+         std::cmatch what;
+         std::string kill_printf;
+         if(std::regex_search(flags.c_str(), what, std::regex("\\s*(\\-D'?printf[^=]*='?)'*")))
+         {
+            kill_printf.append(what[1].first, what[1].second);
+            flags.erase(static_cast<size_t>(what[0].first - flags.c_str()),
+                        static_cast<size_t>(what[0].second - what[0].first));
+         }
+         // Bash variable is initialized using double quotes, thus will evaluate escaped characters. Then, it is
+         // necessary to add a further escaping to retain original string semantics. (i.e. \"var\" ->
+         // CFLAGS="\"var\"" -> "var", while we need it to still be \"var\", thus we need to write
+         // CFLAGS="\\\"var\\\"")
+         return std::regex_replace(flags, std::regex("(\\\\(\"|\\\\|n))"), "\\\\$1");
+      };
+      auto cflags = native_cflags("bambu_reference.c");
+      auto cpp_cflags = native_cflags("bambu_reference.cpp");
 
       get_attribute(sources, "compiler") = compiler.GetCompiler().cc.c_str();
       get_attribute(sources, "cflags") = cflags.c_str();
+      get_attribute(sources, "cpp_cflags") = cpp_cflags.c_str();
    }
    if(Param->isOption(OPT_input_format) &&
       Param->getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
@@ -575,6 +581,7 @@ void BackendWrapper::init(const std::string& top_fu_name, const std::string& top
       get_attribute(testbench, "symbol") = top_fu_name.c_str();
       get_attribute(testbench, "m_symbol") = cxa_prefix_mangled(top_fu_name, "__m_").c_str();
       get_attribute(testbench, "m_pp_symbol") = cxa_prefix_mangled(top_fu_name, "__m_pp_").c_str();
+      get_attribute(testbench, "ramulator") = Param->getOption<bool>(OPT_enable_ramulator);
       get_attribute(testbench, "cflags") = Param->isOption(OPT_tb_extra_cc_options) ?
                                                Param->getOption<std::string>(OPT_tb_extra_cc_options).c_str() :
                                                "";

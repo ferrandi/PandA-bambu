@@ -50,6 +50,7 @@ int main()
 #ifdef __BAMBU_SIM__
    m_param_alloc(0, sizeof(A));
    m_param_alloc(1, sizeof(B));
+   m_param_alloc(2, sizeof(element_count));
 #endif
    vector_copy_plus(A, B, &element_count);
 

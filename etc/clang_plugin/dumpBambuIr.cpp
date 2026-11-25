@@ -1442,10 +1442,18 @@ namespace llvm
          effectiveStoreAlign = getEffectiveMemoryAccessAlignment(store.getPointerOperand(), effectiveStoreAlign, DL);
          if(effectiveStoreAlign && written_obj_size > (8 * effectiveStoreAlign) && !is_a_top_parameter && !isVecType)
          {
-            return build1(IRC(UNALIGNED_MEM_ACCESS_NODE), type, addr);
+            const auto access = build1(IRC(UNALIGNED_MEM_ACCESS_NODE), type, addr);
+            if(store.isSimple())
+               const_cast<ir_node*>(static_cast<const ir_node*>(access))->ordinary_memory_access = true;
+            return access;
          }
          else
-            return build1(IRC(MEM_ACCESS_NODE), type, addr);
+         {
+            const auto access = build1(IRC(MEM_ACCESS_NODE), type, addr);
+            if(store.isSimple())
+               const_cast<ir_node*>(static_cast<const ir_node*>(access))->ordinary_memory_access = true;
+            return access;
+         }
       }
       return getSSA(inst, g, currentFunction, false);
    }
@@ -2319,9 +2327,19 @@ namespace llvm
 #endif
          effectiveLoadAlign = getEffectiveMemoryAccessAlignment(load.getPointerOperand(), effectiveLoadAlign, DL);
          if(effectiveLoadAlign && read_obj_size > (8 * effectiveLoadAlign) && !is_a_top_parameter && !isVecType)
-            return build1(IRC(UNALIGNED_MEM_ACCESS_NODE), type, addr);
+         {
+            const auto access = build1(IRC(UNALIGNED_MEM_ACCESS_NODE), type, addr);
+            if(load.isSimple())
+               const_cast<ir_node*>(static_cast<const ir_node*>(access))->ordinary_memory_access = true;
+            return access;
+         }
          else
-            return build1(IRC(MEM_ACCESS_NODE), type, addr);
+         {
+            const auto access = build1(IRC(MEM_ACCESS_NODE), type, addr);
+            if(load.isSimple())
+               const_cast<ir_node*>(static_cast<const ir_node*>(access))->ordinary_memory_access = true;
+            return access;
+         }
       }
       else if(isa<llvm::SExtInst>(inst) && cast<const llvm::SExtInst>(*inst).getType()->isIntegerTy() &&
               cast<const llvm::SExtInst>(*inst).getOperand(0)->getType()->isIntegerTy() &&
@@ -5133,11 +5151,15 @@ namespace llvm
          case IRC(MEM_ACCESS_NODE):
          {
             serialize_child("op", IR_OPERAND(t, 0));
+            if(static_cast<const ir_node*>(t)->ordinary_memory_access)
+               serialize_string("ordinary_memory_access");
             break;
          }
          case IRC(UNALIGNED_MEM_ACCESS_NODE):
          {
             serialize_child("op", IR_OPERAND(t, 0));
+            if(static_cast<const ir_node*>(t)->ordinary_memory_access)
+               serialize_string("ordinary_memory_access");
             break;
          }
          case IRC(CALL_NODE):

@@ -32,6 +32,31 @@
 #include "custom_map.hpp"
 #include "refcount.hpp"
 
+// Keep synchronization barriers separate from operations with native hardware predicates.
+#define SCM_OMP_CRITICAL "__kmp_bambu_critical"
+#define SCM_OMP_END_CRITICAL "__kmp_bambu_end_critical"
+#define SCM_OMP_BARRIER_REACHED "__kmp_bambu_barrier_reached"
+#define SCM_OMP_WAIT_ALL_THREADS "__kmp_bambu_wait_all_threads"
+#define SCM_OMP_CS_WAIT_ALL_THREADS "__kmp_bambu_cs_wait_all_threads"
+#define SCM_OMP_FORK_CALL "__kmp_bambu_fork_call"
+#define SCM_OMP_SET_NUM_THREADS "__kmp_bambu_th_set_nproc"
+#define SCM_OMP_SET_REDUCE_DATA "__kmp_bambu_set_th_local_reduce_data"
+#define SCM_OMP_GET_REDUCE_DATA "__kmp_bambu_get_th_local_reduce_data"
+
+// Include team setup and reduction handoffs as well as locks and barriers.
+#define SCM_OMP_SYNCHRONIZATION_FUNCTIONS \
+   SCM_OMP_CRITICAL, SCM_OMP_END_CRITICAL, SCM_OMP_BARRIER_REACHED, SCM_OMP_WAIT_ALL_THREADS, \
+       SCM_OMP_CS_WAIT_ALL_THREADS, SCM_OMP_FORK_CALL, SCM_OMP_SET_NUM_THREADS, SCM_OMP_SET_REDUCE_DATA, \
+       SCM_OMP_GET_REDUCE_DATA
+
+// These operations can also move onto conditional paths using native hardware predication.
+#define SCM_OMP_PREDICABLE_FUNCTIONS \
+   SCM_OMP_CRITICAL, SCM_OMP_END_CRITICAL, SCM_OMP_BARRIER_REACHED, SCM_OMP_WAIT_ALL_THREADS, \
+       SCM_OMP_CS_WAIT_ALL_THREADS, SCM_OMP_SET_REDUCE_DATA, SCM_OMP_GET_REDUCE_DATA
+
+// No operation, including pure computations, may cross a fork call.
+#define SCM_OMP_FULL_BARRIER_FUNCTIONS SCM_OMP_FORK_CALL
+
 REF_FORWARD_DECL(Schedule);
 REF_FORWARD_DECL(ir_manager);
 REF_FORWARD_DECL(ir_node);

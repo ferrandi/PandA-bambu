@@ -1127,6 +1127,7 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
     </template>
     <template>
       <name>widen_mul_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <no_constant_characterization></no_constant_characterization>
       <operation operation_name="widen_mul_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
@@ -1140,6 +1141,9 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
@@ -1149,14 +1153,15 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
-  m1 : mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, in1 =&gt; in1, in2 =&gt; in2);"
+          <NP_functionality LIBRARY="widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="mul_node_FU" VERILOG_PROVIDED="mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .stall_port(stall_port), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
+  m1 : mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, stall_port =&gt; stall_port, in1 =&gt; in1, in2 =&gt; in2);"
           />
         </module_o>
       </circuit>
     </template>
     <template>
       <name>mul_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <no_constant_characterization></no_constant_characterization>
       <operation operation_name="mul_node" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
@@ -1170,6 +1175,9 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
@@ -1179,80 +1187,76 @@ assign out1 = (in1 &lt;&lt; (PRECISION-(in3[marg_bitsize-1:0])))|(in2 &gt;&gt; (
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="INT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="
-generate
-  if(PIPE_PARAMETER==1)
-  begin
-    reg signed [BITSIZE_out1-1:0] out1_reg;
-    assign out1 = out1_reg;
-    always @(posedge clock)
-    begin
-      out1_reg &lt;= in1 * in2;
-    end
-  end
-  else if(PIPE_PARAMETER&gt;1)
-  begin
-    reg signed [BITSIZE_in1-1:0] in1_in;
-    reg signed [BITSIZE_in2-1:0] in2_in;
-    wire signed [BITSIZE_out1-1:0] mult_res;
-    reg signed [BITSIZE_out1-1:0] mul [PIPE_PARAMETER-2:0];
-    integer i;
-    assign mult_res = in1_in * in2_in;
-    always @(posedge clock)
-    begin
-      in1_in &lt;= in1;
-      in2_in &lt;= in2;
-      mul[PIPE_PARAMETER-2] &lt;= mult_res;
-      for (i=0; i&lt;PIPE_PARAMETER-2; i=i+1)
-        mul[i] &lt;= mul[i+1];
-    end
-    assign out1 = mul[0];
-  end
-  else
+          <NP_functionality LIBRARY="mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
+  if (PIPE_PARAMETER==0)
   begin
     assign out1 = in1 * in2;
   end
-  endgenerate
-" VHDL_PROVIDED="  signal in1_int : signed (BITSIZE_in1-1 downto 0);
-  signal in2_int : signed (BITSIZE_in2-1 downto 0);
+  else if (PIPE_PARAMETER==1)
+  begin
+    reg signed [BITSIZE_out1-1:0] product_reg;
+    assign out1 = product_reg;
+    always @(posedge clock)
+    begin
+      if (stall_port == 1'b0)
+        product_reg &lt;= in1 * in2;
+    end
+  end
+  else if (PIPE_PARAMETER&gt;1)
+  begin
+    reg signed [BITSIZE_out1-1:0] product_pipe [PIPE_PARAMETER-1:0];
+    integer i;
+    assign out1 = product_pipe[0];
+    always @(posedge clock)
+    begin
+      if (stall_port == 1'b0)
+      begin
+        product_pipe[PIPE_PARAMETER-1] &lt;= in1 * in2;
+        for (i=0; i&lt;PIPE_PARAMETER-1; i=i+1)
+          product_pipe[i] &lt;= product_pipe[i+1];
+      end
+    end
+  end
+endgenerate" VHDL_PROVIDED="  signal product_reg : signed (BITSIZE_out1-1 downto 0);
 begin
-  cond: if(PIPE_PARAMETER=0) generate
+  cond: if (PIPE_PARAMETER=0) generate
     out1 &lt;= signed(resize_signed(in1 * in2, BITSIZE_out1));
   end generate cond;
-  cond1 : if(PIPE_PARAMETER=1) generate
-    out1 &lt;= resize_signed(in1_int * in2_int, BITSIZE_out1);
+  cond1: if (PIPE_PARAMETER=1) generate
     process(clock)
     begin
-      if clock&apos;event and clock = &apos;1&apos; then
-        in1_int &lt;= resize(in1, BITSIZE_in1);
-        in2_int &lt;= resize(in2, BITSIZE_in2);
+      if clock'event and clock = '1' then
+        if stall_port = '0' then
+          product_reg &lt;= signed(resize_signed(in1 * in2, BITSIZE_out1));
+        end if;
       end if;
     end process;
+    out1 &lt;= product_reg;
   end generate cond1;
-  cond2 : if(PIPE_PARAMETER &gt;1) generate
-    type levels_of_registers is array (PIPE_PARAMETER-2 downto 0) of signed(BITSIZE_out1-1 downto 0);
-    signal out1_int : levels_of_registers;
+  cond2: if (PIPE_PARAMETER&gt;1) generate
+    type product_pipe_t is array (PIPE_PARAMETER-1 downto 0) of signed(BITSIZE_out1-1 downto 0);
+    signal product_pipe : product_pipe_t;
   begin
+    out1 &lt;= product_pipe(0);
     process(clock)
     begin
-      if clock&apos;event and clock = &apos;1&apos; then
-        in1_int &lt;= in1;
-        in2_int &lt;= in2;
-        out1_int(PIPE_PARAMETER-2) &lt;= signed(resize_signed(signed(in1_int * in2_int), BITSIZE_out1));
-        for i in 0 to PIPE_PARAMETER-3 loop
-          out1_int (i) &lt;= out1_int (i+1);
-        end loop;
+      if clock'event and clock = '1' then
+        if stall_port = '0' then
+          product_pipe(PIPE_PARAMETER-1) &lt;= signed(resize_signed(in1 * in2, BITSIZE_out1));
+          for i in 0 to PIPE_PARAMETER-2 loop
+            product_pipe(i) &lt;= product_pipe(i+1);
+          end loop;
+        end if;
       end if;
     end process;
-    out1 &lt;= out1_int (0);
-  end generate cond2;
-"
+  end generate cond2;"
           />
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_widen_mul_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <no_constant_characterization></no_constant_characterization>
       <operation operation_name="widen_mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
@@ -1266,6 +1270,9 @@ begin
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
@@ -1275,13 +1282,14 @@ begin
           <port_o id="out1" dir="OUT" is_doubled="1">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="ui_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
-  m1 : ui_mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, in1 =&gt; in1, in2 =&gt; in2);"/>
+          <NP_functionality LIBRARY="ui_widen_mul_node_FU in1 in2 out1 PIPE_PARAMETER" IP_COMPONENT="ui_mul_node_FU" VERILOG_PROVIDED="ui_mul_node_FU #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2), .BITSIZE_out1(BITSIZE_out1), .PIPE_PARAMETER(PIPE_PARAMETER)) m1 (.out1(out1), .clock(clock), .stall_port(stall_port), .in1(in1), .in2(in2));" VHDL_PROVIDED="begin
+  m1 : ui_mul_node_FU generic map(BITSIZE_in1 =&gt; BITSIZE_in1, BITSIZE_in2 =&gt; BITSIZE_in2, BITSIZE_out1 =&gt; BITSIZE_out1, PIPE_PARAMETER =&gt; PIPE_PARAMETER) port map (out1 =&gt; out1, clock =&gt; clock, stall_port =&gt; stall_port, in1 =&gt; in1, in2 =&gt; in2);"/>
         </module_o>
       </circuit>
     </template>
     <template>
       <name>ui_mul_node_FU</name>
+      <attribute name="Stallable" value_type="boolean">1</attribute>
       <no_constant_characterization></no_constant_characterization>
       <operation operation_name="mul_node" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,7|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
@@ -1295,6 +1303,9 @@ begin
           <port_o id="clock" dir="IN" is_clock="1">
             <structural_type_descriptor type="BOOL" size="1"/>
           </port_o>
+          <port_o id="stall_port" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
           <port_o id="in1" dir="IN">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
@@ -1304,74 +1315,69 @@ begin
           <port_o id="out1" dir="OUT">
             <structural_type_descriptor type="UINT" size="1"/>
           </port_o>
-          <NP_functionality LIBRARY="ui_mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="
-generate
-  if(PIPE_PARAMETER==1)
-  begin
-    reg [BITSIZE_out1-1:0] out1_reg;
-    assign out1 = out1_reg;
-    always @(posedge clock)
-    begin
-      out1_reg &lt;= in1 * in2;
-    end
-  end
-  else if(PIPE_PARAMETER&gt;1)
-  begin
-    reg [BITSIZE_in1-1:0] in1_in;
-    reg [BITSIZE_in2-1:0] in2_in;
-    wire [BITSIZE_out1-1:0] mult_res;
-    reg [BITSIZE_out1-1:0] mul [PIPE_PARAMETER-2:0];
-    integer i;
-    assign mult_res = in1_in * in2_in;
-    always @(posedge clock)
-    begin
-      in1_in &lt;= in1;
-      in2_in &lt;= in2;
-      mul[PIPE_PARAMETER-2] &lt;= mult_res;
-      for (i=0; i&lt;PIPE_PARAMETER-2; i=i+1)
-        mul[i] &lt;= mul[i+1];
-    end
-    assign out1 = mul[0];
-  end
-  else
+          <NP_functionality LIBRARY="ui_mul_node_FU in1 in2 out1 PIPE_PARAMETER" VERILOG_PROVIDED="generate
+  if (PIPE_PARAMETER==0)
   begin
     assign out1 = in1 * in2;
   end
-endgenerate
-" VHDL_PROVIDED="  signal in1_int : unsigned (BITSIZE_in1-1 downto 0);
-  signal in2_int : unsigned (BITSIZE_in2-1 downto 0);
+  else if (PIPE_PARAMETER==1)
+  begin
+    reg [BITSIZE_out1-1:0] product_reg;
+    assign out1 = product_reg;
+    always @(posedge clock)
+    begin
+      if (stall_port == 1'b0)
+        product_reg &lt;= in1 * in2;
+    end
+  end
+  else if (PIPE_PARAMETER&gt;1)
+  begin
+    reg [BITSIZE_out1-1:0] product_pipe [PIPE_PARAMETER-1:0];
+    integer i;
+    assign out1 = product_pipe[0];
+    always @(posedge clock)
+    begin
+      if (stall_port == 1'b0)
+      begin
+        product_pipe[PIPE_PARAMETER-1] &lt;= in1 * in2;
+        for (i=0; i&lt;PIPE_PARAMETER-1; i=i+1)
+          product_pipe[i] &lt;= product_pipe[i+1];
+      end
+    end
+  end
+endgenerate" VHDL_PROVIDED="  signal product_reg : unsigned (BITSIZE_out1-1 downto 0);
 begin
-  cond: if(PIPE_PARAMETER=0) generate
+  cond: if (PIPE_PARAMETER=0) generate
     out1 &lt;= resize(in1 * in2, BITSIZE_out1);
   end generate cond;
-  cond1 : if(PIPE_PARAMETER=1) generate
-    out1 &lt;= resize(in1_int * in2_int, BITSIZE_out1);
+  cond1: if (PIPE_PARAMETER=1) generate
     process(clock)
     begin
-      if clock&apos;event and clock = &apos;1&apos; then
-        in1_int &lt;= in1;
-        in2_int &lt;= in2;
+      if clock'event and clock = '1' then
+        if stall_port = '0' then
+          product_reg &lt;= resize(in1 * in2, BITSIZE_out1);
+        end if;
       end if;
     end process;
+    out1 &lt;= product_reg;
   end generate cond1;
-  cond2 : if(PIPE_PARAMETER &gt;1) generate
-    type levels_of_registers is array (PIPE_PARAMETER-1 downto 0) of unsigned (BITSIZE_out1-1 downto 0);
-    signal out1_int : levels_of_registers;
+  cond2: if (PIPE_PARAMETER&gt;1) generate
+    type product_pipe_t is array (PIPE_PARAMETER-1 downto 0) of unsigned(BITSIZE_out1-1 downto 0);
+    signal product_pipe : product_pipe_t;
   begin
-    out1 &lt;= out1_int (0);
+    out1 &lt;= product_pipe(0);
     process(clock)
     begin
-      if clock&apos;event and clock = &apos;1&apos; then
-        in1_int &lt;= in1;
-        in2_int &lt;= in2;
-        out1_int(PIPE_PARAMETER-2) &lt;= resize(in1_int * in2_int, BITSIZE_out1);
-        for i in 0 to PIPE_PARAMETER-3 loop
-          out1_int (i) &lt;= out1_int (i+1);
-        end loop;
+      if clock'event and clock = '1' then
+        if stall_port = '0' then
+          product_pipe(PIPE_PARAMETER-1) &lt;= resize(in1 * in2, BITSIZE_out1);
+          for i in 0 to PIPE_PARAMETER-2 loop
+            product_pipe(i) &lt;= product_pipe(i+1);
+          end loop;
+        end if;
       end if;
     end process;
-  end generate cond2;
-"/>
+  end generate cond2;"/>
         </module_o>
       </circuit>
     </template>

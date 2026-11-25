@@ -663,7 +663,9 @@ struct unary_node : public expr_node
    /// op field is the operand of the unary expression
    ir_nodeRef op;
 
-   explicit unary_node(unsigned int i) : expr_node(i)
+   bool ordinary_memory_access;
+
+   explicit unary_node(unsigned int i) : expr_node(i), ordinary_memory_access(false)
    {
    }
 

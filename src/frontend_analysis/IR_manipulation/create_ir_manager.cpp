@@ -305,7 +305,8 @@ DesignFlowStep_Status create_ir_manager::Exec()
       if(parameters->isOption(OPT_architecture_xml))
       {
          const auto arch_file = parameters->getOption<std::filesystem::path>(OPT_architecture_xml);
-         const auto dest_arch_file = parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "architecture.xml";
+         const auto dest_arch_file =
+             parameters->getOption<std::filesystem::path>(OPT_output_temporary_directory) / "architecture.xml";
 
          std::error_code ec;
          std::filesystem::copy_file(arch_file, dest_arch_file, ec);

@@ -37,6 +37,7 @@
 #include "dbgPrintHelper.hpp"
 #include "refcount.hpp"
 
+#include <cstdint>
 #include <filesystem>
 #include <iosfwd>
 #include <vector>
@@ -175,7 +176,7 @@ class CompilerWrapper
     * @param costTable is the cost table description forwarded to the frontend flow
     */
    void CompileFile(std::string& input_filename, const std::string& output_file, const std::string& parameters_line,
-                    passesType passes, int cm, const std::string& costTable);
+                    passesType passes, int64_t cm, const std::string& costTable);
 
    std::string GetAnalyzeCompiler() const;
 
@@ -183,6 +184,14 @@ class CompilerWrapper
     * Initialize the frontend compiler parameters line
     */
    void InitializeCompilerParameters();
+
+   /**
+    * Return the frontend compiler parameters line, with the --std option
+    * normalized for the language of the given source file, when the options
+    * and the file extension allow it; without a (recognized) source file the
+    * global standard is kept
+    */
+   std::string GetFrontendCompilerParameters(const std::string& source_file = "") const;
 
    /**
     * Analyze the command line options
@@ -252,7 +261,8 @@ class CompilerWrapper
    void QueryCompilerConfig(const std::string& compiler_option) const;
 
    std::string GetCompilerParameters(const std::string& extra_compiler_options,
-                                     bool no_frontend_compiler_parameters = false) const;
+                                     bool no_frontend_compiler_parameters = false,
+                                     const std::string& source_file = "") const;
 
    /**
     * Create an executable starting from source code

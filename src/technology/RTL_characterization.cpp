@@ -479,7 +479,7 @@ void RTLCharacterization::xwrite_characterization(xml_element* nodeRoot)
             {
                const auto port = mod->get_in_port(iport);
                if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME ||
-                  port->get_id() == START_PORT_NAME ||
+                  port->get_id() == START_PORT_NAME || port->get_id() == STALL_PORT_NAME ||
                   (GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_memory()) ||
                   port->get_id().find("sel_") == 0)
                {
@@ -1052,8 +1052,13 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       {
          structural_objectRef port_in = spec_module->get_in_port(i);
          if(port_in->get_id() == CLOCK_PORT_NAME || port_in->get_id() == RESET_PORT_NAME ||
-            port_in->get_id() == START_PORT_NAME)
+            port_in->get_id() == START_PORT_NAME || port_in->get_id() == STALL_PORT_NAME)
          {
+            if(port_in->get_id() == STALL_PORT_NAME)
+            {
+               e_port = SM->add_constant("stall_0", circuit, port_in->get_typeRef(), STR(0));
+               SM->add_connection(port_in, e_port);
+            }
             continue;
          }
          if(fu_base_name == LUT_NODE_STD && i == 0)

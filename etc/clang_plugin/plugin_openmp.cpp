@@ -83,6 +83,9 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/LoopUtils.h>
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+#include <llvm/Transforms/Utils/Cloning.h>
+#endif
 #if PANDA_LLVM_CLANG_MAJOR < 13
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #elif PANDA_LLVM_CLANG_MAJOR >= 13
@@ -110,6 +113,10 @@
 
 namespace llvm
 {
+   cl::opt<bool> OpenMPTaskGraphInput("panda-openmp-task-graph",
+                                      cl::desc("Input contains an extracted OpenMP task graph"), cl::init(false),
+                                      cl::Hidden);
+
    struct openmpBambu;
    static bool remove_openmp_lifetime(llvm::Function& function)
    {
@@ -289,11 +296,15 @@ namespace llvm
                   }
                   assert(isa<ConstantInt>(*gep->idx_begin()));
                   const auto val = cast<ConstantInt>(*gep->idx_begin())->getValue();
-                  return val.udiv(APInt(val.getBitWidth(), 4));
+                  const auto pointer_size =
+                      gep->getModule()->getDataLayout().getPointerSize(gep->getPointerAddressSpace());
+                  return val.udiv(APInt(val.getBitWidth(), pointer_size));
                }();
                const std::array<llvm::Value*, 2> idxs = {
                    ConstantInt::get(Type::getIntNTy(new_ptr->getParent()->getParent()->getContext(), 32), 0),
-                   ConstantInt::get(Type::getIntNTy(new_ptr->getParent()->getParent()->getContext(), 32), idx),
+                   // Structure member indices must be i32 even when the original array index is i64.
+                   ConstantInt::get(Type::getIntNTy(new_ptr->getParent()->getParent()->getContext(), 32),
+                                    idx.getZExtValue()),
                };
                return GetElementPtrInst::Create(elem_type, new_ptr, idxs, "", gep);
             }();
@@ -328,10 +339,182 @@ namespace llvm
       }
    }
 
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+   static constexpr auto promoted_reduction = "bambu.omp.reduction.promoted";
+
+   static bool inline_opaque_reduction_combiners(Function& function)
+   {
+      SmallVector<CallInst*, 2> combiners;
+      for(auto& bb : function)
+      {
+         for(auto& inst : bb)
+         {
+            auto* call = dyn_cast<CallInst>(&inst);
+            auto* callee = call ? call->getCalledFunction() : nullptr;
+            if(callee && callee->hasLocalLinkage() && callee->getName().contains(".omp.reduction.reduction_func") &&
+               call->arg_size() == 2 && call->getArgOperand(1)->getType()->isOpaquePointerTy())
+            {
+               auto* fetch = dyn_cast<CallInst>(call->getArgOperand(1));
+               if(fetch && fetch->getCalledFunction() &&
+                  fetch->getCalledFunction()->getName() == TOSTRING(KMP_GET_REDUCE_DATA))
+               {
+                  combiners.push_back(call);
+               }
+            }
+         }
+      }
+      for(auto* combiner : combiners)
+      {
+         InlineFunctionInfo info;
+         if(!InlineFunction(*combiner, info).isSuccess())
+         {
+            report_fatal_error("OpenMP plug-in cannot inline an opaque reduction combiner", false);
+         }
+      }
+      return !combiners.empty();
+   }
+
+   struct ReductionSlot
+   {
+      StoreInst* initializer = nullptr;
+      SmallVector<LoadInst*, 2> loads;
+   };
+
+   static void collect_reduction_slots(Value* address, unsigned index, MutableArrayRef<ReductionSlot> slots,
+                                       const DataLayout& layout, CallInst* publish,
+                                       std::vector<Instruction*>& remove)
+   {
+      for(auto* user : address->users())
+      {
+         if(user == publish)
+         {
+            continue;
+         }
+         if(auto* gep = dyn_cast<GetElementPtrInst>(user))
+         {
+            APInt offset(layout.getIndexTypeSizeInBits(gep->getType()), 0);
+            const auto stride = layout.getPointerTypeSize(address->getType());
+            if(gep->getPointerOperand() == address && gep->accumulateConstantOffset(layout, offset) &&
+               !offset.isNegative() && offset.getActiveBits() <= 64)
+            {
+               const auto bytes = offset.getZExtValue();
+               if(bytes % stride == 0 && bytes / stride < slots.size() - index)
+               {
+                  collect_reduction_slots(gep, index + bytes / stride, slots, layout, publish, remove);
+                  remove.push_back(gep);
+                  continue;
+               }
+            }
+         }
+         else if(auto* load = dyn_cast<LoadInst>(user))
+         {
+            if(load->getType()->isPointerTy() && load->isSimple())
+            {
+               slots[index].loads.push_back(load);
+               continue;
+            }
+         }
+         else if(auto* store = dyn_cast<StoreInst>(user))
+         {
+            if(publish && store->getPointerOperand() == address && store->isSimple() &&
+               !slots[index].initializer && isa<AllocaInst>(store->getValueOperand()))
+            {
+               slots[index].initializer = store;
+               continue;
+            }
+         }
+         else if(auto* intrinsic = dyn_cast<IntrinsicInst>(user))
+         {
+            if(publish && (intrinsic->getIntrinsicID() == Intrinsic::lifetime_start ||
+                           intrinsic->getIntrinsicID() == Intrinsic::lifetime_end))
+            {
+               remove.push_back(intrinsic);
+               continue;
+            }
+         }
+         report_fatal_error("OpenMP plug-in cannot promote opaque reduction data: unsupported slot access", false);
+      }
+   }
+
+   static StructType* promote_opaque_reduction(CallInst* publish, std::vector<Instruction*>& remove)
+   {
+      auto* table = dyn_cast<AllocaInst>(publish->getArgOperand(1));
+      auto* array = table ? dyn_cast<ArrayType>(table->getAllocatedType()) : nullptr;
+      if(!array || !array->getElementType()->isPointerTy() || !array->getNumElements() || table->isArrayAllocation())
+      {
+         report_fatal_error("OpenMP plug-in cannot promote opaque reduction data: expected a pointer array", false);
+      }
+      const auto& layout = publish->getModule()->getDataLayout();
+      SmallVector<ReductionSlot, 4> slots(array->getNumElements());
+      collect_reduction_slots(table, 0, slots, layout, publish, remove);
+      SmallVector<Type*, 4> types;
+      SmallPtrSet<AllocaInst*, 4> variables;
+      for(const auto& slot : slots)
+      {
+         auto* variable = slot.initializer ? cast<AllocaInst>(slot.initializer->getValueOperand()) : nullptr;
+         if(!variable || variable->isArrayAllocation() || variable->getType() != table->getType() ||
+            variable->getAlign() > layout.getABITypeAlign(variable->getAllocatedType()) ||
+            !variables.insert(variable).second)
+         {
+            report_fatal_error("OpenMP plug-in cannot promote opaque reduction data: unsupported private variable",
+                               false);
+         }
+         types.push_back(variable->getAllocatedType());
+      }
+
+      auto* type = StructType::create(publish->getContext(), types);
+      IRBuilder<> builder(&*publish->getFunction()->getEntryBlock().getFirstInsertionPt());
+      auto* data = builder.CreateAlloca(type, table->getAddressSpace());
+      publish->setArgOperand(1, data);
+      publish->setMetadata(promoted_reduction, MDNode::get(publish->getContext(), {}));
+      for(unsigned i = 0; i < slots.size(); ++i)
+      {
+         auto& slot = slots[i];
+         auto* field = builder.CreateStructGEP(type, data, i);
+         auto* variable = cast<AllocaInst>(slot.initializer->getValueOperand());
+         variable->replaceAllUsesWith(field);
+         remove.push_back(variable);
+         remove.push_back(slot.initializer);
+         for(auto* load : slot.loads)
+         {
+            load->replaceAllUsesWith(field);
+            remove.push_back(load);
+         }
+      }
+      remove.push_back(table);
+      return type;
+   }
+
+   static void promote_opaque_reduction_loads(CallInst* fetch, StructType* type, std::vector<Instruction*>& remove)
+   {
+      SmallVector<ReductionSlot, 4> slots(type->getNumElements());
+      collect_reduction_slots(fetch, 0, slots, fetch->getModule()->getDataLayout(), nullptr, remove);
+      IRBuilder<> builder(fetch->getNextNode());
+      for(unsigned i = 0; i < slots.size(); ++i)
+      {
+         if(!slots[i].loads.empty())
+         {
+            auto* field = builder.CreateStructGEP(type, fetch, i);
+            for(auto* load : slots[i].loads)
+            {
+               load->replaceAllUsesWith(field);
+               remove.push_back(load);
+            }
+         }
+      }
+   }
+#endif
+
    static bool propagate_nproc(llvm::Function& function, ConstantInt* default_nt)
    {
       std::vector<llvm::Instruction*> kmp_to_remove;
       Type* local_data_struct_t = nullptr;
+      bool changed = false;
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+      StructType* opaque_reduction = nullptr;
+      SmallVector<CallInst*, 2> opaque_fetches;
+      changed = inline_opaque_reduction_combiners(function);
+#endif
 
       for(llvm::BasicBlock& bb : function)
       {
@@ -367,10 +550,11 @@ namespace llvm
                               propagate_nproc0(*dyn_cast<llvm::Function>(op), cur_thread_number);
                            }
                         }
-                        else if(isa<llvm::Function>(lambdaFun))
-                        {
-                           propagate_nproc0(*dyn_cast<llvm::Function>(lambdaFun), cur_thread_number);
-                        }
+                     }
+                     // opaque-pointer codegen passes the microtask function directly
+                     else if(isa<llvm::Function>(lambdaFun))
+                     {
+                        propagate_nproc0(*dyn_cast<llvm::Function>(lambdaFun), cur_thread_number);
                      }
                      cur_thread_number = default_nt;
                   }
@@ -382,6 +566,22 @@ namespace llvm
                      assert(call_inst->arg_size() >= 2 && "Expected to have at least 2 arguments!");
 #endif
                      auto set_reduce_data_arg = call_inst->getArgOperand(1U);
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+                     if(set_reduce_data_arg->getType()->isOpaquePointerTy())
+                     {
+                        if(call_inst->getMetadata(promoted_reduction))
+                        {
+                           return;
+                        }
+                        if(opaque_reduction)
+                        {
+                           report_fatal_error("OpenMP plug-in cannot promote multiple opaque reduction arrays in "
+                                              "one function", false);
+                        }
+                        opaque_reduction = promote_opaque_reduction(call_inst, kmp_to_remove);
+                        return;
+                     }
+#endif
                      LLVM_DEBUG(llvm::dbgs() << "   set reduce data arg: " << set_reduce_data_arg << "\n");
                      if(!isa<Instruction>(set_reduce_data_arg))
                      {
@@ -437,9 +637,13 @@ namespace llvm
                            continue;
                         }
                         assert(stores.size() == 1U && "Expected a single store to update local reduce data!");
-                        local_data_ptrs[local_data_idx] = dyn_cast<Instruction>((*stores.begin())->getOperand(0));
-                        assert(local_data_ptrs[local_data_idx] &&
-                               local_data_ptrs[local_data_idx]->getType()->isPointerTy());
+                        auto local_data_value = dyn_cast<Instruction>((*stores.begin())->getOperand(0));
+                        if(!local_data_value || !local_data_value->getType()->isPointerTy())
+                        {
+                           llvm::report_fatal_error("OpenMP plug-in cannot promote local reduce data: expected a "
+                                                    "pointer value", false);
+                        }
+                        local_data_ptrs[local_data_idx] = local_data_value;
                         // remove store operation which will become useless after promotion
                         kmp_to_remove.push_back((*stores.begin()));
                         LLVM_DEBUG(llvm::dbgs()
@@ -464,8 +668,9 @@ namespace llvm
 #else
                            if(val->getType()->isOpaquePointerTy())
                            {
-                              LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                              return;
+                              llvm::report_fatal_error("OpenMP plug-in cannot promote the local reduce data with "
+                                                       "opaque pointers: use a compiler older than clang-16 or "
+                                                       "avoid the reduction clause", false);
                            }
                            local_data_types.push_back(
                                cast<PointerType>(val->getType())->getNonOpaquePointerElementType());
@@ -529,6 +734,13 @@ namespace llvm
                   }
                   else if(calledFunName == TOSTRING(KMP_GET_REDUCE_DATA))
                   {
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+                     if(call_inst->getType()->isOpaquePointerTy())
+                     {
+                        opaque_fetches.push_back(call_inst);
+                        return;
+                     }
+#endif
                      if(local_data_struct_t)
                      {
                         const auto data_struct_ptr_t = PointerType::getUnqual(local_data_struct_t);
@@ -573,14 +785,38 @@ namespace llvm
          }
       }
 
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+      if(opaque_reduction)
+      {
+         for(auto* fetch : opaque_fetches)
+         {
+            promote_opaque_reduction_loads(fetch, opaque_reduction, kmp_to_remove);
+         }
+      }
+#endif
       for(auto instr : kmp_to_remove)
       {
          instr->replaceAllUsesWith(UndefValue::get(instr->getType()));
          instr->eraseFromParent();
       }
 
-      return !kmp_to_remove.empty();
+      return changed || !kmp_to_remove.empty();
    }
+
+#if PANDA_LLVM_CLANG_MAJOR >= 16
+   // Promoting the shared parameters of an .omp_outlined function requires the
+   // pointee type of its parameters, which is not available with opaque
+   // pointers. Note that promoteArgumentsCheck() also bails out on opaque
+   // pointers, so the analysis should never commit a promotion here: report an
+   // explicit error instead of returning false, because the caller would then
+   // rewrite the fork call against the unchanged function signature.
+   static void report_promote_unsupported_opaque()
+   {
+      llvm::report_fatal_error("OpenMP plug-in cannot promote the shared parameters of an .omp_outlined "
+                               "function with opaque pointers: use a compiler older than clang-16 or capture "
+                               "the local variable as firstprivate", false);
+   }
+#endif
 
    static bool fix_omp_outline_parameters(llvm::Function* function,
                                           std::map<Function*, std::set<uint64_t>>& argToPromote,
@@ -653,8 +889,7 @@ namespace llvm
 #else
                   if(I->getType()->isOpaquePointerTy())
                   {
-                     LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                     return false;
+                     report_promote_unsupported_opaque();
                   }
                   Params.push_back(llvm::cast<llvm::PointerType>(I->getType())->getNonOpaquePointerElementType());
 #endif
@@ -669,8 +904,7 @@ namespace llvm
 #else
                   if(I->getType()->isOpaquePointerTy())
                   {
-                     LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                     return false;
+                     report_promote_unsupported_opaque();
                   }
                   Type* AgTy = cast<PointerType>(I->getType())->getNonOpaquePointerElementType();
 #endif
@@ -687,8 +921,7 @@ namespace llvm
 #else
                            if(aT->isOpaquePointerTy())
                            {
-                              LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                              return false;
+                              report_promote_unsupported_opaque();
                            }
                            auto arrElType = aT->getNonOpaquePointerElementType();
 #endif
@@ -753,8 +986,7 @@ namespace llvm
 #else
                         if(I->getType()->getScalarType()->isOpaquePointerTy())
                         {
-                           LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                           return false;
+                           report_promote_unsupported_opaque();
                         }
                         Params.push_back(GetElementPtrInst::getIndexedType(
                             cast<PointerType>(I->getType()->getScalarType())->getNonOpaquePointerElementType(),
@@ -839,7 +1071,7 @@ namespace llvm
 #if PANDA_LLVM_CLANG_MAJOR < 16
       NF->getBasicBlockList().splice(NF->begin(), function->getBasicBlockList());
 #else
-      NF->splice(NF->begin(), NF);
+      NF->splice(NF->begin(), function);
 #endif
 
       // Replace the use of the promoted parameters in the function
@@ -856,14 +1088,19 @@ namespace llvm
 #if PANDA_LLVM_CLANG_MAJOR < 16
             Type* AgTy = cast<PointerType>(I->getType())->getElementType();
 #else
-            if(I->getType()->isOpaquePointerTy())
+            if(I->getType()->isOpaquePointerTy() && ArgNo > 1)
             {
-               LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-               return false;
+               llvm::report_fatal_error("OpenMP plug-in cannot rewrite the promoted parameters of an .omp_outlined "
+                                        "function with opaque pointers: use a compiler older than clang-16", false);
             }
-            Type* AgTy = cast<PointerType>(I->getType())->getNonOpaquePointerElementType();
+            // the shared parameters (ArgNo 0/1) are replaced by the context-switch tid
+            // intrinsics below and do not need the element type, which is not
+            // discoverable with opaque pointers
+            Type* AgTy =
+                I->getType()->isOpaquePointerTy() ? static_cast<Type*>(nullptr) :
+                                                    cast<PointerType>(I->getType())->getNonOpaquePointerElementType();
 #endif
-            if(AgTy->isStructTy())
+            if(AgTy && AgTy->isStructTy())
             {
                assert(ArgNo > 1);
                // In the callee, we create an alloca, and store each of the new incoming
@@ -975,6 +1212,12 @@ namespace llvm
                   }
                   else
                   {
+                     if(!ArgIndices)
+                     {
+                        llvm::report_fatal_error(
+                            "OpenMP plug-in cannot rewrite non-load uses of the shared parameters of an "
+                            ".omp_outlined function", false);
+                     }
                      assert(ArgIndices &&
                             "First and second argument of .omp.outlined not expected to be complex pointers");
                      GetElementPtrInst* GEP = cast<GetElementPtrInst>(I->user_back());
@@ -1481,7 +1724,7 @@ namespace llvm
                }
                else
                {
-#if PANDA_LLVM_CLANG_MAJOR < 19
+#if PANDA_LLVM_CLANG_MAJOR < 16
                   std::vector<Type*> Params;
                   auto ptrToFun = dyn_cast<PointerType>(V.getType());
                   auto ft = dyn_cast<FunctionType>(ptrToFun->getPointerElementType());
@@ -1502,6 +1745,39 @@ namespace llvm
                   FunctionType* nFTy = FunctionType::get(rt, Params, ft->isVarArg());
                   PointerType* nPTy = PointerType::get(nFTy, ptrToFun->getAddressSpace());
                   ArgTys.push_back(nPTy);
+#elif PANDA_LLVM_CLANG_MAJOR < 19
+                  if(cast<PointerType>(V.getType())->isOpaquePointerTy())
+                  {
+                     // with opaque pointers the element type of the microtask pointer is not
+                     // available (and not needed), so its plain pointer type is kept
+                     ArgTys.push_back(V.getType());
+                  }
+                  else
+                  {
+                     std::vector<Type*> Params;
+                     auto ptrToFun = dyn_cast<PointerType>(V.getType());
+                     auto ft = dyn_cast<FunctionType>(ptrToFun->getNonOpaquePointerElementType());
+                     unsigned prmNum = 0;
+                     for(auto prm : ft->params())
+                     {
+                        if(prmNum == 0 || prmNum == 1)
+                        {
+                           Params.push_back(prm->getNonOpaquePointerElementType());
+                        }
+                        else
+                        {
+                           Params.push_back(prm);
+                        }
+                        ++prmNum;
+                     }
+                     auto rt = ft->getReturnType();
+                     FunctionType* nFTy = FunctionType::get(rt, Params, ft->isVarArg());
+                     PointerType* nPTy = PointerType::get(nFTy, ptrToFun->getAddressSpace());
+                     ArgTys.push_back(nPTy);
+                  }
+#else
+                  // opaque pointers: the microtask keeps its plain pointer type
+                  ArgTys.push_back(V.getType());
 #endif
                }
             }
@@ -1579,15 +1855,26 @@ namespace llvm
             }
             else if(argNum == 2)
             {
-               auto bc = dyn_cast<BitCastOperator>(*It);
-               assert(bc);
-               omp_outlined = dyn_cast<Function>(bc->getOperand(0));
-               assert(omp_outlined);
+               // Codegen with typed pointers wraps the microtask in a bitcast constant
+               // expression, while codegen with opaque pointers passes the function directly
+               Value* microtask_operand = *It;
+               if(auto bc = dyn_cast<BitCastOperator>(microtask_operand))
+               {
+                  microtask_operand = bc->getOperand(0);
+               }
+               omp_outlined = dyn_cast<Function>(microtask_operand);
+               if(!omp_outlined)
+               {
+                  llvm::report_fatal_error(llvm::Twine(
+                      "Unsupported microtask operand for " TOSTRING(KMP_FORK_CALL)
+                      " (expected a function, possibly wrapped in a bitcast): ")
+                                           + microtask_operand->getName(), false);
+               }
                if(!computeArgToPromote)
                {
                   auto BFType = bambuFun->getFunctionType();
                   assert(BFType);
-                  auto BCI = Builder.CreateBitCast(bc->getOperand(0), BFType->getParamType(1));
+                  auto BCI = Builder.CreateBitCast(omp_outlined, BFType->getParamType(1));
                   Args.push_back(BCI);
                }
                else
@@ -1616,12 +1903,21 @@ namespace llvm
 #if PANDA_LLVM_CLANG_MAJOR < 16
                         Type* AgTy = cast<PointerType>((*It)->getType())->getElementType();
 #else
-                        if((*It)->getType()->isOpaquePointerTy())
+                        Type* AgTy = nullptr;
+                        if(auto alloca = dyn_cast<AllocaInst>(*It))
                         {
-                           LLVM_DEBUG(llvm::dbgs() << "OpenMP pluging does not support opaque pointers.\n");
-                           return false;
+                           // with opaque pointers the pointee type comes from the allocation
+                           AgTy = alloca->getAllocatedType();
                         }
-                        Type* AgTy = cast<PointerType>((*It)->getType())->getNonOpaquePointerElementType();
+                        else if(!(*It)->getType()->isOpaquePointerTy())
+                        {
+                           AgTy = cast<PointerType>((*It)->getType())->getNonOpaquePointerElementType();
+                        }
+                        if(!AgTy)
+                        {
+                           llvm::report_fatal_error("OpenMP plug-in cannot recover the type of a shared argument "
+                                                    "passed to " TOSTRING(KMP_FORK_CALL), false);
+                        }
 #endif
                         if(AgTy->isStructTy())
                         {
@@ -1694,7 +1990,7 @@ namespace llvm
 #endif
    {
       static char ID;
-
+      static const std::string openMpTaskEntryPointName;
       openmpBambu() : ModulePass(ID)
       {
          initializeLoopPassPass(*PassRegistry::getPassRegistry());
@@ -1732,6 +2028,33 @@ namespace llvm
       bool exec(Module& M)
       {
          bool changed = false;
+         const auto isTaskGraph = OpenMPTaskGraphInput.getValue();
+         if(isTaskGraph)
+         {
+#if PANDA_LLVM_CLANG_MAJOR == 19
+            LLVM_DEBUG(llvm::dbgs() << "Task graph application. Skipping OpenMP parallel for plugin\n");
+            return changed;
+#else
+            assert(false && "OpenMP task are supported with clang19 frontend");
+#endif
+         }
+
+         for(const auto& F : M)
+         {
+            for(const auto& BB : F)
+            {
+               for(const auto& I : BB)
+               {
+                  const auto* call = dyn_cast<CallInst>(&I);
+                  const auto* target = call ? call->getCalledFunction() : nullptr;
+                  if(target && target->getName() == "__kmpc_omp_task_alloc")
+                  {
+                     llvm::report_fatal_error("OpenMP tasks require the LLVM19 frontend (--compiler=I386_CLANG19)");
+                  }
+               }
+            }
+         }
+
          auto default_nt = llvm::ConstantInt::get(M.getContext(), llvm::APInt(32, dflt_nthreads));
          std::set<Function*> ompOutlinedList;
          std::map<Function*, std::set<uint64_t>> argToPromote;
@@ -1799,6 +2122,7 @@ namespace llvm
    };
 
    char openmpBambu::ID = 0;
+   const std::string openmpBambu::openMpTaskEntryPointName = "task_graph";
 
 } // namespace llvm
 

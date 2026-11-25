@@ -135,6 +135,9 @@ static std::string getDemangled(const std::string& declname)
 
 namespace llvm
 {
+   static cl::opt<bool> TaskGraphInputTFP("panda-task-graph-topfname", cl::init(false),
+                                          cl::desc("Preserve task-private function definitions"), cl::Hidden);
+
    static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the list of top function symbols"),
                                                    cl::value_desc("comma-separated list of top function symbols"));
    static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false),
@@ -180,7 +183,7 @@ namespace llvm
             {
                LLVM_DEBUG(llvm::dbgs() << "Checking function: " << fsymbol << " | " << fname << " (" << F->getLinkage()
                                        << ")\n");
-               if(is_builtin_fn(fsymbol) || is_builtin_fn(fname))
+               if(is_builtin_fn(fsymbol) || (!TaskGraphInputTFP && is_builtin_fn(fname)))
                {
                   LLVM_DEBUG(llvm::dbgs() << "  builtin\n");
                   preservedSyms.addSymbol(fsymbol);

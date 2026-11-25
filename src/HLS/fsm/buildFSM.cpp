@@ -388,10 +388,32 @@ DesignFlowStep_Status buildFSM::InternalExec()
          executing_ops[cstep].push_back(op);
          starting_ops[cstep].push_back(op);
          const auto initiation_time = HLS->allocation_information->get_initiation_time(fu_assigned, op);
+         const auto operation_bounded = HLS->allocation_information->is_operation_bounded(dfg, op, fu_assigned);
+         const auto model_latency = HLS->allocation_information->get_cycles(fu_assigned, op, dfg);
+         if(operation_bounded && initiation_time != 0 &&
+            (model_latency == 0 || initiation_time > model_latency))
+         {
+            THROW_ERROR("Invalid FU timing model for operation " + op_info.vertex_name + ": initiation interval " +
+                        STR(initiation_time) + " exceeds or has no explicit model latency " + STR(model_latency));
+         }
+         if(operation_bounded && initiation_time != 0 && initiation_time - 1u > delay)
+         {
+            THROW_ERROR("Invalid scheduled latency for operation " + op_info.vertex_name + ": initiation interval " +
+                        STR(initiation_time) + " exceeds scheduled inclusive latency " +
+                        STR(static_cast<unsigned long long>(delay) + 1ULL));
+         }
+         const auto hold_end = initiation_time == 0 ? end_step : cstep + initiation_time - 1u;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---initiation_time " + STR(initiation_time));
-         if(initiation_time == 0 || initiation_time > delay)
+         if(initiation_time == 0)
          {
             for(auto c = cstep + 1u; c <= end_step; c++)
+            {
+               executing_ops[c].push_back(op);
+            }
+         }
+         else
+         {
+            for(auto c = cstep + 1u; c <= hold_end; c++)
             {
                executing_ops[c].push_back(op);
             }
@@ -620,7 +642,18 @@ DesignFlowStep_Status buildFSM::InternalExec()
                      }
                   }
                   unsigned int call_BB_id = operations.get_bb_index();
-                  auto s_call = fsm_info->createState(call_ops, empty_ops, call_ops, call_BB_id, vertex_step_in,
+                  auto call_exec_ops = call_ops;
+                  for(const auto opv : global_executing_ops.at(s_curState))
+                  {
+                     const auto fu_type = HLS->Rfu->get_assign(opv);
+                     const auto initiation_time = HLS->allocation_information->get_initiation_time(fu_type, opv);
+                     if(HLS->allocation_information->is_operation_bounded(dfg, opv, fu_type) && initiation_time > 1u &&
+                        std::find(call_exec_ops.begin(), call_exec_ops.end(), opv) == call_exec_ops.end())
+                     {
+                        call_exec_ops.push_back(opv);
+                     }
+                  }
+                  auto s_call = fsm_info->createState(call_exec_ops, empty_ops, call_ops, call_BB_id, vertex_step_in,
                                                       vertex_step_out, LPII, isLP ? (max_cstep - min_cstep) : 0,
                                                       isLP && has_last_step_op, isLP, dfg);
                   if(isLP)
