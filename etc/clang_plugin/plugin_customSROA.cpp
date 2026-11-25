@@ -2787,8 +2787,8 @@ llvm::PassPluginLibraryInfo getCustomSROAInfo()
                  // Constant globals passed as parameters (hls4ml weights/biases) must be folded into the
                  // callee, otherwise they reach CSROA as bare non-partitioned pointers. IPSCCP does it for the
                  // internal functions, DFConstArgPass for the dataflow modules, which topfname keeps
-                 // external: there the folding happens inside the module, the parameter stays in the signature
-                 // and the call sites pass null, which DeadArgumentElimination then replaces with poison.
+                 // external: there the constant is folded into the module and the parameter is removed from
+                 // its signature and from its calls.
                  MPM.addPass(llvm::DFConstArgPass(topFunctionName_CSROA, pandaTempPath));
                  MPM.addPass(llvm::IPSCCPPass());
                  MPM.addPass(llvm::GlobalOptPass());
