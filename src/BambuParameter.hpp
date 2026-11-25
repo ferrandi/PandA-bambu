@@ -36,6 +36,7 @@ REF_FORWARD_DECL(BambuParameter);
 class BambuParameter : public Parameter
 {
  private:
+
    /**
     * Check the compatibility among the different parameters
     * and compute implicated parameters
@@ -85,6 +86,7 @@ class BambuParameter : public Parameter
     * Sets default values
     */
    void SetDefaults() override;
+
 };
 
 #endif

@@ -165,6 +165,7 @@
 #include "config_I386_LLVM9_LINK_EXE.hpp"
 #include "config_I386_LLVM9_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_PANDA_LIB_INSTALLDIR.hpp"
 
 #include <algorithm>
@@ -214,6 +215,22 @@ static std::string __escape_define(const std::string& str)
 
 namespace
 {
+   bool is_cpp_standard(const std::string& standard)
+   {
+      return standard.rfind("c++", 0) == 0 || standard.rfind("gnu++", 0) == 0;
+   }
+
+   bool is_openmp_runtime(const ParameterConstRef& param, const std::string& source)
+   {
+      return param->isOption(OPT_openmp) && param->getOption<bool>(OPT_openmp) &&
+             source == (relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename).string();
+   }
+
+   std::string standard_for_language(const std::string& standard, bool cpp_source)
+   {
+      return is_cpp_standard(standard) == cpp_source ? standard : cpp_source ? "c++14" : "c11";
+   }
+
    std::string trim_whitespace(const std::string& value)
    {
       const auto begin = value.find_first_not_of(" \t\r\n");
@@ -566,6 +583,10 @@ void CompilerWrapper::CompileFile(std::string& input_filename, const std::string
       command += " -c";
       command += " -D__NO_INLINE__"; /// needed to avoid problem with glibc inlines
       command += " " + compiler.extra_options;
+      if(is_openmp_runtime(Param, input_filename))
+      {
+         command += " -x c++";
+      }
 
       if((Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)))
       {
@@ -877,7 +898,7 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
       const auto local_compiler_mode = is_llvmir ?
                                            CM_COMPILER_OPT | (compiler_mode & ~(CM_ANALYZER_ALL | CM_LTO_FLAG)) :
                                            CM_COMPILER_STD | compiler_mode;
-      auto local_compiler_parameters = is_llvmir ? "" : frontend_compiler_parameters;
+      auto local_compiler_parameters = is_llvmir ? "" : GetFrontendCompilerParameters(source_file);
       if(!is_llvmir && isOpenmp)
       {
          local_compiler_parameters += " -fopenmp ";
@@ -892,7 +913,8 @@ void CompilerWrapper::FillIRManager(const ir_managerRef TM, std::vector<std::str
          auto bambu_ir_file = output_temporary_directory + "/" + leaf_name + STR_CST_bambu_ir_suffix;
          if(!std::filesystem::exists(bambu_ir_file))
          {
-            CompileFile(source_file, "", frontend_compiler_parameters, passes, CM_EMPTY, costTable);
+            auto empty_mode_parameters = GetFrontendCompilerParameters(source_file);
+            CompileFile(source_file, "", empty_mode_parameters, passes, CM_EMPTY, costTable);
             // source_file has been changed by previous call to CompileFile
             bambu_ir_file = output_temporary_directory + "/" + std::filesystem::path(source_file).filename().string() +
                             STR_CST_bambu_ir_suffix;
@@ -1065,13 +1087,6 @@ void CompilerWrapper::InitializeCompilerParameters()
       }
    }
 
-   /// Adding standard
-   if(Param->isOption(OPT_cc_standard))
-   {
-      auto standard = Param->getOption<std::string>(OPT_cc_standard);
-      frontend_compiler_parameters += "--std=" + standard + " ";
-   }
-
    if(Param->isOption(OPT_cc_E) && Param->getOption<bool>(OPT_cc_E))
    {
       frontend_compiler_parameters += "-E ";
@@ -1150,6 +1165,27 @@ void CompilerWrapper::InitializeCompilerParameters()
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized cc parameters");
+}
+
+std::string CompilerWrapper::GetFrontendCompilerParameters(const std::string& source_file) const
+{
+   auto parameters = frontend_compiler_parameters;
+   if(!Param->isOption(OPT_cc_standard))
+   {
+      return parameters;
+   }
+   auto standard = Param->getOption<std::string>(OPT_cc_standard);
+   const auto format = source_file.empty() ? Parameters_FileFormat::FF_UNKNOWN : Param->GetFileFormat(source_file, false);
+   const bool cpp_source = is_openmp_runtime(Param, source_file) ||
+                           cpp_input || format == Parameters_FileFormat::FF_CPP ||
+                           format == Parameters_FileFormat::FF_LLVM_CPP;
+   if(format == Parameters_FileFormat::FF_C || format == Parameters_FileFormat::FF_CPP ||
+      format == Parameters_FileFormat::FF_LLVM_CPP)
+   {
+      standard = standard_for_language(standard, cpp_source);
+   }
+   parameters += "--std=" + standard + " ";
+   return parameters;
 }
 
 void CompilerWrapper::SetBambuDefault()
@@ -1607,11 +1643,13 @@ void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) co
 }
 
 std::string CompilerWrapper::GetCompilerParameters(const std::string& extra_compiler_options,
-                                                   bool no_frontend_compiler_parameters) const
+                                                   bool no_frontend_compiler_parameters,
+                                                   const std::string& source_file) const
 {
    const auto compiler = GetCompiler();
    std::string command =
-       (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " + compiler_linking_parameters + " ";
+       (no_frontend_compiler_parameters ? "" : GetFrontendCompilerParameters(source_file)) + " " +
+       compiler_linking_parameters + " ";
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
    std::string local_compiler_extra_options = no_frontend_compiler_parameters ? "" : compiler.extra_options;
@@ -1655,9 +1693,11 @@ void CompilerWrapper::CreateExecutable(const std::vector<std::filesystem::path>&
          command += iquote;
       }
    }
-   if(!has_cpp_file)
+   if(Param->isOption(OPT_cc_standard))
    {
-      command = std::regex_replace(command, std::regex("[-]{1,2}std=c\\+\\+\\w+"), "");
+      const auto standard = standard_for_language(Param->getOption<std::string>(OPT_cc_standard),
+                                                  has_cpp_file || cpp_input);
+      command = std::regex_replace(command, std::regex("--std=[^ ]+"), "--std=" + standard);
    }
    command += srcs;
 

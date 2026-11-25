@@ -2297,6 +2297,8 @@ int BambuParameter::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, getOption<int>(OPT_output_level),
                   " ==  Bambu executed with: " + cat_args + "\n");
 
+   bool has_c_source = false;
+   bool has_cpp_source = false;
    while(optind < argc)
    {
       const std::string filename(argv[optind]);
@@ -2315,6 +2317,8 @@ int BambuParameter::Exec()
       {
          appendOption(OPT_input_file, filename);
          setOption(OPT_input_format, file_type);
+         has_c_source |= file_type == Parameters_FileFormat::FF_C;
+         has_cpp_source |= file_type == Parameters_FileFormat::FF_CPP;
       }
       else if(file_type == Parameters_FileFormat::FF_RAW ||
               (isOption(OPT_input_format) &&
@@ -2335,6 +2339,13 @@ int BambuParameter::Exec()
                            "Use --input-format explicitly for raw input or non-standard extensions.");
       }
       optind++;
+   }
+
+   if(has_c_source && has_cpp_source && !isOption(OPT_cc_xlang))
+   {
+      THROW_WARNING("Mixed C/C++ source inputs: Bambu selects the compiler driver from the last input file. "
+                    "Use -x c or -x c++ to specify one language for all user sources, "
+                    "or compile each language separately to LLVM bitcode.");
    }
 
    CheckParameters();
@@ -2868,6 +2879,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_cc_standard, "c11");
       }
    }
+
    /// Disable proxy when there are multiple top functions
    // TODO: check this, function proxies should work properly even with multiple top functions
    if(getOption<std::list<std::string>>(OPT_top_functions_names).size() > 1)
@@ -3371,8 +3383,12 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_openmp) && getOption<bool>(OPT_openmp) &&
       getOption<Parameters_FileFormat>(OPT_input_format) != Parameters_FileFormat::FF_RAW)
    {
-      appendOption(OPT_input_file,
-                   (relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename).string());
+      const auto runtime_file = relocate_install_path(PANDA_DATA_INSTALLDIR, true) / STR_CST_libopenmp_filename;
+      appendOption(OPT_input_file, runtime_file.string());
+      // The supported toolchains are distributed without an OpenMP header, so
+      // expose the bundled one: '#include <omp.h>' must resolve to the
+      // interface implemented by the runtime file appended above.
+      appendOption(OPT_cc_includes, "-isystem " + runtime_file.parent_path().string(), " ");
    }
    if((isOption(OPT_generate_vcd) && getOption<bool>(OPT_generate_vcd)) ||
       (isOption(OPT_discrepancy) && getOption<bool>(OPT_discrepancy)))

@@ -519,3 +519,48 @@ if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp_task AND TARGET clang_plu
               --plugin-dir "$<TARGET_FILE_DIR:clang_plugin_19_opt_openmp_task>")
    set_tests_properties(openmp_task_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 120)
 endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND PANDA_CLANG19_LLVMOPT)
+   add_test(NAME openmp_parallel_passes
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_parallel.py"
+              --clang "${PANDA_CLANG19_EXE}" --opt "${PANDA_CLANG19_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_19_opt_openmp>")
+   set_tests_properties(openmp_parallel_passes PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_16_opt_openmp AND PANDA_CLANG16_EXE AND PANDA_CLANG16_CLANGPP
+   AND PANDA_CLANG16_LLVMLINK AND PANDA_CLANG16_LLVMOPT)
+   add_test(NAME openmp_reduction_16
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_reduction.py"
+              --clang "${PANDA_CLANG16_EXE}" --cxx "${PANDA_CLANG16_CLANGPP}"
+              --llvm-link "${PANDA_CLANG16_LLVMLINK}" --opt "${PANDA_CLANG16_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_16_opt_openmp>" --pointer-mode typed)
+   set_tests_properties(openmp_reduction_16 PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
+if(BUILD_TESTING AND TARGET clang_plugin_19_opt_openmp AND PANDA_CLANG19_EXE AND PANDA_CLANG19_CLANGPP
+   AND PANDA_CLANG19_LLVMLINK AND PANDA_CLANG19_LLVMOPT)
+   add_test(NAME openmp_reduction_19
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/clang_plugins/openmp_parallel/test_openmp_reduction.py"
+              --clang "${PANDA_CLANG19_EXE}" --cxx "${PANDA_CLANG19_CLANGPP}"
+              --llvm-link "${PANDA_CLANG19_LLVMLINK}" --opt "${PANDA_CLANG19_LLVMOPT}"
+              --plugin "$<TARGET_FILE:clang_plugin_19_opt_openmp>" --pointer-mode opaque)
+   set_tests_properties(openmp_reduction_19 PROPERTIES LABELS "frontend;openmp" TIMEOUT 180)
+endif()
+
+if(BUILD_TESTING AND TARGET bambu)
+   add_test(NAME mdpi_testbench_flags
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_mdpi_testbench_flags.py"
+              --makefile "${CMAKE_SOURCE_DIR}/etc/libmdpi/Makefile.mk" --cc "${CMAKE_C_COMPILER}")
+   set_tests_properties(mdpi_testbench_flags PROPERTIES LABELS "frontend" TIMEOUT 120)
+
+   # integration test driving the real front-end: it runs the bambu of this
+   # build's installation (cmake --install), since the build-tree binary lacks
+   # the installed plug-ins and libraries; the test skips when that
+   # installation does not exist yet
+   add_test(NAME frontend_std
+      COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/panda_regressions/hls/frontend_std/test_frontend_std.py"
+              --bambu "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/bambu")
+   set_tests_properties(frontend_std PROPERTIES LABELS "frontend" TIMEOUT 1800
+      SKIP_RETURN_CODE 77)
+endif()

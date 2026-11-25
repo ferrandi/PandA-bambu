@@ -24,8 +24,16 @@ trap exit_time EXIT
 
 CC="$(bambu_results /application/sources@compiler)"
 CFLAGS=`echo $(bambu_results /application/sources@cflags) | envsubst`
+CPP_CFLAGS="$(bambu_results /application/sources@cpp_cflags 2>/dev/null || true)"
+if [ -z "${CPP_CFLAGS}" ]; then
+  CPP_CFLAGS="${CFLAGS}"
+else
+  CPP_CFLAGS=`echo "${CPP_CFLAGS}" | envsubst`
+fi
 CFLAGS+=" -fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing"
 CFLAGS+=" -D__builtin_bambu_time_start\(\)= -D__builtin_bambu_time_stop\(\)= -D__BAMBU_SIM__"
+CPP_CFLAGS+=" -fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing"
+CPP_CFLAGS+=" -D__builtin_bambu_time_start\(\)= -D__builtin_bambu_time_stop\(\)= -D__BAMBU_SIM__"
 
 case "${CFLAGS}" in
   *-m32*) BEH_CFLAGS+=" -D__M32" ;;
@@ -56,6 +64,7 @@ make -f "${BAMBU_HLS}/share/panda/libmdpi/Makefile.mk" \
   CC="${CC}" \
   BEH_CC="${BEH_CC}" \
   CFLAGS="${CFLAGS}" \
+  CPP_CFLAGS="${CPP_CFLAGS}" \
   BEH_CFLAGS="${BEH_CFLAGS}" \
   TB_CFLAGS="$(bambu_results /application/testbench@cflags)" \
   RAMULATOR_ENABLED="$(bambu_results /application/testbench@ramulator)" \
