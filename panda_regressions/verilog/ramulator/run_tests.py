@@ -114,7 +114,7 @@ def main():
                 break
     if not error:
         clients = {}
-        for name in ('memory_contract', 'clock_contract', 'plain_contract', 'completion_error'):
+        for name in ('memory_contract', 'clock_contract', 'plain_contract', 'completion_error', 'wide_contract'):
             clients[name] = directory / name
             execute(['gcc', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                      HERE / f'{name}.c', '-o', clients[name]], directory)
@@ -159,6 +159,17 @@ def main():
             results.append((name, time.monotonic()-start, error, case_dir))
 
         contract('memory-contract', 'memory_contract')
+        # Keep one HBM controller and one entry per queue: a wide logical
+        # transfer must survive repeated native backpressure without duplicates.
+        wide_config = directory / 'wide-hbm.yaml'
+        native = (ROOT / 'etc/libmdpi/configs/boards/alveo-u55c.yaml').read_text()
+        native = native.split('  - impl: HBM12', 2)
+        wide_config.write_text(native[0] + '  - impl: HBM12' +
+                              native[1].replace('read_buffer_size: 32', 'read_buffer_size: 1')
+                              .replace('write_buffer_size: 32', 'write_buffer_size: 1'))
+        contract('wide-native-transfers', 'wide_contract', config=wide_config,
+                 diagnostic='[MDPI-NATIVE] ID=0,READS=122,WRITES=68')
+
         contract('completion-null-buffer', 'completion_error', updates={'MDPI_TEST_NULL_COMPLETION': '1'},
                  failure=True, diagnostic='Null data buffer for Ramulator completion polling')
         contract('completion-invalid-interface', 'completion_error', failure=True,
@@ -328,6 +339,28 @@ def main():
                     error = str(exception)
                 print('FAIL' if error else 'PASS', name, flush=True)
                 results.append((name, time.monotonic()-start, error, case_dir))
+    if not args.contract_only and (directory / 'mdpi.o').exists():
+        for axi in (0, 1):
+            name = f'wide-transport-{axi}'
+            case_dir = directory / name
+            case_dir.mkdir()
+            start = time.monotonic()
+            error = None
+            try:
+                execute([str(verilator), '--binary', '--timing', '-Wno-fatal', '--top-module', 'tb_transport',
+                         f'-GAXI={axi}', '-GWIDTH=512', '--Mdir', case_dir / 'obj', directory / 'models.sv',
+                         HERE / 'tb_transport.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
+                case_env = env.copy()
+                case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / 'obj/Vtb_transport')
+                case_env['RAMULATOR2_CONFIG'] = str(wide_config)
+                execute([directory / 'host'], case_dir, env=case_env, timeout=60)
+                log = (case_dir / 'run.log').read_text(errors='replace')
+                if '[MDPI-NATIVE] ID=0,READS=2,WRITES=2' not in log:
+                    raise ValueError('Wide RTL transfer did not issue two native transactions per operation')
+            except (OSError, subprocess.SubprocessError) as exception:
+                error = str(exception)
+            print('FAIL' if error else 'PASS', name, flush=True)
+            results.append((name, time.monotonic()-start, error, case_dir))
     if not args.contract_only:
         adapters = directory / 'adapters.sv'
         adapters.write_text(extract('MinimalAXI4Adapter', 'NC_AXI_IPs.xml') +

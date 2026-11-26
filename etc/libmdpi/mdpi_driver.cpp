@@ -951,7 +951,46 @@ namespace
          uint64_t cycle;
          std::vector<byte_t> data;
          bool completed = false;
+         size_t submitted = 0;
+         size_t outstanding = 0;
       };
+
+      // A refused logical request is retried by the TB. Retain only requests
+      // with at least one accepted native transaction, and resume their suffix.
+      std::map<uint8_t, int> pending_reads;
+      struct pending_write_t
+      {
+         ptr_t addr = 0;
+         uint8_t channel = 0;
+         uint16_t bitsize = 0;
+         std::vector<byte_t> data;
+         size_t submitted = 0;
+      } pending_write;
+      uint64_t native_reads = 0;
+      uint64_t native_writes = 0;
+
+      size_t chunk_size(ptr_t addr, size_t remaining) const
+      {
+         const auto native_size = static_cast<size_t>(memory->get_tx_bytes());
+         return std::min(remaining, native_size - static_cast<size_t>(addr % native_size));
+      }
+
+      bool submit_read(int tag)
+      {
+         auto& request = requests.at(tag);
+         while(request.submitted < request.data.size())
+         {
+            const auto addr = request.addr + request.submitted;
+            const auto size = chunk_size(addr, request.data.size() - request.submitted);
+            if(!frontend->receive_external_requests(
+                   0, addr, 0, [this, tag](Ramulator::Request&) { complete(tag); }, size))
+               return false;
+            request.submitted += size;
+            ++request.outstanding;
+            ++native_reads;
+         }
+         return true;
+      }
 
       // Entries live until the TB collects the completion, including their tags.
       std::map<int, request_t> requests;
@@ -1110,6 +1149,13 @@ MemorySystem:
             std::abort();
          }
          auto& request = it->second;
+         if(!request.outstanding)
+         {
+            if_error("Ramulator completion without an outstanding native read.\n");
+            std::abort();
+         }
+         --request.outstanding;
+         if(request.outstanding || request.submitted != request.data.size()) return;
          request.completed = true;
          completions[request.channel].push(tag);
 #if __M_OUT_LVL > 4
@@ -1171,6 +1217,8 @@ MemorySystem:
          {
             throw std::runtime_error("Ramulator factory did not create the frontend and memory system");
          }
+         if(memory->get_tx_bytes() <= 0)
+            throw std::invalid_argument("Ramulator requires a positive native transaction size");
          frontend->connect_memory_system(memory.get());
          memory->connect_frontend(frontend.get());
          const auto to_femtoseconds = [](long double period_ns) -> uint64_t {
@@ -1203,6 +1251,9 @@ MemorySystem:
 
       ~mem_interface_ramulator() override
       {
+         report("[MDPI-NATIVE] ID=%u,READS=%llu,WRITES=%llu\n",
+                static_cast<unsigned>(_idx), static_cast<unsigned long long>(native_reads),
+                static_cast<unsigned long long>(native_writes));
          report("[MDPI-MEMORY] ID=%u,CYCLES=%llu,DRAM_TICKS=%llu,READS=%llu,COMPLETED=%llu,WRITES=%llu\n",
                  static_cast<unsigned>(_idx), static_cast<unsigned long long>(current_cycle),
                  static_cast<unsigned long long>(dram_ticks), static_cast<unsigned long long>(reads_issued),
@@ -1213,6 +1264,8 @@ MemorySystem:
       {
          // Discard callbacks with their owning timing model before reusing tags.
          frontend.reset(); memory.reset(); requests.clear(); completions.clear();
+         pending_reads.clear(); pending_write = {};
+         native_reads = 0; native_writes = 0;
          next_tag = 1; current_cycle = 0; clock_phase_fs = 0;
          dram_ticks = 0; reads_issued = 0; reads_completed = 0; writes_issued = 0;
          const auto config = Ramulator::Bambu::factory_configuration(native_config_cache);
@@ -1255,6 +1308,17 @@ MemorySystem:
             if_error("Invalid asynchronous read size: %u bits.\n", bitsize);
             return IF_ERROR;
          }
+         const auto pending = pending_reads.find(static_cast<uint8_t>(channel));
+         if(pending != pending_reads.end())
+         {
+            const auto tag = pending->second;
+            const auto& request = requests.at(tag);
+            if(request.addr != addr || request.bitsize != bitsize) return 0;
+            if(!submit_read(tag)) return 0;
+            pending_reads.erase(pending);
+            ++reads_issued;
+            return tag;
+         }
          const auto initial_tag = next_tag;
          while(requests.count(next_tag))
          {
@@ -1279,9 +1343,14 @@ MemorySystem:
             request.data.back() &= static_cast<byte_t>((1U << (bitsize % 8)) - 1);
          }
          requests.emplace(tag, std::move(request));
-         if(!frontend->receive_external_requests(0, addr, 0, [this, tag](Ramulator::Request&) { complete(tag); }, std::min<int>((bitsize + 7) / 8, memory->get_tx_bytes())))
+         if(!submit_read(tag))
          {
-            requests.erase(tag);
+            if(requests.at(tag).submitted)
+            {
+               pending_reads.emplace(static_cast<uint8_t>(channel), tag);
+               next_tag = tag == INT_MAX ? 1 : tag + 1;
+            }
+            else requests.erase(tag);
             return 0;
          }
          next_tag = tag == INT_MAX ? 1 : tag + 1;
@@ -1315,7 +1384,7 @@ MemorySystem:
          return tag;
       }
 
-      int write_request(bptr_t data, uint16_t bitsize, ptr_t addr)
+      int write_request(bptr_t data, uint16_t bitsize, ptr_t addr, uint8_t channel)
       {
          if(!data || !valid_size(bitsize))
          {
@@ -1327,12 +1396,30 @@ MemorySystem:
             if_error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
             return IF_ERROR;
          }
-         if(!frontend->receive_external_requests(1, addr, 0, [](Ramulator::Request&) {},
-                                                  std::min<int>((bitsize + 7) / 8, memory->get_tx_bytes())))
+         const auto bytes = static_cast<size_t>((bitsize + 7) / 8);
+         if(pending_write.submitted)
          {
-            return 0;
+            if(pending_write.channel != channel || pending_write.addr != addr || pending_write.bitsize != bitsize ||
+               std::memcmp(pending_write.data.data(), data, bytes)) return 0;
          }
-         write_memory(data, bitsize, addr);
+         else
+         {
+            pending_write.addr = addr;
+            pending_write.channel = channel;
+            pending_write.bitsize = bitsize;
+            pending_write.data.assign(data, data + bytes);
+         }
+         while(pending_write.submitted < bytes)
+         {
+            const auto chunk_addr = addr + pending_write.submitted;
+            const auto size = chunk_size(chunk_addr, bytes - pending_write.submitted);
+            if(!frontend->receive_external_requests(1, chunk_addr, 0, [](Ramulator::Request&) {}, size))
+               return 0;
+            pending_write.submitted += size;
+            ++native_writes;
+         }
+         write_memory(pending_write.data.data(), bitsize, addr);
+         pending_write = {};
          ++writes_issued;
          return 1;
       }
@@ -1842,7 +1929,8 @@ static void* __m_driver_loop(void*)
                {
                   __m_ipc_operation.payload.interface.info = memory->write_request(
                       __m_ipc_operation.payload.interface.buffer, __m_ipc_operation.payload.interface.bitsize,
-                      __m_ipc_operation.payload.interface.addr);
+                      __m_ipc_operation.payload.interface.addr,
+                      static_cast<uint8_t>(__m_ipc_operation.payload.interface.info));
                }
             }
             else

@@ -3299,12 +3299,12 @@ import &quot;DPI-C&quot; function int m_read_complete_ch
     (input shortint unsigned id,
      input byte unsigned channel,
      output logic [4095 : 0] data);
-import &quot;DPI-C&quot; function int m_write_request
+import &quot;DPI-C&quot; function int m_write_request_ch
     (input shortint unsigned id,
      input logic [4095 : 0] data,
      input shortint unsigned bitsize,
      input ptr_t addr,
-     input byte unsigned shift);
+     input byte unsigned shift, input byte unsigned channel);
 import &quot;DPI-C&quot; function void m_memory_reset();
 import &quot;DPI-C&quot; function void m_memory_tick
     (input longint unsigned cycle);
@@ -3539,7 +3539,7 @@ generate
           begin
             data = 0;
             data[BITSIZE_Wdata - 1 : 0] = request_head.data;
-            result = m_write_request(index, data, request_head.size, request_head.addr, 0);
+            result = m_write_request_ch(index, data, request_head.size, request_head.addr, 0, i[7:0]);
             if(result &gt; 0)
             begin
               request_pop = 1;
@@ -3827,9 +3827,9 @@ import &quot;DPI-C&quot; function int m_read_request(input shortint unsigned id,
     input shortint unsigned bitsize, input ptr_t addr, input byte cmd);
 import &quot;DPI-C&quot; function int m_read_complete_ch(input shortint unsigned id,
     input byte unsigned channel, output logic [4095:0] data);
-import &quot;DPI-C&quot; function int m_write_request(input shortint unsigned id,
+import &quot;DPI-C&quot; function int m_write_request_ch(input shortint unsigned id,
     input logic [4095:0] data, input shortint unsigned bitsize,
-    input ptr_t addr, input byte unsigned shift);
+    input ptr_t addr, input byte unsigned shift, input byte unsigned channel);
 import &quot;DPI-C&quot; function void m_memory_reset();
 import &quot;DPI-C&quot; function void m_memory_tick(input longint unsigned cycle);
 initial
@@ -3969,7 +3969,7 @@ begin : ramulator_backend
       if(length != 0)
       begin
         data = 0; data[BITSIZE_data-1:0] = w_data_reg[w_head_reg] &gt;&gt; (8 * offset);
-        result = m_write_request(index, data, 8 * length, address + offset, 0);
+        result = m_write_request_ch(index, data, 8 * length, address + offset, 0, AXI_PORT_ID[7:0]);
         if(result &lt; 0) $fatal(1, &quot;Ramulator AXI write request failed&quot;);
         if(result &gt; 0)
         begin

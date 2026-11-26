@@ -362,6 +362,12 @@ int m_read_complete_ch(mdpi_idx_t id, uint8_t channel, svLogicVecVal* data)
 
 int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, uint16_t bitsize, ptr_t addr, uint8_t shift)
 {
+   return m_write_request_ch(id, data, bitsize, addr, shift, 0);
+}
+
+int m_write_request_ch(mdpi_idx_t id, const svLogicVecVal* data, uint16_t bitsize, ptr_t addr,
+                       uint8_t shift, uint8_t channel)
+{
    int retval;
    uint16_t i;
    const uint16_t bsize = (bitsize / 8) + ((bitsize % 8) != 0);
@@ -374,7 +380,7 @@ int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, uint16_t bitsize, 
    __ipc_reserve();
    __m_ipc_operation.type = op_type;
    __m_ipc_operation.payload.interface.id = id;
-   __m_ipc_operation.payload.interface.info = shift;
+   __m_ipc_operation.payload.interface.info = channel;
    __m_ipc_operation.payload.interface.addr = addr;
    __m_ipc_operation.payload.interface.bitsize = bitsize;
 #pragma unroll(4)

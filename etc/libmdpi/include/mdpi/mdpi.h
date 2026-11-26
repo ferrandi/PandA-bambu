@@ -29,7 +29,9 @@ extern "C"
    DPI_DLLESPEC void m_builtin_exit(int status);
 
    // Non-blocking Ramulator requests: >0 accepted (read tag), 0 rejected,
-   // <0 invalid. A rejected request has no memory side effects; the TB retries.
+   // <0 invalid. On 0 the TB retries the same request on the same channel:
+   // native timing transactions may already be submitted, while functional
+   // writes commit only when the complete logical request is accepted.
    // Completion polling returns at most one tag and its original-sized payload.
    // Its data argument is a 4096-bit packed logic vector, cleared on every poll.
    // The write shift argument is reserved and must be zero.
@@ -38,6 +40,10 @@ extern "C"
    DPI_DLLESPEC int m_read_complete_ch(mdpi_idx_t id, unsigned char channel, svLogicVecVal* data);
    DPI_DLLESPEC int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, unsigned short bitsize, ptr_t addr,
                                    unsigned char shift);
+   // Select the retry owner for independent TB channels; the legacy entry
+   // above uses channel zero.
+   DPI_DLLESPEC int m_write_request_ch(mdpi_idx_t id, const svLogicVecVal* data, unsigned short bitsize,
+                                      ptr_t addr, unsigned char shift, unsigned char channel);
 
    // Advance every independent memory once to the shared accelerator cycle.
    DPI_DLLESPEC void m_memory_tick(unsigned long long cycle);
