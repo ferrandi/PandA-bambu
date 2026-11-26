@@ -11,6 +11,12 @@ int main(void)
    {
       sleep(1);
    }
+   if(getenv("MDPI_TEST_PREREADY_CLOCK"))
+   {
+      // Production HLS RTL may reset/tick before its control block calls READY.
+      m_memory_reset();
+      m_memory_tick(2000);
+   }
    svLogicVecVal data[128] = {{0}};
    assert((m_next(1) & 255) == 2);
    int tag = m_read_request(0, 32, 0x40000000, 0);

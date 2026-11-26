@@ -24,6 +24,7 @@ mkdir -p "$out"
 # out of the submodule. No legacy-layout fallback: CI tests the public revision's
 # standard installation contract.
 cmake -S "$src" -B "$out/build" -DCMAKE_BUILD_TYPE=Release \
+    -DRAMULATOR_PYTHON_BINDINGS=OFF -DYAML_CPP_BUILD_TESTS=OFF -DFMT_TEST=OFF \
     -DCMAKE_INSTALL_PREFIX="$out/install" 2>&1 | tee "$out/configure.log"
 cmake --build "$out/build" --parallel "$jobs" 2>&1 | tee "$out/build.log"
 cmake --install "$out/build" 2>&1 | tee "$out/install.log"

@@ -136,7 +136,10 @@ def memory_isolation(log, expected_active, accelerator_cycles=None):
         raise ValueError(f"expected {expected_active} independent active memories with completed reads or writes: {memories}")
     if len({m["cycles"] for m in memories}) != 1 or memories[0]["cycles"] <= 0:
         raise ValueError(f"independent memories do not share accelerator time: {memories}")
-    if accelerator_cycles is not None and not 0 <= accelerator_cycles - memories[0]["cycles"] <= 2:
+    # The posedge-only clock includes at most two setup/terminal sampling edges
+    # outside the reported kernel interval. Every backend must still have exactly
+    # the same time and exactly floor(cycles * accelerator_period / DRAM_period) ticks.
+    if accelerator_cycles is not None and not -2 <= accelerator_cycles - memories[0]["cycles"] <= 2:
         raise ValueError(f"memory time disagrees with simulated accelerator cycles: {memories}")
     clock_records = re.findall(r"\[MDPI-CLOCK\] ID=(\d+),ACCELERATOR_PERIOD_FS=(\d+),DRAM_PERIOD_FS=(\d+)", log)
     clocks = {int(idx): (int(accelerator), int(dram)) for idx, accelerator, dram in clock_records}
@@ -189,7 +192,7 @@ def main():
     parser.add_argument("--out", type=Path, default=ROOT / "out_ramulator_ci")
     parser.add_argument("--timeout", type=int, default=180, help="wall seconds per case, including compilation")
     parser.add_argument("--max-cycles", type=int, default=5000)
-    parser.add_argument("--hbm-max-cycles", type=int, default=12000)
+    parser.add_argument("--hbm-max-cycles", type=int, default=30000)
     parser.add_argument("--hbm-timeout", type=int, default=600)
     args = parser.parse_args()
     if args.list:

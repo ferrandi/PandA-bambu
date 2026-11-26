@@ -29,6 +29,7 @@
 #include "mdpi_wrapper_c_writer.hpp"
 
 #include "Parameter.hpp"
+#include "ramulator_model.hpp"
 #include "behavioral_helper.hpp"
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
@@ -50,6 +51,28 @@
 #include <vector>
 
 REF_FORWARD_DECL(application_manager);
+
+namespace
+{
+   std::string ramulator_config_literal(const std::filesystem::path& path)
+   {
+      if(path.empty()) return "nullptr";
+      std::string literal = "\"";
+      for(const char character : path.string())
+      {
+         const auto byte = static_cast<unsigned char>(character);
+         if(byte >= 32 && byte <= 126 && character != '\\' && character != '\"') literal += character;
+         else
+         {
+            literal += '\\';
+            literal += "01234567"[(byte >> 6) & 7];
+            literal += "01234567"[(byte >> 3) & 7];
+            literal += "01234567"[byte & 7];
+         }
+      }
+      return literal + "\"";
+   }
+}
 
 MdpiWrapperCWriter::MdpiWrapperCWriter(const HLS_managerConstRef _HLSMgr,
                                        const InstructionWriterRef _instruction_writer,
@@ -614,8 +637,10 @@ void MdpiWrapperCWriter::InternalWriteFile()
        Param->isOption(OPT_channels_number) ? Param->getOption<unsigned int>(OPT_channels_number) : 1u;
    if(Param->getOption<bool>(OPT_enable_ramulator))
    {
+      const auto model = resolve_ramulator_model(Param);
       args_set += "__m_interface_mem_ramulator(" + std::to_string(clock_period) + ", " +
-                  std::to_string(channels_number) + ");\n";
+                  std::to_string(channels_number) + ", " +
+                  ramulator_config_literal(model.configuration) + ");\n";
    }
    else
    {
@@ -729,7 +754,9 @@ void MdpiWrapperCWriter::InternalWriteFile()
           static_cast<unsigned int>(param_idx + 1 + (global_use_banked ? 1 : 0)));
       for(size_t i = 0; i < dedicated_memories.size(); ++i)
       {
-         indented_output_stream->Append("__m_interface_mem_ramulator(" + std::to_string(clock_period) + ", 1);\n");
+         const auto model = resolve_ramulator_model(Param);
+         indented_output_stream->Append("__m_interface_mem_ramulator(" + std::to_string(clock_period) + ", 1, " +
+             ramulator_config_literal(model.configuration) + ");\n");
       }
    }
 

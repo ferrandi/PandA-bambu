@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!-- Structural example only: these are not measured board latencies. -->
+<ramulator_configuration schema_version="1" status="experimental" profile="alveo-u55c">
+  <identity board_model="alveo-u55c" fpga_speed_grade="unknown"
+            dram_model="unknown" dram_speed_grade="unknown" configuration_id="example"/>
+  <clocks_hz accelerator="100000000" axi_frontend="100000000" dram="1000000000"/>
+  <delay_ns read_forward="10" write_forward="10" read_return="10" write_return="10"/>
+  <hbm_switch enabled="false"/>
+  <controller_configuration>
+    <mode hbm_global_addressing="false"/>
+  </controller_configuration>
+  <provenance><note>Format example; replace identity, clocks, configuration and times with acquired evidence.</note></provenance>
+</ramulator_configuration>

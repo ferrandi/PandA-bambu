@@ -41,6 +41,8 @@ extern "C"
 
    // Advance every independent memory once to the shared accelerator cycle.
    DPI_DLLESPEC void m_memory_tick(unsigned long long cycle);
+   // Reset timing queues of every backend, preserving functional memory bytes.
+   DPI_DLLESPEC void m_memory_reset(void);
 
 #ifdef __cplusplus
 }

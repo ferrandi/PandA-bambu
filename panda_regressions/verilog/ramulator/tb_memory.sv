@@ -1,6 +1,6 @@
 // Copyright (C) 2026 Politecnico di Milano
 // SPDX-License-Identifier: MIT
-module tb_memory #(parameter DEPTH = 2);
+module tb_memory #(parameter DEPTH = 2, FORWARD = 1, RETURN = 1);
   import "DPI-C" function int unsigned m_next(input int unsigned state);
   reg clock = 0;
   always #5 clock = !clock;
@@ -20,11 +20,15 @@ module tb_memory #(parameter DEPTH = 2);
   integer largest_tag [0:1];
   integer cycle = 0;
   integer completed [0:1];
+  integer outstanding [0:1];
+  integer peak_outstanding [0:1];
   reg pending [0:1][0:255];
   reg [31:0] expected [0:1][0:255];
   reg reading [0:1][0:255];
 
   TestbenchMEMRamulatorIntegrated #(.index(0), .QUEUE_SIZE(DEPTH),
+    .READ_FORWARD(FORWARD), .WRITE_FORWARD(FORWARD),
+    .READ_RETURN(RETURN), .WRITE_RETURN(RETURN),
     .BITSIZE_Mout_oe_ram(2), .BITSIZE_Mout_we_ram(2),
     .BITSIZE_Mout_addr_ram(128), .BITSIZE_Mout_Wdata_ram(64), .BITSIZE_Mout_data_ram_size(12),
     .BITSIZE_Mout_tag(16), .BITSIZE_M_tag(16), .BITSIZE_M_DataRdy(2), .BITSIZE_M_Rdata_ram(64),
@@ -55,6 +59,7 @@ module tb_memory #(parameter DEPTH = 2);
           t = tag[channel*8+:8];
           if(pending[channel][t]) $fatal(1, "duplicate request tag");
           pending[channel][t] = 1;
+          outstanding[channel] = outstanding[channel] + 1;
           reading[channel][t] = oe[channel];
           expected[channel][t] = ((addr[channel*64+:64] - 64'h40000000) / 4) ^ 32'h13579bdf;
         end
@@ -69,7 +74,13 @@ module tb_memory #(parameter DEPTH = 2);
           if(t > largest_tag[channel]) largest_tag[channel] = t;
           pending[channel][t] = 0;
           completed[channel] = completed[channel] + 1;
+          outstanding[channel] = outstanding[channel] - 1;
         end
+        if(outstanding[channel] < 0 || outstanding[channel] > DEPTH)
+          $fatal(1, "minimal total outstanding ch=%0d count=%0d limit=%0d",
+                 channel, outstanding[channel], DEPTH);
+        if(outstanding[channel] > peak_outstanding[channel])
+          peak_outstanding[channel] = outstanding[channel];
       end
     end
   end
@@ -114,6 +125,8 @@ module tb_memory #(parameter DEPTH = 2);
     for(channel = 0; channel < 2; channel = channel + 1)
     begin
       completed[channel] = 0;
+      outstanding[channel] = 0;
+      peak_outstanding[channel] = 0;
       sent[channel] = 1;
       largest_tag[channel] = 0;
       for(t = 0; t < 256; t = t + 1) pending[channel][t] = 0;
@@ -126,6 +139,10 @@ module tb_memory #(parameter DEPTH = 2);
     wait(completed[0] == 200 && completed[1] == 200);
     repeat(5) @(negedge clock);
     done_port = 1;
+    for(channel = 0; channel < 2; channel = channel + 1)
+      if(outstanding[channel] != 0 || peak_outstanding[channel] != DEPTH)
+        $fatal(1, "minimal total credit coverage ch=%0d pending=%0d peak=%0d limit=%0d",
+               channel, outstanding[channel], peak_outstanding[channel], DEPTH);
     if(stalled_requests == 0 || stalled_responses == 0) $fatal(1, "missing minimal saturation coverage");
     if(DEPTH == 64 && out_of_order == 0) $fatal(1, "missing out-of-order response coverage");
     $display("PASS real Ramulator minimal multichannel stalled responses");

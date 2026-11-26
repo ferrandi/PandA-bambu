@@ -95,3 +95,17 @@ add_dependencies(ext
    panda_ext_glaze
    panda_ext_buddy
 )
+
+# Native Ramulator templates are YAML; Bambu-specific records remain XML.
+include(FetchContent)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(panda_yaml_cpp
+   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+   GIT_TAG 56e3bb550c91fd7005566f19c079cb7a503223cf)
+FetchContent_MakeAvailable(panda_yaml_cpp)
+set_property(TARGET yaml-cpp APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+   "$<BUILD_INTERFACE:${panda_yaml_cpp_SOURCE_DIR}/include>")
+install(FILES "${panda_yaml_cpp_SOURCE_DIR}/LICENSE"
+        DESTINATION "${PANDA_LICENSING_INSTALLDIR_REL}/yaml-cpp")

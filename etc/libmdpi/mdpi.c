@@ -37,6 +37,12 @@
    }
 
 static int __fini_trigger = 1;
+// Clocked RTL can run before the control TB publishes READY, and on the edge
+// that receives END. Timing RPCs are valid only inside a live simulation.
+static int __m_memory_ready = 0;
+static int __m_memory_cycle_valid = 0;
+static int __m_memory_reset_sent = 0;
+static unsigned long long __m_memory_cycle = 0;
 static clock_t __m_runtime;
 
 static void __attribute__((constructor)) __m_init()
@@ -63,6 +69,7 @@ static void __attribute__((destructor)) __m_fini()
 
 int m_fini()
 {
+   __m_memory_ready = 0;
    int retval;
 
    // NOTE: here it is "safe" to read from __m_ipc_operation without lock since this should be the last communication
@@ -117,6 +124,9 @@ unsigned int m_next(unsigned int state)
    assert((state_next == MDPI_STATE_SETUP || state_next == MDPI_STATE_END || state_next == MDPI_STATE_ABORT) &&
           "Unexpected state required.");
 
+   __m_memory_ready = state_next == MDPI_STATE_SETUP;
+   __m_memory_cycle_valid = 0;
+   __m_memory_reset_sent = 0;
    return (retval << 8) | (state_next & 0xFF);
 }
 
@@ -383,8 +393,26 @@ int m_write_request(mdpi_idx_t id, const svLogicVecVal* data, uint16_t bitsize, 
    return retval;
 }
 
+void m_memory_reset(void)
+{
+   if(!__m_memory_ready || __m_memory_reset_sent) return;
+   __ipc_reserve();
+   __m_ipc_operation.type = MDPI_OP_TYPE_MEM_RESET;
+   __ipc_request();
+   __ipc_wait(MDPI_IPC_STATE_RESPONSE);
+   terminate_if_not(MDPI_OP_TYPE_MEM_RESET);
+   __ipc_release();
+   __m_memory_reset_sent = 1;
+   __m_memory_cycle_valid = 0;
+}
+
 void m_memory_tick(unsigned long long cycle)
 {
+   if(!__m_memory_ready) return;
+   // All posedge owners call this before accessing memory. Coalesce equal
+   // targets locally so a 32-bank model does not perform 32 identical IPCs.
+   // Different targets still reach the driver, including invalid backwards time.
+   if(__m_memory_cycle_valid && cycle == __m_memory_cycle) return;
    __ipc_reserve();
    __m_ipc_operation.type = MDPI_OP_TYPE_MEM_TICK;
    __m_ipc_operation.payload.interface.addr = cycle;
@@ -392,4 +420,7 @@ void m_memory_tick(unsigned long long cycle)
    __ipc_wait(MDPI_IPC_STATE_RESPONSE);
    terminate_if_not(MDPI_OP_TYPE_MEM_TICK);
    __ipc_release();
+   __m_memory_cycle = cycle;
+   __m_memory_cycle_valid = 1;
+   __m_memory_reset_sent = 0;
 }

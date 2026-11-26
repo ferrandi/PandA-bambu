@@ -8,7 +8,6 @@ module tb_axi_lanes #(parameter DEPTH = 4);
     #5 clock = !clock;
   end
   reg reset = 1;
-  wire ramulator_phase;
   reg arvalid = 0, awvalid = 0, wvalid = 0, rready = 0, bready = 0;
   wire arready, awready, wready, rvalid, bvalid, rlast;
   reg [63 : 0] araddr = 0, awaddr = 0;
@@ -48,9 +47,6 @@ module tb_axi_lanes #(parameter DEPTH = 4);
                     .BITSIZE_rresp(2),
                     .BITSIZE_bresp(2))
       memory(
-`ifndef CLASSIC_AXI
-             .ramulator_phase(ramulator_phase),
-`endif
              .clock(clock),
              .reset(reset),
              .arvalid(arvalid),
@@ -103,7 +99,6 @@ module tb_axi_lanes #(parameter DEPTH = 4);
   reg [44 : 0] held_read;
   reg [10 : 0] held_write;
 `ifndef CLASSIC_AXI
-  ramulator_test_clock tick_source(.clock(clock), .reset(reset), .ramulator_phase(ramulator_phase));
 `endif
   always @(posedge clock)
   begin
