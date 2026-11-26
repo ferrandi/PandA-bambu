@@ -12,7 +12,9 @@
           <xs:attribute name="configuration_id" type="xs:string"/>
         </xs:complexType></xs:element>
         <xs:element name="clocks_hz" minOccurs="0"><xs:complexType>
-          <xs:attribute name="accelerator" type="PositiveClock"/><xs:attribute name="axi_frontend" type="PositiveClock"/><xs:attribute name="dram" type="PositiveClock"/>
+          <xs:attribute name="accelerator" type="PositiveClock"/><xs:attribute name="axi_frontend" type="PositiveClock">
+            <xs:annotation><xs:documentation>Controller AXI frontend frequency in Hz, part of the calibration selection key. A frequency change requires a complete calibrated probe with all clocks and transport delays.</xs:documentation></xs:annotation>
+          </xs:attribute><xs:attribute name="dram" type="PositiveClock"/>
         </xs:complexType></xs:element>
         <xs:element name="delay_ns" minOccurs="0"><xs:complexType>
           <xs:attribute name="read_forward" type="TimeNs"/><xs:attribute name="write_forward" type="TimeNs"/>

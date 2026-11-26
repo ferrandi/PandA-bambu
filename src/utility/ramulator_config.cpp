@@ -243,6 +243,25 @@ void read_record(const fs::path& path, pugi::xml_document& result, bool overlay)
           next_overrides && (!previous_overrides || canonical(previous_overrides) != canonical(next_overrides));
       const bool changed_controller =
           previous_config && next_config && canonical(previous_config) != canonical(next_config);
+      // The AXI controller frontend frequency is part of the calibration key.
+      // Compare numeric Hz, so equivalent decimal/exponent spellings select
+      // the same measurements. A different frequency needs a complete probe
+      // explicitly qualified for that frequency, rather than inherited delays.
+      const auto previous_axi = result.document_element().child("clocks_hz").attribute("axi_frontend");
+      const auto next_axi = root.child("clocks_hz").attribute("axi_frontend");
+      const bool changed_axi =
+          next_axi && (!previous_axi || time_ns(previous_axi.value()) != time_ns(next_axi.value()));
+      if(was_calibrated && changed_axi)
+      {
+         require(status == "calibrated",
+                 "AXI frontend frequency differs from calibration key; supply a complete calibrated probe "
+                 "for the new frequency");
+         for(auto name : delay_names)
+            require(root.child("delay_ns").attribute(name),
+                    "changed AXI frontend frequency requires a complete new probe: missing " + std::string(name));
+         require(root.child("clocks_hz").attribute("accelerator") && root.child("clocks_hz").attribute("dram"),
+                 "changed AXI frontend frequency requires a complete new probe with all clocks");
+      }
       if(was_calibrated && (changed_controller || (changed_overrides && status == "calibrated")))
       {
          for(auto name : delay_names)
@@ -615,7 +634,13 @@ RamulatorResolvedConfig resolve_ramulator_config(const RamulatorConfigInputs& in
    if(root.child("controller_configuration"))
       canonical_copy(key.append_child("controller_configuration"), root.child("controller_configuration"));
    if(root.child("clocks_hz"))
-      canonical_copy(key.append_child("clocks_hz"), root.child("clocks_hz"));
+   {
+      auto clocks_key = key.append_child("clocks_hz");
+      canonical_copy(clocks_key, root.child("clocks_hz"));
+      auto axi_key = clocks_key.attribute("axi_frontend");
+      if(axi_key)
+         axi_key.set_value(decimal_text(time_ns(axi_key.value())).c_str());
+   }
    if(root.child("ramulator"))
       canonical_copy(key.append_child("ramulator"), root.child("ramulator"));
    if(dram_clock)

@@ -153,6 +153,57 @@ int main(int argc, char** argv)
               .attribute("fpga_speed_grade")
               .as_string() == std::string("example-fpga"));
    ++checks;
+   const auto axi_key = [&]()
+   {
+      pugi::xml_document report;
+      if(!report.load_file((directory / "memory-model/resolved-memory-model.xml").c_str()))
+         throw std::runtime_error("Missing calibration report");
+      return std::string(report.document_element().child("resolved").child("selection_key")
+                             .child("clocks_hz").attribute("axi_frontend").value());
+   };
+   if(axi_key() != "100000000") throw std::runtime_error("Missing AXI frequency in calibration key");
+   ++checks;
+   in.imports = {write(
+       "same-axi-clock.xml",
+       R"(<ramulator_configuration schema_version="1"><clocks_hz axi_frontend="1e8"/></ramulator_configuration>)")};
+   const auto same_axi = resolve_ramulator_config(in);
+   if(same_axi.status != "calibrated" || axi_key() != "100000000")
+      throw std::runtime_error("Equivalent AXI frequencies changed calibration key");
+   ++checks;
+   // Changing only the frequency must not reuse a previously calibrated delay.
+   for(const auto& overlay :
+       {R"(<ramulator_configuration schema_version="1"><clocks_hz axi_frontend="225000000"/></ramulator_configuration>)",
+        R"(<ramulator_configuration schema_version="1" status="calibrated"><clocks_hz axi_frontend="225000000"/></ramulator_configuration>)",
+        R"(<ramulator_configuration schema_version="1" status="calibrated"><clocks_hz accelerator="100000000" axi_frontend="225000000" dram="1000000000"/><delay_ns read_forward="10" write_forward="20" read_return="30"/></ramulator_configuration>)",
+        R"(<ramulator_configuration schema_version="1" status="calibrated"><clocks_hz axi_frontend="225000000"/><delay_ns read_forward="10" write_forward="20" read_return="30" write_return="40"/></ramulator_configuration>)"})
+   {
+      in.imports = {write("changed-axi-clock.xml", overlay)};
+      bool failed = false;
+      try { resolve_ramulator_config(in); }
+      catch(const std::runtime_error& error)
+      {
+         failed = std::string(error.what()).find("AXI frontend frequency") != std::string::npos;
+      }
+      if(!failed) throw std::runtime_error("Mismatched AXI frequency accepted without a complete new probe");
+      ++checks;
+   }
+   auto requalified = qualified;
+   requalified.replace(requalified.find(R"(axi_frontend="100000000")"),
+                       std::string(R"(axi_frontend="100000000")").size(), R"(axi_frontend="225000000")");
+   requalified.replace(requalified.find(R"(read_forward="12.5")"),
+                       std::string(R"(read_forward="12.5")").size(), R"(read_forward="25")");
+   in.imports = {write("new-axi-probe.xml", requalified)};
+   const auto new_axi = resolve_ramulator_config(in);
+   if(new_axi.status != "calibrated" || new_axi.cycles[0] != 3 || axi_key() != "225000000")
+      throw std::runtime_error("Complete probe for new AXI frequency was not selected");
+   ++checks;
+   in.calibration = write("new-axi-calibration.xml", requalified);
+   in.imports.clear();
+   const auto selected_axi = resolve_ramulator_config(in);
+   if(selected_axi.status != "calibrated" || axi_key() != "225000000")
+      throw std::runtime_error("Explicit configuration did not select its AXI frequency");
+   ++checks;
+   in.calibration = write("qualified.xml", qualified);
    in.imports = {write(
        "reordered.xml",
        R"(<ramulator_configuration schema_version="1"><controller_configuration><policy value="open"/><mode a="1" b="2"/></controller_configuration><delay_ns read_return="31"/></ramulator_configuration>)")};
