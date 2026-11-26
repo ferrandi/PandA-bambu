@@ -624,7 +624,7 @@ localparam MEM_DELAY_MAX = MEM_DELAY_READ &gt; MEM_DELAY_WRITE ? MEM_DELAY_READ 
            OFFSET_Wdata = OFFSET_Wsize + BITSIZE_Wsize, OFFSET_tag = OFFSET_Wdata + BITSIZE_Wdata,
            BITSIZE_S_Rdata = BITSIZE_Sout_Rdata_ram / BITSIZE_S_oe_ram, BITSIZE_S_ready = 1,
            SLAVE_VALID = BITSIZE_Mout_oe_ram == BITSIZE_S_oe_ram,
-           QUEUE_BITSIZE = QUEUE_SIZE &gt; 1 ? log2(QUEUE_SIZE) : 1;
+           QUEUE_BITSIZE = QUEUE_SIZE &gt; 1 ? log2(QUEUE_SIZE + 1) : 1;
 
 genvar i;
 integer dump_file;
@@ -780,39 +780,15 @@ generate
         end
       end
 
-      if(QUEUE_SIZE &gt; 1)
-      begin
-        assign request_count_next =
-                   request_count_reg +
-                   (((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp;
-                     base_addr &lt;= Mout_addr_ram[i * BITSIZE_addr +: BITSIZE_addr]) &amp;&amp;
-                    (request_count_reg == 0
-                         ? 1
-                         : (request_count_reg - (external_response_ready &amp;&amp;
-                                                 !M_back_pressure[i])) &lt; (QUEUE_SIZE - 1))) -
-                   (external_response_ready &amp;&amp; !M_back_pressure[i]);
-      end
-      else
-      begin
-        assign request_count_next =
-                   ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp;
-                    base_addr &lt;= Mout_addr_ram[i * BITSIZE_addr +: BITSIZE_addr]) ||
-                   (request_count_reg &amp;&amp; !external_response_ready &amp;&amp; !M_back_pressure[i]);
-      end
+      // Count accepted requests until their responses are consumed, including
+      // QUEUE_SIZE == 1 and responses held by accelerator backpressure.
+      assign request_count_next = request_count_reg +
+                 ((Mout_we_ram[i] || Mout_oe_ram[i]) &amp;&amp; !Mout_back_pressure[i] &amp;&amp;
+                  base_addr &lt;= Mout_addr_ram[i * BITSIZE_addr +: BITSIZE_addr]) -
+                 (external_response_ready &amp;&amp; !M_back_pressure[i]);
 
-      if(QUEUE_SIZE &gt; 1)
-      begin
-        assign Mout_back_pressure[i] =
-                   M_back_pressure[i] ||
-                   (request_count_reg == 0
-                        ? 0
-                        : (request_count_reg - external_response_ready) == (QUEUE_SIZE - 1));
-      end
-      else
-      begin
-        assign Mout_back_pressure[i] =
-                   M_back_pressure[i] || (request_count_reg &amp;&amp; !external_response_ready);
-      end
+      assign Mout_back_pressure[i] = M_back_pressure[i] ||
+                 (request_count_reg - (external_response_ready &amp;&amp; !M_back_pressure[i])) &gt;= QUEUE_SIZE;
 
       reg [BITSIZE_tag - 1 : 0] read_tag_reg, write_tag_reg;
       wire [BITSIZE_tag - 1 : 0] response_tag;

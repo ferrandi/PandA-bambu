@@ -26,14 +26,29 @@ module tb_memory #(parameter DEPTH = 2, FORWARD = 1, RETURN = 1);
   reg [31:0] expected [0:1][0:255];
   reg reading [0:1][0:255];
 
+`ifdef CLASSIC_MINIMAL
+  // Keep requests in the fixed-latency pipeline long enough to fill every slot.
+  TestbenchMEMMinimal #(.index(0), .QUEUE_SIZE(DEPTH), .EMULATE_BRAM(0),
+    .MEM_DELAY_READ(DEPTH+FORWARD+3), .MEM_DELAY_WRITE(DEPTH+FORWARD+3),
+    .BITSIZE_S_oe_ram(2), .BITSIZE_S_we_ram(2), .BITSIZE_Sout_DataRdy(2),
+    .BITSIZE_Sout_Rdata_ram(64),
+`else
   TestbenchMEMRamulatorIntegrated #(.index(0), .QUEUE_SIZE(DEPTH),
     .READ_FORWARD(FORWARD), .WRITE_FORWARD(FORWARD),
     .READ_RETURN(RETURN), .WRITE_RETURN(RETURN),
+`endif
     .BITSIZE_Mout_oe_ram(2), .BITSIZE_Mout_we_ram(2),
     .BITSIZE_Mout_addr_ram(128), .BITSIZE_Mout_Wdata_ram(64), .BITSIZE_Mout_data_ram_size(12),
     .BITSIZE_Mout_tag(16), .BITSIZE_M_tag(16), .BITSIZE_M_DataRdy(2), .BITSIZE_M_Rdata_ram(64),
     .BITSIZE_M_back_pressure(2), .BITSIZE_Mout_back_pressure(2)) memory(
-    .clock(clock), .reset(reset), .setup_port(setup_port), .done_port(done_port),
+    .clock(clock), .reset(reset), .done_port(done_port),
+`ifndef CLASSIC_MINIMAL
+    .setup_port(setup_port),
+`endif
+`ifdef CLASSIC_MINIMAL
+    .Sout_DataRdy(2'b0), .Sout_Rdata_ram(64'b0),
+    .S_oe_ram(), .S_we_ram(), .S_addr_ram(), .S_data_ram_size(), .S_Wdata_ram(),
+`endif
     .Mout_oe_ram(oe), .Mout_we_ram(we), .Mout_addr_ram(addr), .Mout_Wdata_ram(wdata),
     .Mout_data_ram_size(size), .Mout_tag(tag), .Mout_back_pressure(request_bp),
     .M_DataRdy(ready), .M_Rdata_ram(rdata), .M_tag(rtag), .M_back_pressure(bp));
@@ -144,8 +159,12 @@ module tb_memory #(parameter DEPTH = 2, FORWARD = 1, RETURN = 1);
         $fatal(1, "minimal total credit coverage ch=%0d pending=%0d peak=%0d limit=%0d",
                channel, outstanding[channel], peak_outstanding[channel], DEPTH);
     if(stalled_requests == 0 || stalled_responses == 0) $fatal(1, "missing minimal saturation coverage");
+`ifndef CLASSIC_MINIMAL
     if(DEPTH == 64 && out_of_order == 0) $fatal(1, "missing out-of-order response coverage");
     $display("PASS real Ramulator minimal multichannel stalled responses");
+`else
+    $display("PASS classic minimal multichannel total capacity=%0d", DEPTH);
+`endif
     $finish;
   end
   initial begin #1000000; $fatal(1, "minimal timeout ch0=%0d ch1=%0d", completed[0], completed[1]); end

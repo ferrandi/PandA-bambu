@@ -269,19 +269,31 @@ def main():
         models = directory / 'models.sv'
         models.write_text('typedef longint unsigned ptr_t;\n' + extract('TestbenchMEMRamulatorIntegrated') +
                           extract('TestbenchMEMAXIRamulatorIntegrated') + extract('if_utils') + extract('TestbenchMEMAXI') +
+                          extract('TestbenchMEMMinimal') +
                           extract_dependencies('Arbiter_connection_interface'))
         execute(['gcc', '-c', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                  '-o', directory / 'mdpi.o'], directory)
-        for model in ('memory', 'memory_delays', 'axi', 'axi_lanes', 'classic_axi_lanes', 'arbiter'):
-            for depth in ((1, 2, 4, 64) if model == 'memory' else (1, 4) if model == 'memory_delays' or 'lanes' in model else (1, 2, 4)):
+        for model in ('memory', 'memory_delays', 'classic_memory', 'axi', 'axi_lanes', 'classic_axi_lanes', 'arbiter'):
+            if model == 'classic_memory':
+                depths = (1, 2, 3, 4, 64)
+            elif model == 'memory':
+                depths = (1, 2, 4, 64)
+            elif model == 'memory_delays' or 'lanes' in model:
+                depths = (1, 4)
+            else:
+                depths = (1, 2, 4)
+            for depth in depths:
                 name = f'{model}-depth{depth}'
                 case_dir = directory / name
                 case_dir.mkdir()
                 start = time.monotonic()
                 error = None
                 try:
-                    fixture = 'axi_lanes' if 'lanes' in model else 'memory' if model == 'memory_delays' else model
+                    fixture = ('axi_lanes' if 'lanes' in model else
+                               'memory' if model in ('memory_delays', 'classic_memory') else model)
                     defines = ['-DCLASSIC_AXI'] if model == 'classic_axi_lanes' else []
+                    if model == 'classic_memory':
+                        defines += ['-DCLASSIC_MINIMAL']
                     if model == 'memory_delays':
                         defines += ['-GFORWARD=5', '-GRETURN=7']
                     execute([str(verilator), *defines, '--binary', '--timing', '-Wno-fatal', '--top-module', f'tb_{fixture}',
@@ -289,7 +301,7 @@ def main():
                              HERE / 'ramulator_test_clock.sv', HERE / f'tb_{fixture}.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
                     case_env = env.copy()
                     case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / f'obj/Vtb_{fixture}')
-                    if model == 'classic_axi_lanes':
+                    if model in ('classic_axi_lanes', 'classic_memory'):
                         case_env['MDPI_TEST_PLAIN'] = '1'
                     execute([directory / 'host'], case_dir, env=case_env, timeout=60)
                 except (OSError, subprocess.SubprocessError) as exception:
