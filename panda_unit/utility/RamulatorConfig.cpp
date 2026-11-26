@@ -4,16 +4,26 @@
 #include "ramulator_sha256.hpp"
 #include <yaml-cpp/yaml.h>
 #include <pugixml.hpp>
-#include <cassert>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <functional>
 #include <stdexcept>
 namespace fs = std::filesystem;
-int main(int argc, char** argv)
+// Validation must execute in Release builds too, including calls to the
+// production resolver inside a check. Evaluate each condition exactly once.
+#define CHECK(condition) \
+   do \
+   { \
+      if(!(condition)) \
+         throw std::runtime_error(std::string(__FILE__) + ":" + std::to_string(__LINE__) + \
+                                  ": check failed: " #condition); \
+   } while(false)
+
+int main(int argc, char** argv) try
 {
-   assert(argc == 3);
+   CHECK(argc == 3);
    const fs::path library = argv[1], directory = argv[2];
    fs::create_directories(directory);
    unsigned checks = 0;
@@ -34,7 +44,7 @@ int main(int argc, char** argv)
       {
          failed = true;
       }
-      assert(failed);
+      CHECK(failed);
       ++checks;
    };
    RamulatorConfigInputs in;
@@ -42,7 +52,7 @@ int main(int argc, char** argv)
    in.output = directory;
    in.profile = "alveo-u55c";
    const auto first = resolve_ramulator_config(in);
-   assert((first.cycles == std::array<unsigned, 4>{{1, 1, 1, 1}}));
+   CHECK((first.cycles == std::array<unsigned, 4>{{1, 1, 1, 1}}));
    ++checks;
    pugi::xml_document initial_report;
    initial_report.load_file((directory / "memory-model/resolved-memory-model.xml").c_str());
@@ -55,48 +65,48 @@ int main(int argc, char** argv)
       throw std::runtime_error("SHA-256 known-answer test failed");
    ++checks;
    auto native = YAML::LoadFile(first.configuration.string());
-   assert(native["memory_system"]["controllers"].size() == 16);
+   CHECK(native["memory_system"]["controllers"].size() == 16);
    ++checks;
    const auto template_before = YAML::Dump(YAML::LoadFile((library / "configs/boards/alveo-u55c.yaml").string()));
    in.clock_period_ns = 5;
-   assert(resolve_ramulator_config(in).cycles[0] == 1);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 1);
    ++checks;
    in.clock_period_ns = 10;
    auto probe = write(
        "probe.xml",
        R"(<ramulator_configuration schema_version="1"><delay_ns read_forward="30" write_forward="30.000001" read_return="0" write_return="11"/></ramulator_configuration>)");
    in.imports = {probe};
-   assert((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{3, 4, 0, 2}}));
+   CHECK((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{3, 4, 0, 2}}));
    ++checks;
    in.imports = {write(
        "fractional-fs.xml",
        R"(<ramulator_configuration schema_version="1"><delay_ns read_forward="30.000000000001" write_forward="0.0000001" read_return="10.1"/></ramulator_configuration>)")};
-   assert((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{4, 1, 2, 1}}));
+   CHECK((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{4, 1, 2, 1}}));
    ++checks;
    auto discovery = write("discovery.yaml", "memory_system:\n  channel_mapper:\n    interleave_bits: 2\n");
    in.imports = {probe, discovery};
    auto both = resolve_ramulator_config(in);
-   assert(both.cycles[0] == 3);
+   CHECK(both.cycles[0] == 3);
    ++checks;
    native = YAML::LoadFile(both.configuration.string());
-   assert(native["memory_system"]["channel_mapper"]["interleave_bits"].as<int>() == 2);
+   CHECK(native["memory_system"]["channel_mapper"]["interleave_bits"].as<int>() == 2);
    ++checks;
    in.imports = {discovery};
-   assert(resolve_ramulator_config(in).cycles[0] == 1);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 1);
    ++checks;
-   assert(template_before == YAML::Dump(YAML::LoadFile((library / "configs/boards/alveo-u55c.yaml").string())));
+   CHECK(template_before == YAML::Dump(YAML::LoadFile((library / "configs/boards/alveo-u55c.yaml").string())));
    ++checks;
    auto partial =
        write("partial.xml",
              R"(<ramulator_configuration schema_version="1"><delay_ns read_forward="25"/></ramulator_configuration>)");
    in.imports = {partial};
-   assert((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{3, 1, 1, 1}}));
+   CHECK((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{3, 1, 1, 1}}));
    ++checks;
    auto switch_file = write(
        "switch.xml",
        R"(<ramulator_configuration schema_version="1"><hbm_switch enabled="true" read_correction_ns="20" write_correction_ns="30"/></ramulator_configuration>)");
    in.imports = {switch_file};
-   assert((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{1, 1, 3, 4}}));
+   CHECK((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{1, 1, 3, 4}}));
    ++checks;
    for(const auto& xml :
        {R"(<ramulator_configuration schema_version="2"/>)",
@@ -131,15 +141,15 @@ int main(int argc, char** argv)
    expect_error([&] { resolve_ramulator_config(in); });
    in.profile.clear();
    in.imports.clear();
-   assert(resolve_ramulator_config(in).configuration.empty());
+   CHECK(resolve_ramulator_config(in).configuration.empty());
    ++checks;
    in.profile = "alveo-u55c";
    in.imports = {write(
        "override.xml",
        R"(<ramulator_configuration schema_version="1"><ramulator><set path="/memory_system/controllers/0/row_policy/impl" value="ClosedCAP"/></ramulator></ramulator_configuration>)")};
    native = YAML::LoadFile(resolve_ramulator_config(in).configuration.string());
-   assert(native["memory_system"]["controllers"][0]["row_policy"]["impl"].as<std::string>() == "ClosedCAP");
-   assert(native["memory_system"]["controllers"][1]["row_policy"]["impl"].as<std::string>() == "Open");
+   CHECK(native["memory_system"]["controllers"][0]["row_policy"]["impl"].as<std::string>() == "ClosedCAP");
+   CHECK(native["memory_system"]["controllers"][1]["row_policy"]["impl"].as<std::string>() == "Open");
    ++checks;
    in.imports = {write(
        "invalid-disabled-switch.xml",
@@ -177,11 +187,11 @@ int main(int argc, char** argv)
    in.imports.clear();
    qualified.insert(qualified.find("<identity"), "<ramulator_model sha256=\"" + baseline_hash + "\"/>");
    in.calibration = write("qualified.xml", qualified);
-   assert((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{2, 2, 3, 4}}));
+   CHECK((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{2, 2, 3, 4}}));
    ++checks;
    pugi::xml_document qualified_report;
    qualified_report.load_file((directory / "memory-model/resolved-memory-model.xml").c_str());
-   assert(qualified_report.document_element()
+   CHECK(qualified_report.document_element()
               .child("resolved")
               .child("selection_key")
               .child("identity")
@@ -329,7 +339,7 @@ int main(int argc, char** argv)
    in.imports = {write(
        "reordered.xml",
        R"(<ramulator_configuration schema_version="1"><controller_configuration><policy value="open"/><mode a="1" b="2"/></controller_configuration><delay_ns read_return="31"/></ramulator_configuration>)")};
-   assert(resolve_ramulator_config(in).cycles[2] == 4);
+   CHECK(resolve_ramulator_config(in).cycles[2] == 4);
    ++checks;
    in.imports = {write(
        "changed.xml",
@@ -345,32 +355,32 @@ int main(int argc, char** argv)
    in.imports = {write(
        "ddr-clock.xml",
        R"(<ramulator_configuration schema_version="1"><clocks_hz dram="1200000000"/></ramulator_configuration>)")};
-   assert(resolve_ramulator_config(in).cycles[0] == 1);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 1);
    ++checks;
    in.imports.clear();
    in.clock_period_ns = 3.333333333333;
-   assert(resolve_ramulator_config(in).cycles[0] == 1);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 1);
    ++checks;
    in.clock_period_ns = 10;
    in.profile.clear();
    in.calibration = write("qualified.xml", qualified);
-   assert(resolve_ramulator_config(in).cycles[0] == 2);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 2);
    ++checks;
    in.calibration.clear();
    in.imports = {(library / "calibrations/examples/probe.xml").string()};
-   assert(resolve_ramulator_config(in).cycles[0] == 1);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 1);
    ++checks;
    in.profile.clear();
    in.calibration.clear();
    in.imports = {write(
        "identity-only.xml",
        R"(<ramulator_configuration schema_version="1"><identity board_model="alveo-u55c"/></ramulator_configuration>)")};
-   assert(resolve_ramulator_config(in).cycles[0] == 1);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 1);
    ++checks;
    in.calibration = write("qualified.xml", qualified);
    in.imports = {write("changed-discovery.yaml", "memory_system:\n  channel_mapper: {interleave_bits: 1}\n")};
    const auto changed = resolve_ramulator_config(in);
-   assert(changed.status == "not_validated" && changed.cycles[0] == 2);
+   CHECK(changed.status == "not_validated" && changed.cycles[0] == 2);
    ++checks;
    auto empty_configuration = qualified;
    const auto raw_start = empty_configuration.find("<controller_configuration>");
@@ -389,14 +399,14 @@ int main(int argc, char** argv)
    resolve_ramulator_config(in);
    pugi::xml_document evidence;
    evidence.load_file((directory / "memory-model/resolved-memory-model.xml").c_str());
-   assert(evidence.document_element().child("provenance").child("note").text().as_string() ==
+   CHECK(evidence.document_element().child("provenance").child("note").text().as_string() ==
           std::string("Imported evidence text"));
    ++checks;
    in.calibration = write("qualified.xml", qualified);
    in.imports = {write(
        "changed-policy.xml",
        R"(<ramulator_configuration schema_version="1"><ramulator><set path="/memory_system/controllers/0/row_policy/impl" value="ClosedCAP"/></ramulator></ramulator_configuration>)")};
-   assert(resolve_ramulator_config(in).status == "not_validated");
+   CHECK(resolve_ramulator_config(in).status == "not_validated");
    ++checks;
    in.imports = {write(
        "unmeasured-policy.xml",
@@ -416,34 +426,39 @@ int main(int argc, char** argv)
        "controller-default.xml",
        R"(<ramulator_configuration schema_version="1"><ramulator><set path="/memory_system/controllers/0/read_buffer_size" value="8"/></ramulator></ramulator_configuration>)")};
    const auto defaults = YAML::LoadFile(resolve_ramulator_config(in).configuration.string());
-   assert(defaults["memory_system"]["controllers"][0]["read_buffer_size"].as<int>() == 8);
-   assert(defaults["memory_system"]["controllers"][1]["read_buffer_size"].as<int>() == 32);
+   CHECK(defaults["memory_system"]["controllers"][0]["read_buffer_size"].as<int>() == 8);
+   CHECK(defaults["memory_system"]["controllers"][1]["read_buffer_size"].as<int>() == 32);
    ++checks;
    // Keep alias isolation covered even when upstream serializes controllers separately.
    auto aliased = YAML::LoadFile((library / "configs/boards/alveo-u55c.yaml").string());
    aliased["memory_system"]["controllers"][1] = aliased["memory_system"]["controllers"][0];
-   assert(aliased["memory_system"]["controllers"][1].is(aliased["memory_system"]["controllers"][0]));
+   CHECK(aliased["memory_system"]["controllers"][1].is(aliased["memory_system"]["controllers"][0]));
    in.imports.insert(in.imports.begin(), write("aliased-controller.yaml", YAML::Dump(aliased)));
    const auto isolated = YAML::LoadFile(resolve_ramulator_config(in).configuration.string());
-   assert(isolated["memory_system"]["controllers"][0]["read_buffer_size"].as<int>() == 8);
-   assert(isolated["memory_system"]["controllers"][1]["read_buffer_size"].as<int>() == 32);
+   CHECK(isolated["memory_system"]["controllers"][0]["read_buffer_size"].as<int>() == 8);
+   CHECK(isolated["memory_system"]["controllers"][1]["read_buffer_size"].as<int>() == 32);
    ++checks;
    in.imports = {write("exact-decimal.xml",
                        "<ramulator_configuration schema_version=\"1\"><delay_ns read_forward=\"10." +
                            std::string(100, '0') + "1\"/></ramulator_configuration>")};
-   assert(resolve_ramulator_config(in).cycles[0] == 2);
+   CHECK(resolve_ramulator_config(in).cycles[0] == 2);
    ++checks;
    in.imports = {write(
        "exact-switch.xml",
        R"(<ramulator_configuration schema_version="1"><hbm_switch enabled="true" read_correction_ns="1e-100" write_correction_ns="0"/></ramulator_configuration>)")};
-   assert(resolve_ramulator_config(in).cycles[2] == 2);
+   CHECK(resolve_ramulator_config(in).cycles[2] == 2);
    ++checks;
    in.imports = {write("exact-switch-sum.xml",
                        "<ramulator_configuration schema_version=\"1\"><delay_ns read_return=\"9." +
                            std::string(100, '9') +
                            "\"/><hbm_switch enabled=\"true\" read_correction_ns=\"1e-100\" "
                            "write_correction_ns=\"0\"/></ramulator_configuration>")};
-   assert(resolve_ramulator_config(in).cycles[2] == 1);
+   CHECK(resolve_ramulator_config(in).cycles[2] == 1);
    ++checks;
    std::cout << "PASS Ramulator configuration contracts: " << checks << " checks\n";
+}
+catch(const std::exception& error)
+{
+   std::cerr << "FAIL Ramulator configuration contracts: " << error.what() << '\n';
+   return EXIT_FAILURE;
 }
