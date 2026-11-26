@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <ramulator_configuration schema_version="1" status="experimental" profile="alveo-u250">
+  <ramulator_model sha256="ea5baef213b0eeb909703c327d34012e388bd86b7331876f147c5eb28fc4dce2"/>
   <identity board_model="alveo-u250" fpga_speed_grade="unknown"
             dram_model="unknown" dram_speed_grade="unknown" configuration_id="default"/>
   <controller_configuration>

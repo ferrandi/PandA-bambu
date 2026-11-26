@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <ramulator_configuration schema_version="1" status="experimental" profile="alveo-u280">
+  <ramulator_model sha256="d7f6a552123488895297d4f3925badb16367f69fb4377f76d5180771bbb5783b"/>
   <identity board_model="alveo-u280" fpga_speed_grade="unknown"
             dram_model="unknown" dram_speed_grade="unknown" configuration_id="default"/>
   <controller_configuration>

@@ -1,6 +1,7 @@
 // Copyright (C) 2026 Politecnico di Milano
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 #include "ramulator_config.hpp"
+#include "ramulator_sha256.hpp"
 #include <yaml-cpp/yaml.h>
 #include <pugixml.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
@@ -8,6 +9,7 @@
 #include <cmath>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <set>
@@ -198,7 +200,8 @@ void read_record(const fs::path& path, pugi::xml_document& result, bool overlay)
    require(std::string(root.name()) == "ramulator_configuration", "expected ramulator_configuration root");
    attributes(root, {"schema_version", "status", "profile"});
    const std::string status = root.attribute("status").as_string("experimental");
-   require(status == "draft" || status == "experimental" || status == "calibrated", "unknown calibration status");
+   require(status == "draft" || status == "experimental" || status == "calibrated" || status == "not_validated",
+           "unknown calibration status");
    require(root.attribute("schema_version").as_string() == std::string("1"), "unsupported configuration schema");
    std::set<std::string> seen;
    for(auto child : root.children())
@@ -208,10 +211,18 @@ void read_record(const fs::path& path, pugi::xml_document& result, bool overlay)
       const std::string name = child.name();
       require(seen.insert(name).second, "duplicate XML section " + name);
       require(name == "identity" || name == "clocks_hz" || name == "delay_ns" || name == "hbm_switch" ||
-                  name == "controller_configuration" || name == "ramulator" || name == "provenance",
+                  name == "controller_configuration" || name == "ramulator" || name == "provenance" ||
+                  name == "ramulator_model",
               "unknown XML section " + name);
-      if(name == "identity" || name == "clocks_hz" || name == "delay_ns" || name == "hbm_switch")
+      if(name == "identity" || name == "clocks_hz" || name == "delay_ns" || name == "hbm_switch" || name == "ramulator_model")
          require(!child.first_child(), "scalar XML section cannot contain children: " + name);
+      if(name == "ramulator_model")
+      {
+         attributes(child, {"sha256"});
+         const std::string hash = child.attribute("sha256").value();
+         require(hash.size() == 64 && hash.find_first_not_of("0123456789abcdef") == std::string::npos,
+                 "ramulator_model sha256 must contain 64 lowercase hexadecimal digits");
+      }
       if(name == "identity")
          attributes(child, {"board_model", "fpga_speed_grade", "dram_model", "dram_speed_grade", "configuration_id"});
       if(name == "clocks_hz")
@@ -221,6 +232,8 @@ void read_record(const fs::path& path, pugi::xml_document& result, bool overlay)
       if(name == "hbm_switch")
          attributes(child, {"enabled", "read_correction_ns", "write_correction_ns"});
    }
+   require(status != "calibrated" || root.child("ramulator_model").attribute("sha256"),
+           "calibrated record requires ramulator_model sha256 from the resolved model report");
    if(overlay && result.document_element())
    {
       auto old_id = result.document_element().child("identity");
@@ -399,6 +412,31 @@ void apply_set(YAML::Node node, const std::string& path, const std::string& valu
          node.reset(child);
    }
 }
+// Versioned, length-prefixed encoding of the resolved YAML data tree.
+// Maps sort by scalar key; sequences preserve order; aliases are expanded by
+// load_yaml. Scalar spelling is retained; quoting, comments and style are not.
+void canonical_yaml(std::ostream& out, const YAML::Node& node)
+{
+   if(node.IsMap())
+   {
+      std::map<std::string, YAML::Node> entries;
+      for(auto item : node) entries.emplace(item.first.as<std::string>(), item.second);
+      out << 'M' << entries.size() << ':';
+      for(const auto& entry : entries)
+      {
+         out << 'S' << entry.first.size() << ':' << entry.first;
+         canonical_yaml(out, entry.second);
+      }
+   }
+   else if(node.IsSequence())
+   {
+      out << 'Q' << node.size() << ':';
+      for(auto item : node) canonical_yaml(out, item);
+   }
+   else if(node.IsScalar())
+      out << 'S' << node.Scalar().size() << ':' << node.Scalar();
+   else out << 'N';
+}
 void atomic_text(const fs::path& path, const std::string& value)
 {
    auto temporary = path;
@@ -567,7 +605,8 @@ RamulatorResolvedConfig resolve_ramulator_config(const RamulatorConfigInputs& in
    delays.fill(Decimal(period_fs) / 1000000); // Default is one current accelerator cycle.
    auto delay = root.child("delay_ns");
    const bool calibrated = std::string(root.attribute("status").value()) == "calibrated";
-   resolved.status = calibrated ? "calibrated" : "experimental";
+   resolved.status = calibrated ? "calibrated" :
+                     (std::string(root.attribute("status").value()) == "not_validated" ? "not_validated" : "experimental");
    for(size_t i = 0; i < delays.size(); ++i)
    {
       const auto attr = delay.attribute(delay_names[i]);
@@ -624,13 +663,43 @@ RamulatorResolvedConfig resolve_ramulator_config(const RamulatorConfigInputs& in
                   root.child("clocks_hz").attribute("axi_frontend"),
               "calibrated record requires controller configuration and all clocks");
    }
+   std::ostringstream canonical_model;
+   canonical_model << "bambu-ramulator-yaml-v1\n";
+   canonical_yaml(canonical_model, config);
+   const auto model_hash = ramulator_sha256(canonical_model.str());
+   auto binding = root.child("ramulator_model");
+   const std::string input_hash = binding.attribute("sha256").value();
+   require(!calibrated || !input_hash.empty(),
+           "calibrated record requires ramulator_model sha256 from the resolved model report");
+   if(!input_hash.empty() && input_hash != model_hash)
+   {
+      resolved.status = "not_validated";
+      auto status = root.attribute("status");
+      if(!status) status = root.append_attribute("status");
+      status = resolved.status.c_str();
+      std::cerr << "Warning: Ramulator calibration YAML SHA-256 mismatch: expected " << input_hash
+                << ", resolved " << model_hash
+                << "; status=not_validated. Continuing with the supplied latency estimates.\n";
+   }
+   // The emitted record always identifies the actual final model. Experimental
+   // estimates may be reused; retain their previous binding in the report.
+   if(!binding) binding = root.append_child("ramulator_model");
+   auto hash_attr = binding.attribute("sha256");
+   if(!hash_attr) hash_attr = binding.append_attribute("sha256");
+   hash_attr = model_hash.c_str();
    auto report = root.append_child("resolved");
    report.append_attribute("status") = resolved.status.c_str();
+   auto model_report = report.append_child("ramulator_model");
+   model_report.append_attribute("sha256") = model_hash.c_str();
+   model_report.append_attribute("canonicalization") = "bambu-ramulator-yaml-v1";
+   if(!input_hash.empty() && input_hash != model_hash)
+      model_report.append_attribute("previous_sha256") = input_hash.c_str();
    // Derived key: preserve raw input above and expose an order-independent form
    // for the future discovery/probe/update-library tools. Repeated XML children
    // retain their order, because lists can encode physical port associations.
    auto key = report.append_child("selection_key");
    canonical_copy(key.append_child("identity"), id);
+   canonical_copy(key.append_child("ramulator_model"), binding);
    if(root.child("controller_configuration"))
       canonical_copy(key.append_child("controller_configuration"), root.child("controller_configuration"));
    if(root.child("clocks_hz"))
@@ -681,5 +750,6 @@ RamulatorResolvedConfig resolve_ramulator_config(const RamulatorConfigInputs& in
    record.save(document, "  ");
    atomic_text(output / "resolved-memory-model.xml", document.str());
    atomic_text(resolved.configuration, YAML::Dump(config) + "\n");
+   atomic_text(output / "ramulator2_config.canonical", canonical_model.str());
    return resolved;
 }

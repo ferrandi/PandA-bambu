@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 // Standalone integration test for production XML/YAML resolution.
 #include "ramulator_config.hpp"
+#include "ramulator_sha256.hpp"
 #include <yaml-cpp/yaml.h>
 #include <pugixml.hpp>
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <functional>
 #include <stdexcept>
 namespace fs = std::filesystem;
@@ -41,6 +43,16 @@ int main(int argc, char** argv)
    in.profile = "alveo-u55c";
    const auto first = resolve_ramulator_config(in);
    assert((first.cycles == std::array<unsigned, 4>{{1, 1, 1, 1}}));
+   ++checks;
+   pugi::xml_document initial_report;
+   initial_report.load_file((directory / "memory-model/resolved-memory-model.xml").c_str());
+   const std::string baseline_hash = initial_report.document_element().child("ramulator_model").attribute("sha256").value();
+   if(baseline_hash.size() != 64) throw std::runtime_error("Missing model SHA-256");
+   ++checks;
+   if(ramulator_sha256("") != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ||
+      ramulator_sha256("abc") != "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" ||
+      ramulator_sha256(std::string(1000000, 'a')) != "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0")
+      throw std::runtime_error("SHA-256 known-answer test failed");
    ++checks;
    auto native = YAML::LoadFile(first.configuration.string());
    assert(native["memory_system"]["controllers"].size() == 16);
@@ -133,7 +145,7 @@ int main(int argc, char** argv)
        "invalid-disabled-switch.xml",
        R"(<ramulator_configuration schema_version="1"><hbm_switch enabled="false" read_correction_ns="-1"/></ramulator_configuration>)")};
    expect_error([&] { resolve_ramulator_config(in); });
-   const std::string qualified =
+   std::string qualified =
        R"(<ramulator_configuration schema_version="1" status="calibrated" profile="alveo-u55c">
      <identity board_model="alveo-u55c" fpga_speed_grade="example-fpga" dram_model="example-part" dram_speed_grade="example-memory" configuration_id="measured"/>
      <clocks_hz accelerator="100000000" axi_frontend="100000000" dram="1000000000"/>
@@ -141,6 +153,29 @@ int main(int argc, char** argv)
      <controller_configuration><mode b="2" a="1"/><policy value="open"/></controller_configuration>
    </ramulator_configuration>)";
    in.imports.clear();
+   // A calibrated record needs an explicit binding; a well-formed wrong
+   // digest downgrades validation, including for a user-supplied YAML path.
+   in.calibration = write("missing-model-binding.xml", qualified);
+   bool missing_failed = false;
+   try { resolve_ramulator_config(in); }
+   catch(const std::runtime_error& error)
+   {
+      missing_failed = std::string(error.what()).find("requires ramulator_model sha256") != std::string::npos;
+   }
+   if(!missing_failed) throw std::runtime_error("Unbound calibration accepted");
+   ++checks;
+   in.calibration.clear();
+   in.imports = {write("unbound-probe.xml", qualified)};
+   missing_failed = false;
+   try { resolve_ramulator_config(in); }
+   catch(const std::runtime_error& error)
+   {
+      missing_failed = std::string(error.what()).find("requires ramulator_model sha256") != std::string::npos;
+   }
+   if(!missing_failed) throw std::runtime_error("Probe inherited a binding from the base record");
+   ++checks;
+   in.imports.clear();
+   qualified.insert(qualified.find("<identity"), "<ramulator_model sha256=\"" + baseline_hash + "\"/>");
    in.calibration = write("qualified.xml", qualified);
    assert((resolve_ramulator_config(in).cycles == std::array<unsigned, 4>{{2, 2, 3, 4}}));
    ++checks;
@@ -153,6 +188,89 @@ int main(int argc, char** argv)
               .attribute("fpga_speed_grade")
               .as_string() == std::string("example-fpga"));
    ++checks;
+   auto digest_warning = [&](const std::string& expected_message)
+   {
+      std::ostringstream warnings;
+      auto* previous = std::cerr.rdbuf(warnings.rdbuf());
+      RamulatorResolvedConfig result;
+      try { result = resolve_ramulator_config(in); }
+      catch(...) { std::cerr.rdbuf(previous); throw; }
+      std::cerr.rdbuf(previous);
+      if(result.status != "not_validated" || warnings.str().find("Warning:") == std::string::npos ||
+         warnings.str().find(expected_message) == std::string::npos ||
+         result.cycles != std::array<unsigned, 4>{{2, 2, 3, 4}} ||
+         !fs::is_regular_file(result.configuration))
+         throw std::runtime_error("Expected model binding warning with retained latencies: " + expected_message);
+      pugi::xml_document report;
+      report.load_file((directory / "memory-model/resolved-memory-model.xml").c_str());
+      if(std::string(report.document_element().attribute("status").value()) != "not_validated" ||
+         std::string(report.document_element().child("resolved").attribute("status").value()) != "not_validated" ||
+         !report.document_element().child("resolved").child("ramulator_model").attribute("previous_sha256"))
+         throw std::runtime_error("Model mismatch validation state is missing from report");
+      ++checks;
+   };
+   auto wrong_binding = qualified;
+   wrong_binding.replace(wrong_binding.find(baseline_hash), baseline_hash.size(), std::string(64, '0'));
+   in.calibration = write("wrong-model-binding.xml", wrong_binding);
+   digest_warning("SHA-256 mismatch");
+   in.calibration = write("qualified.xml", qualified);
+   auto user_model = YAML::LoadFile((library / "configs/boards/alveo-u55c.yaml").string());
+   user_model["memory_system"]["controllers"][0]["read_buffer_size"] = 31;
+   in.profile = write("user-model.yaml", YAML::Dump(user_model));
+   digest_warning("SHA-256 mismatch");
+   in.profile = "alveo-u55c";
+   // A new calibrated probe must bind the final result after discovery merging.
+   in.imports = {write("hash-discovery.yaml", "memory_system: {channel_mapper: {interleave_bits: 1}}"),
+                 write("hash-probe.xml", qualified)};
+   digest_warning("SHA-256 mismatch");
+   in.calibration.clear();
+   in.imports.resize(1); // Resolve discovery experimentally to obtain its model key.
+   resolve_ramulator_config(in);
+   pugi::xml_document discovered_report;
+   discovered_report.load_file((directory / "memory-model/resolved-memory-model.xml").c_str());
+   const std::string discovered_hash =
+       discovered_report.document_element().child("ramulator_model").attribute("sha256").value();
+   auto discovered_calibration = qualified;
+   discovered_calibration.replace(discovered_calibration.find(baseline_hash), baseline_hash.size(), discovered_hash);
+   in.calibration = write("qualified.xml", qualified);
+   in.imports.push_back(write("bound-discovery-probe.xml", discovered_calibration));
+   if(resolve_ramulator_config(in).status != "calibrated")
+      throw std::runtime_error("Matching final discovery model binding rejected");
+   ++checks;
+   in.imports.clear();
+   // Reverse map insertion order and change formatting/comments.
+   std::function<YAML::Node(const YAML::Node&)> reorder = [&](const YAML::Node& node)
+   {
+      YAML::Node result;
+      if(node.IsMap())
+      {
+         result = YAML::Node(YAML::NodeType::Map);
+         std::vector<std::pair<std::string, YAML::Node>> entries;
+         for(auto entry : node) entries.emplace_back(entry.first.as<std::string>(), entry.second);
+         for(auto entry = entries.rbegin(); entry != entries.rend(); ++entry)
+            result[entry->first] = reorder(entry->second);
+      }
+      else if(node.IsSequence())
+      {
+         result = YAML::Node(YAML::NodeType::Sequence);
+         for(auto entry : node) result.push_back(reorder(entry));
+      }
+      else result = YAML::Clone(node);
+      return result;
+   };
+   const auto original_model = YAML::LoadFile((library / "configs/boards/alveo-u55c.yaml").string());
+   in.profile = write("reformatted-model.yaml", "# formatting is not model identity\n" + YAML::Dump(reorder(original_model)));
+   if(resolve_ramulator_config(in).status != "calibrated")
+      throw std::runtime_error("Formatting changed model SHA-256");
+   ++checks;
+   auto reordered_list = YAML::Clone(original_model);
+   auto timing_list = reordered_list["memory_system"]["controllers"][0]["dram"]["timing"];
+   const auto first_timing = timing_list[0].as<std::string>();
+   timing_list[0] = timing_list[1].as<std::string>();
+   timing_list[1] = first_timing;
+   in.profile = write("reordered-timing.yaml", YAML::Dump(reordered_list));
+   digest_warning("SHA-256 mismatch");
+   in.profile = "alveo-u55c";
    const auto axi_key = [&]()
    {
       pugi::xml_document report;
@@ -177,7 +295,11 @@ int main(int argc, char** argv)
         R"(<ramulator_configuration schema_version="1" status="calibrated"><clocks_hz accelerator="100000000" axi_frontend="225000000" dram="1000000000"/><delay_ns read_forward="10" write_forward="20" read_return="30"/></ramulator_configuration>)",
         R"(<ramulator_configuration schema_version="1" status="calibrated"><clocks_hz axi_frontend="225000000"/><delay_ns read_forward="10" write_forward="20" read_return="30" write_return="40"/></ramulator_configuration>)"})
    {
-      in.imports = {write("changed-axi-clock.xml", overlay)};
+      std::string clock_overlay = overlay;
+      if(clock_overlay.find(R"(status="calibrated")") != std::string::npos)
+         clock_overlay.insert(clock_overlay.find('>') + 1,
+                              "<ramulator_model sha256=\"" + baseline_hash + "\"/>");
+      in.imports = {write("changed-axi-clock.xml", clock_overlay)};
       bool failed = false;
       try { resolve_ramulator_config(in); }
       catch(const std::runtime_error& error)
@@ -248,7 +370,7 @@ int main(int argc, char** argv)
    in.calibration = write("qualified.xml", qualified);
    in.imports = {write("changed-discovery.yaml", "memory_system:\n  channel_mapper: {interleave_bits: 1}\n")};
    const auto changed = resolve_ramulator_config(in);
-   assert(changed.status == "experimental" && changed.cycles[0] == 2);
+   assert(changed.status == "not_validated" && changed.cycles[0] == 2);
    ++checks;
    auto empty_configuration = qualified;
    const auto raw_start = empty_configuration.find("<controller_configuration>");
@@ -274,7 +396,7 @@ int main(int argc, char** argv)
    in.imports = {write(
        "changed-policy.xml",
        R"(<ramulator_configuration schema_version="1"><ramulator><set path="/memory_system/controllers/0/row_policy/impl" value="ClosedCAP"/></ramulator></ramulator_configuration>)")};
-   assert(resolve_ramulator_config(in).status == "experimental");
+   assert(resolve_ramulator_config(in).status == "not_validated");
    ++checks;
    in.imports = {write(
        "unmeasured-policy.xml",

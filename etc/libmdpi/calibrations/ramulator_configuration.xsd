@@ -6,6 +6,11 @@
   <xs:element name="ramulator_configuration">
     <xs:complexType>
       <xs:all>
+        <xs:element name="ramulator_model" minOccurs="0"><xs:complexType>
+          <xs:attribute name="sha256" use="required"><xs:simpleType><xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-f]{64}"/>
+          </xs:restriction></xs:simpleType></xs:attribute>
+        </xs:complexType></xs:element>
         <xs:element name="identity" minOccurs="0"><xs:complexType>
           <xs:attribute name="board_model" type="xs:string"/><xs:attribute name="fpga_speed_grade" type="xs:string"/>
           <xs:attribute name="dram_model" type="xs:string"/><xs:attribute name="dram_speed_grade" type="xs:string"/>
@@ -35,7 +40,7 @@
       <xs:attribute name="schema_version" use="required" fixed="1"/>
       <xs:attribute name="profile" type="xs:string"/>
       <xs:attribute name="status"><xs:simpleType><xs:restriction base="xs:string">
-        <xs:enumeration value="draft"/><xs:enumeration value="experimental"/><xs:enumeration value="calibrated"/>
+        <xs:enumeration value="draft"/><xs:enumeration value="experimental"/><xs:enumeration value="calibrated"/><xs:enumeration value="not_validated"/>
       </xs:restriction></xs:simpleType></xs:attribute>
     </xs:complexType>
   </xs:element>
