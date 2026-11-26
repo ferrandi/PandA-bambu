@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<ramulator_configuration schema_version="1" status="experimental" profile="alveo-u250">
+  <ramulator_model sha256="ea5baef213b0eeb909703c327d34012e388bd86b7331876f147c5eb28fc4dce2"/>
+  <identity board_model="alveo-u250" fpga_speed_grade="unknown"
+            dram_model="unknown" dram_speed_grade="unknown" configuration_id="default"/>
+  <controller_configuration>
+    <model standard="DDR4" organization_preset="DDR4_16Gb_x8" timing_preset="DDR4_2400R"
+           physical_channels="4"/>
+  </controller_configuration>
+  <hbm_switch enabled="false"/>
+  <provenance>
+    <source project="CMU-SAFARI/ramulator2" revision="7bead6cb7c4b03e095c6d4769ae3181a8e0bf6da"
+            path="python/ramulator/dram/ddr4.py"/>
+    <note>Candidate model using upstream presets. Device part number, speed grade,
+      implemented mapping, clocks and transport calibration require hardware evidence.
+      Missing delay_ns fields default to one accelerator cycle each.</note>
+  </provenance>
+</ramulator_configuration>

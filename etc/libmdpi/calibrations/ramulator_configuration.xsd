@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="TimeNs"><xs:restriction base="xs:double"><xs:minInclusive value="0"/><xs:maxInclusive value="9223372036854.775"/></xs:restriction></xs:simpleType>
+  <xs:simpleType name="PositiveClock"><xs:restriction base="xs:double"><xs:minExclusive value="0"/><xs:maxInclusive value="1e300"/></xs:restriction></xs:simpleType>
+  <xs:complexType name="RawSection" mixed="true"><xs:sequence><xs:any minOccurs="0" maxOccurs="unbounded" processContents="skip"/></xs:sequence><xs:anyAttribute processContents="skip"/></xs:complexType>
+  <xs:element name="ramulator_configuration">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="ramulator_model" minOccurs="0"><xs:complexType>
+          <xs:attribute name="sha256" use="required"><xs:simpleType><xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-f]{64}"/>
+          </xs:restriction></xs:simpleType></xs:attribute>
+        </xs:complexType></xs:element>
+        <xs:element name="identity" minOccurs="0"><xs:complexType>
+          <xs:attribute name="board_model" type="xs:string"/><xs:attribute name="fpga_speed_grade" type="xs:string"/>
+          <xs:attribute name="dram_model" type="xs:string"/><xs:attribute name="dram_speed_grade" type="xs:string"/>
+          <xs:attribute name="configuration_id" type="xs:string"/>
+        </xs:complexType></xs:element>
+        <xs:element name="clocks_hz" minOccurs="0"><xs:complexType>
+          <xs:attribute name="accelerator" type="PositiveClock"/><xs:attribute name="axi_frontend" type="PositiveClock">
+            <xs:annotation><xs:documentation>Controller AXI frontend frequency in Hz, part of the calibration selection key. A frequency change requires a complete calibrated probe with all clocks and transport delays.</xs:documentation></xs:annotation>
+          </xs:attribute><xs:attribute name="dram" type="PositiveClock"/>
+        </xs:complexType></xs:element>
+        <xs:element name="delay_ns" minOccurs="0"><xs:complexType>
+          <xs:attribute name="read_forward" type="TimeNs"/><xs:attribute name="write_forward" type="TimeNs"/>
+          <xs:attribute name="read_return" type="TimeNs"/><xs:attribute name="write_return" type="TimeNs"/>
+        </xs:complexType></xs:element>
+        <xs:element name="hbm_switch" minOccurs="0"><xs:complexType>
+          <xs:attribute name="enabled"><xs:simpleType><xs:restriction base="xs:string"><xs:enumeration value="true"/><xs:enumeration value="false"/></xs:restriction></xs:simpleType></xs:attribute>
+          <xs:attribute name="read_correction_ns" type="TimeNs"/><xs:attribute name="write_correction_ns" type="TimeNs"/>
+        </xs:complexType></xs:element>
+        <xs:element name="controller_configuration" type="RawSection" minOccurs="0"/>
+        <xs:element name="provenance" type="RawSection" minOccurs="0"/>
+        <xs:element name="ramulator" minOccurs="0"><xs:complexType><xs:sequence>
+          <xs:element name="set" minOccurs="0" maxOccurs="unbounded"><xs:complexType>
+            <xs:attribute name="path" type="xs:string" use="required"/><xs:attribute name="value" type="xs:string" use="required"/>
+          </xs:complexType></xs:element>
+        </xs:sequence></xs:complexType></xs:element>
+      </xs:all>
+      <xs:attribute name="schema_version" use="required" fixed="1"/>
+      <xs:attribute name="profile" type="xs:string"/>
+      <xs:attribute name="status"><xs:simpleType><xs:restriction base="xs:string">
+        <xs:enumeration value="draft"/><xs:enumeration value="experimental"/><xs:enumeration value="calibrated"/><xs:enumeration value="not_validated"/>
+      </xs:restriction></xs:simpleType></xs:attribute>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

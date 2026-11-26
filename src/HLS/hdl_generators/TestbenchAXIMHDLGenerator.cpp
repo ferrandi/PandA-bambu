@@ -30,6 +30,7 @@
 #include "TestbenchAXIMHDLGenerator.hpp"
 
 #include "Parameter.hpp"
+#include "ramulator_model.hpp"
 #include "behavioral_helper.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
@@ -141,11 +142,6 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
    const auto use_ramulator = HLSMgr->get_parameter()->isOption(OPT_enable_ramulator) &&
                               HLSMgr->get_parameter()->getOption<bool>(OPT_enable_ramulator);
 
-   if(use_ramulator)
-   {
-      structural_manager::add_port("ramulator_phase", port_o::IN, mod_cir,
-                                  structural_type_descriptorRef(new structural_type_descriptor("bool", 0)));
-   }
 
    structural_manager::add_NP_functionality(mod_cir, NP_functionality::LIBRARY, np_library);
 
@@ -178,8 +174,11 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
 
    if(use_ramulator)
    {
+      const auto model = resolve_ramulator_model(HLSMgr->get_parameter());
       static unsigned int axi_port_id_counter = 0;
       out << "TestbenchMEMAXIRamulatorIntegrated #(.index(index),\n"
+          << ".READ_FORWARD(" << model.cycles[0] << "), .WRITE_FORWARD(" << model.cycles[1] << "),\n"
+          << ".READ_RETURN(" << model.cycles[2] << "), .WRITE_RETURN(" << model.cycles[3] << "),\n"
           << ".AXI_PORT_ID(" << axi_port_id_counter++ << "),\n"
           << ".QUEUE_SIZE(" << (HLSMgr->get_parameter()->getOption<unsigned int>(OPT_tb_queue_size) + 1) << "),\n"
           << ".BITSIZE_bid(BITSIZE_" << port_prefix << "_bid),\n"
@@ -228,7 +227,6 @@ void TestbenchAXIMHDLGenerator::InternalExec(std::ostream& out, structural_objec
 .ruser(ruser),
 .rvalid(rvalid),
 .clock(clock),
-.ramulator_phase(ramulator_phase),
 .reset(reset),
 .awid(awid),
 .awaddr(awaddr),

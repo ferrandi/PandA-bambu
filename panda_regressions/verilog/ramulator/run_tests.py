@@ -114,7 +114,7 @@ def main():
                 break
     if not error:
         clients = {}
-        for name in ('memory_contract', 'clock_contract', 'plain_contract', 'completion_error'):
+        for name in ('memory_contract', 'clock_contract', 'plain_contract', 'completion_error', 'wide_contract'):
             clients[name] = directory / name
             execute(['gcc', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                      HERE / f'{name}.c', '-o', clients[name]], directory)
@@ -159,6 +159,17 @@ def main():
             results.append((name, time.monotonic()-start, error, case_dir))
 
         contract('memory-contract', 'memory_contract')
+        # Keep one HBM controller and one entry per queue: a wide logical
+        # transfer must survive repeated native backpressure without duplicates.
+        wide_config = directory / 'wide-hbm.yaml'
+        native = (ROOT / 'etc/libmdpi/configs/boards/alveo-u55c.yaml').read_text()
+        native = native.split('  - impl: HBM12', 2)
+        wide_config.write_text(native[0] + '  - impl: HBM12' +
+                              native[1].replace('read_buffer_size: 32', 'read_buffer_size: 1')
+                              .replace('write_buffer_size: 32', 'write_buffer_size: 1'))
+        contract('wide-native-transfers', 'wide_contract', config=wide_config,
+                 diagnostic='[MDPI-NATIVE] ID=0,READS=122,WRITES=68')
+
         contract('completion-null-buffer', 'completion_error', updates={'MDPI_TEST_NULL_COMPLETION': '1'},
                  failure=True, diagnostic='Null data buffer for Ramulator completion polling')
         contract('completion-invalid-interface', 'completion_error', failure=True,
@@ -225,6 +236,23 @@ def main():
                         error = str(exception)
                     print('FAIL' if error else 'PASS', name, flush=True)
                     results.append((name, time.monotonic()-start, error, case_dir))
+        execute(['g++', '-std=c++20', f'-I{prefix / "include"}', HERE / 'native_profile.cpp',
+                 f'-L{libdir}', f'-Wl,-rpath,{libdir}', '-lramulator',
+                 '-o', directory / 'native_profile'], directory)
+        for board, gib in (('alveo-u250',64), ('alveo-u280',8), ('alveo-u55c',16)):
+            profile = ROOT / 'etc/libmdpi/configs/boards' / (board + '.yaml')
+            contract('native-' + board, 'clock_contract', config=profile)
+            name = 'mapping-' + board
+            case_dir = directory / name
+            case_dir.mkdir()
+            start = time.monotonic()
+            error = None
+            try:
+                execute([directory / 'native_profile', profile, str(gib * 1024**3)], case_dir)
+            except (OSError, subprocess.SubprocessError) as exception:
+                error = str(exception)
+            print('FAIL' if error else 'PASS', name, flush=True)
+            results.append((name, time.monotonic()-start, error, case_dir))
         contract('invalid-channel-override', 'clock_contract', config=ROOT / 'etc/libmdpi/configs/default_ddr4.yaml',
                  updates={'RAMULATOR_OVERRIDE_CHANNELS': 'invalid'}, failure=True,
                  diagnostic='RAMULATOR_OVERRIDE_CHANNELS must be 0 or 1')
@@ -235,6 +263,7 @@ def main():
         included = re.sub(r'  DRAM:\n.*?  Controller:', '  DRAM: !include dram.yaml\n  Controller:', default, flags=re.S)
         (include_dir / 'root.yaml').write_text(included)
         contract('relative-include', 'clock_contract', config=include_dir / 'root.yaml')
+        contract('pre-ready-clock', 'clock_contract', updates={'MDPI_TEST_PREREADY_CLOCK': '1'})
         contract('missing-config', 'clock_contract', config=directory / 'missing.yaml', failure=True)
         contract('missing-config-before-ready', 'clock_contract', config=directory / 'missing.yaml', failure=True,
                  updates={'MDPI_TEST_DELAY_READY': '1'})
@@ -251,31 +280,87 @@ def main():
         models = directory / 'models.sv'
         models.write_text('typedef longint unsigned ptr_t;\n' + extract('TestbenchMEMRamulatorIntegrated') +
                           extract('TestbenchMEMAXIRamulatorIntegrated') + extract('if_utils') + extract('TestbenchMEMAXI') +
+                          extract('TestbenchMEMMinimal') +
                           extract_dependencies('Arbiter_connection_interface'))
         execute(['gcc', '-c', '-std=c11', '-D_GNU_SOURCE', *common, ROOT / 'etc/libmdpi/mdpi.c',
                  '-o', directory / 'mdpi.o'], directory)
-        for model in ('memory', 'axi', 'axi_lanes', 'classic_axi_lanes', 'arbiter'):
-            for depth in ((1, 2, 4, 64) if model == 'memory' else (1, 4) if 'lanes' in model else (1, 2, 4)):
+        for model in ('memory', 'memory_delays', 'classic_memory', 'axi', 'axi_lanes', 'classic_axi_lanes', 'arbiter'):
+            if model == 'classic_memory':
+                depths = (1, 2, 3, 4, 64)
+            elif model == 'memory':
+                depths = (1, 2, 4, 64)
+            elif model == 'memory_delays' or 'lanes' in model:
+                depths = (1, 4)
+            else:
+                depths = (1, 2, 4)
+            for depth in depths:
                 name = f'{model}-depth{depth}'
                 case_dir = directory / name
                 case_dir.mkdir()
                 start = time.monotonic()
                 error = None
                 try:
-                    fixture = 'axi_lanes' if 'lanes' in model else model
+                    fixture = ('axi_lanes' if 'lanes' in model else
+                               'memory' if model in ('memory_delays', 'classic_memory') else model)
                     defines = ['-DCLASSIC_AXI'] if model == 'classic_axi_lanes' else []
+                    if model == 'classic_memory':
+                        defines += ['-DCLASSIC_MINIMAL']
+                    if model == 'memory_delays':
+                        defines += ['-GFORWARD=5', '-GRETURN=7']
                     execute([str(verilator), *defines, '--binary', '--timing', '-Wno-fatal', '--top-module', f'tb_{fixture}',
                              f'-GDEPTH={depth}', '--Mdir', case_dir / 'obj', models,
                              HERE / 'ramulator_test_clock.sv', HERE / f'tb_{fixture}.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
                     case_env = env.copy()
                     case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / f'obj/Vtb_{fixture}')
-                    if model == 'classic_axi_lanes':
+                    if model in ('classic_axi_lanes', 'classic_memory'):
                         case_env['MDPI_TEST_PLAIN'] = '1'
                     execute([directory / 'host'], case_dir, env=case_env, timeout=60)
                 except (OSError, subprocess.SubprocessError) as exception:
                     error = str(exception)
                 print('FAIL' if error else 'PASS', name, flush=True)
                 results.append((name, time.monotonic()-start, error, case_dir))
+    if not args.contract_only and (directory / 'mdpi.o').exists():
+        for axi in (0, 1):
+            for delays in ((0, 0, 0, 0), (1, 1, 1, 1), (2, 4, 3, 5), (5, 2, 4, 2), (3, 3, 7, 7)):
+                name = 'transport-' + str(axi) + '-' + '-'.join(map(str, delays))
+                case_dir = directory / name
+                case_dir.mkdir()
+                start = time.monotonic()
+                error = None
+                try:
+                    params = (['-GRESET_INFLIGHT=1'] if delays == (3, 3, 7, 7) else []) + [f'-G{k}={v}' for k, v in zip(('RF','WF','RR','WR'), delays)]
+                    execute([str(verilator), '--binary', '--timing', '-Wno-fatal', '--top-module', 'tb_transport',
+                             f'-GAXI={axi}', *params, '--Mdir', case_dir / 'obj', directory / 'models.sv',
+                             HERE / 'tb_transport.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
+                    case_env = env.copy()
+                    case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / 'obj/Vtb_transport')
+                    execute([directory / 'host'], case_dir, env=case_env, timeout=60)
+                except (OSError, subprocess.SubprocessError) as exception:
+                    error = str(exception)
+                print('FAIL' if error else 'PASS', name, flush=True)
+                results.append((name, time.monotonic()-start, error, case_dir))
+    if not args.contract_only and (directory / 'mdpi.o').exists():
+        for axi in (0, 1):
+            name = f'wide-transport-{axi}'
+            case_dir = directory / name
+            case_dir.mkdir()
+            start = time.monotonic()
+            error = None
+            try:
+                execute([str(verilator), '--binary', '--timing', '-Wno-fatal', '--top-module', 'tb_transport',
+                         f'-GAXI={axi}', '-GWIDTH=512', '--Mdir', case_dir / 'obj', directory / 'models.sv',
+                         HERE / 'tb_transport.sv', '-LDFLAGS', directory / 'mdpi.o'], case_dir)
+                case_env = env.copy()
+                case_env['BAMBU_IPC_SIM_CMD'] = str(case_dir / 'obj/Vtb_transport')
+                case_env['RAMULATOR2_CONFIG'] = str(wide_config)
+                execute([directory / 'host'], case_dir, env=case_env, timeout=60)
+                log = (case_dir / 'run.log').read_text(errors='replace')
+                if '[MDPI-NATIVE] ID=0,READS=2,WRITES=2' not in log:
+                    raise ValueError('Wide RTL transfer did not issue two native transactions per operation')
+            except (OSError, subprocess.SubprocessError) as exception:
+                error = str(exception)
+            print('FAIL' if error else 'PASS', name, flush=True)
+            results.append((name, time.monotonic()-start, error, case_dir))
     if not args.contract_only:
         adapters = directory / 'adapters.sv'
         adapters.write_text(extract('MinimalAXI4Adapter', 'NC_AXI_IPs.xml') +

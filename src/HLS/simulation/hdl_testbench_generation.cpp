@@ -34,6 +34,7 @@
 #include "HDLGeneratorManager.hpp"
 #include "HDL_manager.hpp"
 #include "Parameter.hpp"
+#include "ramulator_model.hpp"
 #include "SimulationInformation.hpp"
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
@@ -325,6 +326,12 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
                                               parameters->getOption<std::string>(OPT_bram_high_latency) == "_4" ?
                                                   "2" :
                                                   parameters->getOption<std::string>(OPT_mem_delay_write));
+   }
+   if(ramulator_memory)
+   {
+      const auto model = resolve_ramulator_model(parameters);
+      const char* names[] = {"READ_FORWARD", "WRITE_FORWARD", "READ_RETURN", "WRITE_RETURN"};
+      for(size_t i = 0; i < model.cycles.size(); ++i) tb_mem->SetParameter(names[i], std::to_string(model.cycles[i]));
    }
    // The testbench is Verilog even when the kernel uses another HDL. ModelSim
    // rejects unsized decimal literals that exceed 32 bits.
@@ -782,25 +789,7 @@ DesignFlowStep_Status HDLTestbenchGeneration::Exec()
       const auto fsm_done = tb_fsm->find_member(DONE_PORT_NAME, port_o_K, tb_fsm);
       add_internal_connection(fsm_done, dut_done);
    }
-   if(ramulator_memory)
-   {
-      const auto phase_port = tb_mem->find_member("ramulator_phase", port_o_K, tb_mem);
-      THROW_ASSERT(phase_port, "Ramulator clock phase output is missing");
-      const auto phase_signal = tb_top->add_sign("sig_ramulator_phase", tb_cir, phase_port->get_typeRef());
-      tb_top->add_connection(phase_port, phase_signal);
-      for(const auto& if_obj : if_modules)
-      {
-         if(if_obj == tb_mem)
-         {
-            continue;
-         }
-         const auto input = if_obj->find_member("ramulator_phase", port_o_K, if_obj);
-         if(input)
-         {
-            tb_top->add_connection(phase_signal, input);
-         }
-      }
-   }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting testbench modules...");
    for(const auto& if_obj : if_modules)
    {

@@ -43,3 +43,6 @@ install(FILES ${LIBMDPI_HEADER_FILES}
 install(DIRECTORY configs/
         DESTINATION "${LIBMDPI_INSTALL_DIR}/configs"
         FILES_MATCHING PATTERN "*.yaml")
+
+install(DIRECTORY calibrations/ DESTINATION "${LIBMDPI_INSTALL_DIR}/calibrations"
+        FILES_MATCHING PATTERN "*.xml" PATTERN "*.xsd")

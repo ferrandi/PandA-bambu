@@ -231,3 +231,36 @@ group and uses the model's existing PRE command. Directed row-policy checks
 exercise repeated accesses, row closing and reopening, multiple banks/ranks,
 and counter reset on refresh, without changing DRAM timing tables.
 The four-channel DDR5 preset also guards against duplicate formatted statistic names.
+
+## Ramulator 2.1 profiles and rising-edge transport
+
+The pinned fork now uses upstream 2.1. The generic preset filenames remain
+supported through the fork's legacy preset expansion. New board templates contain
+native Ramulator YAML; configuration and calibration records use XML. See
+`documentation/ramulator_configuration.md` for the three Bambu options and the
+integer-cycle transport contract (one current accelerator cycle by default).
+
+The real-backend RTL suite additionally exercises the four independent delays,
+reset with pending transactions, pre-READY clock/reset calls, native board
+capacities and mapping boundaries. All clocked Ramulator operations use posedge;
+the old falling-edge phase signal is removed. Independent memory clocks remain
+identical and their tick counts remain exact; the kernel interval comparison
+allows the two setup/terminal sampling edges outside that interval.
+
+The HBM limit is 30,000 cycles with 2.1, compared with 12,000 for 2.0. For example,
+the measured gather/minimal case completes at 13,106 cycles and chase/AXI at
+18,019 cycles. These are completed functional simulations with real Ramulator
+activity; the limit change accommodates the new model and transport delays.
+The ordinary smoke limit stays at 5,000 cycles.
+
+Run full profile/import co-simulations after sourcing installation settings:
+
+```sh
+python3 -B panda_regressions/hls/bambu_ramulator/run_profiles.py \
+  --bambu "$BAMBU_HLS/bin/bambu" --out /tmp/ramulator-profiles --jobs 2
+```
+
+This covers board/configuration selection, discovery YAML only, probe XML only,
+both import orders, a 5 ns accelerator clock, conflicting environment overrides,
+and a mismatched calibration clock. It verifies generated TB parameters,
+functional results and that the installed YAML/XML library is unchanged.

@@ -54,9 +54,24 @@
 #include <cmath>
 #include <filesystem>
 #include <stdexcept>
-#include "base/config.h"
-#include "frontend/frontend.h"
-#include "memory_system/memory_system.h"
+#pragma push_macro("debug")
+#undef debug
+#pragma push_macro("info")
+#undef info
+#pragma push_macro("warn")
+#undef warn
+#pragma push_macro("error")
+#undef error
+#include "ramulator/base/config.h"
+#include "ramulator/bambu/legacy_config.h"
+#include <yaml-cpp/yaml.h>
+#include "ramulator/frontend/i_frontend.h"
+#include "ramulator/memory_system/i_memory_system.h"
+#pragma pop_macro("error")
+#pragma pop_macro("warn")
+#pragma pop_macro("info")
+#pragma pop_macro("debug")
+
 #endif
 
 #define FORCE_INLINE __attribute__((always_inline)) inline
@@ -936,13 +951,53 @@ namespace
          uint64_t cycle;
          std::vector<byte_t> data;
          bool completed = false;
+         size_t submitted = 0;
+         size_t outstanding = 0;
       };
+
+      // A refused logical request is retried by the TB. Retain only requests
+      // with at least one accepted native transaction, and resume their suffix.
+      std::map<uint8_t, int> pending_reads;
+      struct pending_write_t
+      {
+         ptr_t addr = 0;
+         uint8_t channel = 0;
+         uint16_t bitsize = 0;
+         std::vector<byte_t> data;
+         size_t submitted = 0;
+      } pending_write;
+      uint64_t native_reads = 0;
+      uint64_t native_writes = 0;
+
+      size_t chunk_size(ptr_t addr, size_t remaining) const
+      {
+         const auto native_size = static_cast<size_t>(memory->get_tx_bytes());
+         return std::min(remaining, native_size - static_cast<size_t>(addr % native_size));
+      }
+
+      bool submit_read(int tag)
+      {
+         auto& request = requests.at(tag);
+         while(request.submitted < request.data.size())
+         {
+            const auto addr = request.addr + request.submitted;
+            const auto size = chunk_size(addr, request.data.size() - request.submitted);
+            if(!frontend->receive_external_requests(
+                   0, addr, 0, [this, tag](Ramulator::Request&) { complete(tag); }, size))
+               return false;
+            request.submitted += size;
+            ++request.outstanding;
+            ++native_reads;
+         }
+         return true;
+      }
 
       // Entries live until the TB collects the completion, including their tags.
       std::map<int, request_t> requests;
       std::map<uint8_t, std::queue<int>> completions;
       std::unique_ptr<Ramulator::IFrontEnd> frontend;
       std::unique_ptr<Ramulator::IMemorySystem> memory;
+      YAML::Node native_config_cache;
       int next_tag = 1;
       uint64_t current_cycle = 0;
       uint64_t dram_ticks = 0;
@@ -1030,8 +1085,9 @@ namespace
          return load_configuration(path, stack);
       }
 
-      static YAML::Node configuration()
+      static YAML::Node configuration(const char* explicit_path)
       {
+         if(explicit_path && *explicit_path) return parse_configuration(explicit_path);
          if(const auto* path = std::getenv("RAMULATOR2_CONFIG"))
          {
             if(*path)
@@ -1093,6 +1149,13 @@ MemorySystem:
             std::abort();
          }
          auto& request = it->second;
+         if(!request.outstanding)
+         {
+            if_error("Ramulator completion without an outstanding native read.\n");
+            std::abort();
+         }
+         --request.outstanding;
+         if(request.outstanding || request.submitted != request.data.size()) return;
          request.completed = true;
          completions[request.channel].push(tag);
 #if __M_OUT_LVL > 4
@@ -1104,14 +1167,15 @@ MemorySystem:
       }
 
     public:
-      mem_interface_ramulator(mdpi_idx_t idx, double clock_period_ns, uint16_t channels_number) : mem_interface(idx)
+      mem_interface_ramulator(mdpi_idx_t idx, double clock_period_ns, uint16_t channels_number, const char* config_path) : mem_interface(idx)
       {
          if(!std::isfinite(clock_period_ns) || clock_period_ns <= 0 || !channels_number)
          {
             throw std::invalid_argument("Invalid accelerator clock period or memory channel count");
          }
-         auto config = configuration();
-         auto system = config["MemorySystem"];
+         auto config = configuration(config_path);
+         const bool native = static_cast<bool>(config["memory_system"]);
+         auto system = native ? config["memory_system"] : config["MemorySystem"];
          // MDPI owns the external clock. Ignore legacy YAML ratios and bypass
          // Ramulator's standalone frontend/memory scheduler.
          system["clock_ratio"] = 1;
@@ -1119,19 +1183,42 @@ MemorySystem:
          {
             if(std::strcmp(override_channels, "1") == 0)
             {
-               system["DRAM"]["org"]["channel"] = channels_number;
+               if(config_path && *config_path)
+                  throw std::invalid_argument("RAMULATOR_OVERRIDE_CHANNELS conflicts with explicit profiled configuration");
+               if(native) {
+                  auto controllers = system["controllers"];
+                  if(!controllers || controllers.size() == 0) throw std::invalid_argument("No native controllers");
+                  auto prototype = YAML::Clone(controllers[0]);
+                  system["controllers"] = YAML::Node(YAML::NodeType::Sequence);
+                  for(unsigned c = 0; c < channels_number; ++c) system["controllers"].push_back(YAML::Clone(prototype));
+               } else system["DRAM"]["org"]["channel"] = channels_number;
             }
             else if(std::strcmp(override_channels, "0") != 0 && *override_channels)
             {
                throw std::invalid_argument("RAMULATOR_OVERRIDE_CHANNELS must be 0 or 1");
             }
          }
-         frontend.reset(Ramulator::Factory::create_frontend(config));
-         memory.reset(Ramulator::Factory::create_memory_system(config));
+         auto native_config = Ramulator::Bambu::native_configuration(config);
+         uint64_t common_period_ps = 0;
+         for(const auto& controller : native_config["memory_system"]["controllers"])
+         {
+            const auto timings = controller["dram"]["timing"];
+            if(!timings.IsSequence() || !timings.size()) throw std::invalid_argument("Missing native DRAM timings");
+            const auto period_ps = timings[timings.size() - 1].as<int64_t>();
+            if(period_ps <= 0 || (common_period_ps && common_period_ps != static_cast<uint64_t>(period_ps)))
+               throw std::invalid_argument("Ramulator requires positive homogeneous DRAM periods");
+            common_period_ps = static_cast<uint64_t>(period_ps);
+         }
+         native_config_cache = YAML::Clone(native_config);
+         const auto factory_config = Ramulator::Bambu::factory_configuration(native_config);
+         frontend.reset(Ramulator::Factory::create_frontend(factory_config));
+         memory.reset(Ramulator::Factory::create_memory_system(factory_config));
          if(!frontend || !memory)
          {
             throw std::runtime_error("Ramulator factory did not create the frontend and memory system");
          }
+         if(memory->get_tx_bytes() <= 0)
+            throw std::invalid_argument("Ramulator requires a positive native transaction size");
          frontend->connect_memory_system(memory.get());
          memory->connect_frontend(frontend.get());
          const auto to_femtoseconds = [](long double period_ns) -> uint64_t {
@@ -1164,10 +1251,27 @@ MemorySystem:
 
       ~mem_interface_ramulator() override
       {
+         report("[MDPI-NATIVE] ID=%u,READS=%llu,WRITES=%llu\n",
+                static_cast<unsigned>(_idx), static_cast<unsigned long long>(native_reads),
+                static_cast<unsigned long long>(native_writes));
          report("[MDPI-MEMORY] ID=%u,CYCLES=%llu,DRAM_TICKS=%llu,READS=%llu,COMPLETED=%llu,WRITES=%llu\n",
                  static_cast<unsigned>(_idx), static_cast<unsigned long long>(current_cycle),
                  static_cast<unsigned long long>(dram_ticks), static_cast<unsigned long long>(reads_issued),
                  static_cast<unsigned long long>(reads_completed), static_cast<unsigned long long>(writes_issued));
+      }
+
+      void reset_timing()
+      {
+         // Discard callbacks with their owning timing model before reusing tags.
+         frontend.reset(); memory.reset(); requests.clear(); completions.clear();
+         pending_reads.clear(); pending_write = {};
+         native_reads = 0; native_writes = 0;
+         next_tag = 1; current_cycle = 0; clock_phase_fs = 0;
+         dram_ticks = 0; reads_issued = 0; reads_completed = 0; writes_issued = 0;
+         const auto config = Ramulator::Bambu::factory_configuration(native_config_cache);
+         frontend.reset(Ramulator::Factory::create_frontend(config));
+         memory.reset(Ramulator::Factory::create_memory_system(config));
+         frontend->connect_memory_system(memory.get()); memory->connect_frontend(frontend.get());
       }
 
       bool advance_to(uint64_t cycle)
@@ -1204,6 +1308,17 @@ MemorySystem:
             if_error("Invalid asynchronous read size: %u bits.\n", bitsize);
             return IF_ERROR;
          }
+         const auto pending = pending_reads.find(static_cast<uint8_t>(channel));
+         if(pending != pending_reads.end())
+         {
+            const auto tag = pending->second;
+            const auto& request = requests.at(tag);
+            if(request.addr != addr || request.bitsize != bitsize) return 0;
+            if(!submit_read(tag)) return 0;
+            pending_reads.erase(pending);
+            ++reads_issued;
+            return tag;
+         }
          const auto initial_tag = next_tag;
          while(requests.count(next_tag))
          {
@@ -1228,9 +1343,14 @@ MemorySystem:
             request.data.back() &= static_cast<byte_t>((1U << (bitsize % 8)) - 1);
          }
          requests.emplace(tag, std::move(request));
-         if(!frontend->receive_external_requests(0, addr, 0, [this, tag](Ramulator::Request&) { complete(tag); }))
+         if(!submit_read(tag))
          {
-            requests.erase(tag);
+            if(requests.at(tag).submitted)
+            {
+               pending_reads.emplace(static_cast<uint8_t>(channel), tag);
+               next_tag = tag == INT_MAX ? 1 : tag + 1;
+            }
+            else requests.erase(tag);
             return 0;
          }
          next_tag = tag == INT_MAX ? 1 : tag + 1;
@@ -1264,7 +1384,7 @@ MemorySystem:
          return tag;
       }
 
-      int write_request(bptr_t data, uint16_t bitsize, ptr_t addr)
+      int write_request(bptr_t data, uint16_t bitsize, ptr_t addr, uint8_t channel)
       {
          if(!data || !valid_size(bitsize))
          {
@@ -1276,11 +1396,30 @@ MemorySystem:
             if_error("Write to non-mapped address " PTR_FORMAT ".\n", addr);
             return IF_ERROR;
          }
-         if(!frontend->receive_external_requests(1, addr, 0, [](Ramulator::Request&) {}))
+         const auto bytes = static_cast<size_t>((bitsize + 7) / 8);
+         if(pending_write.submitted)
          {
-            return 0;
+            if(pending_write.channel != channel || pending_write.addr != addr || pending_write.bitsize != bitsize ||
+               std::memcmp(pending_write.data.data(), data, bytes)) return 0;
          }
-         write_memory(data, bitsize, addr);
+         else
+         {
+            pending_write.addr = addr;
+            pending_write.channel = channel;
+            pending_write.bitsize = bitsize;
+            pending_write.data.assign(data, data + bytes);
+         }
+         while(pending_write.submitted < bytes)
+         {
+            const auto chunk_addr = addr + pending_write.submitted;
+            const auto size = chunk_size(chunk_addr, bytes - pending_write.submitted);
+            if(!frontend->receive_external_requests(1, chunk_addr, 0, [](Ramulator::Request&) {}, size))
+               return 0;
+            pending_write.submitted += size;
+            ++native_writes;
+         }
+         write_memory(pending_write.data.data(), bitsize, addr);
+         pending_write = {};
          ++writes_issued;
          return 1;
       }
@@ -1303,12 +1442,12 @@ static void ramulator_initialization_error()
    __ipc_abort();
 }
 
-void __m_interface_mem_ramulator(double clock_period_ns, uint16_t channels_number)
+void __m_interface_mem_ramulator(double clock_period_ns, uint16_t channels_number, const char* config_path)
 {
 #ifdef HAVE_RAMULATOR2
    try
    {
-      __m_interface_set(new mem_interface_ramulator(__m_interface_idx_next(), clock_period_ns, channels_number));
+      __m_interface_set(new mem_interface_ramulator(__m_interface_idx_next(), clock_period_ns, channels_number, config_path));
    }
    catch(const std::exception& exception)
    {
@@ -1318,6 +1457,7 @@ void __m_interface_mem_ramulator(double clock_period_ns, uint16_t channels_numbe
 #else
    (void)clock_period_ns;
    (void)channels_number;
+   (void)config_path;
    error("Ramulator2 was requested, but the MDPI driver has no Ramulator support. "
          "Set RAMULATOR2_DIR to its installation prefix and rebuild the simulation.\n");
    ramulator_initialization_error();
@@ -1664,6 +1804,7 @@ static void* __m_driver_loop(void*)
 {
    debug("IPC thread started.\n");
 
+   bool memory_in_reset = false;
    while(true)
    {
       __ipc_wait(MDPI_IPC_STATE_REQUEST);
@@ -1724,7 +1865,27 @@ static void* __m_driver_loop(void*)
             }
             __ipc_response();
             break;
+         case MDPI_OP_TYPE_MEM_RESET:
+#ifdef HAVE_RAMULATOR2
+            if(!memory_in_reset)
+            {
+               try
+               {
+                  for(const auto& iface : __m_interfaces)
+                     if(auto* memory = dynamic_cast<mem_interface_ramulator*>(iface.get())) memory->reset_timing();
+               }
+               catch(const std::exception& exception)
+               {
+                  error("Ramulator reset failed: %s\n", exception.what());
+                  __ipc_abort();
+               }
+            }
+#endif
+            memory_in_reset = true;
+            __ipc_response();
+            break;
          case MDPI_OP_TYPE_MEM_TICK:
+            memory_in_reset = false;
 #ifdef HAVE_RAMULATOR2
             for(const auto& iface : __m_interfaces)
             {
@@ -1768,7 +1929,8 @@ static void* __m_driver_loop(void*)
                {
                   __m_ipc_operation.payload.interface.info = memory->write_request(
                       __m_ipc_operation.payload.interface.buffer, __m_ipc_operation.payload.interface.bitsize,
-                      __m_ipc_operation.payload.interface.addr);
+                      __m_ipc_operation.payload.interface.addr,
+                      static_cast<uint8_t>(__m_ipc_operation.payload.interface.info));
                }
             }
             else

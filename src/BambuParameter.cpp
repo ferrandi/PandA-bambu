@@ -442,7 +442,14 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            FULL - preserve the entire accelerator address.\n"
       << "        FULL connects memories directly without testbench bank adapters.\n\n"
       << "   --enable-ramulator\n"
-      << "        Enable Ramulator memory timing in native bus and AXI testbenches.\n\n"
+      << "        Enable Ramulator memory timing in native bus and AXI testbenches.\n"
+      << "   --ramulator-profile=<board-id|file.yaml>\n"
+      << "        Select a native Ramulator board template (alveo-u250/u280/u55c).\n"
+      << "   --ramulator-calibration=<configuration-id|file.xml>\n"
+      << "        Select board/memory/controller configuration and calibration.\n"
+      << "   --ramulator-import=<file.yaml|file.xml>\n"
+      << "        Import discovery YAML or probe XML for this run; repeat for both.\n"
+      << "        Defaults: one accelerator cycle for each transport delay.\n\n"
       << "   --tb-queue-size=value\n"
       << "        Define the maximum number of concurrent requests accepted by the testbench. (default 4).\n\n"
       << "   --data-bus-bitsize=<bitsize>\n"
@@ -999,6 +1006,9 @@ int BambuParameter::Exec()
       {"mem-delay-write", required_argument, nullptr, OPT_MEM_DELAY_WRITE},
       {"tb-queue-size", required_argument, nullptr, OPT_TB_QUEUE_SIZE},
       {"enable-ramulator", no_argument, nullptr, 0},
+      {"ramulator-profile", required_argument, nullptr, 0},
+      {"ramulator-calibration", required_argument, nullptr, 0},
+      {"ramulator-import", required_argument, nullptr, 0},
       {"host-profiling", no_argument, nullptr, OPT_HOST_PROFILING},
       {"disable-bitvalue-ipa", no_argument, nullptr, OPT_DISABLE_BITVALUE_IPA},
       {"discrepancy", no_argument, nullptr, OPT_DISCREPANCY},
@@ -2218,6 +2228,22 @@ int BambuParameter::Exec()
                setOption(OPT_enable_ramulator, true);
                break;
             }
+            if(strcmp(long_options[option_index].name, "ramulator-profile") == 0)
+            {
+               setOption(OPT_ramulator_profile, optarg);
+               break;
+            }
+            if(strcmp(long_options[option_index].name, "ramulator-calibration") == 0)
+            {
+               setOption(OPT_ramulator_calibration, optarg);
+               break;
+            }
+            if(strcmp(long_options[option_index].name, "ramulator-import") == 0)
+            {
+               setOption(OPT_ramulator_import, (isOption(OPT_ramulator_import) ?
+                   getOption<std::string>(OPT_ramulator_import) + STR_CST_string_separator : "") + optarg);
+               break;
+            }
             /// scheduling options
             if(strcmp(long_options[option_index].name, "no-chaining") == 0)
             {
@@ -2376,6 +2402,12 @@ void BambuParameter::add_experimental_setup_compiler_options(bool kill_printf)
 
 void BambuParameter::CheckParameters()
 {
+   if(!getOption<bool>(OPT_enable_ramulator) &&
+      (isOption(OPT_ramulator_profile) || isOption(OPT_ramulator_calibration) || isOption(OPT_ramulator_import)))
+   {
+      THROW_ERROR_USAGE("Ramulator profile, calibration and import require --enable-ramulator");
+   }
+
    Parameter::CheckParameters();
    for(const auto* name : {"enable-task", "priority-encoder", "task-resource-duplication"})
    {

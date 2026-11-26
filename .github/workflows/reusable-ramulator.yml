@@ -73,7 +73,13 @@ jobs:
           export RAMULATOR2_DIR="$RUNNER_TEMP/ramulator-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/install"
           python3 panda_regressions/hls/bambu_ramulator/run_tests.py \
             --bambu "$PWD/panda_dist/bin/bambu" --out "$PWD/out_ramulator_ci" -j "$RAMULATOR_TEST_JOBS" \
-            --max-cycles 5000 --timeout 180 --hbm-max-cycles 12000 --hbm-timeout 600
+            --max-cycles 5000 --timeout 180 --hbm-max-cycles 30000 --hbm-timeout 600
+      - name: Check native board profiles and discovery/probe imports
+        run: |
+          source panda_dist/settings.sh
+          export RAMULATOR2_DIR="$RUNNER_TEMP/ramulator-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/install"
+          python3 -B panda_regressions/hls/bambu_ramulator/run_profiles.py \
+            --bambu "$PWD/panda_dist/bin/bambu" --out "$PWD/out_ramulator_profiles" --jobs 2
       - name: Check sequential and banked caches with Ramulator bursts
         if: ${{ !cancelled() }}
         run: |
@@ -95,6 +101,10 @@ jobs:
           name: ramulator-results-${{ github.run_id }}-${{ github.run_attempt }}
           if-no-files-found: warn
           path: |
+            out_ramulator_profiles/junit.xml
+            out_ramulator_profiles/**/run.log
+            out_ramulator_profiles/**/command.txt
+            out_ramulator_profiles/**/memory-model/*
             out_ramulator_cache/junit.xml
             out_ramulator_cache/**/run.log
             out_ramulator_cache/**/command.txt

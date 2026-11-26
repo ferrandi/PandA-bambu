@@ -21,6 +21,11 @@ foreach(pattern IN LISTS PANDA_EXCLUDE_PATTERNS)
    endforeach()
 endforeach()
 
+# Configuration validation must retain IEEE NaN/Inf checks and precise rounding
+# even when the rest of Bambu is built with -Ofast.
+set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/utility/ramulator_config.cpp"
+   PROPERTIES COMPILE_OPTIONS "-fno-fast-math")
+
 add_library(panda_core STATIC ${PANDA_ALL_SOURCES})
 
 set(BAMBU_PARAM_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bambu_parameters_registry")
@@ -297,6 +302,7 @@ target_link_libraries(panda_core
       panda_ext_headers
       panda_ext_absl
       panda_ext_pugixml
+      yaml-cpp::yaml-cpp
       panda_ext_mockturtle
       panda_ext_glaze
       panda_ext_buddy
@@ -489,3 +495,13 @@ if(PANDA_BUILD_CC)
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
 endif()
+
+# Fast XML/YAML contract test, independent of the full compiler/link pipeline.
+add_executable(ramulator_config_unit
+   "${CMAKE_CURRENT_SOURCE_DIR}/../panda_unit/utility/RamulatorConfig.cpp"
+   "${CMAKE_CURRENT_SOURCE_DIR}/utility/ramulator_config.cpp")
+target_include_directories(ramulator_config_unit PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/utility")
+target_link_libraries(ramulator_config_unit PRIVATE yaml-cpp::yaml-cpp panda_ext_pugixml Boost::headers)
+add_test(NAME ramulator_config COMMAND ramulator_config_unit
+   "${CMAKE_SOURCE_DIR}/etc/libmdpi" "${CMAKE_BINARY_DIR}/Testing/ramulator-config")
+set_tests_properties(ramulator_config PROPERTIES LABELS "ramulator" TIMEOUT 30)

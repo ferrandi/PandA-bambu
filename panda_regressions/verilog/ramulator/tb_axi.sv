@@ -5,7 +5,6 @@ module tb_axi #(parameter DEPTH = 4);
   reg clock = 0;
   always #5 clock = !clock;
   reg reset = 1;
-  wire ramulator_phase;
   reg arvalid = 0, awvalid = 0, wvalid = 0, rready = 0, bready = 0;
   wire arready, awready, wready, rvalid, bvalid, rlast;
   reg [63:0] araddr = 0, awaddr = 0;
@@ -31,7 +30,7 @@ module tb_axi #(parameter DEPTH = 4);
     .BITSIZE_rid(8), .BITSIZE_bid(8), .BITSIZE_arlen(8), .BITSIZE_awlen(8),
     .BITSIZE_arsize(3), .BITSIZE_awsize(3), .BITSIZE_arburst(2), .BITSIZE_awburst(2),
     .BITSIZE_rdata(32), .BITSIZE_wdata(32), .BITSIZE_wstrb(4), .BITSIZE_rresp(2), .BITSIZE_bresp(2)) memory(
-    .clock(clock), .ramulator_phase(ramulator_phase), .reset(reset), .arvalid(arvalid), .arready(arready), .araddr(araddr),
+    .clock(clock),  .reset(reset), .arvalid(arvalid), .arready(arready), .araddr(araddr),
     .arid(arid), .arlen(arlen), .arsize(arsize), .arburst(arburst),
     .arlock(1'b0), .arcache(1'b0), .arprot(1'b0), .arqos(1'b0), .arregion(1'b0), .aruser(1'b0),
     .rvalid(rvalid), .rready(rready), .rid(rid), .rdata(rdata), .rresp(rresp), .rlast(rlast), .ruser(),
@@ -41,7 +40,6 @@ module tb_axi #(parameter DEPTH = 4);
     .wvalid(wvalid), .wready(wready), .wdata(wdata), .wstrb(wstrb), .wlast(wlast), .wuser(1'b0),
     .bvalid(bvalid), .bready(bready), .bid(bid), .bresp(bresp), .buser());
 
-  ramulator_test_clock tick_source(.clock(clock), .reset(reset), .ramulator_phase(ramulator_phase));
   always @(negedge clock)
   begin
     if(!reset)
