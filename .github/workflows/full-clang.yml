@@ -184,7 +184,6 @@ jobs:
     name: Ramulator long benchmarks
     needs: [build]
     runs-on: [self-hosted, long]
-    container: ubuntu:24.04
     timeout-minutes: 1440
     permissions:
       contents: read
@@ -192,27 +191,17 @@ jobs:
       run:
         shell: bash
     steps:
-      - name: Install test tools
-        run: |
-          apt-get update
-          apt-get install --no-install-recommends -y \
-            ca-certificates git curl wget xz-utils build-essential cmake python3 \
-            clang verilator binutils gettext-base bc
       - name: Checkout Bambu
         uses: actions/checkout@v5
         with:
           submodules: false
+          persist-credentials: false
       - name: Checkout pinned benchmark collection and its dependencies
         run: |
           git submodule update --init -- examples/ramulator-examples
           git -C examples/ramulator-examples rev-parse HEAD
           git -C examples/ramulator-examples submodule update --init --recursive
-      - name: Build and install pinned Ramulator once
-        env:
-          RAMULATOR_BUILD_JOBS: '4'
-        run: |
-          bash panda_regressions/hls/bambu_ramulator/prepare_ramulator.sh \
-            "$RUNNER_TEMP/ramulator-long-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" --checkout
+          git submodule update --init -- ext/ramulator2-no-spdlog
       - name: Download matching Bambu distribution
         uses: ./.github/actions/storage-download
         with:
@@ -225,12 +214,11 @@ jobs:
           bash .devcontainer/library-scripts/compiler-download.sh \
             "$PWD/panda_dist/compilers" clang-13 "${LOCAL_COMPILERS_BACKUP:-}"
       - name: Run all Ramulator benchmark suites
-        run: |
-          set -o pipefail
-          source panda_dist/settings.sh
-          export RAMULATOR2_DIR="$RUNNER_TEMP/ramulator-long-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/install"
-          ./examples/ramulator-examples/run_tests.sh --all --no-compare --tag full-ci \
-            2>&1 | tee ramulator-long.log
+        env:
+          RAMULATOR_BUILD_JOBS: '4'
+        run: >
+          bash .github/scripts/run-ramulator-ci.sh long
+          "$RUNNER_TEMP/ramulator-long-results-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
       - name: Upload benchmark results and dependency build logs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v6
@@ -238,19 +226,7 @@ jobs:
           name: ramulator-long-results-${{ github.run_id }}-${{ github.run_attempt }}
           include-hidden-files: true
           if-no-files-found: warn
-          path: |
-            ramulator-long.log
-            examples/ramulator-examples/.runs/**/batch.json
-            examples/ramulator-examples/.runs/**/metadata.json
-            examples/ramulator-examples/.runs/**/summary.csv
-            examples/ramulator-examples/.runs/**/cases/*.json
-            examples/ramulator-examples/.runs/**/config_snapshot/**/inputs.json
-            examples/ramulator-examples/.runs/**/config_snapshot/**/bambu_flags.json
-            examples/ramulator-examples/.runs/**/config_snapshot/**/*.yaml
-            examples/ramulator-examples/.runs/**/logs/*.gz
-            examples/ramulator-examples/.runs/**/logs/*.xml
-            ${{ runner.temp }}/ramulator-long-${{ github.run_id }}-${{ github.run_attempt }}/*.log
-            ${{ runner.temp }}/ramulator-long-${{ github.run_id }}-${{ github.run_attempt }}/provenance.json
+          path: ${{ runner.temp }}/ramulator-long-results-${{ github.run_id }}-${{ github.run_attempt }}/
 
   success:
     if: ${{ !cancelled() }}
