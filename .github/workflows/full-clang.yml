@@ -217,7 +217,7 @@ jobs:
         env:
           RAMULATOR_BUILD_JOBS: '4'
         run: >
-          bash .github/scripts/run-ramulator-long.sh
+          bash .github/scripts/run-ramulator-ci.sh long
           "$RUNNER_TEMP/ramulator-long-results-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
       - name: Upload benchmark results and dependency build logs
         if: ${{ !cancelled() }}
